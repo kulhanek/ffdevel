@@ -9,6 +9,7 @@ SET(FFENERGY_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffenergy ${FFENERGY_SRC})
+ADD_DEPENDENCIES(ffenergy ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffenergy
         ffdevel

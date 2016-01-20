@@ -9,6 +9,7 @@ SET(RMSDFIT_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(rmsdfit ${RMSDFIT_SRC})
+ADD_DEPENDENCIES(rmsdfit ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(rmsdfit
         ffdevel

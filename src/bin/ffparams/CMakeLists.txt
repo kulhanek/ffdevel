@@ -9,6 +9,7 @@ SET(FFPARAMS_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffparams ${FFPARAMS_SRC})
+ADD_DEPENDENCIES(ffparams ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffparams
         ffdevel

@@ -13,6 +13,7 @@ SET(GENPOINTS_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(genpoints ${GENPOINTS_SRC})
+ADD_DEPENDENCIES(genpoints ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(genpoints
         ffdevel

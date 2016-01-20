@@ -9,6 +9,7 @@ SET(COMP_ENE_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(compenetop ${COMP_ENE_SRC})
+ADD_DEPENDENCIES(compenetop ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(compenetop
         ffdevel

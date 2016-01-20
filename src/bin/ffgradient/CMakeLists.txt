@@ -9,6 +9,7 @@ SET(FFGRADIENT_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffgradient ${FFGRADIENT_SRC})
+ADD_DEPENDENCIES(ffgradient ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffgradient
         ffdevel

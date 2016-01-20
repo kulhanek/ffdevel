@@ -9,6 +9,7 @@ SET(FFOPTIMIZE_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffoptimize ${FFOPTIMIZE_SRC})
+ADD_DEPENDENCIES(ffoptimize ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffoptimize
         ffdevel

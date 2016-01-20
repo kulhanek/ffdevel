@@ -9,6 +9,7 @@ SET(PTSFREQ_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ptsfreq ${PTSFREQ_SRC})
+ADD_DEPENDENCIES(ptsfreq ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ptsfreq
         ffdevel

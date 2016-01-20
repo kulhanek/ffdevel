@@ -9,6 +9,7 @@ SET(MMOPTIMIZE_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(mmoptimize ${MMOPTIMIZE_SRC})
+ADD_DEPENDENCIES(mmoptimize ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(mmoptimize
         ffdevel

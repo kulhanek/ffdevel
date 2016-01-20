@@ -9,6 +9,7 @@ SET(COMP_FREQ_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(compfreq ${COMP_FREQ_SRC})
+ADD_DEPENDENCIES(compfreq ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(compfreq
         ffdevel

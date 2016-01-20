@@ -9,6 +9,7 @@ SET(COMP_GEO_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(compgeo ${COMP_GEO_SRC})
+ADD_DEPENDENCIES(compgeo ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(compgeo
         ffdevel

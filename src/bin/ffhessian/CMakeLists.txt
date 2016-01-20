@@ -9,6 +9,7 @@ SET(FFHESSIAN_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffhessian ${FFHESSIAN_SRC})
+ADD_DEPENDENCIES(ffhessian ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffhessian
         ffdevel

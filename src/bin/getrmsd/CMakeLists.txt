@@ -9,6 +9,7 @@ SET(GETRMSD_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(getrmsd ${GETRMSD_SRC})
+ADD_DEPENDENCIES(getrmsd ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(getrmsd
         ffdevel

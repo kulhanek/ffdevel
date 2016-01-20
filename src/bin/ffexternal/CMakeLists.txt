@@ -9,6 +9,7 @@ SET(FFEXTERNAL_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(ffexternal ${FFEXTERNAL_SRC})
+ADD_DEPENDENCIES(ffexternal ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(ffexternal
         ffdevel

@@ -10,6 +10,7 @@ SET(GENROTORS_SRC
 
 # final build ------------------------------------------------------------------
 ADD_EXECUTABLE(genrotors ${GENROTORS_SRC})
+ADD_DEPENDENCIES(genrotors ffdevel_shared)
 
 TARGET_LINK_LIBRARIES(genrotors
         ${ASL_LIB_NAME}
