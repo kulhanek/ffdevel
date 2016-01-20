@@ -118,7 +118,7 @@ LINK_DIRECTORIES(${OPEN_BABEL_ROOT}/lib)
 SET(OPEN_BABEL_LIB obcore)
 
 # boost --------------------------------------
-INCLUDE_DIRECTORIES(${DEVELOPMENT_ROOT}/thirdparty/boost/1.51.0)
+INCLUDE_DIRECTORIES(${DEVELOPMENT_ROOT}/thirdparty/boost/1.59.0)
 
 # ==============================================================================
 # output directories -----------------------------------------------------------
