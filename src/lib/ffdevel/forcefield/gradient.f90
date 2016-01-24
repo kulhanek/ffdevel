@@ -252,10 +252,9 @@ subroutine ffdev_gradient_dihedrals(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         ::  i,j,k,l,ic,ip,pn
-    real(DEVDP)     ::  scp,phi,arg,dv,f1
-    real(DEVDP)     ::  bjinv, bkinv, bj2inv, bk2inv
-    real(DEVDP)     ::  rji(3),rjk(3),rkl(3),rnj(3),rnk(3)
-    real(DEVDP)     ::  rki(3),rlj(3), dpi(3,4),di(3),dl(3)
+    real(DEVDP)     ::  scp,phi,arg,dv
+    real(DEVDP)     ::  a2,b2,gv,fg,hg
+    real(DEVDP)     ::  f(3),g(3),h(3),a(3),b(3)
     ! -----------------------------------------------------------------------------
 
     geo%dih_ene = 0.0d0
@@ -267,25 +266,26 @@ subroutine ffdev_gradient_dihedrals(top,geo)
         l  = top%dihedrals(ip)%al
         ic = top%dihedrals(ip)%dt
 
-        rji(:) = geo%crd(:,i) - geo%crd(:,j)
-        rjk(:) = geo%crd(:,k) - geo%crd(:,j)
-        rkl(:) = geo%crd(:,l) - geo%crd(:,k)
+        f(:) = geo%crd(:,i) - geo%crd(:,j)
+        g(:) = geo%crd(:,j) - geo%crd(:,k)
+        h(:) = geo%crd(:,l) - geo%crd(:,k)
 
-        rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
-        rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
-        rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)
+        a(1) = f(2)*g(3) - f(3)*g(2)
+        a(2) = f(3)*g(1) - f(1)*g(3)
+        a(3) = f(1)*g(2) - f(2)*g(1)
 
-        rnk(1) = -rjk(2)*rkl(3) + rjk(3)*rkl(2)
-        rnk(2) = -rjk(3)*rkl(1) + rjk(1)*rkl(3)
-        rnk(3) = -rjk(1)*rkl(2) + rjk(2)*rkl(1)
+        b(1) = h(2)*g(3) - h(3)*g(2)
+        b(2) = h(3)*g(1) - h(1)*g(3)
+        b(3) = h(1)*g(2) - h(2)*g(1)
 
-        bj2inv = 1.0d0/(rnj(1)**2 + rnj(2)**2 + rnj(3)**2 )
-        bk2inv = 1.0d0/(rnk(1)**2 + rnk(2)**2 + rnk(3)**2 )
-        bjinv = sqrt(bj2inv)
-        bkinv = sqrt(bk2inv)
+        fg = dot_product(f,g)
+        hg = dot_product(h,g)
+        a2 = a(1)**2 + a(2)**2 + a(3)**2
+        b2 = b(1)**2 + b(2)**2 + b(3)**2
+        gv = sqrt( g(1)**2 + g(2)**2 + g(3)**2 )
 
         ! calculate scp and phi
-        scp = (rnj(1)*rnk(1)+rnj(2)*rnk(2)+rnj(3)*rnk(3))*(bjinv*bkinv)
+        scp = (a(1)*b(1)+a(2)*b(2)+a(3)*b(3))/sqrt(a2*b2)
         if ( scp .gt.  1.0 ) then
                 scp =  1.0
                 phi = acos (1.0) ! const
@@ -295,9 +295,9 @@ subroutine ffdev_gradient_dihedrals(top,geo)
         else
             phi = acos ( scp )
         end if
-        if(rjk(1)*(rnj(2)*rnk(3)-rnj(3)*rnk(2)) &
-           +rjk(2)*(rnj(3)*rnk(1)-rnj(1)*rnk(3)) &
-           +rjk(3)*(rnj(1)*rnk(2)-rnj(2)*rnk(1)) .lt. 0) then
+        if( g(1)*(a(2)*b(3)-a(3)*b(2)) &
+           +g(2)*(a(3)*b(1)-a(1)*b(3)) &
+           +g(3)*(a(1)*b(2)-a(2)*b(1)) .gt. 0) then
                     phi = -phi
         end if
 
@@ -332,31 +332,10 @@ subroutine ffdev_gradient_dihedrals(top,geo)
         end select
 
         ! calculate gradient
-        f1 = sin ( phi )
-        if ( abs(f1) .lt. 1.e-12 ) f1 = 1.e-12
-        f1 =  -1.0d0 / f1
-        di(:) = f1 * ( rnk(:)*(bjinv*bkinv) - scp*rnj(:)*bj2inv )
-        dl(:) = f1 * ( rnj(:)*(bjinv*bkinv) - scp*rnk(:)*bk2inv )
-        rki(:) =  rji(:) - rjk(:)
-        rlj(:) = -rjk(:) - rkl(:)
-
-        dpi(1,1) = rjk(2)*di(3) - rjk(3)*di(2)
-        dpi(2,1) = rjk(3)*di(1) - rjk(1)*di(3)
-        dpi(3,1) = rjk(1)*di(2) - rjk(2)*di(1)
-        dpi(1,2) = rki(2)*di(3)-rki(3)*di(2)+rkl(2)*dl(3)-rkl(3)*dl(2)
-        dpi(2,2) = rki(3)*di(1)-rki(1)*di(3)+rkl(3)*dl(1)-rkl(1)*dl(3)
-        dpi(3,2) = rki(1)*di(2)-rki(2)*di(1)+rkl(1)*dl(2)-rkl(2)*dl(1)
-        dpi(1,3) = rlj(2)*dl(3)-rlj(3)*dl(2)-rji(2)*di(3)+rji(3)*di(2)
-        dpi(2,3) = rlj(3)*dl(1)-rlj(1)*dl(3)-rji(3)*di(1)+rji(1)*di(3)
-        dpi(3,3) = rlj(1)*dl(2)-rlj(2)*dl(1)-rji(1)*di(2)+rji(2)*di(1)
-        dpi(1,4) = rjk(2)*dl(3) - rjk(3)*dl(2)
-        dpi(2,4) = rjk(3)*dl(1) - rjk(1)*dl(3)
-        dpi(3,4) = rjk(1)*dl(2) - rjk(2)*dl(1)
-
-        geo%grd(:,i) = geo%grd(:,i) + dv* dpi(:,1)
-        geo%grd(:,j) = geo%grd(:,j) + dv* dpi(:,2)
-        geo%grd(:,k) = geo%grd(:,k) + dv* dpi(:,3)
-        geo%grd(:,l) = geo%grd(:,l) + dv* dpi(:,4)
+        geo%grd(:,i) = geo%grd(:,i) + dv*( -gv/a2*a(:) )
+        geo%grd(:,j) = geo%grd(:,j) + dv*(  (gv/a2 + fg/(a2*gv))*a(:) - hg/(b2*gv)*b(:) )
+        geo%grd(:,k) = geo%grd(:,k) + dv*(  (hg/(b2*gv) - gv/b2)*b(:) - fg/(a2*gv)*a(:) )
+        geo%grd(:,l) = geo%grd(:,l) + dv*( gv/b2*b(:) )
     end do
 
 end subroutine ffdev_gradient_dihedrals
@@ -375,10 +354,9 @@ subroutine ffdev_gradient_impropers(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         ::  i,j,k,l,ic,ip
-    real(DEVDP)     ::  scp,phi,arg,dv,f1
-    real(DEVDP)     ::  bjinv, bkinv, bj2inv, bk2inv
-    real(DEVDP)     ::  rji(3),rjk(3),rkl(3),rnj(3),rnk(3)
-    real(DEVDP)     ::  rki(3),rlj(3), dpi(3,4),di(3),dl(3)
+    real(DEVDP)     ::  scp,phi,arg,dv
+    real(DEVDP)     ::  a2,b2,gv,fg,hg
+    real(DEVDP)     ::  f(3),g(3),h(3),a(3),b(3)
     ! -----------------------------------------------------------------------------
 
     geo%impropr_ene = 0.0d0
@@ -390,34 +368,39 @@ subroutine ffdev_gradient_impropers(top,geo)
         l  = top%impropers(ip)%al
         ic = top%impropers(ip)%dt
 
-        rji(:) = geo%crd(:,i) - geo%crd(:,j)
-        rjk(:) = geo%crd(:,k) - geo%crd(:,j)
-        rkl(:) = geo%crd(:,l) - geo%crd(:,k)
+        f(:) = geo%crd(:,i) - geo%crd(:,j)
+        g(:) = geo%crd(:,j) - geo%crd(:,k)
+        h(:) = geo%crd(:,l) - geo%crd(:,k)
 
-        rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
-        rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
-        rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)
-        rnk(1) = -rjk(2)*rkl(3) + rjk(3)*rkl(2)
-        rnk(2) = -rjk(3)*rkl(1) + rjk(1)*rkl(3)
-        rnk(3) = -rjk(1)*rkl(2) + rjk(2)*rkl(1)
+        a(1) = f(2)*g(3) - f(3)*g(2)
+        a(2) = f(3)*g(1) - f(1)*g(3)
+        a(3) = f(1)*g(2) - f(2)*g(1)
 
-        bj2inv  = 1.0d0/( rnj(1)**2 + rnj(2)**2 + rnj(3)**2)
-        bk2inv  = 1.0d0/( rnk(1)**2 + rnk(2)**2 + rnk(3)**2)
-        bjinv = sqrt(bj2inv)
-        bkinv = sqrt(bk2inv)
+        b(1) = h(2)*g(3) - h(3)*g(2)
+        b(2) = h(3)*g(1) - h(1)*g(3)
+        b(3) = h(1)*g(2) - h(2)*g(1)
 
-        scp = (rnj(1)*rnk(1)+rnj(2)*rnk(2)+rnj(3)*rnk(3))*(bjinv*bkinv)
-        if ( scp .gt.  1.0d0 ) then
-            scp =  1.0d0
-        else if ( scp .lt. -1.0d0 ) then
-            scp = -1.0d0
+        fg = dot_product(f,g)
+        hg = dot_product(h,g)
+        a2 = a(1)**2 + a(2)**2 + a(3)**2
+        b2 = b(1)**2 + b(2)**2 + b(3)**2
+        gv = sqrt( g(1)**2 + g(2)**2 + g(3)**2 )
+
+        ! calculate scp and phi
+        scp = (a(1)*b(1)+a(2)*b(2)+a(3)*b(3))/sqrt(a2*b2)
+        if ( scp .gt.  1.0 ) then
+                scp =  1.0
+                phi = acos (1.0) ! const
+        else if ( scp .lt. -1.0 ) then
+                scp = -1.0
+                phi = acos (-1.0) ! const
+        else
+            phi = acos ( scp )
         end if
-        phi = acos ( scp )
-        if(rjk(1)*(rnj(2)*rnk(3)-rnj(3)*rnk(2)) &
-            +rjk(2)*(rnj(3)*rnk(1)-rnj(1)*rnk(3)) &
-            +rjk(3)*(rnj(1)*rnk(2)-rnj(2)*rnk(1)) &
-            .lt. 0) then
-                  phi = -phi
+        if( g(1)*(a(2)*b(3)-a(3)*b(2)) &
+           +g(2)*(a(3)*b(1)-a(1)*b(3)) &
+           +g(3)*(a(1)*b(2)-a(2)*b(1)) .gt. 0) then
+                    phi = -phi
         end if
 
         ! calculate energy
@@ -427,32 +410,11 @@ subroutine ffdev_gradient_impropers(top,geo)
         ! calculate gradient
         dv  = -2.0d0 * top%improper_types(ic)%v * sin(arg)
 
-        f1 = sin ( phi )
-        if ( abs(f1) .lt. 1.e-12 ) f1 = 1.e-12
-        f1 =  -1.0 / f1
-
-        di(:) = f1 * ( rnk(:)*bjinv*bkinv - scp*rnj(:)*bj2inv )
-        dl(:) = f1 * ( rnj(:)*bjinv*bkinv - scp*rnk(:)*bk2inv )
-        rki(:) =  rji(:) - rjk(:)
-        rlj(:) = -rjk(:) - rkl(:)
-
-        dpi(1,1) = rjk(2)*di(3) - rjk(3)*di(2)
-        dpi(2,1) = rjk(3)*di(1) - rjk(1)*di(3)
-        dpi(3,1) = rjk(1)*di(2) - rjk(2)*di(1)
-        dpi(1,2) = rki(2)*di(3)-rki(3)*di(2)+rkl(2)*dl(3)-rkl(3)*dl(2)
-        dpi(2,2) = rki(3)*di(1)-rki(1)*di(3)+rkl(3)*dl(1)-rkl(1)*dl(3)
-        dpi(3,2) = rki(1)*di(2)-rki(2)*di(1)+rkl(1)*dl(2)-rkl(2)*dl(1)
-        dpi(1,3) = rlj(2)*dl(3)-rlj(3)*dl(2)-rji(2)*di(3)+rji(3)*di(2)
-        dpi(2,3) = rlj(3)*dl(1)-rlj(1)*dl(3)-rji(3)*di(1)+rji(1)*di(3)
-        dpi(3,3) = rlj(1)*dl(2)-rlj(2)*dl(1)-rji(1)*di(2)+rji(2)*di(1)
-        dpi(1,4) = rjk(2)*dl(3) - rjk(3)*dl(2)
-        dpi(2,4) = rjk(3)*dl(1) - rjk(1)*dl(3)
-        dpi(3,4) = rjk(1)*dl(2) - rjk(2)*dl(1)
-
-        geo%grd(:,i) = geo%grd(:,i) + dv* dpi(:,1)
-        geo%grd(:,j) = geo%grd(:,j) + dv* dpi(:,2)
-        geo%grd(:,k) = geo%grd(:,k) + dv* dpi(:,3)
-        geo%grd(:,l) = geo%grd(:,l) + dv* dpi(:,4)
+        ! calculate gradient
+        geo%grd(:,i) = geo%grd(:,i) + dv*( -gv/a2*a(:) )
+        geo%grd(:,j) = geo%grd(:,j) + dv*(  (gv/a2 + fg/(a2*gv))*a(:) - hg/(b2*gv)*b(:) )
+        geo%grd(:,k) = geo%grd(:,k) + dv*(  (hg/(b2*gv) - gv/b2)*b(:) - fg/(a2*gv)*a(:) )
+        geo%grd(:,l) = geo%grd(:,l) + dv*( gv/b2*b(:) )
 
     end do
 

@@ -53,6 +53,8 @@ subroutine ffdev_hessian_all(top,geo)
     ! reset hessian
     geo%hess(:,:,:,:) = 0.0d0
 
+    stop 'incorrect hessian for dihedrals'
+
     ! bonded terms
     call ffdev_hessian_bonds(top,geo)
     call ffdev_hessian_angles(top,geo)

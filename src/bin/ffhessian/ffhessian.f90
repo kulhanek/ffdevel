@@ -35,7 +35,7 @@ program ffdev_hessian_program
     character(len=MAX_PATH) :: arg
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo,ngeo,nggeo
-    logical                 :: do_test
+    logical                 :: do_test, do_numerical
     logical                 :: write_pts
     integer                 :: i
     ! --------------------------------------------------------------------------
@@ -52,6 +52,7 @@ program ffdev_hessian_program
     call get_command_argument(2, crdname)
 
     do_test = .false.
+    do_numerical = .false.
     write_pts = .false.
 
     do i=3,command_argument_count()
@@ -59,6 +60,8 @@ program ffdev_hessian_program
         select case(trim(arg))
             case('test')
                 do_test = .true.
+            case('numerical')
+                do_numerical = .true.
             case('write')
                 write_pts = .true.
             case default
@@ -97,8 +100,13 @@ program ffdev_hessian_program
 
     ! calculate energy and gradient
     write(DEV_OUT,*)
-    write(DEV_OUT,'(A)') 'Analytical hessian ...'
-    call ffdev_hessian_all(top,geo)
+    if( do_numerical ) then
+        write(DEV_OUT,'(A)') 'Numerical hessian ...'
+        call ffdev_hessian_num_by_grds_all(top,geo)
+    else 
+        write(DEV_OUT,'(A)') 'Analytical hessian ...'
+        call ffdev_hessian_all(top,geo)
+    end if
 
     if( write_pts ) then
         write(DEV_OUT,*)
