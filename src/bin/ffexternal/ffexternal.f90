@@ -62,6 +62,7 @@ program ffdev_external_program
                 i = i + 1
             case('-n')
                 do_numerical = .true.
+                i = i + 1
             case default
                 exit
         end select
