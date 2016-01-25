@@ -114,9 +114,9 @@ program ffdev_external_program
             write(DEV_OUT,141)
             call ffdev_gradient_allocate(geo)
             if( do_numerical ) then
-                call ffdev_gradient_all(top,geo)
-            else
                 call ffdev_gradient_num_all(top,geo)
+            else
+                call ffdev_gradient_all(top,geo)
             end if
         case(2)
             write(DEV_OUT,142)

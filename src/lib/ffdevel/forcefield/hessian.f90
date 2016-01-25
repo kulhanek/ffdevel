@@ -91,7 +91,7 @@ subroutine ffdev_hessian_num_all(top,geo)
     integer         :: i,j,k,l
     ! --------------------------------------------------------------------------
 
-    d = 1.0d-2  ! differentiation parameter
+    d = 1.0d-5  ! differentiation parameter
     d2inv = 1.0d0/d**2
 
     ! calculate base energy
@@ -183,7 +183,7 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo)
     integer                     :: i,j,k,l
     ! --------------------------------------------------------------------------
 
-    d = 1.0d-5  ! differentiation parameter
+    d = 1.0d-6  ! differentiation parameter
 
     ! calculate base energy and gradient
     call ffdev_gradient_all(top,geo)
