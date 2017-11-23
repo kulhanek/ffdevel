@@ -21,4 +21,6 @@ ADD_SUBDIRECTORY(compenepts)
 ADD_SUBDIRECTORY(compenetop)
 ADD_SUBDIRECTORY(compgeo)
 ADD_SUBDIRECTORY(compfreq)
+ADD_SUBDIRECTORY(vdwprobefilter)
+ADD_SUBDIRECTORY(vdwgenprobe)
 
