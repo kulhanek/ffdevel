@@ -53,6 +53,8 @@ subroutine ffdev_hessian_all(top,geo)
     ! reset hessian
     geo%hess(:,:,:,:) = 0.0d0
 
+    stop 'incorrect hessian for dihedrals'
+
     ! bonded terms
     call ffdev_hessian_bonds(top,geo)
     call ffdev_hessian_angles(top,geo)
@@ -89,7 +91,7 @@ subroutine ffdev_hessian_num_all(top,geo)
     integer         :: i,j,k,l
     ! --------------------------------------------------------------------------
 
-    d = 1.0d-2  ! differentiation parameter
+    d = 1.0d-5  ! differentiation parameter
     d2inv = 1.0d0/d**2
 
     ! calculate base energy
@@ -181,7 +183,7 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo)
     integer                     :: i,j,k,l
     ! --------------------------------------------------------------------------
 
-    d = 1.0d-5  ! differentiation parameter
+    d = 1.0d-6  ! differentiation parameter
 
     ! calculate base energy and gradient
     call ffdev_gradient_all(top,geo)

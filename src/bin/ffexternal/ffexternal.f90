@@ -34,24 +34,48 @@ program ffdev_external_program
     character               :: layer        ! requested layer
     character(len=MAX_PATH) :: inpname      ! input data
     character(len=MAX_PATH) :: outname      ! output data
+    character(len=MAX_PATH) :: arg
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo
-    integer                 :: mode         ! what should be calculated
+    integer                 :: mode,i         ! what should be calculated
+    logical                 :: do_numerical
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF External')
 
     ! test number of input arguments
-    if( command_argument_count() .lt. 4  ) then
+    if( command_argument_count() .lt. 5  ) then
         call print_usage()
         write(DEV_OUT,*) 'Number of arguments: ',command_argument_count()
         call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (4 or more are required)!')
     end if
 
-    call get_command_argument(1, topname)
-    call get_command_argument(2, layer)
-    call get_command_argument(3, inpname)
-    call get_command_argument(4, outname)
+    do_numerical = .false.
+
+    i = 1
+    do while (i .le. command_argument_count() )
+        call get_command_argument(i, arg)
+        select case(trim(arg))
+            case('-p')
+                i = i + 1
+                if( i .le. command_argument_count() ) call get_command_argument(i, topname)
+                i = i + 1
+            case('-n')
+                do_numerical = .true.
+                i = i + 1
+            case default
+                exit
+        end select
+    end do
+
+    if( i .lt. 3  ) then
+        call print_usage()
+        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified after topology!')
+    end if
+    
+    call get_command_argument(i+0, layer)
+    call get_command_argument(i+1, inpname)
+    call get_command_argument(i+2, outname)
 
     ! paths
     write(DEV_OUT,*)
@@ -89,12 +113,20 @@ program ffdev_external_program
         case(1)
             write(DEV_OUT,141)
             call ffdev_gradient_allocate(geo)
-            call ffdev_gradient_all(top,geo)
+            if( do_numerical ) then
+                call ffdev_gradient_num_all(top,geo)
+            else
+                call ffdev_gradient_all(top,geo)
+            end if
         case(2)
             write(DEV_OUT,142)
             call ffdev_gradient_allocate(geo)
             call ffdev_hessian_allocate(geo)
-            call ffdev_hessian_all(top,geo)
+            if( do_numerical ) then
+                call ffdev_hessian_num_by_grds_all(top,geo)
+            else
+                call ffdev_hessian_all(top,geo)
+            end if
     end select
 
     write(DEV_OUT,*)
