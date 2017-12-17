@@ -22,12 +22,16 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <set>
+#include <openbabel/mol.h>
+#include <openbabel/graphsym.h>
+#include <openbabel/obconversion.h>
 
 //------------------------------------------------------------------------------
 
 using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
+using namespace OpenBabel;
 
 MAIN_ENTRY(CVDWGenProbe);
 
@@ -38,6 +42,7 @@ MAIN_ENTRY(CVDWGenProbe);
 CVDWGenProbe::CVDWGenProbe(void)
 {
     OutputFile = NULL;
+    NumOfProbes = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -128,49 +133,35 @@ bool CVDWGenProbe::Run(void)
     StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),CPoint());
     StructureWithProbe.SetSymbol(Structure.GetNumberOfAtoms(),Options.GetOptProbeSymbol());
 
-    // generate structures
-    GenAllStructures();
 
-    return(true);
-}
-
-//------------------------------------------------------------------------------
-
-bool CVDWGenProbe::GenAllStructures(void)
-{
-    CPoint probe;
-    for(probe.x = Min.x; probe.x <= Max.x; probe.x += Options.GetOptSpacing()){
-        cout << "x";
-        for(probe.y = Min.y; probe.y <= Max.y; probe.y += Options.GetOptSpacing()){
-            cout << "y";
-            for(probe.z = Min.z; probe.z <= Max.z; probe.z += Options.GetOptSpacing()){
-                if( CheckProbe(probe) ){
-                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
-
-                    if( StructureWithProbe.Save(OutputFile) == false ){
-                        vout << "<red>>>> ERROR: Unable to save a structure to the output file: " << Options.GetArgOutputName() << "</red>" << endl;
-                        return(false);
-                    }
-                }
-            }
+    // decode filters
+    string sfilters = string(Options.GetOptFilters());
+    vector<string> filters;
+    split(filters,sfilters,is_any_of(","));
+    vector<string>::iterator it = filters.begin();
+    vector<string>::iterator ie = filters.end();
+    while( it != ie ){
+        string filter = *it;
+        if( filter == "minmax" ){
+            Filters.push_back(EF_MINMAX);
+        } else if( filter == "minonly" ){
+            Filters.push_back(EF_MINONLY);
+        } else {
+            vout << "<red>>>> ERROR: Unsupported filter: " << filter << "</red>" << endl;
+            return(false);
         }
-    }
-    cout << endl;
-}
-
-//------------------------------------------------------------------------------
-
-bool CVDWGenProbe::CheckProbe(const CPoint& probe)
-{
-    bool ok = false;
-    for(int i=0; i < Structure.GetNumberOfAtoms(); i++){
-        CPoint apos = Structure.GetPosition(i);
-        double d = Size(apos - probe);
-        if( d < Options.GetOptRMin() ) return(false);
-        if( (d <= Options.GetOptRMax()) && SelectedAtoms[i] ) ok = true;
+        it++;
     }
 
-    return(ok);
+    // generate structures
+    if( Options.GetOptGenerator() == "grid" ){
+        return( GeneratorGrid() );
+    } else if( Options.GetOptGenerator() == "random" ){
+        return( GeneratorRandom() );
+    } else {
+        vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
+        return(false);
+    }
 }
 
 //==============================================================================
@@ -227,16 +218,77 @@ bool CVDWGenProbe::LoadStructure(void)
         if( Max.z < at.z ) Max.z = at.z;
     }
 
+    double buffer = Options.GetOptBuffer();
+    if( Options.GetOptBuffer() == -1 ){
+        buffer = Options.GetOptRMax();
+    }
+    Min.x -= buffer;
+    Min.y -= buffer;
+    Min.z -= buffer;
+    Max.x += buffer;
+    Max.y += buffer;
+    Max.z += buffer;
+
+// generate selected atoms
     SelectedAtoms.resize(Structure.GetNumberOfAtoms());
+
+    vout << "# Selected atoms                 = " << Options.GetOptSelectedAtoms() <<  endl;
 
     int sat = 0;
     // gen list of selected atoms
-    if( Options.GetOptSelectedAtoms() == NULL ){
+    if( Options.GetOptSelectedAtoms() == "all" ){
         // select all atoms
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
             SelectedAtoms[i] = true;
         }
         sat = Structure.GetNumberOfAtoms();
+    } else if( Options.GetOptSelectedAtoms() == "symclasses" ){
+        // read structure as OBMol
+        ifstream sin;
+        sin.open(Options.GetArgStructureName());
+        if( !sin ) {
+            vout << "<red>>>> ERROR: Unable to load (as OBMol) the XYZ structure: " << Options.GetArgStructureName() << "</red>" << endl;
+            return(false);
+        }
+
+        OBConversion    conv(&sin, &cout);
+        OBFormat*       obFormat = conv.FormatFromExt(Options.GetArgStructureName());
+        OBMol           mol;
+
+        if( obFormat == NULL ) {
+            vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
+            return(false);
+        }
+
+        if( ! conv.SetInFormat(obFormat) ) {
+            vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
+            return(false);
+        }
+
+        if( ! conv.Read(&mol) ) {
+            vout << "<red>>>> ERROR: Unable to load obmol from the stream!</red>" << endl;
+            return(false);
+        }
+
+        mol.ConnectTheDots();
+        mol.PerceiveBondOrders();
+
+        // generate symmetry classes
+        OBGraphSym  graph_sym(&mol);
+        std::vector<unsigned int> symclasses;
+        graph_sym.GetSymmetry(symclasses);
+
+        // select unique atoms
+        sat = 0;
+        std::set<unsigned int>  selected_classes;
+        for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
+            unsigned int sc = symclasses[i];
+            if( selected_classes.count(sc) != 1 ){
+                SelectedAtoms[i] = true;
+                selected_classes.insert(sc);
+                sat++;
+            }
+        }
     } else {
         string          slist(Options.GetOptSelectedAtoms());
         vector<string>  idxs;
@@ -253,6 +305,116 @@ bool CVDWGenProbe::LoadStructure(void)
         }
     }
     vout << "# Number of selected atoms       = " << sat <<  endl;
+
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::SaveStructure(void)
+{
+    NumOfProbes++;
+    if( NumOfProbes == Options.GetOptMaxProbes() ){
+        vout << "<red>>>> ERROR: MaxProbe limit was reached!</red>" << endl;
+        return(false);
+    }
+
+    if( StructureWithProbe.Save(OutputFile) == false ){
+        vout << "<red>>>> ERROR: Unable to save a structure to the output file: " << Options.GetArgOutputName() << "</red>" << endl;
+        return(false);
+    }
+    return(true);
+}
+
+//==============================================================================
+//------------------------------------------------------------------------------
+//==============================================================================
+
+bool CVDWGenProbe::GeneratorGrid(void)
+{
+    CPoint probe;
+    for(probe.x = Min.x; probe.x <= Max.x; probe.x += Options.GetOptSpacing()){
+        for(probe.y = Min.y; probe.y <= Max.y; probe.y += Options.GetOptSpacing()){
+            for(probe.z = Min.z; probe.z <= Max.z; probe.z += Options.GetOptSpacing()){
+                if( FilterProbe(probe) ){
+                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                    if( SaveStructure() == false ) return(false);
+                }
+            }
+        }
+    }
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorRandom(void)
+{
+    CPoint probe;
+    for(int i=0; i < Options.GetOptNumOfTrials(); i++){
+        probe.x = rand()*(Max.x - Min.x)/RAND_MAX + Min.x;
+        probe.y = rand()*(Max.y - Min.y)/RAND_MAX + Min.y;
+        probe.z = rand()*(Max.z - Min.z)/RAND_MAX + Min.z;
+        if( FilterProbe(probe) ){
+            StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+            if( SaveStructure() == false ) return(false);
+        }
+    }
+    return(true);
+}
+
+//==============================================================================
+//------------------------------------------------------------------------------
+//==============================================================================
+
+bool CVDWGenProbe::FilterProbe(const CPoint& probe)
+{
+    vector<EFilter>::iterator it = Filters.begin();
+    vector<EFilter>::iterator ie = Filters.end();
+    while( it != ie ){
+        switch(*it){
+            case EF_MINMAX:
+                if( FilterMinMax(probe) == false ) return(false);
+            break;
+        case EF_MINONLY:
+            if( FilterMinOnly(probe) == false ) return(false);
+        break;
+        }
+        it++;
+    }
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::FilterMinMax(const CPoint& probe)
+{
+    bool ok = false;
+    double dmin2 = Options.GetOptRMin();
+    dmin2 = dmin2*dmin2;
+    double dmax2 = Options.GetOptRMax();
+    dmax2 = dmax2*dmax2;
+    for(int i=0; i < Structure.GetNumberOfAtoms(); i++){
+        CPoint apos = Structure.GetPosition(i);
+        double d = Square(apos - probe);
+        if( d < dmin2 ) return(false);
+        if( (d <= dmax2) && SelectedAtoms[i] ) ok = true;
+    }
+
+    return(ok);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::FilterMinOnly(const CPoint& probe)
+{
+    double dmin2 = Options.GetOptRMin();
+    dmin2 = dmin2*dmin2;
+    for(int i=0; i < Structure.GetNumberOfAtoms(); i++){
+        CPoint apos = Structure.GetPosition(i);
+        double d = Square(apos - probe);
+        if( d < dmin2 ) return(false);
+    }
 
     return(true);
 }

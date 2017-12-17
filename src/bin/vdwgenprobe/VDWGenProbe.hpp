@@ -36,6 +36,13 @@ public:
 
 //------------------------------------------------------------------------------
 
+enum EFilter{
+    EF_MINMAX = 0,
+    EF_MINONLY =1
+};
+
+//------------------------------------------------------------------------------
+
 class CVDWGenProbe {
 public:
     // constructor
@@ -60,17 +67,25 @@ private:
     FILE*                   OutputFile; // output file
     CXYZStructure           StructureWithProbe;  // output structure
     CPoint                  Min,Max;    // min/max conners
+    std::vector<EFilter>    Filters;
+    int                     NumOfProbes;
 
     // output ------------------------------------
     CTerminalStr            Console;
     CVerboseStr             vout;
 
-    /// load structure
+    /// load/save structure
     bool LoadStructure(void);
+    bool SaveStructure(void);
+
+    /// generators
+    bool GeneratorGrid(void);
+    bool GeneratorRandom(void);
 
     /// filters
-    bool GenAllStructures(void);
-    bool CheckProbe(const CPoint& probe);
+    bool FilterProbe(const CPoint& probe);
+    bool FilterMinMax(const CPoint& probe);
+    bool FilterMinOnly(const CPoint& probe);
 };
 
 //------------------------------------------------------------------------------

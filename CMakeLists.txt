@@ -112,13 +112,13 @@ LINK_DIRECTORIES(${NLOPT_ROOT}/lib)
 SET(NLOPT_LIB_NAME nlopt)
 
 # OpenBabel --------------------------------------
-SET(OPEN_BABEL_ROOT ${DEVELOPMENT_ROOT}/thirdparty/obcore/2.3.1)
+SET(OPEN_BABEL_ROOT ${DEVELOPMENT_ROOT}/thirdparty/obcore/2.4.0)
 INCLUDE_DIRECTORIES(${OPEN_BABEL_ROOT}/include)
 LINK_DIRECTORIES(${OPEN_BABEL_ROOT}/lib)
 SET(OPEN_BABEL_LIB obcore)
 
 # boost --------------------------------------
-INCLUDE_DIRECTORIES(${DEVELOPMENT_ROOT}/thirdparty/boost/1.59.0)
+INCLUDE_DIRECTORIES(${DEVELOPMENT_ROOT}/thirdparty/boost/1.65.1)
 
 # ==============================================================================
 # output directories -----------------------------------------------------------

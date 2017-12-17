@@ -3,23 +3,24 @@
 # ==============================================================================
 
 # program objects --------------------------------------------------------------
-SET(VDWGENPROBE_SRC
-        VDWGenProbe.cpp
-        VDWGenProbeOptions.cpp
+SET(VDWOPTIMIZE_SRC
+        vdwoptimize.f90
         )
 
 # final build ------------------------------------------------------------------
-ADD_EXECUTABLE(vdwgenprobe ${VDWGENPROBE_SRC})
+ADD_EXECUTABLE(vdwoptimize ${VDWOPTIMIZE_SRC})
+ADD_DEPENDENCIES(vdwoptimize ffdevel_shared)
 
-TARGET_LINK_LIBRARIES(vdwgenprobe
-        ${OPEN_BABEL_LIB}
-        ${SCIMAFIC_CLIB_NAME}
-        ${HIPOLY_LIB_NAME}
+TARGET_LINK_LIBRARIES(vdwoptimize
+        ffdevel
+        ${PRMFILE_FLIB_NAME}
+        ${SCIMAFIC_FLIB_NAME}
+        ${LAPACK_LIB_NAME}
+        ${BLAS_LIB_NAME}
         )
 
 INSTALL(TARGETS
-            vdwgenprobe
-        RUNTIME DESTINATION
+            vdwoptimize
+        DESTINATION
             bin
         )
-

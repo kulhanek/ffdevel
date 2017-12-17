@@ -48,10 +48,14 @@ public:
     CSO_OPT(double,RMin)
     CSO_OPT(double,RMax)
     CSO_OPT(double,Spacing)
-    CSO_OPT(int,NumOfProbes)
+    CSO_OPT(double,Buffer)
+    CSO_OPT(int,NumOfTrials)
+    CSO_OPT(int,MaxProbes)
     CSO_OPT(CSmallString,ProbeSymbol)
     CSO_OPT(CSmallString,SelectedAtoms)
     CSO_OPT(bool,Append)
+    CSO_OPT(CSmallString,Generator)
+    CSO_OPT(CSmallString,Filters)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -81,6 +85,7 @@ public:
                 "min",                      /* long option name */
                 "NUM",                           /* parametr name */
                 "minimal distance from any atom")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(double,                           /* option type */
                 RMax,                        /* option name */
                 5.0,                          /* default value */
@@ -88,7 +93,7 @@ public:
                 '\0',                           /* short option name */
                 "max",                      /* long option name */
                 "NUM",                           /* parametr name */
-                "maximal distance from any atom")   /* option description */
+                "maximum distance from selected atoms")   /* option description */
     CSO_MAP_OPT(double,                           /* option type */
                 Spacing,                        /* option name */
                 0.1,                          /* default value */
@@ -97,14 +102,34 @@ public:
                 "spacing",                      /* long option name */
                 "NUM",                           /* parametr name */
                 "grid point spacing")   /* option description */
-    CSO_MAP_OPT(int,                           /* option type */
-                NumOfProbes,                        /* option name */
-                0,                          /* default value */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(double,                           /* option type */
+                Buffer,                        /* option name */
+                -1.0,                          /* default value */
                 false,                          /* is option mandatory */
-                'n',                           /* short option name */
-                "number",                      /* long option name */
+                '\0',                           /* short option name */
+                "buffer",                      /* long option name */
                 "NUM",                           /* parametr name */
-                "number of generated probes, which are selected randomly; zero means all possible probes")   /* option description */
+                "offset for encapsulation box, if -1 that 'max' option is used")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(int,                           /* option type */
+                NumOfTrials,                        /* option name */
+                1000,                          /* default value */
+                false,                          /* is option mandatory */
+                't',                           /* short option name */
+                "trials",                      /* long option name */
+                "NUM",                           /* parametr name */
+                "number of probe generation trials")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(int,                           /* option type */
+                MaxProbes,                        /* option name */
+                200,                          /* default value */
+                false,                          /* is option mandatory */
+                'm',                           /* short option name */
+                "maxprobes",                      /* long option name */
+                "NUM",                           /* parametr name */
+                "maximum number of generated probes")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 ProbeSymbol,                        /* option name */
                 "Ar",                          /* default value */
@@ -113,14 +138,16 @@ public:
                 "probe",                      /* long option name */
                 "NAME",                           /* parametr name */
                 "probe symbol")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 SelectedAtoms,                        /* option name */
-                NULL,                          /* default value */
+                "symclasses",                          /* default value */
                 false,                          /* is option mandatory */
                 's',                           /* short option name */
                 "selected",                      /* long option name */
                 "LIST",                           /* parametr name */
-                "comma separated list of atom indexes (counted from 1)")   /* option description */
+                "comma separated list of atom indexes (counted from 1), or 'all', or 'symclasses' ")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Append,                        /* option name */
                 false,                          /* default value */
@@ -129,6 +156,24 @@ public:
                 "append",                      /* long option name */
                 NULL,                           /* parametr name */
                 "append structures to the output file if it exists")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(CSmallString,                           /* option type */
+                Generator,                        /* option name */
+                "random",                          /* default value */
+                false,                          /* is option mandatory */
+                'g',                           /* short option name */
+                "generator",                      /* long option name */
+                "METHOD",                           /* parametr name */
+                "probe generator: random, grid")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(CSmallString,                           /* option type */
+                Filters,                        /* option name */
+                "minmax",                          /* default value */
+                false,                          /* is option mandatory */
+                'f',                           /* short option name */
+                "filters",                      /* long option name */
+                "LIST",                           /* parametr name */
+                "comma separated filters: minmax, minonly")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */
