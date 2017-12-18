@@ -56,6 +56,7 @@ public:
     CSO_OPT(bool,Append)
     CSO_OPT(CSmallString,Generator)
     CSO_OPT(CSmallString,Filters)
+    CSO_OPT(CSmallString,MSMSSurfaceVertices)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -164,7 +165,7 @@ public:
                 'g',                           /* short option name */
                 "generator",                      /* long option name */
                 "METHOD",                           /* parametr name */
-                "probe generator: random, grid")   /* option description */
+                "probe generator: random, grid, msms-all, msms-random")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 Filters,                        /* option name */
@@ -173,7 +174,16 @@ public:
                 'f',                           /* short option name */
                 "filters",                      /* long option name */
                 "LIST",                           /* parametr name */
-                "comma separated filters: minmax, minonly")   /* option description */
+                "comma separated filters: keepall, minmax, minonly")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(CSmallString,                           /* option type */
+                MSMSSurfaceVertices,                        /* option name */
+                NULL,                          /* default value */
+                false,                          /* is option mandatory */
+                '\0',                           /* short option name */
+                "msms",                      /* long option name */
+                "VERTS",                           /* parametr name */
+                "filename with msms surface vertices")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

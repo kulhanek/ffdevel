@@ -108,6 +108,11 @@ bool CVDWGenProbe::Run(void)
     // load structure
     if( LoadStructure() == false ) return(false);
 
+    // load probes
+    if( Options.IsOptMSMSSurfaceVerticesSet() ){
+        if( LoadMSMSProbes() == false ) return(false);
+    }
+
     // open output file
     if(Options.GetArgOutputName() != "-") {
         if( Options.GetOptAppend() == true ){
@@ -146,6 +151,8 @@ bool CVDWGenProbe::Run(void)
             Filters.push_back(EF_MINMAX);
         } else if( filter == "minonly" ){
             Filters.push_back(EF_MINONLY);
+        } else if( filter == "keepall" ){
+            Filters.push_back(EF_KEEPALL);
         } else {
             vout << "<red>>>> ERROR: Unsupported filter: " << filter << "</red>" << endl;
             return(false);
@@ -154,14 +161,23 @@ bool CVDWGenProbe::Run(void)
     }
 
     // generate structures
+    bool result;
     if( Options.GetOptGenerator() == "grid" ){
-        return( GeneratorGrid() );
+        result = GeneratorGrid();
     } else if( Options.GetOptGenerator() == "random" ){
-        return( GeneratorRandom() );
+        result = GeneratorRandom();
+    } else if( Options.GetOptGenerator() == "msms-all" ){
+        result = GeneratorMSMSAll();
+    } else if( Options.GetOptGenerator() == "msms-random" ){
+        result = GeneratorMSMSRandom();
     } else {
         vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
         return(false);
     }
+
+    // final stat
+        vout << "# Number of generated probes     = " << NumOfProbes <<  endl;
+    return(result);
 }
 
 //==============================================================================
@@ -191,9 +207,9 @@ void CVDWGenProbe::Finalize(void)
 bool CVDWGenProbe::LoadStructure(void)
 {
     if(Options.GetArgStructureName() != "-") {
-        vout << "# Input XYZ structure (in)       : " << Options.GetArgStructureName() << endl;
+        vout << "# Input XYZ structure (in)       = " << Options.GetArgStructureName() << endl;
     } else {
-        vout << "# Input XYZ structure (in)       : - (standard input)" << endl;
+        vout << "# Input XYZ structure (in)       = - (standard input)" << endl;
     }
 
     if( Structure.Load(Options.GetArgStructureName()) == false ) {
@@ -240,6 +256,7 @@ bool CVDWGenProbe::LoadStructure(void)
         // select all atoms
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
             SelectedAtoms[i] = true;
+            SelectedAtomIds.insert(i);
         }
         sat = Structure.GetNumberOfAtoms();
     } else if( Options.GetOptSelectedAtoms() == "symclasses" ){
@@ -281,14 +298,19 @@ bool CVDWGenProbe::LoadStructure(void)
         // select unique atoms
         sat = 0;
         std::set<unsigned int>  selected_classes;
+        CSmallString sats;
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
             unsigned int sc = symclasses[i];
             if( selected_classes.count(sc) != 1 ){
                 SelectedAtoms[i] = true;
                 selected_classes.insert(sc);
+                SelectedAtomIds.insert(i);
+                if( sats != NULL ) sats << ",";
+                sats << i+1;
                 sat++;
             }
         }
+        vout << "# Selected atoms                 = " << sats <<  endl;
     } else {
         string          slist(Options.GetOptSelectedAtoms());
         vector<string>  idxs;
@@ -301,11 +323,79 @@ bool CVDWGenProbe::LoadStructure(void)
             if( (indx >= 0) && (indx < Structure.GetNumberOfAtoms()) ){
                 if( SelectedAtoms[indx] == false ) sat++;
                 SelectedAtoms[indx] = true;
+                SelectedAtomIds.insert(indx);
             }
         }
     }
     vout << "# Number of selected atoms       = " << sat <<  endl;
 
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::LoadMSMSProbes(void)
+{
+        vout << "# MSMS surface vertices (in)     = " << Options.GetOptMSMSSurfaceVertices() << endl;
+    ifstream ifs(Options.GetOptMSMSSurfaceVertices());
+    if( !ifs ){
+        vout << "<red>>>> ERROR: Unable to load the file with vertices: " << Options.GetOptMSMSSurfaceVertices() << "</red>" << endl;
+        return(false);
+    }
+
+    string line;
+
+    // skip three lines
+    getline(ifs,line);
+    getline(ifs,line);
+    getline(ifs,line);
+
+    while( getline(ifs,line) ){
+        // get xyz
+        stringstream sfs(line);
+        CProbe probe;
+        probe.AtomId = -1;
+        probe.Selected = true;
+        sfs >> probe.Pos.x >> probe.Pos.y >> probe.Pos.z;
+        MSMSProbes.push_back(probe);
+    }
+
+    vout << "# Number of vertices             = " << MSMSProbes.size() <<  endl;
+
+    // find closest atoms
+
+    CProbe probe;
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        probe = MSMSProbes[i];
+        double min;
+        int minid = -1;
+        for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+            CPoint apos = Structure.GetPosition(j);
+            double d = Square(apos - probe.Pos);
+            if( (j == 0) || (d < min) ){
+                min = d;
+                minid = j;
+            }
+        }
+        MSMSProbes[i].AtomId = minid;
+    }
+
+    // filter by selected atoms
+    int sel = 0;
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        if( SelectedAtomIds.count(MSMSProbes[i].AtomId) == 1 ){
+            sel++;
+            MSMSProbes[i].Selected = true;
+        } else {
+            MSMSProbes[i].Selected = false;
+        }
+    }
+
+    // stat
+    std::set<int>::iterator  it = SelectedAtomIds.begin();
+    std::set<int>::iterator  ie = SelectedAtomIds.end();
+
+    vout << "# Number of selected vertices    = " << sel <<  endl;
     return(true);
 }
 
@@ -363,6 +453,85 @@ bool CVDWGenProbe::GeneratorRandom(void)
     return(true);
 }
 
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorMSMSAll(void)
+{
+    CProbe probe;
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        probe = MSMSProbes[i];
+        if( probe.Selected == false ) continue;
+        if( FilterProbe(probe.Pos) ){
+            StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+            if( SaveStructure() == false ) return(false);
+        }
+    }
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorMSMSRandom(void)
+{
+    std::set<int>::iterator  it = SelectedAtomIds.begin();
+    std::set<int>::iterator  ie = SelectedAtomIds.end();
+
+    vout << debug;
+
+    while( it != ie ){
+        int atomid = *it;
+        // calculate number of probes
+        int nprobes = 0;
+        for(size_t i=0; i < MSMSProbes.size(); i++){
+            CProbe probe = MSMSProbes[i];
+            if( (probe.Selected == true) && (probe.AtomId == atomid) ) nprobes++;
+        }
+
+        vout << "Selected atom " << atomid + 1 << " has " << nprobes << " vertices." << endl;
+
+        // get probes
+        if( nprobes <= Options.GetOptNumOfTrials() ){
+            // use all probes
+            for(size_t i=0; i < MSMSProbes.size(); i++){
+                CProbe probe = MSMSProbes[i];
+                if( probe.AtomId == atomid ) {
+                    if( FilterProbe(probe.Pos) ){
+                        StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+                        if( SaveStructure() == false ) return(false);
+                    }
+                }
+            }
+        } else {
+            // gen up to Options.GetOptNumOfTrials() random selections
+            int ntrials = Options.GetOptNumOfTrials();
+            while( ntrials > 0 ){
+                int rnd = random() % nprobes;
+                for(size_t i=0; i < MSMSProbes.size(); i++){
+                    CProbe probe = MSMSProbes[i];
+                    if( probe.AtomId == atomid ) {
+                        rnd--;
+                    }
+                    if( rnd == 0 ){
+                        if( probe.Selected == false ) break; // already selected
+                        MSMSProbes[i].Selected = false;
+                        if( FilterProbe(probe.Pos) ){
+                            StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+                            if( SaveStructure() == false ) return(false);
+                            ntrials--;
+                        }
+                    }
+                }
+            }
+        }
+
+        it++;
+    }
+
+    vout << high;
+
+    return(true);
+}
+
 //==============================================================================
 //------------------------------------------------------------------------------
 //==============================================================================
@@ -379,6 +548,9 @@ bool CVDWGenProbe::FilterProbe(const CPoint& probe)
         case EF_MINONLY:
             if( FilterMinOnly(probe) == false ) return(false);
         break;
+        case EF_KEEPALL:
+            // nothing to be here
+            break;
         }
         it++;
     }

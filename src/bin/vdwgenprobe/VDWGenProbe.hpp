@@ -22,6 +22,7 @@
 #include <VerboseStr.hpp>
 #include <TerminalStr.hpp>
 #include <vector>
+#include <set>
 #include <Point.hpp>
 #include <XYZStructure.hpp>
 
@@ -38,7 +39,17 @@ public:
 
 enum EFilter{
     EF_MINMAX = 0,
-    EF_MINONLY =1
+    EF_MINONLY =1,
+    EF_KEEPALL = 2
+};
+
+//------------------------------------------------------------------------------
+
+class CProbe {
+public:
+    CPoint  Pos;
+    int     AtomId;
+    bool    Selected;
 };
 
 //------------------------------------------------------------------------------
@@ -63,12 +74,15 @@ public:
 private:
     CVDWGenProbeOptions     Options;    // program options
     CXYZStructure           Structure;  // input structure
+    std::vector<CProbe>     MSMSProbes;     // probes from MSMS surface
     std::vector<bool>       SelectedAtoms;    // consider only these atoms
+    std::set<int>           SelectedAtomIds;
     FILE*                   OutputFile; // output file
     CXYZStructure           StructureWithProbe;  // output structure
     CPoint                  Min,Max;    // min/max conners
     std::vector<EFilter>    Filters;
     int                     NumOfProbes;
+
 
     // output ------------------------------------
     CTerminalStr            Console;
@@ -77,10 +91,13 @@ private:
     /// load/save structure
     bool LoadStructure(void);
     bool SaveStructure(void);
+    bool LoadMSMSProbes(void);
 
     /// generators
     bool GeneratorGrid(void);
     bool GeneratorRandom(void);
+    bool GeneratorMSMSAll(void);
+    bool GeneratorMSMSRandom(void);
 
     /// filters
     bool FilterProbe(const CPoint& probe);

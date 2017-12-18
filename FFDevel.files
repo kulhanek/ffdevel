@@ -69,11 +69,6 @@ src/bin/vdwgenprobe/VDWGenProbeOptions.cpp
 src/bin/vdwgenprobe/VDWGenProbeOptions.hpp
 src/bin/vdwoptimize/CMakeLists.txt
 src/bin/vdwoptimize/vdwoptimize.f90
-src/bin/vdwprobefilter/CMakeLists.txt
-src/bin/vdwprobefilter/VDWProbeFilter.cpp
-src/bin/vdwprobefilter/VDWProbeFilter.hpp
-src/bin/vdwprobefilter/VDWProbeFilterOptions.cpp
-src/bin/vdwprobefilter/VDWProbeFilterOptions.hpp
 src/lib/CMakeLists.txt
 src/lib/ffdevel/CMakeLists.txt
 src/lib/ffdevel/constants.f90
