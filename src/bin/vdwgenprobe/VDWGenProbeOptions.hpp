@@ -50,6 +50,7 @@ public:
     CSO_OPT(double,Spacing)
     CSO_OPT(double,Buffer)
     CSO_OPT(int,NumOfTrials)
+    CSO_OPT(int,Seed)
     CSO_OPT(int,MaxProbes)
     CSO_OPT(CSmallString,ProbeSymbol)
     CSO_OPT(CSmallString,SelectedAtoms)
@@ -123,6 +124,15 @@ public:
                 "number of probe generation trials")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(int,                           /* option type */
+                Seed,                        /* option name */
+                -1,                          /* default value */
+                false,                          /* is option mandatory */
+                '\0',                           /* short option name */
+                "seed",                      /* long option name */
+                "NUM",                           /* parametr name */
+                "seed for pseudo-random number generator (-1 for seed derived from time) ")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(int,                           /* option type */
                 MaxProbes,                        /* option name */
                 200,                          /* default value */
                 false,                          /* is option mandatory */
@@ -165,7 +175,7 @@ public:
                 'g',                           /* short option name */
                 "generator",                      /* long option name */
                 "METHOD",                           /* parametr name */
-                "probe generator: random, grid, msms-all, msms-random")   /* option description */
+                "probe generator: random, grid, grid-closest, msms-all, msms-random, msms-random-with-min-prefilter")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 Filters,                        /* option name */
@@ -174,7 +184,7 @@ public:
                 'f',                           /* short option name */
                 "filters",                      /* long option name */
                 "LIST",                           /* parametr name */
-                "comma separated filters: keepall, minmax, minonly")   /* option description */
+                "comma separated filters: none, minmax, minonly, maxprobes")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 MSMSSurfaceVertices,                        /* option name */

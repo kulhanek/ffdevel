@@ -40,7 +40,16 @@ public:
 enum EFilter{
     EF_MINMAX = 0,
     EF_MINONLY =1,
-    EF_KEEPALL = 2
+    EF_MAXPROBES = 2,
+    EF_NONE = 3
+};
+
+//------------------------------------------------------------------------------
+
+enum EFilterResult{
+    EFR_OK = 0,
+    EFR_STOP =1,
+    EFR_NEXT = 2
 };
 
 //------------------------------------------------------------------------------
@@ -50,6 +59,7 @@ public:
     CPoint  Pos;
     int     AtomId;
     bool    Selected;
+    bool    Used;
 };
 
 //------------------------------------------------------------------------------
@@ -95,14 +105,17 @@ private:
 
     /// generators
     bool GeneratorGrid(void);
+    bool GeneratorGridClosest(void);
     bool GeneratorRandom(void);
     bool GeneratorMSMSAll(void);
     bool GeneratorMSMSRandom(void);
+    bool GeneratorMSMSRandomWithMinPreFilter(void);
 
     /// filters
-    bool FilterProbe(const CPoint& probe);
-    bool FilterMinMax(const CPoint& probe);
-    bool FilterMinOnly(const CPoint& probe);
+    EFilterResult FilterProbe(const CPoint& probe);
+    EFilterResult FilterMinMax(const CPoint& probe);
+    EFilterResult FilterMinOnly(const CPoint& probe);
+    EFilterResult FilterMaxProbes(const CPoint& probe);
 };
 
 //------------------------------------------------------------------------------

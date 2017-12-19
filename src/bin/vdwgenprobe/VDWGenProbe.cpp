@@ -25,6 +25,8 @@
 #include <openbabel/mol.h>
 #include <openbabel/graphsym.h>
 #include <openbabel/obconversion.h>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -34,6 +36,10 @@ using namespace boost::algorithm;
 using namespace OpenBabel;
 
 MAIN_ENTRY(CVDWGenProbe);
+
+//------------------------------------------------------------------------------
+
+boost::random::mt19937 gen;
 
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -113,6 +119,12 @@ bool CVDWGenProbe::Run(void)
         if( LoadMSMSProbes() == false ) return(false);
     }
 
+    if(Options.GetArgOutputName() != "-") {
+        vout << "# Output file with probes        = " << Options.GetArgOutputName() << endl;
+    } else {
+        vout << "# Output file with probes        = - (standard output)" << endl;
+    }
+
     // open output file
     if(Options.GetArgOutputName() != "-") {
         if( Options.GetOptAppend() == true ){
@@ -128,6 +140,16 @@ bool CVDWGenProbe::Run(void)
         return(false);
     }
 
+    // seed initialization
+    unsigned int seed = Options.GetOptSeed();
+    if( Options.GetOptSeed() == -1 ){
+        struct timeval tp;
+        gettimeofday(&tp, NULL);
+        seed = static_cast<unsigned int>(tp.tv_usec);
+    }
+        vout << "# Pseudo-random generator seed   = " << seed << endl;
+        gen.seed(seed);
+
     // create output structure
     StructureWithProbe.SetNumberOfAtoms(Structure.GetNumberOfAtoms()+1);
     // copy basal atoms
@@ -138,6 +160,8 @@ bool CVDWGenProbe::Run(void)
     StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),CPoint());
     StructureWithProbe.SetSymbol(Structure.GetNumberOfAtoms(),Options.GetOptProbeSymbol());
 
+
+    vout << "# Probe filters                  = " << Options.GetOptFilters() << endl;
 
     // decode filters
     string sfilters = string(Options.GetOptFilters());
@@ -151,8 +175,10 @@ bool CVDWGenProbe::Run(void)
             Filters.push_back(EF_MINMAX);
         } else if( filter == "minonly" ){
             Filters.push_back(EF_MINONLY);
-        } else if( filter == "keepall" ){
-            Filters.push_back(EF_KEEPALL);
+        } else if( filter == "maxprobes" ){
+            Filters.push_back(EF_MAXPROBES);
+        } else if( filter == "none" ){
+            Filters.push_back(EF_NONE);
         } else {
             vout << "<red>>>> ERROR: Unsupported filter: " << filter << "</red>" << endl;
             return(false);
@@ -160,16 +186,22 @@ bool CVDWGenProbe::Run(void)
         it++;
     }
 
+    vout << "# Probe generator                = " << Options.GetOptGenerator() << endl;
+
     // generate structures
     bool result;
     if( Options.GetOptGenerator() == "grid" ){
         result = GeneratorGrid();
+    } else if( Options.GetOptGenerator() == "grid-closest" ){
+        result = GeneratorGridClosest();
     } else if( Options.GetOptGenerator() == "random" ){
         result = GeneratorRandom();
     } else if( Options.GetOptGenerator() == "msms-all" ){
         result = GeneratorMSMSAll();
     } else if( Options.GetOptGenerator() == "msms-random" ){
         result = GeneratorMSMSRandom();
+    } else if( Options.GetOptGenerator() == "msms-random-with-min-prefilter" ){
+        result = GeneratorMSMSRandomWithMinPreFilter();
     } else {
         vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
         return(false);
@@ -207,9 +239,9 @@ void CVDWGenProbe::Finalize(void)
 bool CVDWGenProbe::LoadStructure(void)
 {
     if(Options.GetArgStructureName() != "-") {
-        vout << "# Input XYZ structure (in)       = " << Options.GetArgStructureName() << endl;
+        vout << "# Input XYZ structure            = " << Options.GetArgStructureName() << endl;
     } else {
-        vout << "# Input XYZ structure (in)       = - (standard input)" << endl;
+        vout << "# Input XYZ structure            = - (standard input)" << endl;
     }
 
     if( Structure.Load(Options.GetArgStructureName()) == false ) {
@@ -247,6 +279,9 @@ bool CVDWGenProbe::LoadStructure(void)
 
 // generate selected atoms
     SelectedAtoms.resize(Structure.GetNumberOfAtoms());
+    for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
+        SelectedAtoms[i] = false;
+    }
 
     vout << "# Selected atoms                 = " << Options.GetOptSelectedAtoms() <<  endl;
 
@@ -295,6 +330,11 @@ bool CVDWGenProbe::LoadStructure(void)
         std::vector<unsigned int> symclasses;
         graph_sym.GetSymmetry(symclasses);
 
+        if( symclasses.size() != Structure.GetNumberOfAtoms() ){
+            vout << "<red>>>> ERROR: Symmetry clases: " << symclasses.size() << " != number of atoms: " << Structure.GetNumberOfAtoms() << "!</red>" << endl;
+            return(false);
+        }
+
         // select unique atoms
         sat = 0;
         std::set<unsigned int>  selected_classes;
@@ -336,7 +376,7 @@ bool CVDWGenProbe::LoadStructure(void)
 
 bool CVDWGenProbe::LoadMSMSProbes(void)
 {
-        vout << "# MSMS surface vertices (in)     = " << Options.GetOptMSMSSurfaceVertices() << endl;
+        vout << "# MSMS surface vertices          = " << Options.GetOptMSMSSurfaceVertices() << endl;
     ifstream ifs(Options.GetOptMSMSSurfaceVertices());
     if( !ifs ){
         vout << "<red>>>> ERROR: Unable to load the file with vertices: " << Options.GetOptMSMSSurfaceVertices() << "</red>" << endl;
@@ -354,31 +394,17 @@ bool CVDWGenProbe::LoadMSMSProbes(void)
         // get xyz
         stringstream sfs(line);
         CProbe probe;
+        CPoint norm;
+        int    num;
         probe.AtomId = -1;
         probe.Selected = true;
-        sfs >> probe.Pos.x >> probe.Pos.y >> probe.Pos.z;
+        probe.Used = false;
+        sfs >> probe.Pos.x >> probe.Pos.y >> probe.Pos.z >> norm.x >> norm.y >> norm.z >> num >> probe.AtomId;
+        probe.AtomId--;
         MSMSProbes.push_back(probe);
     }
 
     vout << "# Number of vertices             = " << MSMSProbes.size() <<  endl;
-
-    // find closest atoms
-
-    CProbe probe;
-    for(size_t i=0; i < MSMSProbes.size(); i++){
-        probe = MSMSProbes[i];
-        double min;
-        int minid = -1;
-        for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
-            CPoint apos = Structure.GetPosition(j);
-            double d = Square(apos - probe.Pos);
-            if( (j == 0) || (d < min) ){
-                min = d;
-                minid = j;
-            }
-        }
-        MSMSProbes[i].AtomId = minid;
-    }
 
     // filter by selected atoms
     int sel = 0;
@@ -391,10 +417,6 @@ bool CVDWGenProbe::LoadMSMSProbes(void)
         }
     }
 
-    // stat
-    std::set<int>::iterator  it = SelectedAtomIds.begin();
-    std::set<int>::iterator  ie = SelectedAtomIds.end();
-
     vout << "# Number of selected vertices    = " << sel <<  endl;
     return(true);
 }
@@ -404,10 +426,6 @@ bool CVDWGenProbe::LoadMSMSProbes(void)
 bool CVDWGenProbe::SaveStructure(void)
 {
     NumOfProbes++;
-    if( NumOfProbes == Options.GetOptMaxProbes() ){
-        vout << "<red>>>> ERROR: MaxProbe limit was reached!</red>" << endl;
-        return(false);
-    }
 
     if( StructureWithProbe.Save(OutputFile) == false ){
         vout << "<red>>>> ERROR: Unable to save a structure to the output file: " << Options.GetArgOutputName() << "</red>" << endl;
@@ -426,7 +444,44 @@ bool CVDWGenProbe::GeneratorGrid(void)
     for(probe.x = Min.x; probe.x <= Max.x; probe.x += Options.GetOptSpacing()){
         for(probe.y = Min.y; probe.y <= Max.y; probe.y += Options.GetOptSpacing()){
             for(probe.z = Min.z; probe.z <= Max.z; probe.z += Options.GetOptSpacing()){
-                if( FilterProbe(probe) ){
+                EFilterResult result = FilterProbe(probe);
+                if( result == EFR_STOP ) return(false);
+                if( result == EFR_OK ){
+                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                    if( SaveStructure() == false ) return(false);
+                }
+            }
+        }
+    }
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorGridClosest(void)
+{
+    CPoint probe;
+    for(probe.x = Min.x; probe.x <= Max.x; probe.x += Options.GetOptSpacing()){
+        for(probe.y = Min.y; probe.y <= Max.y; probe.y += Options.GetOptSpacing()){
+            for(probe.z = Min.z; probe.z <= Max.z; probe.z += Options.GetOptSpacing()){
+                // determine closest atom
+                double min;
+                int minid = -1;
+                for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+                    CPoint apos = Structure.GetPosition(j);
+                    double d = Square(apos - probe);
+                    if( (j == 0) || (d < min) ){
+                        min = d;
+                        minid = j;
+                    }
+                }
+                // is atom selected?
+                if( SelectedAtomIds.count(minid) != 1 ) continue;
+
+                // filter probe
+                EFilterResult result = FilterProbe(probe);
+                if( result == EFR_STOP ) return(false);
+                if( result == EFR_OK ){
                     StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
                     if( SaveStructure() == false ) return(false);
                 }
@@ -440,12 +495,22 @@ bool CVDWGenProbe::GeneratorGrid(void)
 
 bool CVDWGenProbe::GeneratorRandom(void)
 {
+    double spacing = Options.GetOptSpacing();
+    int nx = (Max.x - Min.x) / spacing;
+    int ny = (Max.y - Min.y) / spacing;
+    int nz = (Max.z - Min.z) / spacing;
+    boost::random::uniform_int_distribution<> dist1(0, nx-1);
+    boost::random::uniform_int_distribution<> dist2(0, ny-1);
+    boost::random::uniform_int_distribution<> dist3(0, nz-1);
+
     CPoint probe;
     for(int i=0; i < Options.GetOptNumOfTrials(); i++){
-        probe.x = rand()*(Max.x - Min.x)/RAND_MAX + Min.x;
-        probe.y = rand()*(Max.y - Min.y)/RAND_MAX + Min.y;
-        probe.z = rand()*(Max.z - Min.z)/RAND_MAX + Min.z;
-        if( FilterProbe(probe) ){
+        probe.x = dist1(gen)*spacing + Min.x;
+        probe.y = dist2(gen)*spacing + Min.y;
+        probe.z = dist3(gen)*spacing + Min.z;
+        EFilterResult result = FilterProbe(probe);
+        if( result == EFR_STOP ) return(false);
+        if( result == EFR_OK ){
             StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
             if( SaveStructure() == false ) return(false);
         }
@@ -461,12 +526,28 @@ bool CVDWGenProbe::GeneratorMSMSAll(void)
     for(size_t i=0; i < MSMSProbes.size(); i++){
         probe = MSMSProbes[i];
         if( probe.Selected == false ) continue;
-        if( FilterProbe(probe.Pos) ){
+        EFilterResult result = FilterProbe(probe.Pos);
+        if( result == EFR_STOP ) return(false);
+        if( result == EFR_OK ){
             StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
             if( SaveStructure() == false ) return(false);
         }
     }
     return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorMSMSRandomWithMinPreFilter(void)
+{
+    // run min filter
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        CProbe probe = MSMSProbes[i];
+        if( FilterMinOnly(probe.Pos) != EFR_OK ) MSMSProbes[i].Selected = false;
+    }
+
+    // generate probes
+    return( GeneratorMSMSRandom() );
 }
 
 //------------------------------------------------------------------------------
@@ -486,16 +567,21 @@ bool CVDWGenProbe::GeneratorMSMSRandom(void)
             CProbe probe = MSMSProbes[i];
             if( (probe.Selected == true) && (probe.AtomId == atomid) ) nprobes++;
         }
+        it++;
 
         vout << "Selected atom " << atomid + 1 << " has " << nprobes << " vertices." << endl;
+
+        if( nprobes <= Options.GetOptMaxProbes() ) continue;
 
         // get probes
         if( nprobes <= Options.GetOptNumOfTrials() ){
             // use all probes
             for(size_t i=0; i < MSMSProbes.size(); i++){
                 CProbe probe = MSMSProbes[i];
-                if( probe.AtomId == atomid ) {
-                    if( FilterProbe(probe.Pos) ){
+                if( (probe.Selected == true) && (probe.AtomId == atomid) ) {
+                    EFilterResult result = FilterProbe(probe.Pos);
+                    if( result == EFR_STOP ) return(false);
+                    if( result == EFR_OK ){
                         StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
                         if( SaveStructure() == false ) return(false);
                     }
@@ -505,26 +591,28 @@ bool CVDWGenProbe::GeneratorMSMSRandom(void)
             // gen up to Options.GetOptNumOfTrials() random selections
             int ntrials = Options.GetOptNumOfTrials();
             while( ntrials > 0 ){
-                int rnd = random() % nprobes;
+                boost::random::uniform_int_distribution<> dist(0, nprobes-1);
+                int rnd = dist(gen);
                 for(size_t i=0; i < MSMSProbes.size(); i++){
                     CProbe probe = MSMSProbes[i];
-                    if( probe.AtomId == atomid ) {
+                    if( (probe.Selected == true) && (probe.AtomId == atomid) ) {
                         rnd--;
-                    }
-                    if( rnd == 0 ){
-                        if( probe.Selected == false ) break; // already selected
-                        MSMSProbes[i].Selected = false;
-                        if( FilterProbe(probe.Pos) ){
-                            StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
-                            if( SaveStructure() == false ) return(false);
-                            ntrials--;
+                        if( rnd == 0 ){
+                            if( probe.Used == true ) break;
+                            MSMSProbes[i].Used = true;
+                            EFilterResult result = FilterProbe(probe.Pos);
+                            if( result == EFR_STOP ) return(false);
+                            if( result == EFR_OK ){
+                                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+                                if( SaveStructure() == false ) return(false);
+                                ntrials--;
+                            }
+                            break;
                         }
                     }
                 }
             }
         }
-
-        it++;
     }
 
     vout << high;
@@ -536,30 +624,39 @@ bool CVDWGenProbe::GeneratorMSMSRandom(void)
 //------------------------------------------------------------------------------
 //==============================================================================
 
-bool CVDWGenProbe::FilterProbe(const CPoint& probe)
+EFilterResult CVDWGenProbe::FilterProbe(const CPoint& probe)
 {
     vector<EFilter>::iterator it = Filters.begin();
     vector<EFilter>::iterator ie = Filters.end();
     while( it != ie ){
         switch(*it){
-            case EF_MINMAX:
-                if( FilterMinMax(probe) == false ) return(false);
-            break;
-        case EF_MINONLY:
-            if( FilterMinOnly(probe) == false ) return(false);
-        break;
-        case EF_KEEPALL:
-            // nothing to be here
-            break;
+            case EF_MINMAX:{
+                EFilterResult result = FilterMinMax(probe);
+                if( result != EFR_OK ) return(result);
+                }
+                break;
+            case EF_MINONLY:{
+                EFilterResult result = FilterMinOnly(probe);
+                if( result != EFR_OK ) return(result);
+                }
+                break;
+            case EF_MAXPROBES:{
+                EFilterResult result = FilterMaxProbes(probe);
+                if( result != EFR_OK ) return(result);
+                }
+                break;
+            case EF_NONE:
+                // nothing to be here
+                break;
         }
         it++;
     }
-    return(true);
+    return(EFR_OK);
 }
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::FilterMinMax(const CPoint& probe)
+EFilterResult CVDWGenProbe::FilterMinMax(const CPoint& probe)
 {
     bool ok = false;
     double dmin2 = Options.GetOptRMin();
@@ -569,26 +666,37 @@ bool CVDWGenProbe::FilterMinMax(const CPoint& probe)
     for(int i=0; i < Structure.GetNumberOfAtoms(); i++){
         CPoint apos = Structure.GetPosition(i);
         double d = Square(apos - probe);
-        if( d < dmin2 ) return(false);
+        if( d < dmin2 ) return(EFR_NEXT);
         if( (d <= dmax2) && SelectedAtoms[i] ) ok = true;
     }
 
-    return(ok);
+    return(EFR_OK);
 }
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::FilterMinOnly(const CPoint& probe)
+EFilterResult CVDWGenProbe::FilterMinOnly(const CPoint& probe)
 {
     double dmin2 = Options.GetOptRMin();
     dmin2 = dmin2*dmin2;
     for(int i=0; i < Structure.GetNumberOfAtoms(); i++){
         CPoint apos = Structure.GetPosition(i);
         double d = Square(apos - probe);
-        if( d < dmin2 ) return(false);
+        if( d < dmin2 ) return(EFR_NEXT);
     }
 
-    return(true);
+    return(EFR_OK);
+}
+
+//------------------------------------------------------------------------------
+
+EFilterResult CVDWGenProbe::FilterMaxProbes(const CPoint& probe)
+{
+    if( NumOfProbes == Options.GetOptMaxProbes() ){
+        vout << "<red>>>> ERROR: MaxProbes limit was reached!</red>" << endl;
+        return(EFR_STOP);
+    }
+    return(EFR_OK);
 }
 
 //==============================================================================
