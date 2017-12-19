@@ -49,7 +49,7 @@ public:
     "  * none         - all probes are accepted\n"
     "  * minmax       - at least minimum distance <b>--min</b> from all atoms,less than maximum distance <b>--max</b> from at least one atom\n"
     "  * minonly      - at least minimum distance from all atoms\n"
-    "  * maxprobes    - accept up to <b>--maxprobes</b> generated probes\n"
+    "  * maxprobes    - accept up to <b>--maxprobes</b> generated probes"
     CSO_PROG_DESC_END
 
     CSO_PROG_VERS_BEGIN
