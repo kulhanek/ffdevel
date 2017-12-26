@@ -120,6 +120,7 @@ integer,parameter       :: DEV_TEST     = 1342
 integer,parameter       :: DEV_DEBUG    = 1000
 integer,parameter       :: DEV_XYZ      = 123
 integer,parameter       :: DEV_TRAJ     = 125
+integer,parameter       :: DEV_OTRAJ    = 126
 integer,parameter       :: DEV_GEO      = 287
 integer,parameter       :: DEV_TOP      = 289
 integer,parameter       :: DEV_PRMS     = 298

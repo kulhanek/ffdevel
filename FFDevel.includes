@@ -1,3 +1,4 @@
 src/bin/vdwprobefilter
 src/bin/vdwgenprobe
 src/bin/vdwoptimize
+src/bin/vdwenefilter

@@ -45,6 +45,8 @@ subroutine ffdev_topology_init(top)
     top%nimpropers = 0
     top%nimproper_types = 0
     top%nb_size = 0
+    top%nb_mode = NB_MODE_LJ
+    top%probe_size = 0
 
 end subroutine ffdev_topology_init
 
@@ -72,7 +74,7 @@ subroutine ffdev_topology_load(top,name)
     ! load topology file
     call prmfile_init(fin)
     if( .not. prmfile_read(fin,name) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to read topology '//name//'!')
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to read topology "'//name//'"!')
     end if
 
     top%name = name
@@ -700,6 +702,7 @@ subroutine ffdev_topology_info(top)
     write(DEV_OUT,90)  trim(top%name)
     write(DEV_OUT,100) top%natoms
     write(DEV_OUT,110) top%natom_types
+    if( top%probe_size .eq. 0 ) then
     write(DEV_OUT,120) top%nbonds
     write(DEV_OUT,130) top%nbond_types
     write(DEV_OUT,140) top%nangles
@@ -709,7 +712,17 @@ subroutine ffdev_topology_info(top)
     write(DEV_OUT,180) top%ndihedral_seq_size
     write(DEV_OUT,190) top%nimpropers
     write(DEV_OUT,200) top%nimproper_types
+    end if
     write(DEV_OUT,210) top%nb_size
+    if( top%probe_size .ne. 0 ) then
+    write(DEV_OUT,220) top%probe_size
+    end if
+    select case(top%nb_mode)
+        case(NB_MODE_LJ)
+            write(DEV_OUT,215) 'Lennard-Jones potential'
+        case(NB_MODE_BP)
+            write(DEV_OUT,215) 'Buckingham potential'
+    end select
 
  90 format('Topology name               = ',A)
 100 format('Number of atoms             = ',I6)
@@ -724,6 +737,8 @@ subroutine ffdev_topology_info(top)
 190 format('Number of impropers         = ',I6)
 200 format('Number of improper types    = ',I6)
 210 format('Number of NB size           = ',I6)
+215 format('Type of NB interactions     = ',A)
+220 format('Number of atoms in probe    = ',I6)
 
 end subroutine ffdev_topology_info
 
@@ -919,24 +934,58 @@ end subroutine ffdev_topology_info_types
 
 subroutine ffdev_topology_finalize_setup(top)
 
+    use ffdev_utils
+
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: ip,i,j,it,jt
+    integer         :: ip,i,j,it,jt,alloc_stat
     real(DEVDP)     :: eps,r0
     ! --------------------------------------------------------------------------
 
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        top%nb_list(ip)%mcharge = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
-        it = top%atoms(i)%typeid
-        jt = top%atoms(j)%typeid
-        eps = sqrt(top%atom_types(it)%eps * top%atom_types(jt)%eps)
-        r0  = top%atom_types(it)%r0 + top%atom_types(jt)%r0
-        top%nb_list(ip)%A12 = eps*r0**12
-        top%nb_list(ip)%B6 = 2.0d0*eps*r0**6
-    end do
+    if( top%probe_size .le. 0 ) then
+    ! regular mode
+        do ip=1,top%nb_size
+            i = top%nb_list(ip)%ai
+            j = top%nb_list(ip)%aj
+            top%nb_list(ip)%mcharge = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+            it = top%atoms(i)%typeid
+            jt = top%atoms(j)%typeid
+            eps = sqrt(top%atom_types(it)%eps * top%atom_types(jt)%eps)
+            r0  = top%atom_types(it)%r0 + top%atom_types(jt)%r0
+            top%nb_list(ip)%A = eps*r0**12
+            top%nb_list(ip)%B = 2.0d0*eps*r0**6
+        end do
+    else
+    ! probe mode
+        ! release previous NB list
+        if( associated(top%nb_list) ) deallocate(top%nb_list)
+
+        ! calculate size of new NB list
+        top%nb_size = (top%natoms - top%probe_size)*top%probe_size
+        allocate( top%nb_list(top%nb_size), stat = alloc_stat )
+
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_switch_to_probe_mode!')
+        end if
+
+        ip = 1
+        do i=1,top%natoms - top%probe_size
+            do j=top%natoms - top%probe_size+1,top%natoms
+                top%nb_list(ip)%ai = i
+                top%nb_list(ip)%aj = j
+                top%nb_list(ip)%mcharge = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+                top%nb_list(ip)%dt = 0
+                it = top%atoms(i)%typeid
+                jt = top%atoms(j)%typeid
+                eps = sqrt(top%atom_types(it)%eps * top%atom_types(jt)%eps)
+                r0  = top%atom_types(it)%r0 + top%atom_types(jt)%r0
+                top%nb_list(ip)%A = eps*r0**12
+                top%nb_list(ip)%B = 2.0d0*eps*r0**6
+                ip = ip + 1
+            end do
+        end do
+    end if
 
 end subroutine ffdev_topology_finalize_setup
 

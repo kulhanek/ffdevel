@@ -45,7 +45,6 @@ program ffdev_energy_program
     call get_command_argument(1, topname)
     call get_command_argument(2, crdname)
 
-
     write_pts = .false.
 
     do i=3,command_argument_count()

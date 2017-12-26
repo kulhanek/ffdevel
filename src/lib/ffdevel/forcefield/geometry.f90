@@ -106,6 +106,45 @@ subroutine ffdev_geometry_load_xyz(geo,name)
 end subroutine ffdev_geometry_load_xyz
 
 ! ==============================================================================
+! subroutine ffdev_geometry_load_xyz_snapshot
+! ==============================================================================
+
+subroutine ffdev_geometry_load_xyz_snapshot(geo,fin)
+
+    use smf_xyzfile
+    use smf_xyzfile_type
+    use ffdev_utils
+    use smf_periodic_table
+
+    implicit none
+    type(GEOMETRY)      :: geo
+    type(XYZFILE_TYPE)  :: fin
+    ! --------------------------------------------
+    integer             :: alloc_stat, i
+    ! --------------------------------------------------------------------------
+
+    ! allocate data
+    geo%natoms = fin%natoms
+    geo%name   = 'snapshot'
+    geo%title  = fin%comment
+
+    allocate( geo%crd(3,geo%natoms), geo%z(geo%natoms), stat = alloc_stat )
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+    end if
+
+    geo%crd(:,:) = fin%cvs(:,:)
+    do i=1,fin%natoms
+        ! is symbol?
+        geo%z(i) = SearchZBySymbol(fin%symbols(i))
+        if( geo%z(i) .eq. 0 ) then
+            read(fin%symbols(i),*) geo%z(i)
+        end if
+    end do
+
+end subroutine ffdev_geometry_load_xyz_snapshot
+
+! ==============================================================================
 ! subroutine ffdev_geometry_save_xyz
 ! ==============================================================================
 
@@ -145,6 +184,37 @@ subroutine ffdev_geometry_save_xyz(geo,name)
     call free_xyz(fout)
 
 end subroutine ffdev_geometry_save_xyz
+
+! ==============================================================================
+! subroutine ffdev_geometry_save_xyz_snapshot
+! ==============================================================================
+
+subroutine ffdev_geometry_save_xyz_snapshot(geo,fout)
+
+    use smf_xyzfile
+    use smf_xyzfile_type
+    use ffdev_utils
+    use ffdev_topology
+    use smf_periodic_table_dat
+
+    implicit none
+    type(GEOMETRY)      :: geo
+    type(XYZFILE_TYPE)  :: fout
+    ! --------------------------------------------
+    integer             :: i
+    ! --------------------------------------------------------------------------
+
+    ! copy data
+    fout%cvs(:,:) = geo%crd(:,:)
+    write(fout%comment,150) geo%total_ene
+
+    do i=1,geo%natoms
+        fout%symbols(i) = pt_symbols(geo%z(i))
+    end do
+
+150 format('E=',F20.10)
+
+end subroutine ffdev_geometry_save_xyz_snapshot
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_load_point

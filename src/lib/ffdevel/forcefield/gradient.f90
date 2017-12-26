@@ -51,10 +51,12 @@ subroutine ffdev_gradient_all(top,geo)
     geo%grd(:,:) = 0.0d0
 
     ! bonded terms
-    call ffdev_gradient_bonds(top,geo)
-    call ffdev_gradient_angles(top,geo)
-    call ffdev_gradient_dihedrals(top,geo)
-    call ffdev_gradient_impropers(top,geo)
+    if( top%probe_size .eq. 0 ) then
+        call ffdev_gradient_bonds(top,geo)
+        call ffdev_gradient_angles(top,geo)
+        call ffdev_gradient_dihedrals(top,geo)
+        call ffdev_gradient_impropers(top,geo)
+    end if
 
     ! non-bonded terms
     call ffdev_gradient_nb(top,geo)
@@ -446,8 +448,8 @@ subroutine ffdev_gradient_nb(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        aLJa  = top%nb_list(ip)%A12
-        bLJa  = top%nb_list(ip)%B6
+        aLJa  = top%nb_list(ip)%A
+        bLJa  = top%nb_list(ip)%B
         crgij = top%nb_list(ip)%mcharge
 
         ! calculate dx, r and r2

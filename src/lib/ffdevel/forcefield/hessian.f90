@@ -56,10 +56,12 @@ subroutine ffdev_hessian_all(top,geo)
     stop 'incorrect hessian for dihedrals'
 
     ! bonded terms
-    call ffdev_hessian_bonds(top,geo)
-    call ffdev_hessian_angles(top,geo)
-    call ffdev_hessian_dihedrals(top,geo)
-    call ffdev_hessian_impropers(top,geo)
+    if( top%probe_size .eq. 0 ) then
+        call ffdev_hessian_bonds(top,geo)
+        call ffdev_hessian_angles(top,geo)
+        call ffdev_hessian_dihedrals(top,geo)
+        call ffdev_hessian_impropers(top,geo)
+    end if
 
     ! non-bonded terms
     call ffdev_hessian_nb(top,geo)
@@ -2711,8 +2713,8 @@ subroutine ffdev_hessian_nb(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        aLJa  = top%nb_list(ip)%A12
-        bLJa  = top%nb_list(ip)%B6
+        aLJa  = top%nb_list(ip)%A
+        bLJa  = top%nb_list(ip)%B
         crgij = top%nb_list(ip)%mcharge
 
         ! calculate dx, r and r2

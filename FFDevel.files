@@ -62,6 +62,8 @@ src/bin/topreport/TopReport.cpp
 src/bin/topreport/TopReport.hpp
 src/bin/topreport/TopReportOptions.cpp
 src/bin/topreport/TopReportOptions.hpp
+src/bin/vdwenefilter/CMakeLists.txt
+src/bin/vdwenefilter/vdwenefilter.f90
 src/bin/vdwgenprobe/CMakeLists.txt
 src/bin/vdwgenprobe/VDWGenProbe.cpp
 src/bin/vdwgenprobe/VDWGenProbe.hpp

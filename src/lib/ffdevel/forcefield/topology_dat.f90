@@ -104,8 +104,9 @@ type NB_PAIR
     integer     ::  ai,aj   ! pair
     integer     ::  dt      ! dihedral type for scaling factors
     real(DEVDP) ::  mcharge ! fac*charge1*charge2
-    real(DEVDP) ::  A12     ! vdw A
-    real(DEVDP) ::  B6      ! vdw B
+    real(DEVDP) ::  A       ! vdw A
+    real(DEVDP) ::  B       ! vdw B
+    real(DEVDP) ::  C       ! vdw C
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -116,6 +117,7 @@ type NB_TYPE
     integer             :: z
     real(DEVDP)         :: eps
     real(DEVDP)         :: r0
+    real(DEVDP)         :: alpha
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -150,9 +152,11 @@ type TOPOLOGY
 
 ! non-bonded terms
     integer                     :: nb_size
+    integer                     :: nb_mode
     type(NB_PAIR),pointer       :: nb_list(:)
     integer                     :: natom_types
     type(NB_TYPE),pointer       :: atom_types(:)
+    integer                     :: probe_size       ! number of atoms in probe
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -160,6 +164,11 @@ end type TOPOLOGY
 
 logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
                                         ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
+
+! ------------------------------------------------------------------------------
+
+integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
+integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
 
 ! ------------------------------------------------------------------------------
 
