@@ -59,6 +59,7 @@ private:
     std::map<int,CAngleType>    AngleTypes;
     std::map<int,CDihedralType> DihedralTypes;
     std::map<int,CDihedralType> ImproperTypes;
+    std::map<int,int>           NBTypes;
     std::list<CDihedral>        UniqueDihedrals;
 
     int dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
@@ -66,6 +67,7 @@ private:
 
     // dimmensions
     int natoms;
+    int natom_types;
     int nbonds;
     int nbond_types;
     int nangles;
@@ -76,7 +78,7 @@ private:
     int nimpropers;
     int nimproper_types;
     int nb_size;
-    int natom_types;
+    int nnb_types;
 
     /// load topology
     bool LoadTopology(void);
@@ -104,6 +106,7 @@ private:
     void WriteImproperTypes(std::ostream& sout);
     void WriteImpropers(std::ostream& sout);
 
+    void WriteNBTypes(std::ostream& sout);
     void WriteNBList(std::ostream& sout);
 
     void WriteDimensions(std::ostream& sout);

@@ -102,22 +102,24 @@ end type IMPROPER_TYPE
 
 type NB_PAIR
     integer     ::  ai,aj   ! pair
+    integer     ::  nbt     ! NB type
     integer     ::  dt      ! dihedral type for scaling factors
-    real(DEVDP) ::  mcharge ! fac*charge1*charge2
-    real(DEVDP) ::  A       ! vdw A
-    real(DEVDP) ::  B       ! vdw B
-    real(DEVDP) ::  C       ! vdw C
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
 
-type NB_TYPE
+type ATOM_TYPE
     character(len=4)    :: name
     real(DEVDP)         :: mass
     integer             :: z
-    real(DEVDP)         :: eps
-    real(DEVDP)         :: r0
-    real(DEVDP)         :: alpha
+end type ATOM_TYPE
+
+! ------------------------------------------------------------------------------
+
+type NB_TYPE
+    integer             :: ti,tj            ! atom types
+    real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
+    real(DEVDP)         :: A, B, C
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -155,7 +157,9 @@ type TOPOLOGY
     integer                     :: nb_mode
     type(NB_PAIR),pointer       :: nb_list(:)
     integer                     :: natom_types
-    type(NB_TYPE),pointer       :: atom_types(:)
+    type(ATOM_TYPE),pointer     :: atom_types(:)
+    integer                     :: nnb_types
+    type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size       ! number of atoms in probe
 end type TOPOLOGY
 

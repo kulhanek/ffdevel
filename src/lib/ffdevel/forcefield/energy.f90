@@ -320,7 +320,7 @@ subroutine ffdev_energy_nb(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j
+    integer         :: ip, i, j, nbt
     real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2a,ra,r6a
     ! --------------------------------------------------------------------------
@@ -333,9 +333,10 @@ subroutine ffdev_energy_nb(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        aLJa  = top%nb_list(ip)%A
-        bLJa  = top%nb_list(ip)%B
-        crgij = top%nb_list(ip)%mcharge
+        nbt = top%nb_list(ip)%nbt
+        aLJa  = top%nb_types(nbt)%A
+        bLJa  = top%nb_types(nbt)%B
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
         ! calculate dx, r and r2
         dxa1 = geo%crd(1,i) - geo%crd(1,j)

@@ -41,6 +41,7 @@ MAIN_ENTRY(CTop2STop);
 CTop2STop::CTop2STop(void)
 {
     natoms = 0;
+    natom_types = 0;
     nbonds = 0;
     nbond_types = 0;
     nangles = 0;
@@ -51,7 +52,7 @@ CTop2STop::CTop2STop(void)
     nimpropers = 0;
     nimproper_types = 0;
     nb_size = 0;
-    natom_types = 0;
+    nnb_types = 0;
     dih_mode = 0;
     dih_samp_freq = 5;
 }
@@ -188,6 +189,7 @@ void CTop2STop::WriteAll(ostream& sout)
     WriteImproperTypes(sout);
     WriteImpropers(sout);
 
+    WriteNBTypes(sout);
     WriteNBList(sout);
     WriteDimensions(sout);
 }
@@ -245,24 +247,6 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
         }
         if( unique_types[mmtype.name].idx == -1 ){
 
-            if( Topology.NonBondedList.GetNonBondedType(p_atom,p_atom) < 0 ) {
-                RUNTIME_ERROR("10-12 interaction is not supported");
-            }
-
-            double a,b,eps,rii;
-
-            a = Topology.NonBondedList.GetAParam(p_atom,p_atom);
-            b = Topology.NonBondedList.GetBParam(p_atom,p_atom);
-
-            eps = 0.0;
-            rii = 0.0;
-            if( a != 0.0 ) {
-                eps = b*b / (4.0 * a);
-                rii = pow(2*a/b,1.0/6.0) * 0.5;
-            }
-            mmtype.eps = eps;
-            mmtype.r0 = rii;
-
             unique_types[mmtype.name] = mmtype;
         } else {
             if( unique_types[mmtype.name] != mmtype ){
@@ -286,7 +270,7 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
 
     // write types
     sout << "[atom_types]" << endl;
-    sout << "! Index Type       Mass  Z           eps            r*" << endl;
+    sout << "! Index Type       Mass  Z  " << endl;
 
     std::map<int,CAtomType>::iterator tit = AtomTypes.begin();
     std::map<int,CAtomType>::iterator tie = AtomTypes.end();
@@ -296,14 +280,13 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
         sout << right << setw(7) << mmtype.idx << " ";
         sout << left << setw(4) << mmtype.name << " ";
         sout << right << fixed << setw(10) << setprecision(4) << mmtype.mass << " ";
-        sout << right << setw(2) << mmtype.z << " ";
-        sout << right << fixed << setw(13) << setprecision(7) << mmtype.eps << " ";
-        sout << right << fixed << setw(13) << setprecision(7) << mmtype.r0 << endl;
+        sout << right << setw(2) << mmtype.z <<  endl;
         tit++;
     }
 
     natom_types = AtomTypes.size();
 }
+
 
 //------------------------------------------------------------------------------
 
@@ -1026,10 +1009,63 @@ void CTop2STop::WriteImpropers(ostream& sout)
 
 //------------------------------------------------------------------------------
 
+void CTop2STop::WriteNBTypes(ostream& sout)
+{
+    map<int,int> Types;
+
+    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
+        CAmberAtom* p_atom = Topology.AtomList.GetAtom(i);
+        Types[p_atom->GetIAC()-1] = FindAtomTypeIdx(i);
+    }
+
+    sout << "[nb_types]" << endl;
+    sout << "! Index TypA TypB           eps            r0         alpha ! TypeA TypeB" << endl;
+
+    int idx = 1;
+    for(int i=0; i < Topology.NonBondedList.GetNumberOfTypes(); i++){
+        for(int j=i; j < Topology.NonBondedList.GetNumberOfTypes(); j++){
+
+            // ij parameters
+            int icoij = Topology.NonBondedList.GetICOIndex(Topology.NonBondedList.GetNumberOfTypes()*i + j);
+
+            NBTypes[icoij] = idx;
+
+            double aij,bij,epsij,rij;
+
+            aij = Topology.NonBondedList.GetAParam(icoij);
+            bij = Topology.NonBondedList.GetBParam(icoij);
+
+            epsij = 0.0;
+            rij = 0.0;
+            if( aij != 0.0 ) {
+                epsij = bij*bij / (4.0 * aij);
+                rij = pow(2*aij/bij,1.0/6.0) * 0.5;
+            }
+
+            int it = Types[i];
+            int jt = Types[j];
+
+            sout << right << setw(7) << idx << " ";
+            sout << left << setw(4) << it << " ";
+            sout << left << setw(4) << jt << " ";
+            sout << right << fixed << setw(13) << setprecision(7) << epsij << " ";
+            sout << right << fixed << setw(13) << setprecision(7) << rij*2.0 << " ";
+            sout << right << fixed << setw(13) << setprecision(7) << 0.0 << " ! ";
+            sout << left << setw(5) << AtomTypes[it].name << " ";
+            sout << left << setw(5) << AtomTypes[jt].name << endl;
+            idx++;
+        }
+    }
+
+    nnb_types = idx-1;
+}
+
+//------------------------------------------------------------------------------
+
 void CTop2STop::WriteNBList(ostream& sout)
 {
     sout << "[nb_list]" << endl;
-    sout << "! Index AtomA AtomB  Type   AtomA TypeA AtomB TypeB" << endl;
+    sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
 
     nb_size = 0;
     int idx = 1;
@@ -1071,7 +1107,7 @@ void CTop2STop::WriteNBList(ostream& sout)
                         break;
                 }
             }
-            int type = 0;
+            int didx = 0;
             if( found == true ){
                 CDihedralType dtype;
                 int ip = p_dih->GetIP();
@@ -1082,13 +1118,17 @@ void CTop2STop::WriteNBList(ostream& sout)
                 if( dtype.idx == -1 ){
                     RUNTIME_ERROR("1-4 nb interaction dihedral not found");
                 }
-                type = dtype.idx;
+                didx = dtype.idx;
             }
+
+            int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
+            int nbidx = NBTypes[ico];
 
             sout << right << setw(7) << idx << " ";
             sout << right << setw(5) << i+1 << " ";
             sout << right << setw(5) << j+1 << " ";
-            sout << right << setw(5) << type << " ! ";
+            sout << right << setw(5) << nbidx << " ";
+            sout << right << setw(5) << didx << " ! ";
             sout << left << setw(5) << p_atom1->GetName() << " ";
             sout << left << setw(5) << p_atom1->GetType() << " ";
             sout << left << setw(5) << p_atom2->GetName() << " ";
@@ -1100,126 +1140,14 @@ void CTop2STop::WriteNBList(ostream& sout)
     }
 }
 
-//void CTop2STop::WriteNBList(ostream& sout)
-//{
-//    sout << "[nb_list]" << endl;
-//    sout << "! Index AtomA AtomB  Type   AtomA TypeA AtomB TypeB" << endl;
-
-//    nb_size = 0;
-//    int idx = 1;
-//    int excidx = 0;
-//    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms() - 1; i++) {
-//        CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(i);
-//        int nexcluded = p_atom1->GetNUMEX();
-//        for(int j=i+1; j < Topology.AtomList.GetNumberOfAtoms(); j++) {
-//            CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(j);
-
-//            // is excluded
-//            if( nexcluded > 0 ){
-//                if( Topology.NonBondedList.GetNATEX(excidx) == j ){
-//                    excidx++;
-//                    nexcluded--;
-//                    continue;
-//                }
-//                if( Topology.NonBondedList.GetNATEX(excidx) == -1 ){
-//                    nexcluded--;
-//                }
-//            }
-
-//            int type = 0;
-
-//            sout << right << setw(7) << idx << " ";
-//            sout << right << setw(5) << i+1 << " ";
-//            sout << right << setw(5) << j+1 << " ";
-//            sout << right << setw(5) << type << " ! ";
-//            sout << left << setw(5) << p_atom1->GetName() << " ";
-//            sout << left << setw(5) << p_atom1->GetType() << " ";
-//            sout << left << setw(5) << p_atom2->GetName() << " ";
-//            sout << left << setw(5) << p_atom2->GetType() << endl;
-//            nb_size++;
-//            idx++;
-//        }
-//        if( nexcluded != 0 ){
-//            CSmallString error;
-//            error << "incorrectly processed NB exclusion list, atom " << i << ", remaining " << nexcluded;
-//            RUNTIME_ERROR(error);
-//        }
-//    }
-
-//    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
-//        CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(i);
-//        for(int j=i+1; j < Topology.AtomList.GetNumberOfAtoms(); j++) {
-//            CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(j);
-
-//            bool found = false;
-//            // is bonded?
-//            for(int k=0; k < Topology.BondList.GetNumberOfBonds(); k++) {
-//                CAmberBond* p_bond = Topology.BondList.GetBond(k);
-//                if( ((p_bond->GetIB() == i)&&(p_bond->GetJB() == j)) ||
-//                    ((p_bond->GetIB() == j)&&(p_bond->GetJB() == i)) ){
-//                        found = true;
-//                        break;
-//                }
-//            }
-//            if( found == true ) continue;
-
-//            // is 1-3?
-//            for(int k=0; k < Topology.AngleList.GetNumberOfAngles(); k++) {
-//                CAmberAngle* p_angle = Topology.AngleList.GetAngle(k);
-//                if( ((p_angle->GetIT() == i)&&(p_angle->GetKT() == j)) ||
-//                    ((p_angle->GetIT() == j)&&(p_angle->GetKT() == i)) ){
-//                        found = true;
-//                        break;
-//                }
-//            }
-//            if( found == true ) continue;
-
-//            // is 1-4?
-//            CAmberDihedral* p_dih;
-//            for(int k=0; k < Topology.DihedralList.GetNumberOfDihedrals(); k++) {
-//                p_dih = Topology.DihedralList.GetDihedral(k);
-//                if( ((p_dih->GetIP() == i)&&(p_dih->GetLP() == j)) ||
-//                    ((p_dih->GetIP() == j)&&(p_dih->GetLP() == i)) ){
-//                        found = true;
-//                        break;
-//                }
-//            }
-
-//            if( found == false ) continue;
-//            CDihedralType dtype;
-//            int ip = p_dih->GetIP();
-//            int jp = p_dih->GetJP();
-//            int kp = p_dih->GetKP();
-//            int lp = p_dih->GetLP();
-//            dtype = FindDihedralByTypes(ip,jp,kp,lp);
-//            if( dtype.idx == -1 ){
-//                RUNTIME_ERROR("1-4 nb interaction dihedral not found");
-//            }
-//            int type = dtype.idx;
-
-//            sout << right << setw(7) << idx << " ";
-//            sout << right << setw(5) << i+1 << " ";
-//            sout << right << setw(5) << j+1 << " ";
-//            sout << right << setw(5) << type << " ! ";
-//            sout << left << setw(5) << p_atom1->GetName() << " ";
-//            sout << left << setw(5) << p_atom1->GetType() << " ";
-//            sout << left << setw(5) << p_atom2->GetName() << " ";
-//            sout << left << setw(5) << p_atom2->GetType() << endl;
-//            nb_size++;
-//            idx++;
-//        }
-
-//    }
-
-//}
-
 //------------------------------------------------------------------------------
 
 void CTop2STop::WriteDimensions(std::ostream& sout)
 {
     sout << "[dimensions]" << endl;
-    sout << "! Scope           Size" << endl;
+    sout << "! Scope           Size" << endl;   
     sout << "atoms             " << natoms << endl;
+    sout << "atom_types        " << natom_types << endl;
     sout << "bonds             " << nbonds << endl;
     sout << "bond_types        " << nbond_types << endl;
     sout << "angles            " << nangles << endl;
@@ -1230,7 +1158,12 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "impropers         " << nimpropers << endl;
     sout << "improper_types    " << nimproper_types << endl;
     sout << "nb_size           " << nb_size << endl;
-    sout << "atom_types        " << natom_types << endl;
+    sout << "nb_types          " << nnb_types << endl;
+
+//    integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
+//    integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
+
+    sout << "nb_mode           " << 1 << endl;
 }
 
 //==============================================================================

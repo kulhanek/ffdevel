@@ -34,9 +34,12 @@ integer,parameter       :: REALM_DIH_SCNB   = 9
 integer,parameter       :: REALM_IMPR_V     = 10
 integer,parameter       :: REALM_IMPR_G     = 11
 integer,parameter       :: REALM_DIH_C      = 12
+integer,parameter       :: REALM_VDW_A      = 13
+integer,parameter       :: REALM_VDW_B      = 14
+integer,parameter       :: REALM_VDW_C      = 15
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_DIH_C
+integer,parameter       :: REALM_LAST    = REALM_VDW_C
 
 ! ------------------------------------------------------------------------------
 
@@ -64,8 +67,6 @@ type PARM_TYPE
     character(len=4)    :: name
     integer             :: z
     real(DEVDP)         :: mass
-    real(DEVDP)         :: eps
-    real(DEVDP)         :: r0
     integer,pointer     :: ids(:)
 end type PARM_TYPE
 

@@ -28,8 +28,6 @@ public:
     std::string name;
     double      mass;
     int         z;
-    double      eps;
-    double      r0;
 public:
     CAtomType(void);
     bool operator != (const CAtomType& right);

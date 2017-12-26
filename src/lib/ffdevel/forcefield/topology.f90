@@ -97,6 +97,8 @@ subroutine ffdev_topology_load(top,name)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'impropers',top%nimpropers)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'improper_types',top%nimproper_types)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_size',top%nb_size)
+    my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_types',top%nnb_types)
+    my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_mode',top%nb_mode)
 
     if( .not. my_result ) then
         call ffdev_utils_exit(DEV_OUT,1,'Missing data in [dimmensions] section!')
@@ -107,10 +109,11 @@ subroutine ffdev_topology_load(top,name)
               top%angles(top%nangles), top%angle_types(top%nangle_types), &
               top%dihedrals(top%ndihedrals), top%dihedral_types(top%ndihedral_types), &
               top%impropers(top%nimpropers), top%improper_types(top%nimproper_types), &
-              top%nb_list(top%nb_size), top%atom_types(top%natom_types), stat = alloc_stat )
+              top%nb_list(top%nb_size), top%atom_types(top%natom_types), &
+              top%nb_types(top%nnb_types), stat = alloc_stat )
 
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays!')
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_load!')
     end if
 
     ! read sections
@@ -145,7 +148,7 @@ subroutine ffdev_topology_load(top,name)
             call ffdev_utils_exit(DEV_OUT,1,'Premature end of [atom_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%atom_types(i)%name, top%atom_types(i)%mass, &
-                                      top%atom_types(i)%z, top%atom_types(i)%eps, top%atom_types(i)%r0
+                                      top%atom_types(i)%z
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [atom_types] section!')
         end if
@@ -474,7 +477,7 @@ subroutine ffdev_topology_load(top,name)
             call ffdev_utils_exit(DEV_OUT,1,'Premature end of [nb_list] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%nb_list(i)%ai, top%nb_list(i)%aj, &
-                                      top%nb_list(i)%dt
+                                      top%nb_list(i)%nbt, top%nb_list(i)%dt
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_list] section!')
         end if
@@ -484,10 +487,37 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_list(i)%aj .le. 0) .or. (top%nb_list(i)%aj .gt. top%natoms) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [nb_list] section!')
         end if
+        if( (top%nb_list(i)%nbt .lt. 0) .or. (top%nb_list(i)%nbt .gt. top%nnb_types) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'NB type out-of-legal range in [nb_list] section!')
+        end if
         ! it includes zero, which is not 1,4 interaction
         if( (top%nb_list(i)%dt .lt. 0) .or. (top%nb_list(i)%dt .gt. top%ndihedral_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Dihedral type out-of-legal range in [nb_list] section!')
         end if
+    end do
+
+    ! read NB types ------------------------------------
+    if( .not. prmfile_open_section(fin,'nb_types') ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [nb_types] section!')
+    end if
+
+    do i=1,top%nnb_types
+        if( .not. prmfile_get_line(fin,buffer) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [nb_types] section!')
+        end if
+        read(buffer,*,iostat=io_stat) idx, top%nb_types(i)%ti, top%nb_types(i)%tj, &
+                                      top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
+        if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_types] section!')
+        end if
+        if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
+        end if
+        if( (top%nb_types(i)%tj .le. 0) .or. (top%nb_types(i)%tj .gt. top%natom_types) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
+        end if
+        ! expand parameters
+        call ffdev_topology_ERA2ABC(top,top%nb_types(i))
     end do
 
     ! check if everything was read
@@ -528,6 +558,8 @@ subroutine ffdev_topology_save(top,name)
     write(DEV_TOP,10) 'dimensions'
     key = 'atoms'
     write(DEV_TOP,20) adjustl(key), top%natoms
+    key = 'atom_types'
+    write(DEV_TOP,20) adjustl(key), top%natom_types
     key = 'bonds'
     write(DEV_TOP,20) adjustl(key), top%nbonds
     key = 'bond_types'
@@ -548,8 +580,10 @@ subroutine ffdev_topology_save(top,name)
     write(DEV_TOP,20) adjustl(key), top%nimproper_types
     key = 'nb_size'
     write(DEV_TOP,20) adjustl(key), top%nb_size
-    key = 'atom_types'
-    write(DEV_TOP,20) adjustl(key), top%natom_types
+    key = 'nb_types'
+    write(DEV_TOP,20) adjustl(key), top%nnb_types
+    key = 'nb_mode'
+    write(DEV_TOP,20) adjustl(key), top%nb_mode
 
  10 format('[',A,']')
  20 format(A20,1X,I8)
@@ -559,10 +593,9 @@ subroutine ffdev_topology_save(top,name)
     do i=1,top%natom_types
         write(DEV_TOP,30)   i, adjustl(top%atom_types(i)%name), &
                                top%atom_types(i)%mass, &
-                               top%atom_types(i)%z, &
-                               top%atom_types(i)%eps, top%atom_types(i)%r0
+                               top%atom_types(i)%z
     end do
- 30 format(I7,1X,A4,1X,F10.4,1X,I2,1X,F13.7,1X,F13.7)
+ 30 format(I7,1X,A4,1X,F10.4,1X,I2)
 
     write(DEV_TOP,10) 'atoms'
     do i=1,top%natoms
@@ -678,12 +711,19 @@ subroutine ffdev_topology_save(top,name)
 120 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4)
 
     ! NB list --------------------------
+    write(DEV_TOP,10) 'nb_types'
+    do i=1,top%nnb_types
+        write(DEV_TOP,130)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
+                               top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
+    end do
+125 format(I7,1X,I5,1X,I5,1X,F13.7,1X,F13.7,1X,F13.7)
+
     write(DEV_TOP,10) 'nb_list'
     do i=1,top%nb_size
         write(DEV_TOP,130)   i, top%nb_list(i)%ai, top%nb_list(i)%aj, &
-                               top%nb_list(i)%dt
+                               top%nb_list(i)%nbt, top%nb_list(i)%dt
     end do
-130 format(I7,1X,I5,1X,I5,1X,I5)
+130 format(I7,1X,I5,1X,I5,1X,I5,1X,I5)
 
     close(DEV_TOP)
 
@@ -768,8 +808,7 @@ subroutine ffdev_topology_info_types(top)
     do i=1,top%natom_types
         write(DEV_OUT,40)   i, adjustl(top%atom_types(i)%name), &
                                top%atom_types(i)%z, adjustl(pt_symbols(top%atom_types(i)%z)), &
-                               top%atom_types(i)%mass, &
-                               top%atom_types(i)%eps, top%atom_types(i)%r0
+                               top%atom_types(i)%mass
     end do
 
     ! bonds ----------------------------
@@ -889,12 +928,25 @@ subroutine ffdev_topology_info_types(top)
         end do
     end if
 
+    ! NB ------------------------
+    if( top%nnb_types .gt. 0 ) then
+        write(DEV_OUT,*)
+        write(DEV_OUT,510)
+        write(DEV_OUT,520)
+        write(DEV_OUT,530)
+        do i=1,top%nnb_types
+            write(DEV_OUT,540)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
+                                   adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
+                                   top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
+        end do
+    end if
+
   5 format('Topology name = ',A)
 
  10 format('# ~~~~~~~~~~~~~~~~~ atom types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
- 20 format('# ID Type  Z  Sym    Mass          eps               R*       ')
- 30 format('# -- ---- --- --- ---------- ---------------- ----------------')
- 40 format(I4,1X,A4,1X,I3,1X,A3,1X,F10.4,1X,F16.6,1X,F16.6)
+ 20 format('# ID Type  Z  Sym    Mass   ')
+ 30 format('# -- ---- --- --- ----------')
+ 40 format(I4,1X,A4,1X,I3,1X,A3,1X,F10.4)
 
 110 format('# ~~~~~~~~~~~~~~~~~ bond types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 120 format('# ID TypA TypB Mod       R0               K         ')
@@ -926,6 +978,11 @@ subroutine ffdev_topology_info_types(top)
 430 format('# -- ---- ---- ---- ---- ---------------- ----------------')
 440 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,F16.6,1X,F16.6)
 
+510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+520 format('# ID TypA TypB        eps              R0             alpha      ')
+530 format('# -- ---- ---- ---------------- ---------------- ----------------')
+540 format(I4,1X,A4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.4)
+
 end subroutine ffdev_topology_info_types
 
 ! ==============================================================================
@@ -939,25 +996,12 @@ subroutine ffdev_topology_finalize_setup(top)
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: ip,i,j,it,jt,alloc_stat
+    integer         :: ip,i,j,it,jt,alloc_stat,nbt
     real(DEVDP)     :: eps,r0
     ! --------------------------------------------------------------------------
 
-    if( top%probe_size .le. 0 ) then
-    ! regular mode
-        do ip=1,top%nb_size
-            i = top%nb_list(ip)%ai
-            j = top%nb_list(ip)%aj
-            top%nb_list(ip)%mcharge = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
-            it = top%atoms(i)%typeid
-            jt = top%atoms(j)%typeid
-            eps = sqrt(top%atom_types(it)%eps * top%atom_types(jt)%eps)
-            r0  = top%atom_types(it)%r0 + top%atom_types(jt)%r0
-            top%nb_list(ip)%A = eps*r0**12
-            top%nb_list(ip)%B = 2.0d0*eps*r0**6
-        end do
-    else
-    ! probe mode
+    if( top%probe_size .gt. 0 ) then
+    ! switch to probe mode
         ! release previous NB list
         if( associated(top%nb_list) ) deallocate(top%nb_list)
 
@@ -974,20 +1018,40 @@ subroutine ffdev_topology_finalize_setup(top)
             do j=top%natoms - top%probe_size+1,top%natoms
                 top%nb_list(ip)%ai = i
                 top%nb_list(ip)%aj = j
-                top%nb_list(ip)%mcharge = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
                 top%nb_list(ip)%dt = 0
-                it = top%atoms(i)%typeid
-                jt = top%atoms(j)%typeid
-                eps = sqrt(top%atom_types(it)%eps * top%atom_types(jt)%eps)
-                r0  = top%atom_types(it)%r0 + top%atom_types(jt)%r0
-                top%nb_list(ip)%A = eps*r0**12
-                top%nb_list(ip)%B = 2.0d0*eps*r0**6
+                top%nb_list(ip)%nbt = ffdev_topology_find_nbtype(top,i,j)
                 ip = ip + 1
             end do
         end do
     end if
 
 end subroutine ffdev_topology_finalize_setup
+
+! ==============================================================================
+! subroutine ffdev_topology_ERA2ABC
+! ==============================================================================
+
+subroutine ffdev_topology_ERA2ABC(top,nbtype)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(NB_TYPE)   :: nbtype
+    ! --------------------------------------------------------------------------
+
+    select case(top%nb_mode)
+        case(NB_MODE_LJ)
+            nbtype%A = nbtype%eps*nbtype%r0**12
+            nbtype%B = 2.0d0*nbtype%eps*nbtype%r0**6
+            nbtype%C = 0.0d0
+        case(NB_MODE_BP)
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported Buckingham potential!')
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode!')
+    end select
+
+end subroutine ffdev_topology_ERA2ABC
 
 ! ==============================================================================
 ! subroutine ffdev_topology_gen_bonded
@@ -1029,6 +1093,39 @@ subroutine ffdev_topology_gen_bonded(top)
     end do
 
 end subroutine ffdev_topology_gen_bonded
+
+! ==============================================================================
+! function ffdev_topology_find_nbtype
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype(top,ai,aj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: ai,aj
+    ! --------------------------------------------
+    integer         :: i,j,k,ti,tj
+    ! --------------------------------------------------------------------------
+
+    ! convert to types
+    ti = top%atoms(ai)%typeid
+    tj = top%atoms(aj)%typeid
+
+    do i=1,top%nnb_types
+        if(  ( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) .or. &
+             ( (top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti) ) ) then
+             ffdev_topology_find_nbtype = i
+             return
+        end if
+    end do
+
+    ! not found
+    ffdev_topology_find_nbtype = 0
+    return
+
+end function ffdev_topology_find_nbtype
 
 ! ------------------------------------------------------------------------------
 

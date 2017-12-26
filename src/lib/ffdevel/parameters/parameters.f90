@@ -61,6 +61,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
+        maxnparams = maxnparams + 3*sets(i)%top%nnb_types       ! NB
     end do
 
     write(DEV_OUT,*)
@@ -357,6 +358,75 @@ subroutine ffdev_parameters_init()
         end do
     end do
 
+    ! vdw A realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_A)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%A
+                params(nparams)%realm = REALM_VDW_A
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw B realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_B)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%B
+                params(nparams)%realm = REALM_VDW_B
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw C realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_C)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%C
+                params(nparams)%realm = REALM_VDW_C
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
     write(DEV_OUT,30) nparams
 
     ! load parameters from file
@@ -416,6 +486,9 @@ integer function find_parameter(top,id,pn,realm)
             tj = get_common_type_id(top,top%improper_types(id)%tj)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
+        case(REALM_VDW_A,REALM_VDW_B,REALM_VDW_C)
+            ti = get_common_type_id(top,top%nb_types(id)%ti)
+            tj = get_common_type_id(top,top%nb_types(id)%tj)
     end select
 
     ! is parameter defined?
@@ -446,6 +519,11 @@ integer function find_parameter(top,id,pn,realm)
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
                     ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
+                        find_parameter = i
+                end if
+            case(REALM_VDW_A,REALM_VDW_B,REALM_VDW_C)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
+                    ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
                 end if
         end select
@@ -570,8 +648,6 @@ subroutine ffdev_parameters_gen_unique_types()
                     types(i)%ids(j) = k
                     types(i)%z = sets(j)%top%atom_types(k)%z
                     types(i)%mass = sets(j)%top%atom_types(k)%mass
-                    types(i)%r0 = sets(j)%top%atom_types(k)%r0
-                    types(i)%eps = sets(j)%top%atom_types(k)%eps
                     exit
                 end if
             end do
@@ -797,11 +873,12 @@ subroutine ffdev_parameters_save_amber(name)
     write(DEV_PRMS,*)
 
     ! nonbonded
-    write(DEV_PRMS,20) 'NONB'
-    do i=1,ntypes
-        write(DEV_PRMS,80) types(i)%name,types(i)%r0,types(i)%eps
-    end do
-    write(DEV_PRMS,*)
+! FIXME
+!    write(DEV_PRMS,20) 'NONB'
+!    do i=1,ntypes
+!        write(DEV_PRMS,80) types(i)%name,types(i)%r0,types(i)%eps
+!    end do
+!    write(DEV_PRMS,*)
 
     close(DEV_PRMS)
 
@@ -939,6 +1016,15 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'impr_gamma'
                 scaling = DEV_R2D
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_A)
+                tmp = 'vdw_A'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_B)
+                tmp = 'vdw_B'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_C)
+                tmp = 'vdw_C'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -997,6 +1083,12 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'impr_v'
             case(REALM_IMPR_G)
                 tmp = 'impr_gamma'
+            case(REALM_VDW_A)
+                tmp = 'vdW_A'
+            case(REALM_VDW_B)
+                tmp = 'vdW_B'
+            case(REALM_VDW_C)
+                tmp = 'vdW_C'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -1198,6 +1290,24 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%improper_types(params(i)%ids(j))%g = params(i)%value
                     end if
                 end do
+            case(REALM_VDW_A)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%A = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_B)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%B = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_C)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%C = params(i)%value
+                    end if
+                end do
         end select
     end do
 
@@ -1248,6 +1358,12 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
                 tmpx(id) = -20.0
             case(REALM_IMPR_G)
                 tmpx(id) = -DEV_PI/180
+            case(REALM_VDW_A)
+                tmpx(id) = 0.0d0
+            case(REALM_VDW_B)
+                tmpx(id) = 0.0d0
+            case(REALM_VDW_C)
+                tmpx(id) = 0.0d0
         end select
     end do
 
@@ -1298,6 +1414,12 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
                 tmpx(id) = 20.0
             case(REALM_IMPR_G)
                 tmpx(id) = 1.05*DEV_PI
+            case(REALM_VDW_A)
+                tmpx(id) = 1.0d10
+            case(REALM_VDW_B)
+                tmpx(id) = 1.0d10
+            case(REALM_VDW_C)
+                tmpx(id) = 1.0d10
         end select
     end do
 

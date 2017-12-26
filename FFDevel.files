@@ -69,8 +69,6 @@ src/bin/vdwgenprobe/VDWGenProbe.cpp
 src/bin/vdwgenprobe/VDWGenProbe.hpp
 src/bin/vdwgenprobe/VDWGenProbeOptions.cpp
 src/bin/vdwgenprobe/VDWGenProbeOptions.hpp
-src/bin/vdwoptimize/CMakeLists.txt
-src/bin/vdwoptimize/vdwoptimize.f90
 src/lib/CMakeLists.txt
 src/lib/ffdevel/CMakeLists.txt
 src/lib/ffdevel/constants.f90

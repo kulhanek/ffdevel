@@ -2698,7 +2698,7 @@ subroutine ffdev_hessian_nb(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j
+    integer         :: ip, i, j, nbt
     real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,rij(3)
     real(DEVDP)     :: r2a,ra,r6a,Vela,V_aa,V_ba,dva
     real(DEVDP)     :: dn1,dn2,dn3,dn4,dn5,dn6
@@ -2713,9 +2713,10 @@ subroutine ffdev_hessian_nb(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        aLJa  = top%nb_list(ip)%A
-        bLJa  = top%nb_list(ip)%B
-        crgij = top%nb_list(ip)%mcharge
+        nbt = top%nb_list(ip)%nbt
+        aLJa  = top%nb_types(nbt)%A
+        bLJa  = top%nb_types(nbt)%B
+        crgij = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
         ! calculate dx, r and r2
         rij(:) = geo%crd(:,i) - geo%crd(:,j)
