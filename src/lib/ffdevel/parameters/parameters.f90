@@ -82,6 +82,7 @@ subroutine ffdev_parameters_init()
 
     ! energy offset realm ==================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         nparams = nparams + 1
         params(nparams)%value = sets(i)%offset
         params(nparams)%realm = REALM_EOFFSET
@@ -98,6 +99,7 @@ subroutine ffdev_parameters_init()
 
     ! bond length realm ====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nbond_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_BOND_D0)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -121,6 +123,7 @@ subroutine ffdev_parameters_init()
 
     ! bond force realm ====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nbond_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_BOND_K)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -144,6 +147,7 @@ subroutine ffdev_parameters_init()
 
     ! angle realm ==========================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nangle_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_ANGLE_A0)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -167,6 +171,7 @@ subroutine ffdev_parameters_init()
 
     ! angle force realm ====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nangle_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_ANGLE_K)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -190,6 +195,7 @@ subroutine ffdev_parameters_init()
 
     ! dihedral v realm =====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_COS ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
@@ -216,6 +222,7 @@ subroutine ffdev_parameters_init()
 
     ! dihedral c realm =====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_GRBF ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
@@ -242,6 +249,7 @@ subroutine ffdev_parameters_init()
 
     ! dihedral g realm =====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_COS ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
@@ -268,6 +276,7 @@ subroutine ffdev_parameters_init()
 
     ! dihedral scee realm ==================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%ndihedral_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_DIH_SCEE)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -291,6 +300,7 @@ subroutine ffdev_parameters_init()
 
     ! dihedral scnb realm ==================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%ndihedral_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_DIH_SCNB)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -314,6 +324,7 @@ subroutine ffdev_parameters_init()
 
     ! imroper v realm ======================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nimproper_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_IMPR_V)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -337,6 +348,7 @@ subroutine ffdev_parameters_init()
 
     ! improper g realm =====================
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nimproper_types
             parmid = find_parameter(sets(i)%top,j,0,REALM_IMPR_G)
             if( parmid .eq. 0 ) then    ! new parameter
@@ -361,6 +373,7 @@ subroutine ffdev_parameters_init()
     ! vdw A realm =====================
     do i=1,nsets
         do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
             parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_A)
             if( parmid .eq. 0 ) then    ! new parameter
                 nparams = nparams + 1
@@ -384,6 +397,7 @@ subroutine ffdev_parameters_init()
     ! vdw B realm =====================
     do i=1,nsets
         do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
             parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_B)
             if( parmid .eq. 0 ) then    ! new parameter
                 nparams = nparams + 1
@@ -407,6 +421,8 @@ subroutine ffdev_parameters_init()
     ! vdw C realm =====================
     do i=1,nsets
         do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+            if( sets(i)%top%nb_mode .ne. NB_MODE_BP ) cycle
             parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_C)
             if( parmid .eq. 0 ) then    ! new parameter
                 nparams = nparams + 1
@@ -693,7 +709,7 @@ subroutine ffdev_parameters_load(name)
 
     close(DEV_PRMS)
 
- 10 format('FFDEVEL PARAMATERS',1X,I6)
+ 10 format('FFDEVEL PARAMETERS',1X,I6)
  20 format(I6,1X,I3,1X,I2,1X,I2,F20.6)
 
 end subroutine ffdev_parameters_load
@@ -728,7 +744,7 @@ subroutine ffdev_parameters_save(name)
 
     close(DEV_PRMS)
 
- 10 format('FFDEVEL PARAMATERS',1X,I6)
+ 10 format('FFDEVEL PARAMETERS',1X,I6)
  20 format(I6,1X,I3,1X,I2,1X,I2,F20.6)
 
 end subroutine ffdev_parameters_save
@@ -1111,12 +1127,12 @@ subroutine ffdev_parameters_print_parameters()
     write(DEV_OUT,230) act
 
 
- 10 format('# ID ST Iden    Realm    PN   Value      Counts     IDs in Sets')
- 20 format('# -- -- ---- ----------- -- ------------ ------     -- -- -- -- -- -- -- -- -- -- --')
+ 10 format('# ID ST Iden    Realm    PN       Value      Counts     IDs in Sets')
+ 20 format('# -- -- ---- ----------- -- ---------------- ------     -- -- -- -- -- -- -- -- -- -- --')
  30 format(I4,1X,L2,1X,I4,1X)
  31 format(I4,1X,L2,1X,'----',1X)
  32 format(A11,1X)
- 35 format(I2,1X,F12.3,1X,I6,5X)
+ 35 format(I2,1X,E16.7,1X,I6,5X)
  40 format(I2,1X)
  50 format('--',1X)
 

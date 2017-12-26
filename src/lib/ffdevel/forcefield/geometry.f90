@@ -594,8 +594,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                 Weight E G H P')
-40 format('# ---- -------------------- ------ - - - -')
+30 format('# ID   File                                     Weight E G H P')
+40 format('# ---- ---------------------------------------- ------ - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -608,7 +608,7 @@ subroutine ffdev_geometry_info_point(geo)
     implicit none
     type(GEOMETRY)      :: geo
     ! --------------------------------------------
-    character(len=20)   :: lname
+    character(len=40)   :: lname
     ! --------------------------------------------------------------------------
 
     lname = trim(geo%name)
@@ -616,7 +616,7 @@ subroutine ffdev_geometry_info_point(geo)
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A20,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 
@@ -632,8 +632,8 @@ subroutine ffdev_geometry_info_point_header_ext()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                 Weight    Rel Energy    E G H P')
-40 format('# ---- -------------------- ------ ---------------- - - - -')
+30 format('# ID   File                                     Weight    Rel Energy    E G H P')
+40 format('# ---- ---------------------------------------- ------ ---------------- - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -646,7 +646,7 @@ subroutine ffdev_geometry_info_point_ext(geo)
     implicit none
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    character(len=20)   :: lname
+    character(len=40)   :: lname
     ! --------------------------------------------------------------------------
 
     lname = trim(geo%name)
@@ -654,7 +654,7 @@ subroutine ffdev_geometry_info_point_ext(geo)
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A20,1X,F6.3,1X,F16.3,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F16.4,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point_ext
 

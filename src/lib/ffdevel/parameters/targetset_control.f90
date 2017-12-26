@@ -37,9 +37,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: allow_nopoints
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string,key,geoname,sweight
-    integer                     :: i,j,alloc_status,minj
-    logical                     :: data_avail,rst
+    character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight
+    integer                     :: i,j,alloc_status,minj,probesize
+    logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
     ! --------------------------------------------------------------------------
 
@@ -81,13 +81,34 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
 
         ! get topology name
-        if( .not. prmfile_get_string_by_key(fin,'topology',string) ) then
+        if( .not. prmfile_get_string_by_key(fin,'topology',topin) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get topology name (topology) for [SET]!')
         end if
+        write(DEV_OUT,12) trim(topin)
+
+        ! get name of resulting topology
+        if( .not. prmfile_get_string_by_key(fin,'final',sets(i)%final_name) ) then
+            sets(i)%final_name = ''
+            write(DEV_OUT,15) trim('-none-')
+        else
+            write(DEV_OUT,15) trim(sets(i)%final_name)
+        end if
+
+        if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
+            shift2zero = .false.
+        end if
+        write(DEV_OUT,16) prmfile_onoff(shift2zero)
+
+        if( .not. prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
+            probesize = 0
+        end if
+        write(DEV_OUT,17) probesize
 
         ! load topology and print info
+        write(DEV_OUT,*)
         call ffdev_topology_init(sets(i)%top)
-        call ffdev_topology_load(sets(i)%top,string)
+        sets(i)%top%probe_size = probesize
+        call ffdev_topology_load(sets(i)%top,topin)
         call ffdev_topology_info(sets(i)%top)
         sets(i)%offset = 0.0d0
 
@@ -104,13 +125,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end select
             rst = prmfile_next_line(fin)
         end do
-
-        ! get name of resulting topology
-        if( .not. prmfile_get_string_by_key(fin,'final',sets(i)%final_name) ) then
-            sets(i)%final_name = ''
-        else
-            write(DEV_OUT,15) trim(sets(i)%final_name)
-        end if
 
         if( sets(i)%ngeos .le. 0 ) then
             if( allow_nopoints .eqv. .false. ) then
@@ -147,6 +161,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     rst = prmfile_next_line(fin)
                     cycle   ! skip
                 case('final')
+                    rst = prmfile_next_line(fin)
+                    cycle   ! skip
+                case('probesize')
+                    rst = prmfile_next_line(fin)
+                    cycle   ! skip
+                case('shift2zero')
                     rst = prmfile_next_line(fin)
                     cycle   ! skip
                 case('point')
@@ -217,7 +237,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
             do j=1,sets(i)%ngeos
                 if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
-                sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
+                if( shift2zero ) then
+                    sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
+                end if
                 call ffdev_geometry_info_point_ext(sets(i)%geo(j))
             end do
         end if
@@ -228,9 +250,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     end do
 
 10 format('=== [SET] #',I2.2,' ==================================================================')
-15 format('Final topology name         = ',A)
-20 format('Number of target points     = ',I6)
-30 format('Minimum energy point #',I5.5,' has energy ',F20.3)
+12 format('Input topology name (topology)     = ',A)
+15 format('Final topology name (final)        = ',A)
+16 format('Shift minimum to zero (shift2zero) = ',A)
+17 format('Probe size (probesize)             = ',I6)
+20 format('Number of target points            = ',I6)
+30 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 
 end subroutine ffdev_targetset_ctrl
 

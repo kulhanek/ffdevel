@@ -777,7 +777,7 @@ subroutine ffdev_topology_info(top)
 190 format('Number of impropers         = ',I6)
 200 format('Number of improper types    = ',I6)
 210 format('Number of NB size           = ',I6)
-215 format('Type of NB interactions     = ',A)
+215 format('Type of vdW interactions    = ',A)
 220 format('Number of atoms in probe    = ',I6)
 
 end subroutine ffdev_topology_info
@@ -932,6 +932,12 @@ subroutine ffdev_topology_info_types(top)
     if( top%nnb_types .gt. 0 ) then
         write(DEV_OUT,*)
         write(DEV_OUT,510)
+        select case(top%nb_mode)
+            case(NB_MODE_LJ)
+                write(DEV_OUT,515) 'Lennard-Jones potential'
+            case(NB_MODE_BP)
+                write(DEV_OUT,515) 'Buckingham potential'
+        end select
         write(DEV_OUT,520)
         write(DEV_OUT,530)
         do i=1,top%nnb_types
@@ -979,9 +985,10 @@ subroutine ffdev_topology_info_types(top)
 440 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,F16.6,1X,F16.6)
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+515 format('# Type of vdW interactions = ',A)
 520 format('# ID TypA TypB        eps              R0             alpha      ')
 530 format('# -- ---- ---- ---------------- ---------------- ----------------')
-540 format(I4,1X,A4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.4)
+540 format(I4,1X,A4,1X,A4,1X,F16.6,1X,F16.6,1X,F16.6)
 
 end subroutine ffdev_topology_info_types
 
@@ -1126,6 +1133,34 @@ integer function ffdev_topology_find_nbtype(top,ai,aj)
     return
 
 end function ffdev_topology_find_nbtype
+
+! ==============================================================================
+! function ffdev_topology_is_nbtype_used
+! ==============================================================================
+
+logical function ffdev_topology_is_nbtype_used(top,nbt)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nb_size
+        if( top%nb_list(i)%nbt .eq. nbt ) then
+            ffdev_topology_is_nbtype_used = .true.
+            return
+        end if
+    end do
+
+    ! not found
+    ffdev_topology_is_nbtype_used = .false.
+    return
+
+end function ffdev_topology_is_nbtype_used
 
 ! ------------------------------------------------------------------------------
 
