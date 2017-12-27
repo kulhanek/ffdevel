@@ -516,8 +516,6 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_types(i)%tj .le. 0) .or. (top%nb_types(i)%tj .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
-        ! expand parameters
-        call ffdev_topology_ERA2ABC(top,top%nb_types(i))
     end do
 
     ! check if everything was read
@@ -1032,22 +1030,45 @@ subroutine ffdev_topology_finalize_setup(top)
         end do
     end if
 
+    ! update ABC parameters for NB calculations
+    call ffdev_topology_update_nbABC(top)
+
 end subroutine ffdev_topology_finalize_setup
 
 ! ==============================================================================
-! subroutine ffdev_topology_ERA2ABC
+! subroutine ffdev_topology_update_nbABC
 ! ==============================================================================
 
-subroutine ffdev_topology_ERA2ABC(top,nbtype)
+subroutine ffdev_topology_update_nbABC(top)
 
     use ffdev_utils
 
     implicit none
     type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nnb_types
+        call ffdev_topology_ERA2ABC(top%nb_mode,top%nb_types(i))
+    end do
+
+end subroutine ffdev_topology_update_nbABC
+
+! ==============================================================================
+! subroutine ffdev_topology_ERA2ABC
+! ==============================================================================
+
+subroutine ffdev_topology_ERA2ABC(nbmode,nbtype)
+
+    use ffdev_utils
+
+    implicit none
+    integer         :: nbmode
     type(NB_TYPE)   :: nbtype
     ! --------------------------------------------------------------------------
 
-    select case(top%nb_mode)
+    select case(nbmode)
         case(NB_MODE_LJ)
             nbtype%A = nbtype%eps*nbtype%r0**12
             nbtype%B = 2.0d0*nbtype%eps*nbtype%r0**6
