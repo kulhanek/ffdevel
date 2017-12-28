@@ -658,12 +658,14 @@ subroutine ffdev_parameters_gen_unique_types()
             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for type ids!')
         end if
         types(i)%ids(:) = 0
+        types(i)%probe = .false.
         do j=1,nsets
             do k=1,sets(j)%top%natom_types
                 if( types(i)%name .eq. sets(j)%top%atom_types(k)%name ) then
                     types(i)%ids(j) = k
                     types(i)%z = sets(j)%top%atom_types(k)%z
                     types(i)%mass = sets(j)%top%atom_types(k)%mass
+                    types(i)%probe = sets(j)%top%atom_types(k)%probe
                     exit
                 end if
             end do
@@ -1014,8 +1016,25 @@ subroutine ffdev_parameters_extract_LJ_prms()
     use ffdev_utils
 
     implicit none
-    integer     :: i,j
+    integer         :: i,j,k,l,ti,tj
+    logical         :: nb_opt
+    real(DEVDP)     :: epsij,r0ij,alphaij,epsii,r0ii,alphaii
+    real(DEVDP)     :: epsjj,r0jj,alphajj
+    real(DEVDP)     :: mn, epsjj_sum, epsjj_sum2, epsjj_ms, r0jj_sum, r0jj_sum2, r0jj_ms
     ! --------------------------------------------------------------------------
+
+    nb_opt = .false.
+
+    ! do we optimize LJ paramarers
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
+            nb_opt = .true.
+            exit
+        end if
+    end do
+
+    if( .not. nb_opt ) return   ! nothing to extract
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Extracting LJ parameters', ':')
@@ -1030,6 +1049,7 @@ subroutine ffdev_parameters_extract_LJ_prms()
         case(LJ_RULE_KG)
             write(DEV_OUT,19) 'KG (Kong)'
         case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_extract_LJ_prms!')
     end select
 
 ! label types that need to be extracted from optimized data
@@ -1039,32 +1059,140 @@ subroutine ffdev_parameters_extract_LJ_prms()
     do i=1,nparams
         if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
             ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
-            types(params(i)%ti)%print_nb = .true.
+            if( .not. types(params(i)%ti)%probe ) then
+                types(params(i)%ti)%print_nb = .true.
+            end if
+            if( .not. types(params(i)%tj)%probe ) then
+                types(params(i)%tj)%print_nb = .true.
+            end if
         end if
+    end do
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Probes', '~')
+    write(DEV_OUT,*)
+    write(DEV_OUT,550)
+    write(DEV_OUT,560)
+
+! print probes in sets
+    do i=1,ntypes
+        if( .not. types(i)%probe ) cycle
+        do j=1,nsets
+            ti = types(i)%ids(j)
+            if( ti .gt. 0 ) then
+                call ffdev_topology_get_nbprms(sets(j)%top,ti,ti,epsii,r0ii,alphaii)
+                write(DEV_OUT,540) j,sets(j)%top%atom_types(ti)%name,epsii,r0ii,alphaii
+            end if
+        end do
     end do
 
 ! print summary and reconstructed parameters
     do i=1,ntypes
         if( .not. types(i)%print_nb ) cycle
+        if( types(i)%probe ) cycle
         write(DEV_OUT,*)
-        write(DEV_OUT,500) types(i)%name
-        write(DEV_OUT,510) i
+        call ffdev_utils_heading(DEV_OUT,'Type ('//trim(types(i)%name)//')', '~')
         write(DEV_OUT,*)
         write(DEV_OUT,520)
         write(DEV_OUT,530)
+        mn = 0
+        epsjj_sum = 0.0d0
+        epsjj_sum2 = 0.0d0
+        r0jj_sum = 0.0d0
+        r0jj_sum2 = 0.0d0
         do j=1,nsets
-
+            tj = types(i)%ids(j) ! this is a probed atom
+            if( ti .gt. 0 ) then
+                do k=1,sets(j)%top%natom_types
+                    if( sets(j)%top%atom_types(k)%probe ) then
+                        ti = k   ! this is a probe
+                        call ffdev_topology_get_nbprms(sets(j)%top,ti,ti,epsii,r0ii,alphaii)
+                        call ffdev_topology_get_nbprms(sets(j)%top,ti,tj,epsij,r0ij,alphaij)
+                        call ffdev_parameters_get_LJ_prms(epsii,r0ii,epsij,r0ij,epsjj,r0jj)
+                        epsjj_sum = epsjj_sum + epsjj
+                        epsjj_sum2 = epsjj_sum2 + epsjj**2
+                        r0jj_sum = r0jj_sum + r0jj
+                        r0jj_sum2 = r0jj_sum2 + r0jj**2
+                        mn = mn + 1.0d0
+                        write(DEV_OUT,540) j,sets(j)%top%atom_types(tj)%name,epsij,r0ij,alphaij,epsjj,r0jj
+                    end if
+                end do
+            end if
         end do
+        write(DEV_OUT,530)
+        epsjj_ms = 0.0d0
+        r0jj_ms = 0.0d0
+        if( mn .gt. 0.0d0 ) then
+            write(DEV_OUT,545) epsjj_sum / mn, r0jj_sum / mn
+            types(i)%eps = epsjj_sum / mn
+            types(i)%r0 = r0jj_sum / mn
+            epsjj_ms = mn*epsjj_sum2 - epsjj_sum**2
+            r0jj_ms = mn*r0jj_sum2 - r0jj_sum**2
+        end if
+        if( (epsjj_ms .ge. 0.0d0) .and. (epsjj_ms .ge. 0.0d0) ) then
+            write(DEV_OUT,547) sqrt(epsjj_ms) / mn, sqrt(r0jj_ms) / mn
+        end if
     end do
 
  19 format('LJ combining rule (lj_rule)        = ',A)
 
 500 format('# Type = ',A)
 510 format('# ID   = ',I2)
-520 format('# Set Probe NB  eps(MM,ij)    R0(MM,ij)  alpha(MM,ij)     eps(LJ,ii)    R0(LJ,ii) ')
-530 format('# --- ----- -- ------------ ------------ ------------ -> ------------ ------------')
+520 format('# Set Probe  eps(MM,ij)   R0(MM,ij)  alpha(MM,ij)     eps(LJ,jj)   R0(LJ,jj) ')
+530 format('# --- ----- ------------ ----------- ------------ -> ------------ -----------')
+540 format(I5,1x,A5,1X,F12.7,1X,F11.6,1X,F12.6,4X,F12.7,1X,F11.6)
+545 format('#                                              <X> = ',F12.7,1X,F11.6)
+547 format('#                                             s(X) = ',F12.7,1X,F11.6)
+
+550 format('# Set Probe  eps(MM,ii)   R0(MM,ii)  alpha(MM,ii)')
+560 format('# --- ----- ------------ ----------- ------------')
+570 format(I5,1x,A5,1X,F12.7,1X,F11.6,1X,F12.6)
 
 end subroutine ffdev_parameters_extract_LJ_prms
+
+! ==============================================================================
+! function ffdev_parameters_get_LJ_prms
+! ==============================================================================
+
+subroutine ffdev_parameters_get_LJ_prms(epsii,r0ii,epsij,r0ij,epsjj,r0jj)
+
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_parameters_dat
+
+    implicit none
+    real(DEVDP)     :: epsii,r0ii,epsij,r0ij,epsjj,r0jj
+    ! --------------------------------------------
+    real(DEVDP)     :: k,l,c,d
+    ! --------------------------------------------------------------------------
+
+    select case(FinalLJCombiningRule)
+        case(LJ_RULE_LB)
+!           r0ij = (r0ii+r0jj)*0.5d0;
+!           epsij = sqrt(epsii*epsjj);
+            r0jj = 2.0d0*r0ij - r0ii
+            epsjj = epsij**2/epsii;
+        case(LJ_RULE_WH)
+!           r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0);
+!           epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6;
+            r0jj = (2.0d0*r0ij**6 - r0ii**6)**(1.0d0/6.0d0);
+            epsjj = epsij**2 * r0ij**6 / (epsii*r0ii**6);
+        case(LJ_RULE_KG)
+!           k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6);
+!           l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13;
+!           r0ij = (l/k)**(1.0d0/6.0d0);
+!           epsij = k / (r0ij**6);
+            k = epsij * r0ij**6
+            l = r0ij**6 * k
+            c = k**2 / (epsii*r0ii**6) ! c = epsjj*r0jj**6
+            d = ( 2.0d0 * l**(1.0d0/13.0d0) - (epsii*r0ii**12)**(1.0d0/13.0d0) )**13 ! d = epsjj*r0jj**12
+            r0jj = (d / c)**(1.0d0/6.0d0)
+            epsjj = c / (r0jj**6)
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_LJ_prms!')
+    end select
+
+end subroutine ffdev_parameters_get_LJ_prms
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_print_types

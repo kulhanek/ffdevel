@@ -153,6 +153,7 @@ subroutine ffdev_topology_load(top,name)
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [atom_types] section!')
         end if
+        top%atom_types(i)%probe = .false.
     end do
 
     ! read bonds -------------------------------------
@@ -968,7 +969,6 @@ subroutine ffdev_topology_info_types(top,mode)
                 write(DEV_OUT,540)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
                                        adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                        top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
-                top%nb_types(i)%probe = .false.
             end do
         end if
     end if
@@ -1294,7 +1294,8 @@ subroutine ffdev_topology_get_nbprms(top,ti,tj,eps,r0,alpha)
     ! --------------------------------------------------------------------------
 
     do i=1,top%nnb_types
-        if( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) then
+        if( ((top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj)) .or. &
+            ((top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti)) ) then
             eps = top%nb_types(i)%eps
             r0 = top%nb_types(i)%r0
             alpha = top%nb_types(i)%alpha
@@ -1320,7 +1321,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
     type(TOPOLOGY)  :: top
     integer         :: probe_size
     ! --------------------------------------------
-    integer         :: i,j,ip,nbt,k,alloc_stat
+    integer         :: i,j,ip,it,k,alloc_stat
     ! --------------------------------------------------------------------------
 
     if( probe_size .eq. 0 ) return
@@ -1329,15 +1330,15 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
 
     ! label atom types with probe
     do i=top%natoms - top%probe_size+1,top%natoms
-        nbt = ffdev_topology_find_nbtype(top,i,i)
-        top%nb_types(nbt)%probe = .true.
+        it = top%atoms(i)%typeid
+        top%atom_types(it)%probe = .true.
     end do
 
     ! test probe atom type overlaps
     do i=1,top%natoms - top%probe_size
-        nbt = ffdev_topology_find_nbtype(top,i,i)
-        if( top%nb_types(nbt)%probe ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Probe atom types cannot be part of probed structure!')
+        it = top%atoms(i)%typeid
+        if( top%atom_types(it)%probe ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Atom type of probe cannot be used in probed structure!')
         end if
     end do
 

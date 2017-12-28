@@ -69,6 +69,7 @@ type PARM_TYPE
     integer             :: z
     real(DEVDP)         :: mass
     integer,pointer     :: ids(:)
+    logical             :: probe
     ! derived LJ parameters
     logical             :: print_nb
     real(DEVDP)         :: eps
@@ -113,7 +114,7 @@ real(DEVDP)             :: AngleA0PenaltyForceK = 10.0
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
 character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
 character(len=MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
-integer                 :: FinalLJCombiningRule = LJ_RULE_WH
+integer                 :: FinalLJCombiningRule = LJ_RULE_KG
 
 ! ------------------------------------------------------------------------------
 

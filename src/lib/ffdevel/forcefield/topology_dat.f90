@@ -112,6 +112,7 @@ type ATOM_TYPE
     character(len=4)    :: name
     real(DEVDP)         :: mass
     integer             :: z
+    logical             :: probe            ! probe
 end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -120,7 +121,6 @@ type NB_TYPE
     integer             :: ti,tj            ! atom types
     real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
     real(DEVDP)         :: A, B, C
-    logical             :: probe            ! probe
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------

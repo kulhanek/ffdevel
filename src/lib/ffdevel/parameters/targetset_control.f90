@@ -98,16 +98,17 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,15) trim(sets(i)%final_name)
         end if
 
+        ! load topology and print info
+        write(DEV_OUT,*)
+        call ffdev_topology_init(sets(i)%top)
+        call ffdev_topology_load(sets(i)%top,topin)
+
         if( .not. prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
             probesize = 0
         end if
         write(DEV_OUT,17) probesize
+        call ffdev_topology_switch_to_probe_mode(sets(i)%top,probesize)
 
-        ! load topology and print info
-        write(DEV_OUT,*)
-        call ffdev_topology_init(sets(i)%top)
-        sets(i)%top%probe_size = probesize
-        call ffdev_topology_load(sets(i)%top,topin)
         call ffdev_topology_info(sets(i)%top)
 
         if( prmfile_get_string_by_key(fin,'lj_rule',string) ) then
@@ -204,7 +205,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,*)
-            call ffdev_geometry_info_point_header()
+            if( shift2zero ) then
+                call ffdev_geometry_info_point_header()
+            else
+                call ffdev_geometry_info_point_header_ext()
+            end if
         end if
 
         ! load points
@@ -278,15 +283,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,*)
             write(DEV_OUT,300) sets(i)%mineneid,minenergy
             write(DEV_OUT,*)
-            call ffdev_geometry_info_point_header_ext()
-
-            do j=1,sets(i)%ngeos
-                if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
-                if( shift2zero ) then
+            if( shift2zero ) then
+                call ffdev_geometry_info_point_header_ext()
+                do j=1,sets(i)%ngeos
+                    if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
-                end if
-                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
-            end do
+                    call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                end do
+            end if
         end if
 
         i = i + 1

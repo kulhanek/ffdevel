@@ -156,6 +156,9 @@ program ffdev_optimize_program
     ! release the file
     call prmfile_clear(fin)
 
+    ! extract LJ parameters
+    call ffdev_parameters_extract_LJ_prms()
+
     ! finalize
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Finalize', ':')
