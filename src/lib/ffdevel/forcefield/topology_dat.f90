@@ -120,6 +120,7 @@ type NB_TYPE
     integer             :: ti,tj            ! atom types
     real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
     real(DEVDP)         :: A, B, C
+    logical             :: probe            ! probe
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -161,6 +162,7 @@ type TOPOLOGY
     integer                     :: nnb_types
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size       ! number of atoms in probe
+    integer                     :: lj_rule
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -173,6 +175,11 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 
 integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
 integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
+
+integer,parameter               :: LJ_RULE_LB = 10  ! LB (Lorentz-Berthelot)
+integer,parameter               :: LJ_RULE_WH = 20  ! WH (Waldman-Hagler)
+integer,parameter               :: LJ_RULE_KG = 30  ! KG (Kong)
+integer,parameter               :: LJ_RULE_IN = 40  ! input data
 
 ! ------------------------------------------------------------------------------
 

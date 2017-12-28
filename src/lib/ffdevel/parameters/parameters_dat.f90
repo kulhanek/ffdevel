@@ -19,6 +19,7 @@ module ffdev_parameters_dat
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_topology_dat
 
 ! ------------------------------------------------------------------------------
 
@@ -68,6 +69,10 @@ type PARM_TYPE
     integer             :: z
     real(DEVDP)         :: mass
     integer,pointer     :: ids(:)
+    ! derived LJ parameters
+    logical             :: print_nb
+    real(DEVDP)         :: eps
+    real(DEVDP)         :: r0
 end type PARM_TYPE
 
 integer                     :: ntypes    ! number of types
@@ -105,9 +110,10 @@ real(DEVDP)             :: BondD0PenaltyForceK  = 10.0
 real(DEVDP)             :: AngleA0PenaltyForceK = 10.0
 
 ! === [files] ==================================================================
-character(len=MAX_PATH) :: InpParamFileName = '-none-'              ! input parameters
-character(len=MAX_PATH) :: OutParamFileName = 'final.prms'          ! output parameters
+character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
+character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
 character(len=MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
+integer                 :: FinalLJCombiningRule = LJ_RULE_WH
 
 ! ------------------------------------------------------------------------------
 

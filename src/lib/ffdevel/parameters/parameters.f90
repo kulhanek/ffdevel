@@ -765,6 +765,7 @@ subroutine ffdev_parameters_save_amber(name)
     integer         :: datum(8)
     integer         :: i,j,it,ij,pn,max_pn
     real(DEVDP)     :: v,g, scee, scnb
+    logical         :: enable_section
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'U')
@@ -773,128 +774,221 @@ subroutine ffdev_parameters_save_amber(name)
     write(DEV_PRMS,10) datum(1),datum(2),datum(3),datum(5),datum(6),datum(7)
 
     ! atom types
-    write(DEV_PRMS,20) 'MASS'
+    enable_section = .false.
     do i=1,ntypes
-        write(DEV_PRMS,30) types(i)%name,types(i)%mass,0.0d0
+        types(i)%print_nb = .false.
     end do
-    write(DEV_PRMS,*)
-
-    ! bonds
-    it = 0
-    write(DEV_PRMS,20) 'BOND'
     do i=1,nparams
-        if( params(i)%realm .ne. REALM_BOND_D0 ) cycle
-        it = it + 1
-        ij = 0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_BOND_K ) cycle
-            ij = ij + 1
-            if( ij .eq. it ) exit
-        end do
-        write(DEV_PRMS,40) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                           params(j)%value,params(i)%value
+        if( (params(i)%realm .eq. REALM_BOND_D0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+            types(params(i)%tj)%print_nb = .true.
+            cycle
+        end if
+        if( (params(i)%realm .eq. REALM_ANGLE_A0) .or. ( params(i)%realm .eq. REALM_ANGLE_K ) ) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+            types(params(i)%tj)%print_nb = .true.
+            types(params(i)%tk)%print_nb = .true.
+            cycle
+        end if
+        if( (params(i)%realm .eq. REALM_DIH_V) .or. ( params(i)%realm .eq. REALM_DIH_G ) .or. &
+            (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+            types(params(i)%tj)%print_nb = .true.
+            types(params(i)%tk)%print_nb = .true.
+            types(params(i)%tl)%print_nb = .true.
+            cycle
+        end if
+        if( (params(i)%realm .eq. REALM_IMPR_V) .or. ( params(i)%realm .eq. REALM_IMPR_G ) ) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+            types(params(i)%tj)%print_nb = .true.
+            types(params(i)%tk)%print_nb = .true.
+            types(params(i)%tl)%print_nb = .true.
+            cycle
+        end if
+        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+            cycle
+        end if
     end do
-    write(DEV_PRMS,*)
-
-    ! angles
-    it = 0
-    write(DEV_PRMS,20) 'ANGL'
-    do i=1,nparams
-        if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
-        it = it + 1
-        ij = 0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_ANGLE_K ) cycle
-            ij = ij + 1
-            if( ij .eq. it ) exit
-        end do
-        write(DEV_PRMS,50) types(params(i)%ti)%name,types(params(i)%tj)%name,types(params(i)%tk)%name, &
-                           params(j)%value,params(i)%value*DEV_R2D
-    end do
-    write(DEV_PRMS,*)
-
-    ! dihedrals
-    it = 0
-    write(DEV_PRMS,20) 'DIHE'
-    do i=1,nparams
-        if( params(i)%realm .ne. REALM_DIH_V ) cycle
-        v = params(i)%value
-        max_pn = 0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_DIH_V ) cycle
-            if( (params(i)%ti .eq. params(j)%ti) .and. &
-                (params(i)%tj .eq. params(j)%tj) .and. &
-                (params(i)%tk .eq. params(j)%tk) .and. &
-                (params(i)%tl .eq. params(j)%tl) ) then
-                    max_pn  = max_pn + 1
+    if( enable_section ) then
+        write(DEV_PRMS,20) 'MASS'
+        do i=1,ntypes
+            if( types(i)%print_nb ) then
+                write(DEV_PRMS,30) types(i)%name,types(i)%mass,0.0d0
             end if
         end do
-        pn = params(i)%pn
-        if( pn .lt. max_pn ) pn = -pn
-        it = it + 1
-        ij = 0
-        g = 0.0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_DIH_G ) cycle
-            ij = ij + 1
-            g = params(j)%value
-            if( ij .eq. it ) exit
-        end do
-        ij = 0
-        scee = 1.2
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_DIH_SCEE ) cycle
-            ij = ij + 1
-            scee = params(j)%value
-            if( ij .eq. it ) exit
-        end do
-        ij = 0
-        scnb = 2.0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_DIH_SCNB ) cycle
-            ij = ij + 1
-            scnb = params(j)%value
-            if( ij .eq. it ) exit
-        end do
-        write(DEV_PRMS,60) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                           types(params(i)%tk)%name, types(params(i)%tl)%name, &
-                           v, g*DEV_R2D, pn, scee, scnb
+        write(DEV_PRMS,*)
+    end if
+
+    ! bonds
+    enable_section = .false.
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_BOND_D0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
+            enable_section = .true.
+            exit
+        end if
     end do
-    write(DEV_PRMS,*)
+    if( enable_section ) then
+        it = 0
+        write(DEV_PRMS,20) 'BOND'
+        do i=1,nparams
+            if( params(i)%realm .ne. REALM_BOND_D0 ) cycle
+            it = it + 1
+            ij = 0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_BOND_K ) cycle
+                ij = ij + 1
+                if( ij .eq. it ) exit
+            end do
+            write(DEV_PRMS,40) types(params(i)%ti)%name,types(params(i)%tj)%name, &
+                               params(j)%value,params(i)%value
+        end do
+        write(DEV_PRMS,*)
+    end if
+
+    ! angles
+    enable_section = .false.
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_ANGLE_A0) .or. ( params(i)%realm .eq. REALM_ANGLE_K ) ) then
+            enable_section = .true.
+            exit
+        end if
+    end do
+    if( enable_section ) then
+        it = 0
+        write(DEV_PRMS,20) 'ANGL'
+        do i=1,nparams
+            if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
+            it = it + 1
+            ij = 0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_ANGLE_K ) cycle
+                ij = ij + 1
+                if( ij .eq. it ) exit
+            end do
+            write(DEV_PRMS,50) types(params(i)%ti)%name,types(params(i)%tj)%name,types(params(i)%tk)%name, &
+                               params(j)%value,params(i)%value*DEV_R2D
+        end do
+        write(DEV_PRMS,*)
+    end if
+
+    ! dihedrals
+    enable_section = .false.
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_DIH_V) .or. ( params(i)%realm .eq. REALM_DIH_G ) .or. &
+            (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
+            enable_section = .true.
+            exit
+        end if
+    end do
+    if( enable_section ) then
+        it = 0
+        write(DEV_PRMS,20) 'DIHE'
+        do i=1,nparams
+            if( params(i)%realm .ne. REALM_DIH_V ) cycle
+            v = params(i)%value
+            max_pn = 0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_DIH_V ) cycle
+                if( (params(i)%ti .eq. params(j)%ti) .and. &
+                    (params(i)%tj .eq. params(j)%tj) .and. &
+                    (params(i)%tk .eq. params(j)%tk) .and. &
+                    (params(i)%tl .eq. params(j)%tl) ) then
+                        max_pn  = max_pn + 1
+                end if
+            end do
+            pn = params(i)%pn
+            if( pn .lt. max_pn ) pn = -pn
+            it = it + 1
+            ij = 0
+            g = 0.0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_DIH_G ) cycle
+                ij = ij + 1
+                g = params(j)%value
+                if( ij .eq. it ) exit
+            end do
+            ij = 0
+            scee = 1.2
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_DIH_SCEE ) cycle
+                ij = ij + 1
+                scee = params(j)%value
+                if( ij .eq. it ) exit
+            end do
+            ij = 0
+            scnb = 2.0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_DIH_SCNB ) cycle
+                ij = ij + 1
+                scnb = params(j)%value
+                if( ij .eq. it ) exit
+            end do
+            write(DEV_PRMS,60) types(params(i)%ti)%name,types(params(i)%tj)%name, &
+                               types(params(i)%tk)%name, types(params(i)%tl)%name, &
+                               v, g*DEV_R2D, pn, scee, scnb
+        end do
+        write(DEV_PRMS,*)
+    end if
 
     ! impropers
-    it = 0
-    write(DEV_PRMS,20) 'IMPR'
+    enable_section = .false.
     do i=1,nparams
-        if( params(i)%realm .ne. REALM_IMPR_V ) cycle
-        v = params(i)%value
-        pn = 2
-        it = it + 1
-        ij = 0
-        g = 0.0
-        do j=1,nparams
-            if( params(j)%realm .ne. REALM_IMPR_G ) cycle
-            ij = ij + 1
-            g = params(j)%value
-            if( ij .eq. it ) exit
-        end do
-        write(DEV_PRMS,70) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                           types(params(i)%tk)%name, types(params(i)%tl)%name, &
-                           v, g*DEV_R2D, pn
+        if( (params(i)%realm .eq. REALM_IMPR_V) .or. ( params(i)%realm .eq. REALM_IMPR_G ) ) then
+            enable_section = .true.
+            exit
+        end if
     end do
-    write(DEV_PRMS,*)
+    if( enable_section ) then
+        it = 0
+        write(DEV_PRMS,20) 'IMPR'
+        do i=1,nparams
+            if( params(i)%realm .ne. REALM_IMPR_V ) cycle
+            v = params(i)%value
+            pn = 2
+            it = it + 1
+            ij = 0
+            g = 0.0
+            do j=1,nparams
+                if( params(j)%realm .ne. REALM_IMPR_G ) cycle
+                ij = ij + 1
+                g = params(j)%value
+                if( ij .eq. it ) exit
+            end do
+            write(DEV_PRMS,70) types(params(i)%ti)%name,types(params(i)%tj)%name, &
+                               types(params(i)%tk)%name, types(params(i)%tl)%name, &
+                               v, g*DEV_R2D, pn
+        end do
+        write(DEV_PRMS,*)
+    end if
 
-    ! hydrogen bonds
-    write(DEV_PRMS,20) 'HBON'
-    write(DEV_PRMS,*)
-
-    ! nonbonded
-! FIXME
-!    write(DEV_PRMS,20) 'NONB'
-!    do i=1,ntypes
-!        write(DEV_PRMS,80) types(i)%name,types(i)%r0,types(i)%eps
-!    end do
-!    write(DEV_PRMS,*)
+    ! NB
+    enable_section = .false.
+    do i=1,ntypes
+        types(i)%print_nb = .false.
+    end do
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
+            enable_section = .true.
+            types(params(i)%ti)%print_nb = .true.
+        end if
+    end do
+    if( enable_section ) then
+        write(DEV_PRMS,20) 'NONB'
+        do i=1,ntypes
+            if( types(i)%print_nb ) then
+                write(DEV_PRMS,80) types(i)%name,types(i)%r0,types(i)%eps
+            end if
+        end do
+        write(DEV_PRMS,*)
+    end if
 
     close(DEV_PRMS)
 
@@ -908,6 +1002,69 @@ subroutine ffdev_parameters_save_amber(name)
  80 format(A4,10X,F16.6,1X,F16.6)
 
 end subroutine ffdev_parameters_save_amber
+
+! ==============================================================================
+! subroutine ffdev_parameters_extract_LJ_prms
+! ==============================================================================
+
+subroutine ffdev_parameters_extract_LJ_prms()
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: i,j
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Extracting LJ parameters', ':')
+
+! what rule will be used during reconstruction
+    write(DEV_OUT,*)
+    select case(FinalLJCombiningRule)
+        case(LJ_RULE_LB)
+            write(DEV_OUT,19) 'LB (Lorentz-Berthelot)'
+        case(LJ_RULE_WH)
+            write(DEV_OUT,19) 'WH (Waldman-Hagler)'
+        case(LJ_RULE_KG)
+            write(DEV_OUT,19) 'KG (Kong)'
+        case default
+    end select
+
+! label types that need to be extracted from optimized data
+    do i=1,ntypes
+        types(i)%print_nb = .false.
+    end do
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
+            types(params(i)%ti)%print_nb = .true.
+        end if
+    end do
+
+! print summary and reconstructed parameters
+    do i=1,ntypes
+        if( .not. types(i)%print_nb ) cycle
+        write(DEV_OUT,*)
+        write(DEV_OUT,500) types(i)%name
+        write(DEV_OUT,510) i
+        write(DEV_OUT,*)
+        write(DEV_OUT,520)
+        write(DEV_OUT,530)
+        do j=1,nsets
+
+        end do
+    end do
+
+ 19 format('LJ combining rule (lj_rule)        = ',A)
+
+500 format('# Type = ',A)
+510 format('# ID   = ',I2)
+520 format('# Set Probe NB  eps(MM,ij)    R0(MM,ij)  alpha(MM,ij)     eps(LJ,ii)    R0(LJ,ii) ')
+530 format('# --- ----- -- ------------ ------------ ------------ -> ------------ ------------')
+
+end subroutine ffdev_parameters_extract_LJ_prms
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_print_types
@@ -949,7 +1106,7 @@ subroutine ffdev_parameters_print_types()
 
   5 format('Number of unique atom types among all target sets = ',I6)
 
- 10 format('# ID Type Counts     Atom Type IDs in Sets')
+ 10 format('# ID Type Counts     IDs in Sets')
  20 format('# -- ---- ------     -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --')
  30 format(I4,1X,A4,1X,I6,5X)
  40 format(I2,1X)

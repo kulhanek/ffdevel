@@ -46,6 +46,7 @@ subroutine ffdev_topology_init(top)
     top%nimproper_types = 0
     top%nb_size = 0
     top%nb_mode = NB_MODE_LJ
+    top%lj_rule = LJ_RULE_IN
     top%probe_size = 0
 
 end subroutine ffdev_topology_init
@@ -762,21 +763,21 @@ subroutine ffdev_topology_info(top)
             write(DEV_OUT,215) 'Buckingham potential'
     end select
 
- 90 format('Topology name               = ',A)
-100 format('Number of atoms             = ',I6)
-110 format('Number of types             = ',I6)
-120 format('Number of bonds             = ',I6)
-130 format('Number of bond types        = ',I6)
-140 format('Number of angles            = ',I6)
-150 format('Number of angle types       = ',I6)
-160 format('Number of dihedrals         = ',I6)
-170 format('Number of dihedral types    = ',I6)
-180 format('Number of dihedral seq size = ',I6)
-190 format('Number of impropers         = ',I6)
-200 format('Number of improper types    = ',I6)
-210 format('Number of NB size           = ',I6)
-215 format('Type of vdW interactions    = ',A)
-220 format('Number of atoms in probe    = ',I6)
+ 90 format('Topology name                      = ',A)
+100 format('Number of atoms                    = ',I6)
+110 format('Number of types                    = ',I6)
+120 format('Number of bonds                    = ',I6)
+130 format('Number of bond types               = ',I6)
+140 format('Number of angles                   = ',I6)
+150 format('Number of angle types              = ',I6)
+160 format('Number of dihedrals                = ',I6)
+170 format('Number of dihedral types           = ',I6)
+180 format('Number of dihedral seq size        = ',I6)
+190 format('Number of impropers                = ',I6)
+200 format('Number of improper types           = ',I6)
+210 format('Number of NB size                  = ',I6)
+215 format('Type of vdW interactions           = ',A)
+220 format('Number of atoms in probe           = ',I6)
 
 end subroutine ffdev_topology_info
 
@@ -784,165 +785,192 @@ end subroutine ffdev_topology_info
 ! subroutine ffdev_topology_info_types
 ! ==============================================================================
 
-subroutine ffdev_topology_info_types(top)
+subroutine ffdev_topology_info_types(top,mode)
 
     use smf_periodic_table_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
+    type(TOPOLOGY)      :: top
+    integer,optional    :: mode
     ! --------------------------------------------
-    integer         :: i,j
+    integer         :: i,j,rmode
     logical         :: print
     real(DEVDP)     :: scee,scnb
     ! --------------------------------------------------------------------------
 
-    write(DEV_OUT,5) trim(top%name)
+    rmode = 0 ! print all
+    if( present(mode) ) then
+        rmode = mode
+    end if
 
-    ! atoms ----------------------------
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-    write(DEV_OUT,20)
-    write(DEV_OUT,30)
-    do i=1,top%natom_types
-        write(DEV_OUT,40)   i, adjustl(top%atom_types(i)%name), &
-                               top%atom_types(i)%z, adjustl(pt_symbols(top%atom_types(i)%z)), &
-                               top%atom_types(i)%mass
-    end do
+    if( rmode .eq. 0 ) then
+        write(DEV_OUT,5) trim(top%name)
+    end if
 
-    ! bonds ----------------------------
-    if( top%nbond_types .gt. 0 ) then
+    if( (rmode .eq. 0) .or. (rmode .eq. 1) ) then
+
+! atoms ----------------------------
         write(DEV_OUT,*)
-        write(DEV_OUT,110)
-        write(DEV_OUT,120)
-        write(DEV_OUT,130)
-        do i=1,top%nbond_types
-            write(DEV_OUT,140)   i, adjustl(top%atom_types(top%bond_types(i)%ti)%name), &
-                                   adjustl(top%atom_types(top%bond_types(i)%tj)%name), &
-                                   top%bond_types(i)%model, &
-                                   top%bond_types(i)%d0, top%bond_types(i)%k
+        write(DEV_OUT,10)
+        write(DEV_OUT,20)
+        write(DEV_OUT,30)
+        do i=1,top%natom_types
+            write(DEV_OUT,40)   i, adjustl(top%atom_types(i)%name), &
+                                   top%atom_types(i)%z, adjustl(pt_symbols(top%atom_types(i)%z)), &
+                                   top%atom_types(i)%mass
         end do
     end if
 
-    ! angles ----------------------------
-    if( top%nangle_types .gt. 0 ) then
-        write(DEV_OUT,*)
-        write(DEV_OUT,210)
-        write(DEV_OUT,220)
-        write(DEV_OUT,230)
-        do i=1,top%nangle_types
-            write(DEV_OUT,240)   i, adjustl(top%atom_types(top%angle_types(i)%ti)%name), &
-                                   adjustl(top%atom_types(top%angle_types(i)%tj)%name), &
-                                   adjustl(top%atom_types(top%angle_types(i)%tk)%name), &
-                                   top%angle_types(i)%a0*DEV_R2D, top%angle_types(i)%k
-        end do
-    end if
-
-    ! dihedrals -------------------------
-    if( top%ndihedral_types .gt. 0 ) then
-        write(DEV_OUT,*)
-        write(DEV_OUT,310)
-        write(DEV_OUT,320)
-        write(DEV_OUT,330)
-        do i=1,top%ndihedral_types
-            do j=1,top%dihedral_types(i)%n
-                scee = 0.0
-                if( top%dihedral_types(i)%inv_scee .ne. 0 ) then
-                    scee = 1.0/top%dihedral_types(i)%inv_scee
-                end if
-                if( top%dihedral_types(i)%inv_scnb .ne. 0 ) then
-                    scnb = 1.0/top%dihedral_types(i)%inv_scnb
-                end if
-                write(DEV_OUT,340)   i, adjustl(top%atom_types(top%dihedral_types(i)%ti)%name), &
-                                       adjustl(top%atom_types(top%dihedral_types(i)%tj)%name), &
-                                       adjustl(top%atom_types(top%dihedral_types(i)%tk)%name), &
-                                       adjustl(top%atom_types(top%dihedral_types(i)%tl)%name), &
-                                       top%dihedral_types(i)%mode, scee, scnb
-            end do
-        end do
-    end if
-
-    ! dihedrals cos mode -------------------------
-    if( top%ndihedral_types .gt. 0 ) then
-        print = .false.
-        do i=1,top%ndihedral_types
-            if( top%dihedral_types(i)%mode .eq. DIH_COS ) then
-                print = .true.
-                exit
-            end if
-        end do
-
-        if( print ) then
+    if( rmode .eq. 0 ) then
+! bonds ----------------------------
+        if( top%nbond_types .gt. 0 ) then
             write(DEV_OUT,*)
-            write(DEV_OUT,350)
-            write(DEV_OUT,355)
-            write(DEV_OUT,360)
+            write(DEV_OUT,110)
+            write(DEV_OUT,120)
+            write(DEV_OUT,130)
+            do i=1,top%nbond_types
+                write(DEV_OUT,140)   i, adjustl(top%atom_types(top%bond_types(i)%ti)%name), &
+                                       adjustl(top%atom_types(top%bond_types(i)%tj)%name), &
+                                       top%bond_types(i)%model, &
+                                       top%bond_types(i)%d0, top%bond_types(i)%k
+            end do
+        end if
+
+! angles ----------------------------
+        if( top%nangle_types .gt. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,210)
+            write(DEV_OUT,220)
+            write(DEV_OUT,230)
+            do i=1,top%nangle_types
+                write(DEV_OUT,240)   i, adjustl(top%atom_types(top%angle_types(i)%ti)%name), &
+                                       adjustl(top%atom_types(top%angle_types(i)%tj)%name), &
+                                       adjustl(top%atom_types(top%angle_types(i)%tk)%name), &
+                                       top%angle_types(i)%a0*DEV_R2D, top%angle_types(i)%k
+            end do
+        end if
+
+! dihedrals -------------------------
+        if( top%ndihedral_types .gt. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,310)
+            write(DEV_OUT,320)
+            write(DEV_OUT,330)
             do i=1,top%ndihedral_types
-                if( top%dihedral_types(i)%mode .ne. DIH_COS ) cycle
                 do j=1,top%dihedral_types(i)%n
-                    write(DEV_OUT,365)   i, top%dihedral_types(i)%enabled(j), j, top%dihedral_types(i)%v(j), &
-                                           top%dihedral_types(i)%g(j)*DEV_R2D
+                    scee = 0.0
+                    if( top%dihedral_types(i)%inv_scee .ne. 0 ) then
+                        scee = 1.0/top%dihedral_types(i)%inv_scee
+                    end if
+                    if( top%dihedral_types(i)%inv_scnb .ne. 0 ) then
+                        scnb = 1.0/top%dihedral_types(i)%inv_scnb
+                    end if
+                    write(DEV_OUT,340)   i, adjustl(top%atom_types(top%dihedral_types(i)%ti)%name), &
+                                           adjustl(top%atom_types(top%dihedral_types(i)%tj)%name), &
+                                           adjustl(top%atom_types(top%dihedral_types(i)%tk)%name), &
+                                           adjustl(top%atom_types(top%dihedral_types(i)%tl)%name), &
+                                           top%dihedral_types(i)%mode, scee, scnb
                 end do
+            end do
+        end if
+
+! dihedrals cos mode -------------------------
+        if( top%ndihedral_types .gt. 0 ) then
+            print = .false.
+            do i=1,top%ndihedral_types
+                if( top%dihedral_types(i)%mode .eq. DIH_COS ) then
+                    print = .true.
+                    exit
+                end if
+            end do
+
+            if( print ) then
+                write(DEV_OUT,*)
+                write(DEV_OUT,350)
+                write(DEV_OUT,355)
+                write(DEV_OUT,360)
+                do i=1,top%ndihedral_types
+                    if( top%dihedral_types(i)%mode .ne. DIH_COS ) cycle
+                    do j=1,top%dihedral_types(i)%n
+                        write(DEV_OUT,365)   i, top%dihedral_types(i)%enabled(j), j, top%dihedral_types(i)%v(j), &
+                                               top%dihedral_types(i)%g(j)*DEV_R2D
+                    end do
+                end do
+            end if
+        end if
+
+! dihedrals grbf mode -------------------------
+        if( top%ndihedral_types .gt. 0 ) then
+            print = .false.
+            do i=1,top%ndihedral_types
+                if( top%dihedral_types(i)%mode .eq. DIH_GRBF ) then
+                    print = .true.
+                    exit
+                end if
+            end do
+
+            if( print ) then
+                write(DEV_OUT,*)
+                write(DEV_OUT,370)
+                write(DEV_OUT,375)
+                write(DEV_OUT,380)
+                do i=1,top%ndihedral_types
+                    if( top%dihedral_types(i)%mode .ne. DIH_GRBF ) cycle
+                    do j=1,top%dihedral_types(i)%n
+                        write(DEV_OUT,385)   i, top%dihedral_types(i)%enabled(j), j, top%dihedral_types(i)%c(j), &
+                                               top%dihedral_types(i)%p(j)*DEV_R2D, sqrt(top%dihedral_types(i)%w(j))*DEV_R2D
+                    end do
+                end do
+            end if
+        end if
+
+! impropers ------------------------
+        if( top%nimproper_types .gt. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,410)
+            write(DEV_OUT,420)
+            write(DEV_OUT,430)
+            do i=1,top%nimproper_types
+                write(DEV_OUT,440)   i, adjustl(top%atom_types(top%improper_types(i)%ti)%name), &
+                                       adjustl(top%atom_types(top%improper_types(i)%tj)%name), &
+                                       adjustl(top%atom_types(top%improper_types(i)%tk)%name), &
+                                       adjustl(top%atom_types(top%improper_types(i)%tl)%name), &
+                                       top%improper_types(i)%v, top%improper_types(i)%g*DEV_R2D
             end do
         end if
     end if
 
-    ! dihedrals grbf mode -------------------------
-    if( top%ndihedral_types .gt. 0 ) then
-        print = .false.
-        do i=1,top%ndihedral_types
-            if( top%dihedral_types(i)%mode .eq. DIH_GRBF ) then
-                print = .true.
-                exit
-            end if
-        end do
-
-        if( print ) then
+    if( (rmode .eq. 0) .or. (rmode .eq. 1) .or. (rmode .eq. 2) ) then
+! NB ------------------------
+        if( top%nnb_types .gt. 0 ) then
             write(DEV_OUT,*)
-            write(DEV_OUT,370)
-            write(DEV_OUT,375)
-            write(DEV_OUT,380)
-            do i=1,top%ndihedral_types
-                if( top%dihedral_types(i)%mode .ne. DIH_GRBF ) cycle
-                do j=1,top%dihedral_types(i)%n
-                    write(DEV_OUT,385)   i, top%dihedral_types(i)%enabled(j), j, top%dihedral_types(i)%c(j), &
-                                           top%dihedral_types(i)%p(j)*DEV_R2D, sqrt(top%dihedral_types(i)%w(j))*DEV_R2D
-                end do
+            write(DEV_OUT,510)
+            select case(top%nb_mode)
+                case(NB_MODE_BP)
+                    write(DEV_OUT,515) 'Buckingham potential'
+                case(NB_MODE_LJ)
+                    write(DEV_OUT,515) 'Lennard-Jones potential'
+                    select case(top%lj_rule)
+                        case(LJ_RULE_IN)
+                            write(DEV_OUT,516) 'input data'
+                        case(LJ_RULE_LB)
+                            write(DEV_OUT,516) 'LB (Lorentz-Berthelot)'
+                        case(LJ_RULE_WH)
+                            write(DEV_OUT,516) 'WH (Waldman-Hagler)'
+                        case(LJ_RULE_KG)
+                            write(DEV_OUT,516) 'KG (Kong)'
+                    end select
+            end select
+
+            write(DEV_OUT,520)
+            write(DEV_OUT,530)
+            do i=1,top%nnb_types
+                write(DEV_OUT,540)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
+                                       adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
+                                       top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
+                top%nb_types(i)%probe = .false.
             end do
         end if
-    end if
-
-    ! impropers ------------------------
-    if( top%nimproper_types .gt. 0 ) then
-        write(DEV_OUT,*)
-        write(DEV_OUT,410)
-        write(DEV_OUT,420)
-        write(DEV_OUT,430)
-        do i=1,top%nimproper_types
-            write(DEV_OUT,440)   i, adjustl(top%atom_types(top%improper_types(i)%ti)%name), &
-                                   adjustl(top%atom_types(top%improper_types(i)%tj)%name), &
-                                   adjustl(top%atom_types(top%improper_types(i)%tk)%name), &
-                                   adjustl(top%atom_types(top%improper_types(i)%tl)%name), &
-                                   top%improper_types(i)%v, top%improper_types(i)%g*DEV_R2D
-        end do
-    end if
-
-    ! NB ------------------------
-    if( top%nnb_types .gt. 0 ) then
-        write(DEV_OUT,*)
-        write(DEV_OUT,510)
-        select case(top%nb_mode)
-            case(NB_MODE_LJ)
-                write(DEV_OUT,515) 'Lennard-Jones potential'
-            case(NB_MODE_BP)
-                write(DEV_OUT,515) 'Buckingham potential'
-        end select
-        write(DEV_OUT,520)
-        write(DEV_OUT,530)
-        do i=1,top%nnb_types
-            write(DEV_OUT,540)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
-                                   adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
-                                   top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
-        end do
     end if
 
   5 format('Topology name = ',A)
@@ -984,6 +1012,7 @@ subroutine ffdev_topology_info_types(top)
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 515 format('# Type of vdW interactions = ',A)
+516 format('# LJ combining rule        = ',A)
 520 format('# ID TypA TypB        eps              R0             alpha      ')
 530 format('# -- ---- ---- ---------------- ---------------- ----------------')
 540 format(I4,1X,A4,1X,A4,1X,F16.6,1X,F16.6,1X,F16.6)
@@ -1005,33 +1034,10 @@ subroutine ffdev_topology_finalize_setup(top)
     real(DEVDP)     :: eps,r0
     ! --------------------------------------------------------------------------
 
-    if( top%probe_size .gt. 0 ) then
-    ! switch to probe mode
-        ! release previous NB list
-        if( associated(top%nb_list) ) deallocate(top%nb_list)
-
-        ! calculate size of new NB list
-        top%nb_size = (top%natoms - top%probe_size)*top%probe_size
-        allocate( top%nb_list(top%nb_size), stat = alloc_stat )
-
-        if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_switch_to_probe_mode!')
-        end if
-
-        ip = 1
-        do i=1,top%natoms - top%probe_size
-            do j=top%natoms - top%probe_size+1,top%natoms
-                top%nb_list(ip)%ai = i
-                top%nb_list(ip)%aj = j
-                top%nb_list(ip)%dt = 0
-                top%nb_list(ip)%nbt = ffdev_topology_find_nbtype(top,i,j)
-                ip = ip + 1
-            end do
-        end do
-    end if
-
     ! update ABC parameters for NB calculations
     call ffdev_topology_update_nbABC(top)
+
+    ! reserved for future usage
 
 end subroutine ffdev_topology_finalize_setup
 
@@ -1074,7 +1080,9 @@ subroutine ffdev_topology_ERA2ABC(nbmode,nbtype)
             nbtype%B = 2.0d0*nbtype%eps*nbtype%r0**6
             nbtype%C = 0.0d0
         case(NB_MODE_BP)
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported Buckingham potential!')
+            nbtype%A = 6.0d0*nbtype%eps*exp(nbtype%alpha)/(nbtype%alpha - 6.0d0)
+            nbtype%B = nbtype%alpha/nbtype%r0
+            nbtype%C = nbtype%eps*nbtype%alpha*nbtype%r0**6/(nbtype%alpha - 6.0d0)
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode!')
     end select
@@ -1182,6 +1190,193 @@ logical function ffdev_topology_is_nbtype_used(top,nbt)
     return
 
 end function ffdev_topology_is_nbtype_used
+
+! ==============================================================================
+! function ffdev_topology_switch_nbmode
+! ==============================================================================
+
+subroutine ffdev_topology_switch_nbmode(top,nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nb_mode
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    if( top%nb_mode .eq. nb_mode ) return ! nothing to change
+
+    select case(nb_mode)
+        case(NB_MODE_LJ)
+            ! keep eps, r0, erase alpha
+            do i=1,top%nnb_types
+                top%nb_types(i)%alpha = 0.0d0
+            end do
+        case(NB_MODE_BP)
+            ! derive alpha from LJ from equality of the second derivatives in r0
+            do i=1,top%nnb_types
+                top%nb_types(i)%alpha = 0.5d0*(19.0d0 + sqrt(73.0d0))
+            end do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
+    end select
+
+    top%nb_mode = nb_mode
+
+end subroutine ffdev_topology_switch_nbmode
+
+! ==============================================================================
+! function ffdev_topology_apply_LJ_combrule
+! ==============================================================================
+
+subroutine ffdev_topology_apply_LJ_combrule(top,lj_rule)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: lj_rule
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,tmp,epsij,r0ij,k,l
+    ! --------------------------------------------------------------------------
+
+    if( top%nb_mode .ne. NB_MODE_LJ ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to remix LJ parameters for nb_mode .ne. NB_MODE_LJ!')
+    end if
+
+    top%lj_rule = lj_rule
+
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+            ! get type parameters
+            call ffdev_topology_get_nbprms(top,top%nb_types(i)%ti,top%nb_types(i)%ti,epsii,r0ii,tmp)
+            call ffdev_topology_get_nbprms(top,top%nb_types(i)%tj,top%nb_types(i)%tj,epsjj,r0jj,tmp)
+
+            select case(lj_rule)
+                case(LJ_RULE_LB)
+                    r0ij = (r0ii+r0jj)*0.5d0;
+                    epsij = sqrt(epsii*epsjj);
+                case(LJ_RULE_WH)
+                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0);
+                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6;
+                case(LJ_RULE_KG)
+                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6);
+                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13;
+                    r0ij = (l/k)**(1.0d0/6.0d0);
+                    epsij = k / (r0ij**6);
+            end select
+
+            top%nb_types(i)%eps = epsij
+            top%nb_types(i)%r0 = r0ij
+            top%nb_types(i)%alpha = 0.0d0
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_LJ_combrule
+
+! ==============================================================================
+! function ffdev_topology_get_nbprms
+! ==============================================================================
+
+subroutine ffdev_topology_get_nbprms(top,ti,tj,eps,r0,alpha)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: ti,tj
+    real(DEVDP)     :: eps,r0,alpha
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nnb_types
+        if( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) then
+            eps = top%nb_types(i)%eps
+            r0 = top%nb_types(i)%r0
+            alpha = top%nb_types(i)%alpha
+            return
+        end if
+    end do
+
+    eps = 0.0d0
+    r0 = 0.0d0
+    alpha = 0.0d0
+
+end subroutine ffdev_topology_get_nbprms
+
+! ==============================================================================
+! function ffdev_topology_switch_to_probe_mode
+! ==============================================================================
+
+subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: probe_size
+    ! --------------------------------------------
+    integer         :: i,j,ip,nbt,k,alloc_stat
+    ! --------------------------------------------------------------------------
+
+    if( probe_size .eq. 0 ) return
+
+    top%probe_size = probe_size
+
+    ! label atom types with probe
+    do i=top%natoms - top%probe_size+1,top%natoms
+        nbt = ffdev_topology_find_nbtype(top,i,i)
+        top%nb_types(nbt)%probe = .true.
+    end do
+
+    ! test probe atom type overlaps
+    do i=1,top%natoms - top%probe_size
+        nbt = ffdev_topology_find_nbtype(top,i,i)
+        if( top%nb_types(nbt)%probe ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Probe atom types cannot be part of probed structure!')
+        end if
+    end do
+
+    ! check covalent bonds between probe and probed structure
+    do i=1,top%natoms - top%probe_size
+        do j=top%natoms - top%probe_size+1,top%natoms
+            do k=1,top%nbonds
+                if( (top%bonds(k)%ai .eq. i) .and. (top%bonds(k)%aj .eq. j) .or. &
+                    (top%bonds(k)%ai .eq. j) .and. (top%bonds(k)%aj .eq. i) ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Covalent bond detected between the probe and probed structure!')
+                end if
+            end do
+        end do
+    end do
+
+! switch to probe mode
+    ! release previous NB list
+    if( associated(top%nb_list) ) deallocate(top%nb_list)
+
+    ! calculate size of new NB list
+    top%nb_size = (top%natoms - top%probe_size)*top%probe_size
+    allocate( top%nb_list(top%nb_size), stat = alloc_stat )
+
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_switch_to_probe_mode!')
+    end if
+
+    ip = 1
+    do i=1,top%natoms - top%probe_size
+        do j=top%natoms - top%probe_size+1,top%natoms
+            top%nb_list(ip)%ai = i
+            top%nb_list(ip)%aj = j
+            top%nb_list(ip)%dt = 0
+            top%nb_list(ip)%nbt = ffdev_topology_find_nbtype(top,i,j)
+            ip = ip + 1
+        end do
+    end do
+
+end subroutine ffdev_topology_switch_to_probe_mode
 
 ! ------------------------------------------------------------------------------
 

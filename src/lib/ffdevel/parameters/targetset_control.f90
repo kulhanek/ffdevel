@@ -38,7 +38,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight
-    integer                     :: i,j,alloc_status,minj,probesize
+    integer                     :: i,j,alloc_status,minj,probesize,nb_mode,lj_rule
     logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
     ! --------------------------------------------------------------------------
@@ -80,6 +80,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             call ffdev_utils_exit(DEV_OUT,1,'Section '''//trim(string)//''' must be [SET]!')
         end if
 
+!----------------------
+! topology
+!----------------------
+
         ! get topology name
         if( .not. prmfile_get_string_by_key(fin,'topology',topin) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get topology name (topology) for [SET]!')
@@ -94,11 +98,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,15) trim(sets(i)%final_name)
         end if
 
-        if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
-            shift2zero = .false.
-        end if
-        write(DEV_OUT,16) prmfile_onoff(shift2zero)
-
         if( .not. prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
             probesize = 0
         end if
@@ -110,7 +109,67 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         sets(i)%top%probe_size = probesize
         call ffdev_topology_load(sets(i)%top,topin)
         call ffdev_topology_info(sets(i)%top)
+
+        if( prmfile_get_string_by_key(fin,'lj_rule',string) ) then
+            write(DEV_OUT,*)
+            select case(trim(string))
+                case('LB')
+                    lj_rule = LJ_RULE_LB
+                    write(DEV_OUT,19) 'LB (Lorentz-Berthelot)'
+                case('WH')
+                    lj_rule = LJ_RULE_WH
+                    write(DEV_OUT,19) 'WH (Waldman-Hagler)'
+                case('KG')
+                    lj_rule = LJ_RULE_KG
+                    write(DEV_OUT,19) 'KG (Kong)'
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported lj_rule in ffdev_targetset_ctrl!')
+            end select
+
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original LJ parameters', '#')
+            call ffdev_topology_info_types(sets(i)%top,1)
+
+            ! remix parameters
+            call ffdev_topology_apply_LJ_combrule(sets(i)%top,lj_rule)
+
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Remixed LJ parameters', '#')
+             call ffdev_topology_info_types(sets(i)%top,2)
+        end if
+
+        if( prmfile_get_string_by_key(fin,'nb_mode',string) ) then
+            select case(trim(string))
+                case('LJ')
+                    nb_mode = NB_MODE_LJ
+                case('BP')
+                    nb_mode = NB_MODE_BP
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_targetset_ctrl!')
+            end select
+            call ffdev_topology_switch_nbmode(sets(i)%top,nb_mode)
+        end if
+
+        write(DEV_OUT,*)
+        select case(sets(i)%top%nb_mode)
+            case(NB_MODE_LJ)
+                write(DEV_OUT,18) 'LJ'
+            case(NB_MODE_BP)
+                write(DEV_OUT,18) 'BP'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_targetset_ctrl!')
+        end select
+
+!----------------------
+! points
+!----------------------
+
         sets(i)%offset = 0.0d0
+        if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
+            shift2zero = .false.
+        end if
+        write(DEV_OUT,16) prmfile_onoff(shift2zero)
 
         ! count number of points
         sets(i)%ngeos = 0
@@ -141,7 +200,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
 
         write(DEV_OUT,*)
-        write(DEV_OUT,20) sets(i)%ngeos
+        write(DEV_OUT,200) sets(i)%ngeos
 
         if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,*)
@@ -155,25 +214,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
             rst = prmfile_get_field_on_line(fin,key)
 
-            ! is it point?
-            select case(trim(key))
-                case('topology')
-                    rst = prmfile_next_line(fin)
-                    cycle   ! skip
-                case('final')
-                    rst = prmfile_next_line(fin)
-                    cycle   ! skip
-                case('probesize')
-                    rst = prmfile_next_line(fin)
-                    cycle   ! skip
-                case('shift2zero')
-                    rst = prmfile_next_line(fin)
-                    cycle   ! skip
-                case('point')
-                    ! continue
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unrecognized key ''' // trim(key) // ''' in set section!')
-            end select
+            ! process only points
+            if( trim(key) .ne. 'point' ) then
+                rst = prmfile_next_line(fin)
+                cycle
+            end if
 
             rst = prmfile_get_field_on_line(fin,geoname)
             if( .not. rst ) then
@@ -231,7 +276,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         sets(i)%mineneid = minj
         if( sets(i)%mineneid .gt. 0 ) then
             write(DEV_OUT,*)
-            write(DEV_OUT,30) sets(i)%mineneid,minenergy
+            write(DEV_OUT,300) sets(i)%mineneid,minenergy
             write(DEV_OUT,*)
             call ffdev_geometry_info_point_header_ext()
 
@@ -249,13 +294,16 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
     end do
 
-10 format('=== [SET] #',I2.2,' ==================================================================')
-12 format('Input topology name (topology)     = ',A)
-15 format('Final topology name (final)        = ',A)
-16 format('Shift minimum to zero (shift2zero) = ',A)
-17 format('Probe size (probesize)             = ',I6)
-20 format('Number of target points            = ',I6)
-30 format('Minimum energy point #',I5.5,' has energy ',F20.4)
+ 10 format('=== [SET] #',I2.2,' ==================================================================')
+ 12 format('Input topology name (topology)     = ',A)
+ 15 format('Final topology name (final)        = ',A)
+ 16 format('Shift minimum to zero (shift2zero) = ',A)
+ 17 format('Probe size (probesize)             = ',I6)
+ 18 format('NB mode (nb_mode)                  = ',A)
+ 19 format('LJ combining rule (lj_rule)        = ',A)
+
+200 format('Number of target points            = ',I6)
+300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 
 end subroutine ffdev_targetset_ctrl
 
