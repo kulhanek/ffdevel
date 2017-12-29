@@ -75,8 +75,8 @@ program ffdev_enefilter_program
     call ffdev_topology_init(top)
     call ffdev_topology_load(top,trim(topname))
 
-    ! switch to probe mode and finalizae topology
-    top%probe_size = probe_size
+    ! switch to probe mode and finalizae topology 
+    call ffdev_topology_switch_to_probe_mode(top,probe_size)
     call ffdev_topology_finalize_setup(top)
     call ffdev_topology_info(top)
 

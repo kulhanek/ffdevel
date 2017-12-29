@@ -685,7 +685,9 @@ subroutine ffdev_parameters_ctrl_files(fin)
     use ffdev_utils
 
     implicit none
-    type(PRMFILE_TYPE)  :: fin
+    type(PRMFILE_TYPE)          :: fin
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: string
     ! -----------------------------------------------------------------------------
 
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
@@ -715,6 +717,39 @@ subroutine ffdev_parameters_ctrl_files(fin)
         write (DEV_OUT,30) trim(OutAmberPrmsFileName)
     end if
 
+    if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
+        write(DEV_OUT,*)
+        select case(trim(string))
+            case('LB')
+                FinalCombiningRule = COMB_RULE_LB
+                write(DEV_OUT,40) 'LB (Lorentz-Berthelot)'
+            case('WH')
+                FinalCombiningRule = COMB_RULE_WH
+                write(DEV_OUT,40) 'WH (Waldman-Hagler)'
+            case('KG')
+                FinalCombiningRule = COMB_RULE_KG
+                write(DEV_OUT,40) 'KG (Kong)'
+            case('FB')
+                FinalCombiningRule = COMB_RULE_FB
+                write(DEV_OUT,40) 'FB (Fender-Halsey-Berthelot)'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_parameters_ctrl_files!')
+        end select
+    else
+        select case(FinalCombiningRule)
+            case(COMB_RULE_LB)
+                write(DEV_OUT,40) 'LB (Lorentz-Berthelot)'
+            case(COMB_RULE_WH)
+                write(DEV_OUT,40) 'WH (Waldman-Hagler)'
+            case(COMB_RULE_KG)
+                write(DEV_OUT,40) 'KG (Kong)'
+            case(COMB_RULE_FB)
+                write(DEV_OUT,40) 'FB (Fender-Halsey-Berthelot)'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_parameters_ctrl_files!')
+        end select
+    end if
+
     return
 
 10 format('Input parameters (input)               = ',a)
@@ -723,6 +758,8 @@ subroutine ffdev_parameters_ctrl_files(fin)
 25 format('Final parameters file (final)          = ',a12,'                  (default)')
 30 format('Final AMBER parameters (amber)         = ',a)
 35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
+40 format('Combining rules (comb_rules)           = ',a)
+45 format('Combining rules (comb_rules)           = ',a12,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_files
 

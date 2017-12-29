@@ -38,7 +38,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight
-    integer                     :: i,j,alloc_status,minj,probesize,nb_mode,lj_rule
+    integer                     :: i,j,alloc_status,minj,probesize,nb_mode,comb_rules
     logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
     ! --------------------------------------------------------------------------
@@ -111,20 +111,23 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         call ffdev_topology_info(sets(i)%top)
 
-        if( prmfile_get_string_by_key(fin,'lj_rule',string) ) then
+        if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
             write(DEV_OUT,*)
             select case(trim(string))
                 case('LB')
-                    lj_rule = LJ_RULE_LB
+                    comb_rules = COMB_RULE_LB
                     write(DEV_OUT,19) 'LB (Lorentz-Berthelot)'
                 case('WH')
-                    lj_rule = LJ_RULE_WH
+                    comb_rules = COMB_RULE_WH
                     write(DEV_OUT,19) 'WH (Waldman-Hagler)'
                 case('KG')
-                    lj_rule = LJ_RULE_KG
+                    comb_rules = COMB_RULE_KG
                     write(DEV_OUT,19) 'KG (Kong)'
+                case('FB')
+                    comb_rules = COMB_RULE_FB
+                    write(DEV_OUT,19) 'FB (Fender-Halsey-Berthelot)'
                 case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported lj_rule in ffdev_targetset_ctrl!')
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_targetset_ctrl!')
             end select
 
             write(DEV_OUT,*)
@@ -132,7 +135,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             call ffdev_topology_info_types(sets(i)%top,1)
 
             ! remix parameters
-            call ffdev_topology_apply_LJ_combrule(sets(i)%top,lj_rule)
+            call ffdev_topology_apply_LJ_combrule(sets(i)%top,comb_rules)
 
             ! new set of parameters
             write(DEV_OUT,*)
@@ -304,7 +307,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  16 format('Shift minimum to zero (shift2zero) = ',A)
  17 format('Probe size (probesize)             = ',I6)
  18 format('NB mode (nb_mode)                  = ',A)
- 19 format('LJ combining rule (lj_rule)        = ',A)
+ 19 format('Combining rule (comb_rules)        = ',A)
 
 200 format('Number of target points            = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)

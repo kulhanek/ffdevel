@@ -162,7 +162,7 @@ type TOPOLOGY
     integer                     :: nnb_types
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size       ! number of atoms in probe
-    integer                     :: lj_rule
+    integer                     :: comb_rules
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -176,10 +176,11 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
 integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
 
-integer,parameter               :: LJ_RULE_LB = 10  ! LB (Lorentz-Berthelot)
-integer,parameter               :: LJ_RULE_WH = 20  ! WH (Waldman-Hagler)
-integer,parameter               :: LJ_RULE_KG = 30  ! KG (Kong)
-integer,parameter               :: LJ_RULE_IN = 40  ! input data
+integer,parameter               :: COMB_RULE_IN = 05  ! input data
+integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)
+integer,parameter               :: COMB_RULE_WH = 20  ! WH (Waldman-Hagler)
+integer,parameter               :: COMB_RULE_KG = 30  ! KG (Kong)
+integer,parameter               :: COMB_RULE_FB = 40  ! FB (Fender-Halsey-Berthelot)
 
 ! ------------------------------------------------------------------------------
 

@@ -986,7 +986,7 @@ subroutine ffdev_parameters_save_amber(name)
         write(DEV_PRMS,20) 'NONB'
         do i=1,ntypes
             if( types(i)%print_nb ) then
-                write(DEV_PRMS,80) types(i)%name,types(i)%r0,types(i)%eps
+                write(DEV_PRMS,80) types(i)%name,types(i)%r0*0.5d0,types(i)%eps
             end if
         end do
         write(DEV_PRMS,*)
@@ -1041,13 +1041,15 @@ subroutine ffdev_parameters_extract_LJ_prms()
 
 ! what rule will be used during reconstruction
     write(DEV_OUT,*)
-    select case(FinalLJCombiningRule)
-        case(LJ_RULE_LB)
+    select case(FinalCombiningRule)
+        case(COMB_RULE_LB)
             write(DEV_OUT,19) 'LB (Lorentz-Berthelot)'
-        case(LJ_RULE_WH)
+        case(COMB_RULE_WH)
             write(DEV_OUT,19) 'WH (Waldman-Hagler)'
-        case(LJ_RULE_KG)
+        case(COMB_RULE_KG)
             write(DEV_OUT,19) 'KG (Kong)'
+        case(COMB_RULE_FB)
+            write(DEV_OUT,19) 'FB (Fender-Halsey-Berthelot)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_extract_LJ_prms!')
     end select
@@ -1134,7 +1136,7 @@ subroutine ffdev_parameters_extract_LJ_prms()
         end if
     end do
 
- 19 format('LJ combining rule (lj_rule)        = ',A)
+ 19 format('Combining rule (comb_rules)           = ',A)
 
 500 format('# Type = ',A)
 510 format('# ID   = ',I2)
@@ -1166,18 +1168,18 @@ subroutine ffdev_parameters_get_LJ_prms(epsii,r0ii,epsij,r0ij,epsjj,r0jj)
     real(DEVDP)     :: k,l,c,d
     ! --------------------------------------------------------------------------
 
-    select case(FinalLJCombiningRule)
-        case(LJ_RULE_LB)
+    select case(FinalCombiningRule)
+        case(COMB_RULE_LB)
 !           r0ij = (r0ii+r0jj)*0.5d0;
 !           epsij = sqrt(epsii*epsjj);
             r0jj = 2.0d0*r0ij - r0ii
             epsjj = epsij**2/epsii;
-        case(LJ_RULE_WH)
+        case(COMB_RULE_WH)
 !           r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0);
 !           epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6;
             r0jj = (2.0d0*r0ij**6 - r0ii**6)**(1.0d0/6.0d0);
             epsjj = epsij**2 * r0ij**6 / (epsii*r0ii**6);
-        case(LJ_RULE_KG)
+        case(COMB_RULE_KG)
 !           k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6);
 !           l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13;
 !           r0ij = (l/k)**(1.0d0/6.0d0);
@@ -1188,6 +1190,11 @@ subroutine ffdev_parameters_get_LJ_prms(epsii,r0ii,epsij,r0ij,epsjj,r0jj)
             d = ( 2.0d0 * l**(1.0d0/13.0d0) - (epsii*r0ii**12)**(1.0d0/13.0d0) )**13 ! d = epsjj*r0jj**12
             r0jj = (d / c)**(1.0d0/6.0d0)
             epsjj = c / (r0jj**6)
+        case(COMB_RULE_FB)
+!           r0ij = (r0ii+r0jj)*0.5d0
+!           epsij = 2.0d0*epsii*epsjj/(epsii*epsjj)
+            r0jj = 2.0d0*r0ij - r0ii
+            epsjj = epsij*epsii/(2.0d0*epsii-epsij);
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_LJ_prms!')
     end select

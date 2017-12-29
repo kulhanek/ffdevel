@@ -114,7 +114,7 @@ real(DEVDP)             :: AngleA0PenaltyForceK = 10.0
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
 character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
 character(len=MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
-integer                 :: FinalLJCombiningRule = LJ_RULE_KG
+integer                 :: FinalCombiningRule = COMB_RULE_KG
 
 ! ------------------------------------------------------------------------------
 
