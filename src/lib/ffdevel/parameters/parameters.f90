@@ -1116,7 +1116,7 @@ subroutine ffdev_parameters_extract_LJ_prms()
                         r0jj_sum = r0jj_sum + r0jj
                         r0jj_sum2 = r0jj_sum2 + r0jj**2
                         mn = mn + 1.0d0
-                        write(DEV_OUT,540) j,sets(j)%top%atom_types(tj)%name,epsij,r0ij,alphaij,epsjj,r0jj
+                        write(DEV_OUT,540) j,sets(j)%top%atom_types(ti)%name,epsij,r0ij,alphaij,epsjj,r0jj
                     end if
                 end do
             end if
