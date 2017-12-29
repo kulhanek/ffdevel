@@ -335,21 +335,54 @@ bool CVDWGenProbe::LoadStructure(void)
             return(false);
         }
 
-        // select unique atoms
-        sat = 0;
-        std::set<unsigned int>  selected_classes;
-        CSmallString sats;
+        // make list of unique classes
+        std::set<unsigned int>  unique_classes;
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
-            unsigned int sc = symclasses[i];
-            if( selected_classes.count(sc) != 1 ){
-                SelectedAtoms[i] = true;
-                selected_classes.insert(sc);
-                SelectedAtomIds.insert(i);
-                if( sats != NULL ) sats << ",";
-                sats << i+1;
-                sat++;
-            }
+            unique_classes.insert(symclasses[i]);
         }
+
+        // for each class find closest atom to previously selected atoms
+        std::set<unsigned int>::iterator it = unique_classes.begin();
+        std::set<unsigned int>::iterator ie = unique_classes.end();
+        CPoint       com_sum;
+        double       com_num = 0;
+        CPoint       com;
+        double       d, min_d;
+        CSmallString sats;
+        sat = 0;
+        while( it != ie ){
+            unsigned int ssc = *it;
+            int      da = -1;
+            for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
+                unsigned int asc = symclasses[i];
+                if( asc != ssc ) continue;
+                if( com_num == 0 ){
+                    da = i;
+                    break;
+                }
+                if( da == -1 ){
+                    da = i;
+                    min_d = Size(Structure.GetPosition(da) - com);
+                }
+                d = Size(Structure.GetPosition(i) - com);
+                if( d < min_d ){
+                    da = i;
+                    min_d = Size(Structure.GetPosition(da) - com);
+                }
+            }
+            if( da == -1 ){
+                ES_ERROR("da == -1");
+            }
+            com_num++;
+            com_sum = com_sum + Structure.GetPosition(da);
+            com = com_sum * (1.0/com_num);
+            SelectedAtomIds.insert(da);
+            if( sats != NULL ) sats << ",";
+            sats << da+1;
+            sat++;
+            it++;
+        }
+
         vout << "# Selected atoms                 = " << sats <<  endl;
     } else {
         string          slist(Options.GetOptSelectedAtoms());

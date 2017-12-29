@@ -33,7 +33,7 @@ program ffdev_enefilter_program
     character(len=MAX_PATH)     :: otrjname
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
-    integer                     :: i, probe_size, snap
+    integer                     :: i, probe_size, snap, kept, removed
     real(DEVDP)                 :: enetreshold, ene
     type(TOPOLOGY)              :: top
     type(GEOMETRY)              :: geo
@@ -98,6 +98,8 @@ program ffdev_enefilter_program
     ! read xyz stream
     call ffdev_geometry_init(geo)
     snap = 1
+    kept = 0
+    removed = 0
     do while (is_next_xyz_record(DEV_TRAJ,fin))
         ! load snapshot and perform integrity check
         call read_xyz(DEV_TRAJ,fin)
@@ -111,9 +113,11 @@ program ffdev_enefilter_program
             ! save snapshot
             call ffdev_geometry_save_xyz_snapshot(geo,fout)
             call write_xyz(DEV_OTRAJ,fout)
+            kept = kept + 1
         else
             write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
             ! skip snapshot
+            removed = removed + 1
         end if
         snap = snap + 1
     end do
@@ -121,6 +125,10 @@ program ffdev_enefilter_program
     ! close all streams
     call close_xyz(DEV_TRAJ,fin)
     call close_xyz(DEV_OTRAJ,fout)
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,180) removed
+    write(DEV_OUT,190) kept
 
     call ffdev_utils_footer('vdWEneFilter')
 
@@ -134,6 +142,8 @@ program ffdev_enefilter_program
 150 format('# snapshot   energy   flag')
 160 format('# -------- ---------- ----')
 170 format(2X,I8,1X,F10.4,1X,A)
+180 format('Number of removed snapshots   = ',I6)
+190 format('Number of kept snapshots      = ',I6)
 
 200 call ffdev_utils_exit(DEV_OUT,1,'Probe size must be an integer number!')
 210 call ffdev_utils_exit(DEV_OUT,1,'Energy treshold must be an real number!')
