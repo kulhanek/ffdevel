@@ -198,11 +198,15 @@ bool CVDWGenProbe::Run(void)
         result = GeneratorRandom();
     } else if( Options.GetOptGenerator() == "msms-all" ){
         result = GeneratorMSMSAll();
-    } else if( Options.GetOptGenerator() == "msms-random" ){
-        result = GeneratorMSMSRandom();
-    } else if( Options.GetOptGenerator() == "msms-random-with-min-prefilter" ){
-        result = GeneratorMSMSRandomWithMinPreFilter();
-    } else {
+    } else if( Options.GetOptGenerator() == "msms-random-per-atom" ){
+        result = GeneratorMSMSRandomPerAtom();
+    } else if( Options.GetOptGenerator() == "msms-random-per-atom-with-min-prefilter" ){
+        result = GeneratorMSMSRandomPerAtomWithMinPreFilter();
+    } else if( Options.GetOptGenerator() == "msms-random-per-all" ){
+        result = GeneratorMSMSRandomPerAll();
+    } else if( Options.GetOptGenerator() == "msms-random-per-all-with-min-prefilter" ){
+        result = GeneratorMSMSRandomPerAllWithMinPreFilter();
+    }else {
         vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
         return(false);
     }
@@ -571,7 +575,7 @@ bool CVDWGenProbe::GeneratorMSMSAll(void)
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::GeneratorMSMSRandomWithMinPreFilter(void)
+bool CVDWGenProbe::GeneratorMSMSRandomPerAtomWithMinPreFilter(void)
 {
     // run min filter
     for(size_t i=0; i < MSMSProbes.size(); i++){
@@ -580,12 +584,12 @@ bool CVDWGenProbe::GeneratorMSMSRandomWithMinPreFilter(void)
     }
 
     // generate probes
-    return( GeneratorMSMSRandom() );
+    return( GeneratorMSMSRandomPerAtom() );
 }
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::GeneratorMSMSRandom(void)
+bool CVDWGenProbe::GeneratorMSMSRandomPerAtom(void)
 {
     std::set<int>::iterator  it = SelectedAtomIds.begin();
     std::set<int>::iterator  ie = SelectedAtomIds.end();
@@ -649,6 +653,78 @@ bool CVDWGenProbe::GeneratorMSMSRandom(void)
     }
 
     vout << high;
+
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorMSMSRandomPerAllWithMinPreFilter(void)
+{
+    // run min filter
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        CProbe probe = MSMSProbes[i];
+        if( FilterMinOnly(probe.Pos) != EFR_OK ) MSMSProbes[i].Selected = false;
+    }
+
+    // generate probes
+    return( GeneratorMSMSRandomPerAll() );
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorMSMSRandomPerAll(void)
+{
+
+    // calculate number of probes
+    int nprobes = 0;
+    for(size_t i=0; i < MSMSProbes.size(); i++){
+        CProbe probe = MSMSProbes[i];
+        if( probe.Selected == true ) nprobes++;
+    }
+
+    if( nprobes <= Options.GetOptMaxProbes() ) return(true);
+
+    // get probes
+    if( nprobes <= Options.GetOptNumOfTrials() ){
+        // use all probes
+        for(size_t i=0; i < MSMSProbes.size(); i++){
+            CProbe probe = MSMSProbes[i];
+            if( probe.Selected == true ) {
+                EFilterResult result = FilterProbe(probe.Pos);
+                if( result == EFR_STOP ) return(false);
+                if( result == EFR_OK ){
+                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+                    if( SaveStructure() == false ) return(false);
+                }
+            }
+        }
+    } else {
+        // gen up to Options.GetOptNumOfTrials() random selections
+        int ntrials = Options.GetOptNumOfTrials();
+        while( ntrials > 0 ){
+            boost::random::uniform_int_distribution<> dist(0, nprobes-1);
+            int rnd = dist(gen);
+            for(size_t i=0; i < MSMSProbes.size(); i++){
+                CProbe probe = MSMSProbes[i];
+                if( probe.Selected == true ) {
+                    rnd--;
+                    if( rnd == 0 ){
+                        if( probe.Used == true ) break;
+                        MSMSProbes[i].Used = true;
+                        EFilterResult result = FilterProbe(probe.Pos);
+                        if( result == EFR_STOP ) return(false);
+                        if( result == EFR_OK ){
+                            StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe.Pos);
+                            if( SaveStructure() == false ) return(false);
+                            ntrials--;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     return(true);
 }

@@ -108,8 +108,10 @@ private:
     bool GeneratorGridClosest(void);
     bool GeneratorRandom(void);
     bool GeneratorMSMSAll(void);
-    bool GeneratorMSMSRandom(void);
-    bool GeneratorMSMSRandomWithMinPreFilter(void);
+    bool GeneratorMSMSRandomPerAtom(void);
+    bool GeneratorMSMSRandomPerAtomWithMinPreFilter(void);
+    bool GeneratorMSMSRandomPerAll(void);
+    bool GeneratorMSMSRandomPerAllWithMinPreFilter(void);
 
     /// filters
     EFilterResult FilterProbe(const CPoint& probe);
