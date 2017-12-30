@@ -1783,7 +1783,7 @@ subroutine ffdev_parameters_error_num(prms,error,grads)
     integer                 :: i
     ! --------------------------------------------------------------------------
 
-    d = 1.0d-5  ! differentiation parameter
+    d = 0.5d-6  ! differentiation parameter
 
     ! calculate base energy
     call ffdev_parameters_error_only(prms,error)
