@@ -431,6 +431,12 @@ subroutine change_realms(realm,enable,options)
             realmid = REALM_IMPR_V
         case('impr_gamma')
             realmid = REALM_IMPR_G
+        case('vdw_eps')
+            realmid = REALM_VDW_EPS
+        case('vdw_r0')
+            realmid = REALM_VDW_R0
+        case('vdw_alpha')
+            realmid = REALM_VDW_ALPHA
         case('all')
             realmid = -1
         case default
