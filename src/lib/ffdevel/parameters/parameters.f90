@@ -1676,7 +1676,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
             case(REALM_VDW_R0)
                 tmpx(id) = 0.5d0
             case(REALM_VDW_ALPHA)
-                tmpx(id) = 10.0d0
+                tmpx(id) = 13.7d0
         end select
     end do
 
