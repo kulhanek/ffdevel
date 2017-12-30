@@ -371,7 +371,8 @@ subroutine opt_nlopt
     ! NLOPT_G_MLSL_LDS
 
     NLoptID = 0
-    call nlo_create(NLoptID,NLOPT_GN_DIRECT_L, nactparms)
+!    call nlo_create(NLoptID,NLOPT_GN_DIRECT_L, nactparms)
+    call nlo_create(NLoptID,NLOPT_GN_CRS2_LM, nactparms)
 !    call nlo_create(locoptid,NLOPT_LD_LBFGS, nactparms)
 !    call nlo_set_local_optimizer(ires, NLoptID, locoptid)
     call nlo_set_maxeval(ires, NLoptID, 500000)
