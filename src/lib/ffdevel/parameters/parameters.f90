@@ -1674,9 +1674,9 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
             case(REALM_VDW_EPS)
                 tmpx(id) = 0.0d0
             case(REALM_VDW_R0)
-                tmpx(id) = 0.0d0
+                tmpx(id) = 0.5d0
             case(REALM_VDW_ALPHA)
-                tmpx(id) = 0.0d0
+                tmpx(id) = 13.0d0
         end select
     end do
 
@@ -1728,11 +1728,11 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_IMPR_G)
                 tmpx(id) = 1.05*DEV_PI
             case(REALM_VDW_EPS)
-                tmpx(id) = 10.0d0
+                tmpx(id) = 1.0d0
             case(REALM_VDW_R0)
-                tmpx(id) = 10.0d0
+                tmpx(id) = 5.0d0
             case(REALM_VDW_ALPHA)
-                tmpx(id) = 1.0d10
+                tmpx(id) = 20.0d0
         end select
     end do
 
