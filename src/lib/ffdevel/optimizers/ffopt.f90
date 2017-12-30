@@ -374,7 +374,7 @@ subroutine opt_nlopt
     call nlo_create(NLoptID,NLOPT_GN_DIRECT_L, nactparms)
 !    call nlo_create(locoptid,NLOPT_LD_LBFGS, nactparms)
 !    call nlo_set_local_optimizer(ires, NLoptID, locoptid)
-    call nlo_set_maxeval(ires, NLoptID, 6000)
+    call nlo_set_maxeval(ires, NLoptID, 500000)
     call nlo_set_population(ires, NLoptID, 500)
     call nlo_set_stopval(ires,NLoptID,-1e-20)
 
