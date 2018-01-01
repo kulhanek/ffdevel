@@ -1901,11 +1901,6 @@ subroutine ffdev_parameters_error_only(prms,error)
                 err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
                 seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end if
-            ! ------------------------------------------------------------------
-            if( EnablePenaltyError ) then
-                err = ffdev_parameters_geo_penalty(sets(i)%top,sets(i)%geo(j))
-                seterrpenalty = seterrpenalty + err * sets(i)%geo(j)%weight
-            end if
         end do
         if( nene .gt. 0 ) then
             error%energy = error%energy + sqrt(seterrene/real(nene))
@@ -1916,87 +1911,13 @@ subroutine ffdev_parameters_error_only(prms,error)
         if( nhess .gt. 0 ) then
             error%hess = error%hess + seterrhess/real(nhess)
         end if
-        error%penalty = error%penalty + seterrpenalty / real(sets(i)%ngeos)
     end do
 
     error%total = EnergyErrorWeight * error%energy &
                 + GradientErrorWeight * error%grad &
-                + HessianErrorWeight * error%hess &
-                + PenaltyErrorWeight * error%penalty
+                + HessianErrorWeight * error%hess
 
 end subroutine ffdev_parameters_error_only
-
-! ==============================================================================
-! function ffdev_parameters_geo_penalty
-! ==============================================================================
-
-real(DEVDP) function ffdev_parameters_geo_penalty(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_parameters_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ib,i,j,k,ic,ia
-    real(DEVDP)     :: rij(3),rkj(3),b,db,bji2inv,bjk2inv,bjiinv,bjkinv,scp
-    real(DEVDP)     :: angv,da, penalty
-    ! --------------------------------------------------------------------------
-
-    penalty = 0.0
-
-    ! for all bonds
-    do ib=1,top%nbonds
-        ! for each bond
-        i  = top%bonds(ib)%ai
-        j  = top%bonds(ib)%aj
-        ic = top%bonds(ib)%bt
-        ! calculate rij
-        rij(:) = geo%crd(:,j) - geo%crd(:,i)
-
-        ! calculate b and db, update energy
-        b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
-        db = b - top%bond_types(ic)%d0
-        penalty = penalty + 0.5*BondD0PenaltyForceK*db**2
-    end do
-
-    ! for all angles
-    do ia=1,top%nangles
-        i  = top%angles(ia)%ai
-        j  = top%angles(ia)%aj
-        k  = top%angles(ia)%ak
-        ic = top%angles(ia)%at
-
-        ! calculate rji and rjk
-        rij(:) = geo%crd(:,i) - geo%crd(:,j)
-        rkj(:) = geo%crd(:,k) - geo%crd(:,j)
-
-        ! calculate bjiinv and bjkinv and their squares
-        bji2inv = 1./(rij(1)**2 + rij(2)**2 + rij(3)**2 )
-        bjk2inv = 1./(rkj(1)**2 + rkj(2)**2 + rkj(3)**2 )
-        bjiinv = sqrt(bji2inv)
-        bjkinv = sqrt(bjk2inv)
-
-            ! calculate scp and angv
-        scp = ( rij(1)*rkj(1) + rij(2)*rkj(2) + rij(3)*rkj(3) )
-        scp = scp * bjiinv*bjkinv
-        if ( scp .gt.  1.0 ) then
-            scp =  1.0
-        else if ( scp .lt. -1.0 ) then
-            scp = -1.0
-        end if
-        angv = acos(scp)
-
-        ! calculate da and dv
-        da = angv - top%angle_types(ic)%a0
-        penalty = penalty + 0.5*AngleA0PenaltyForceK*da**2
-    end do
-
-    ffdev_parameters_geo_penalty = penalty
-
-end function ffdev_parameters_geo_penalty
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set

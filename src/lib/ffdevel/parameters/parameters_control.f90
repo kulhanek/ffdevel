@@ -587,10 +587,6 @@ subroutine ffdev_parameters_ctrl_error(fin)
         write(DEV_OUT,55) GradientErrorWeight
         write(DEV_OUT,65) prmfile_onoff(EnableHessianError)
         write(DEV_OUT,75) HessianErrorWeight
-        write(DEV_OUT,85) prmfile_onoff(EnablePenaltyError)
-        write(DEV_OUT,95) PenaltyErrorWeight
-        write(DEV_OUT,105) BondD0PenaltyForceK
-        write(DEV_OUT,115) AngleA0PenaltyForceK
         return
     end if
 
@@ -627,29 +623,6 @@ subroutine ffdev_parameters_ctrl_error(fin)
         write(DEV_OUT,75) HessianErrorWeight
     end if
 
-    if( prmfile_get_logical_by_key(fin,'penalty', EnablePenaltyError)) then
-        write(DEV_OUT,80) prmfile_onoff(EnablePenaltyError)
-    else
-        write(DEV_OUT,85) prmfile_onoff(EnablePenaltyError)
-    end if
-    if( prmfile_get_real8_by_key(fin,'penalty_weight', PenaltyErrorWeight)) then
-        write(DEV_OUT,90) PenaltyErrorWeight
-    else
-        write(DEV_OUT,95) PenaltyErrorWeight
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'bond_r0_k', BondD0PenaltyForceK)) then
-        write(DEV_OUT,100) BondD0PenaltyForceK
-    else
-        write(DEV_OUT,105) BondD0PenaltyForceK
-    end if
-    if( prmfile_get_real8_by_key(fin,'angle_a0_k', AngleA0PenaltyForceK)) then
-        write(DEV_OUT,110) AngleA0PenaltyForceK
-    else
-        write(DEV_OUT,115) AngleA0PenaltyForceK
-    end if
-
-
  10 format('=== [errors] ===================================================================')
 
  20  format ('Energy error (energy)                  = ',a12)
@@ -666,17 +639,6 @@ subroutine ffdev_parameters_ctrl_error(fin)
  65  format ('Hessian error (hessian)                = ',a12,'                  (default)')
  70  format ('Hessian error weight (hessian_weight)  = ',f21.8)
  75  format ('Hessian error weight (hessian_weight)  = ',f21.8,'         (default)')
-
- 80  format ('Penalty error (penalty)                = ',a12)
- 85  format ('Penalty error (penalty)                = ',a12,'                  (default)')
- 90  format ('Penalty error weight (penalty_weight)  = ',f21.8)
- 95  format ('Penalty error weight (penalty_weight)  = ',f21.8,'         (default)')
-
-100  format ('Bond r0 penalty force c. (bond_r0_k)   = ',f21.8)
-105  format ('Bond r0 penalty force c. (bond_r0_k)   = ',f21.8,'         (default)')
-
-110  format ('Angle a0 penalty force c. (angle_a0_k) = ',f21.8)
-115  format ('Angle a0 penalty force c. (angle_a0_k) = ',f21.8,'         (default)')
 
 end subroutine ffdev_parameters_ctrl_error
 
@@ -941,7 +903,6 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,noexec)
             if( params(typeid)%realm .ne. REALM_ANGLE_A0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'type is not angle_a0!')
             end if
-            if( noexec .eqv. .false. ) call ffdev_parameters_angle_a0_init(typeid,mode)
             rst = prmfile_next_line(fin)
         end do
     else

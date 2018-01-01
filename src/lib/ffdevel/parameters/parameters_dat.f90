@@ -38,9 +38,13 @@ integer,parameter       :: REALM_DIH_C      = 12
 integer,parameter       :: REALM_VDW_EPS    = 13
 integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
+integer,parameter       :: REALM_VDW_A      = 16
+integer,parameter       :: REALM_VDW_B      = 17
+integer,parameter       :: REALM_VDW_C6     = 18
+integer,parameter       :: REALM_VDW_C8     = 19
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_VDW_ALPHA
+integer,parameter       :: REALM_LAST    = REALM_VDW_C8
 
 ! ------------------------------------------------------------------------------
 
@@ -95,6 +99,10 @@ type(FFERROR_TYPE)      :: FFError
 real(DEVDP),allocatable :: FFParams(:)
 real(DEVDP),allocatable :: FFParamsGrd(:)
 
+! === [control] ================================================================
+
+integer                 :: FinalCombiningRule = COMB_RULE_KG
+
 ! === [error] ==================================================================
 logical                 :: EnableEnergyError = .true.
 real(DEVDP)             :: EnergyErrorWeight = 1.0
@@ -105,16 +113,10 @@ real(DEVDP)             :: GradientErrorWeight = 1.0
 logical                 :: EnableHessianError = .true.
 real(DEVDP)             :: HessianErrorWeight = 1.0
 
-logical                 :: EnablePenaltyError   = .false.
-real(DEVDP)             :: PenaltyErrorWeight   = 1.0
-real(DEVDP)             :: BondD0PenaltyForceK  = 10.0
-real(DEVDP)             :: AngleA0PenaltyForceK = 10.0
-
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
 character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
 character(len=MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
-integer                 :: FinalCombiningRule = COMB_RULE_KG
 
 ! ------------------------------------------------------------------------------
 
