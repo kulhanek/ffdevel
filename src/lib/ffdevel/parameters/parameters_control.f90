@@ -326,6 +326,7 @@ subroutine change_realms(realm,enable,options)
     character(*)    :: options
     ! --------------------------------------------
     integer         :: realmid, i
+    logical         :: lenable
     ! --------------------------------------------------------------------------
 
     ! decode realm
@@ -437,6 +438,14 @@ subroutine change_realms(realm,enable,options)
             realmid = REALM_VDW_R0
         case('vdw_alpha')
             realmid = REALM_VDW_ALPHA
+        case('vdw_A')
+            realmid = REALM_VDW_A
+        case('vdw_B')
+            realmid = REALM_VDW_B
+        case('vdw_C6')
+            realmid = REALM_VDW_C6
+        case('vdw_C8')
+            realmid = REALM_VDW_C8
         case('all')
             realmid = -1
         case default
@@ -444,14 +453,37 @@ subroutine change_realms(realm,enable,options)
     end select
 
     do i=1,nparams
-        if( params(i)%realm .eq. realmid ) then
+        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
             if( params(i)%identity .eq. 0 ) then
-                params(i)%enabled = enable
-            end if
-        end if
-        if( realmid .eq. -1 ) then
-            if( params(i)%identity .eq. 0 ) then
-                params(i)%enabled = enable
+                lenable = enable
+                select case(GlobalNBMode)
+                    case(NB_MODE_LJ)
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                    case(NB_MODE_EXP6)
+                        if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                    case(NB_MODE_BP)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                    case(NB_MODE_EXPONLY)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                    case(NB_MODE_EXPD3BJ)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                end select
+                params(i)%enabled = lenable
             end if
         end if
     end do
@@ -946,15 +978,15 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
     write(DEV_OUT,10)
 
 ! global parameters
-    if( prmfile_get_real8_by_key(fin,'erep1',Erep1) ) then
-        write(DEV_OUT,20) Erep1
+    if( prmfile_get_real8_by_key(fin,'d3bj_a1',d3bj_a1) ) then
+        write(DEV_OUT,20) d3bj_a1
     else
-        write(DEV_OUT,25) Erep1
+        write(DEV_OUT,25) d3bj_a1
     end if
-    if( prmfile_get_real8_by_key(fin,'erep2',Erep2) ) then
-        write(DEV_OUT,30) Erep2
+    if( prmfile_get_real8_by_key(fin,'d3bj_a2',d3bj_a2) ) then
+        write(DEV_OUT,30) d3bj_a2
     else
-        write(DEV_OUT,35) Erep2
+        write(DEV_OUT,35) d3bj_a2
     end if
 
 ! programatic NB change (order dependent)
@@ -978,10 +1010,10 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
     end do
 
 10 format('=== [nbmanip] ==================================================================')
-20 format('Erep1 (erep1)                    = ',F10.6)
-25 format('Erep1 (erep1)                    = ',F10.6,' (default)')
-30 format('Erep2 (erep2)                    = ',F10.6)
-35 format('Erep2 (erep2)                    = ',F10.6,' (default)')
+20 format('BJ damping parameter a1 (d3bj_a1) = ',F10.6)
+25 format('BJ damping parameter a1 (d3bj_a1) = ',F10.6,' (default)')
+30 format('BJ damping parameter a2 (d3bj_a2) = ',F10.6)
+35 format('BJ damping parameter a2 (d3bj_a2) = ',F10.6,' (default)')
 
 end subroutine ffdev_parameters_ctrl_nbmanip
 
@@ -1051,16 +1083,27 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     character(PRMFILE_MAX_PATH) :: string
     logical                     :: noexec
     ! --------------------------------------------
-    integer                     :: i,nb_mode
+    integer                     :: i,j,nb_mode
     ! --------------------------------------------------------------------------
 
-    nb_mode = ffdev_topology_nb_mode_from_string(string)
+    if( trim(string) .eq. 'ADDD3BJ' ) then
+        nb_mode = NB_MODE_ADDD3BJ
+    else
+        nb_mode = ffdev_topology_nb_mode_from_string(string)
+    end if
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
     write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(nb_mode)
 
-    if( noexec ) return ! do not execute
+    if( noexec ) then
+        ! do not execute but minic that we changed the mode
+        if( nb_mode .eq. NB_MODE_ADDD3BJ ) then
+            nb_mode = NB_MODE_EXPD3BJ
+        end if
+        GlobalNBMode = nb_mode
+        return
+    end if
 
     do i=1,nsets
         write(DEV_OUT,*)
@@ -1082,6 +1125,37 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
         call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
         call ffdev_topology_info_types(sets(i)%top,2)
     end do
+
+    if( nb_mode .eq. NB_MODE_ADDD3BJ ) then
+        nb_mode = NB_MODE_EXPD3BJ
+    end if
+    GlobalNBMode = nb_mode
+
+    ! update parameter values
+    do i=1,nparams
+        select case(params(i)%realm)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
+                do j=1,nsets
+                    select case(params(i)%realm)
+                        case(REALM_VDW_EPS)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
+                        case(REALM_VDW_R0)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
+                        case(REALM_VDW_ALPHA)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
+                        case(REALM_VDW_A)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%A
+                        case(REALM_VDW_B)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%B
+                        case(REALM_VDW_C6)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
+                        case(REALM_VDW_C8)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C8
+                    end select
+                end do
+        end select
+    end do
+
 
 10 format('NB mode (nb_mode)                = ',A)
 20 format('=== SET ',I2.2)

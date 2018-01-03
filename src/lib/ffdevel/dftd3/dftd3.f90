@@ -75,5 +75,29 @@ real(DEVDP) function ffdev_dftd3_get_c8(z1,cn1,z2,cn2)
 end function ffdev_dftd3_get_c8
 
 ! ==============================================================================
+! subroutine ffdev_dftd3_get_rcov
+! ==============================================================================
+
+real(DEVDP) function ffdev_dftd3_get_rcov(z1)
+
+    implicit none
+    integer         :: z1
+    ! --------------------------------------------
+    real(DEVDP)     :: c6
+    ! --------------------------------------------------------------------------
+
+    if( .not. dftd3_initialized ) then
+        call dftd3_init(loc_dftd3_calc,loc_dftd3_input)
+        dftd3_initialized = .true.
+    end if
+
+    ! these new data (=rcov) are scaled with k2=4./3. and converted a_0 via
+    ! autoang=0.52917726d0
+
+    ffdev_dftd3_get_rcov = rcov(z1) * 1.889725989d0 ! switch back to A
+
+end function ffdev_dftd3_get_rcov
+
+! ==============================================================================
 
 end module ffdev_dftd3

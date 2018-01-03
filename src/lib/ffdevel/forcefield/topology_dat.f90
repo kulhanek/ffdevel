@@ -169,9 +169,11 @@ end type TOPOLOGY
 
 logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
                                         ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
-
-real(DEVDP) :: Erep1 =  1.0d0           ! values for NB parameter conversion
-real(DEVDP) :: Erep2 =  0.5d0
+! d3bj parameters
+real(DEVDP)         :: d3bj_a1                      ! damping function parameters
+real(DEVDP)         :: d3bj_a2
+logical             :: d3bj_use_frac_cn = .true.   ! use fractional CN derived from bond_r0
+real(DEVDP)         :: d3bj_k1 = 16.0               ! to derive fractional CN
 
 ! ------------------------------------------------------------------------------
 

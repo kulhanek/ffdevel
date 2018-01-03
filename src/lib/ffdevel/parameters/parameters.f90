@@ -61,7 +61,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 3*sets(i)%top%nnb_types       ! NB
+        maxnparams = maxnparams + 4*sets(i)%top%nnb_types       ! NB
     end do
 
     write(DEV_OUT,*)
@@ -422,12 +422,107 @@ subroutine ffdev_parameters_init()
     do i=1,nsets
         do j=1,sets(i)%top%nnb_types
             if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-            if( sets(i)%top%nb_mode .ne. NB_MODE_BP ) cycle
             parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_ALPHA)
             if( parmid .eq. 0 ) then    ! new parameter
                 nparams = nparams + 1
                 params(nparams)%value = sets(i)%top%nb_types(j)%alpha
                 params(nparams)%realm = REALM_VDW_ALPHA
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw A realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_A)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%A
+                params(nparams)%realm = REALM_VDW_A
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw B realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_B)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%B
+                params(nparams)%realm = REALM_VDW_B
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw C6 realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_C6)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%C6
+                params(nparams)%realm = REALM_VDW_C6
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! vdw C8 realm =====================
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_C8)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%nb_types(j)%C8
+                params(nparams)%realm = REALM_VDW_C8
                 params(nparams)%enabled = .false.
                 params(nparams)%identity = 0
                 params(nparams)%pn    = 0
@@ -502,7 +597,7 @@ integer function find_parameter(top,id,pn,realm)
             tj = get_common_type_id(top,top%improper_types(id)%tj)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
-        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
+        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
     end select
@@ -537,7 +632,7 @@ integer function find_parameter(top,id,pn,realm)
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -977,7 +1072,9 @@ subroutine ffdev_parameters_save_amber(name)
     end do
     do i=1,nparams
         if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
-            ( params(i)%realm .eq. REALM_VDW_ALPHA )) then
+            ( params(i)%realm .eq. REALM_VDW_ALPHA ) .or. ( params(i)%realm .eq. REALM_VDW_A ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_B ) .or. ( params(i)%realm .eq. REALM_VDW_C6 ) .or. &
+            ( params(i)%realm .eq. REALM_VDW_C8 ) ) then
             enable_section = .true.
             types(params(i)%ti)%print_nb = .true.
         end if
@@ -1444,7 +1541,9 @@ subroutine ffdev_parameters_print_parameters()
  30 format(I4,1X,L2,1X,I4,1X)
  31 format(I4,1X,L2,1X,'----',1X)
  32 format(A11,1X)
- 35 format(I2,1X,F16.7,1X,I6,5X)
+
+
+ 35 format(I2,1X,F16.4,1X,I6,5X)
  40 format(I2,1X)
  50 format('--',1X)
 
@@ -1634,6 +1733,30 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%alpha = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_A)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%A = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_B)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%B = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_C6)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%C6 = params(i)%value
+                    end if
+                end do
+            case(REALM_VDW_C8)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%C8 = params(i)%value
                     end if
                 end do
         end select
