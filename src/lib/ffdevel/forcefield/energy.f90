@@ -398,7 +398,7 @@ subroutine ffdev_energy_nb_bp(top,geo)
         nbt = top%nb_list(ip)%nbt
         aBP  = top%nb_types(nbt)%A
         bBP  = top%nb_types(nbt)%B
-        cBP  = top%nb_types(nbt)%C
+        cBP  = top%nb_types(nbt)%C6
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
         ! calculate dx, r and r2

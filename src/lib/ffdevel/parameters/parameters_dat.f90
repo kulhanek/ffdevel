@@ -91,7 +91,6 @@ type FFERROR_TYPE
     real(DEVDP)         :: energy       ! energy part of error
     real(DEVDP)         :: grad         ! gradient part of error
     real(DEVDP)         :: hess         ! hessian part of error
-    real(DEVDP)         :: penalty      ! geometry penalty
 end type FFERROR_TYPE
 
 
@@ -101,7 +100,9 @@ real(DEVDP),allocatable :: FFParamsGrd(:)
 
 ! === [control] ================================================================
 
-integer                 :: FinalCombiningRule = COMB_RULE_KG
+integer                 :: GlobalNBMode       = NB_MODE_LJ      ! global non-bonded mode
+integer                 :: FinalCombiningRule = COMB_RULE_KG    ! how to extract the final LJ parameters
+logical                 :: NumGradErrFce      = .true.          ! numerical/analytical gradients of error function
 
 ! === [error] ==================================================================
 logical                 :: EnableEnergyError = .true.

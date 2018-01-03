@@ -1333,6 +1333,18 @@ subroutine ffdev_parameters_print_parameters()
             case(REALM_VDW_ALPHA)
                 tmp = 'vdw_alpha'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_A)
+                tmp = 'vdw_A'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_B)
+                tmp = 'vdw_B'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_C6)
+                tmp = 'vdw_C6'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_VDW_C8)
+                tmp = 'vdw_C8'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -1397,6 +1409,14 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'vdW_r0'
             case(REALM_VDW_ALPHA)
                 tmp = 'vdW_alpha'
+            case(REALM_VDW_A)
+                tmp = 'vdW_A'
+            case(REALM_VDW_B)
+                tmp = 'vdW_B'
+            case(REALM_VDW_C6)
+                tmp = 'vdW_C6'
+            case(REALM_VDW_C8)
+                tmp = 'vdW_C8'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -1759,7 +1779,11 @@ subroutine ffdev_parameters_error(prms,error,grads)
 
     grads(:) = 0.0d0
 
-    call ffdev_parameters_error_num(prms,error,grads)
+    if( NumGradErrFce ) then
+        call ffdev_parameters_error_num(prms,error,grads)
+    else
+        call ffdev_parameters_error_grad(prms,error,grads)
+    end if
 
 end subroutine ffdev_parameters_error
 
@@ -1783,7 +1807,7 @@ subroutine ffdev_parameters_error_num(prms,error,grads)
     integer                 :: i
     ! --------------------------------------------------------------------------
 
-    d = 0.5d-6  ! differentiation parameter
+    d = 0.5d-5  ! differentiation parameter
 
     ! calculate base energy
     call ffdev_parameters_error_only(prms,error)
@@ -1833,14 +1857,13 @@ subroutine ffdev_parameters_error_only(prms,error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer         :: i,j,q,w,e,r,nene,ngrd,nhess
-    real(DEVDP)     :: err,seterrene,seterrgrd,seterrhess,seterrpenalty
+    real(DEVDP)     :: err,seterrene,seterrgrd,seterrhess
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0
     error%energy = 0.0d0
     error%grad = 0.0d0
     error%hess = 0.0d0
-    error%penalty = 0.0d0
 
     ! scatter parameters
     call ffdev_parameters_scatter(prms)
@@ -1864,7 +1887,6 @@ subroutine ffdev_parameters_error_only(prms,error)
         seterrene = 0.0
         seterrgrd = 0.0
         seterrhess = 0.0
-        seterrpenalty = 0.0
         nene = 0
         ngrd = 0
         nhess = 0
@@ -1918,6 +1940,75 @@ subroutine ffdev_parameters_error_only(prms,error)
                 + HessianErrorWeight * error%hess
 
 end subroutine ffdev_parameters_error_only
+
+! ==============================================================================
+! subroutine ffdev_parameters_error_grad
+! ==============================================================================
+
+subroutine ffdev_parameters_error_grad(prms,error,grads)
+
+    use ffdev_parameters_dat
+    use ffdev_targetset
+    use ffdev_targetset_dat
+    use ffdev_energy
+    use ffdev_gradient
+    use ffdev_hessian
+    use ffdev_utils
+
+    implicit none
+    real(DEVDP)         :: prms(:)
+    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: grads(:)
+    ! --------------------------------------------
+    integer         :: i,j,q,w,e,r,nene
+    real(DEVDP)     :: err,seterrene
+    ! --------------------------------------------------------------------------
+
+    error%total = 0.0d0
+    error%energy = 0.0d0
+    error%grad = 0.0d0
+    error%hess = 0.0d0
+
+    if( EnableHessianError ) then
+        call ffdev_utils_exit(DEV_OUT,1,'EnableHessianError - not implemented in ffdev_parameters_error_grad!')
+    end if
+    if( EnableGradientError ) then
+        call ffdev_utils_exit(DEV_OUT,1,'EnableGradientError - not implemented in ffdev_parameters_error_grad!')
+    end if
+
+    ! scatter parameters
+    call ffdev_parameters_scatter(prms)
+    call ffdev_parameters_to_tops()
+
+    ! calculate all energies
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
+                call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
+            end if
+        end do
+    end do
+
+    ! calculate error
+    do i=1,nsets
+        seterrene = 0.0
+        nene = 0
+        do j=1,sets(i)%ngeos
+            ! ------------------------------------------------------------------
+            if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
+                nene = nene + 1
+                err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+            end if
+        end do
+        if( nene .gt. 0 ) then
+            error%energy = error%energy + sqrt(seterrene/real(nene))
+        end if
+    end do
+
+    error%total = EnergyErrorWeight * error%energy
+
+end subroutine ffdev_parameters_error_grad
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set

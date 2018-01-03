@@ -6,6 +6,7 @@
 SET(VDWGENPROBE_SRC
         VDWGenProbe.cpp
         VDWGenProbeOptions.cpp
+        Sphere.cpp
         )
 
 # final build ------------------------------------------------------------------

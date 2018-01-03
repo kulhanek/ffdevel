@@ -28,7 +28,7 @@ public:
 
 // program name and description -----------------------------------------------
     CSO_PROG_NAME_BEGIN
-    "vdwprobefilter"
+    "vdwgenprobe"
     CSO_PROG_NAME_END
 
     CSO_PROG_DESC_BEGIN
@@ -52,6 +52,9 @@ public:
     "  * msms-random-per-all-with-min-prefilter\n"
     "                 - similar as <u>msms-random-per-all</u> but vertices are prefiltered with the minonly filter,\n"
     "                   which is suitable for situations when the surface is generated for other structure then <u>STRUCTURE</u>\n"
+    "  * sphere-min-repulsion - select those vertices on discretized spheres constructed around selected atoms\n"
+    "                   that exhibit minimum repulsion\n"
+    "                   spheres are constructed with radius ranging from <b>--min</b> to <b>--max</b> with <b>--spacing</b>"
     "\n"
     "<b>Supported filters:</b>\n"
     "  * none         - all probes are accepted\n"
@@ -83,6 +86,7 @@ public:
     CSO_OPT(CSmallString,Generator)
     CSO_OPT(CSmallString,Filters)
     CSO_OPT(CSmallString,MSMSSurfaceVertices)
+    CSO_OPT(int,SphereQuality)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -121,6 +125,7 @@ public:
                 "max",                      /* long option name */
                 "NUM",                           /* parametr name */
                 "maximum distance from selected atoms")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(double,                           /* option type */
                 Spacing,                        /* option name */
                 0.1,                          /* default value */
@@ -219,6 +224,15 @@ public:
                 "msms",                      /* long option name */
                 "VERTS",                           /* parametr name */
                 "filename with msms surface vertices")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(int,                           /* option type */
+                SphereQuality,                        /* option name */
+                4,                          /* default value */
+                false,                          /* is option mandatory */
+                '\0',                           /* short option name */
+                "tesselation",                      /* long option name */
+                "NUM",                           /* parametr name */
+                "sphere tesselation quality (level of icosahedron tesselation)")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

@@ -120,7 +120,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj            ! atom types
     real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
-    real(DEVDP)         :: A, B, C
+    real(DEVDP)         :: A, B, C6, C8     ! alternative/complementary data
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -162,7 +162,6 @@ type TOPOLOGY
     integer                     :: nnb_types
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size       ! number of atoms in probe
-    integer                     :: comb_rules
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -171,10 +170,17 @@ end type TOPOLOGY
 logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
                                         ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
 
+real(DEVDP) :: Erep1 =  1.0d0           ! values for NB parameter conversion
+real(DEVDP) :: Erep2 =  0.5d0
+
 ! ------------------------------------------------------------------------------
 
-integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
-integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
+integer,parameter               :: NB_MODE_LJ       = 1   ! Lennard-Jones potential (eps,r0)
+integer,parameter               :: NB_MODE_EXP6     = 2   ! Exp-6 potential (eps,r0,alpha)
+integer,parameter               :: NB_MODE_BP       = 3   ! Buckingham potential (A,B,C6)
+integer,parameter               :: NB_MODE_EXPONLY  = 4   ! Born-Mayer potential - Exp only (A,B)
+integer,parameter               :: NB_MODE_ADDD3BJ  = 5   ! D3-BJ add C6,C8
+integer,parameter               :: NB_MODE_EXPD3BJ  = 6   ! D3-BJ (A,B,C6,C8)
 
 integer,parameter               :: COMB_RULE_IN = 05  ! input data
 integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)

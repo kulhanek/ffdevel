@@ -566,8 +566,8 @@ subroutine write_header()
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT')
- 20 format('# STEP    Error       Err(Ene)    Err(Grad)    Err(Hess)   Err(Penalty)    RMSG         maxG     ')
- 30 format('#----- ------------ ------------ ------------ ------------ ------------ ------------ ------------')
+ 20 format('# STEP    Error       Err(Ene)    Err(Grad)    Err(Hess)      RMSG         maxG     ')
+ 30 format('#----- ------------ ------------ ------------ ------------ ------------ ------------')
 
 end subroutine write_header
 
@@ -591,10 +591,10 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
         write(DEV_OUT,10) istep, error%total, error%energy, error%grad, error%hess, &
-                          error%penalty,rmsg,maxgrad
+                          rmsg,maxgrad
     end if
 
- 10 format(I6,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5)
+ 10 format(I6,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5)
 
 end subroutine write_results
 

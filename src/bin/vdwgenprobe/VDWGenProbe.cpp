@@ -27,6 +27,8 @@
 #include <openbabel/obconversion.h>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#include "Sphere.hpp"
+#include <PeriodicTable.hpp>
 
 //------------------------------------------------------------------------------
 
@@ -206,7 +208,9 @@ bool CVDWGenProbe::Run(void)
         result = GeneratorMSMSRandomPerAll();
     } else if( Options.GetOptGenerator() == "msms-random-per-all-with-min-prefilter" ){
         result = GeneratorMSMSRandomPerAllWithMinPreFilter();
-    }else {
+    } else if( Options.GetOptGenerator() == "sphere-min-repulsion" ){
+        result = SphereMinRepulsion();
+    } else {
         vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
         return(false);
     }
@@ -727,6 +731,64 @@ bool CVDWGenProbe::GeneratorMSMSRandomPerAll(void)
     }
 
     return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::SphereMinRepulsion(void)
+{
+    std::set<int>::iterator  it = SelectedAtomIds.begin();
+    std::set<int>::iterator  ie = SelectedAtomIds.end();
+
+    CSphere sphere;
+    if( sphere.SetTessellationQuality(Options.GetOptSphereQuality()) == false ){
+        ES_ERROR("unable to initialize sphere");
+    }
+
+    vector<int> z;
+    for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+        z.push_back(PeriodicTable.SearchZBySymbol(Structure.GetSymbol(j)));
+    }
+
+    double rprobe = PeriodicTable.GetVdWRadius(PeriodicTable.SearchZBySymbol(Options.GetOptProbeSymbol()));
+
+    while( it != ie ){
+        int atomid = *it;
+        CPoint origin = Structure.GetPosition(atomid);
+        int    vertex;
+        double min;
+        for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
+            double interaction = 0.0;
+            for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+                CPoint v1 = sphere.GetVertice(i,origin,r);
+                for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+                    double rvdw = PeriodicTable.GetVdWRadius(z[j]);
+                    CPoint apos = Structure.GetPosition(j);
+                    double d = Size(apos - v1);
+                    double r0 = rprobe + rvdw;
+                    interaction = interaction + pow(r0/d,12); // - 2.0*pow(r0/d,6);
+                }
+            }
+            if( (i == 0) || (min > interaction) ){
+                vertex = i;
+                min = interaction;
+            }
+        }
+        for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+            CPoint probe = sphere.GetVertice(vertex,origin,r);
+            EFilterResult result = FilterProbe(probe);
+            if( result == EFR_STOP ) return(false);
+            if( result == EFR_OK ){
+                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                if( SaveStructure() == false ) return(false);
+            }
+        }
+
+        it++;
+    }
+
+    return(true);
+
 }
 
 //==============================================================================

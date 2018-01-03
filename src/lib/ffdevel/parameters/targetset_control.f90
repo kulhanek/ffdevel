@@ -111,60 +111,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         call ffdev_topology_info(sets(i)%top)
 
-        if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
-            write(DEV_OUT,*)
-            select case(trim(string))
-                case('LB')
-                    comb_rules = COMB_RULE_LB
-                    write(DEV_OUT,19) 'LB (Lorentz-Berthelot)'
-                case('WH')
-                    comb_rules = COMB_RULE_WH
-                    write(DEV_OUT,19) 'WH (Waldman-Hagler)'
-                case('KG')
-                    comb_rules = COMB_RULE_KG
-                    write(DEV_OUT,19) 'KG (Kong)'
-                case('FB')
-                    comb_rules = COMB_RULE_FB
-                    write(DEV_OUT,19) 'FB (Fender-Halsey-Berthelot)'
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_targetset_ctrl!')
-            end select
-
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original LJ parameters', '#')
-            call ffdev_topology_info_types(sets(i)%top,1)
-
-            ! remix parameters
-            call ffdev_topology_apply_LJ_combrule(sets(i)%top,comb_rules)
-
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Remixed LJ parameters', '#')
-             call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-
-        if( prmfile_get_string_by_key(fin,'nb_mode',string) ) then
-            select case(trim(string))
-                case('LJ')
-                    nb_mode = NB_MODE_LJ
-                case('BP')
-                    nb_mode = NB_MODE_BP
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_targetset_ctrl!')
-            end select
-            call ffdev_topology_switch_nbmode(sets(i)%top,nb_mode)
-        end if
-
-        write(DEV_OUT,*)
-        select case(sets(i)%top%nb_mode)
-            case(NB_MODE_LJ)
-                write(DEV_OUT,18) 'LJ'
-            case(NB_MODE_BP)
-                write(DEV_OUT,18) 'BP'
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_targetset_ctrl!')
-        end select
-
 !----------------------
 ! points
 !----------------------
@@ -306,8 +252,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  15 format('Final topology name (final)        = ',A)
  16 format('Shift minimum to zero (shift2zero) = ',A)
  17 format('Probe size (probesize)             = ',I6)
- 18 format('NB mode (nb_mode)                  = ',A)
- 19 format('Combining rule (comb_rules)        = ',A)
 
 200 format('Number of target points            = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)

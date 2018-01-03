@@ -112,6 +112,7 @@ private:
     bool GeneratorMSMSRandomPerAtomWithMinPreFilter(void);
     bool GeneratorMSMSRandomPerAll(void);
     bool GeneratorMSMSRandomPerAllWithMinPreFilter(void);
+    bool SphereMinRepulsion(void);
 
     /// filters
     EFilterResult FilterProbe(const CPoint& probe);

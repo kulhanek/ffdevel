@@ -97,8 +97,8 @@ program ffdev_optimize_program
             i = i + 1
         end if
 
-        if( string .eq. 'INITFF' ) then
-            call execute_initff(fin,.true.)
+        if( string .eq. 'FFMANIP' ) then
+            call execute_ffmanip(fin,.true.)
         end if
 
         rst = prmfile_next_group(fin)
@@ -127,7 +127,12 @@ program ffdev_optimize_program
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
         end if
 
-        ! program -------------------------------------
+    ! manipff -------------------------------------
+        if( string .eq. 'FFMANIP' ) then
+            call execute_ffmanip(fin,.false.)
+        end if
+
+    ! program -------------------------------------
         if( string .eq. 'PROGRAM' ) then
             write(DEV_OUT,*)
             write(string,110) i
@@ -136,11 +141,6 @@ program ffdev_optimize_program
             call execute_program(fin)
 
             i = i + 1
-        end if
-
-        ! initff -------------------------------------
-        if( string .eq. 'INITFF' ) then
-            call execute_initff(fin,.false.)
         end if
 
         rst = prmfile_next_group(fin)
@@ -264,10 +264,10 @@ subroutine execute_program_fake(grpin)
 end subroutine execute_program_fake
 
 !===============================================================================
-! subroutine:  execute_initff
+! subroutine:  execute_ffmanip
 !===============================================================================
 
-subroutine execute_initff(grpin,noexec)
+subroutine execute_ffmanip(grpin,noexec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
@@ -282,7 +282,7 @@ subroutine execute_initff(grpin,noexec)
     end if
 
     ! load and execute setup
-    call ffdev_parameters_ctrl_initff(grpin,noexec)
+    call ffdev_parameters_ctrl_ffmanip(grpin,noexec)
 
     if( .not. noexec ) then
         call ffdev_parameters_print_parameters()
@@ -290,7 +290,7 @@ subroutine execute_initff(grpin,noexec)
 
     return
 
-end subroutine execute_initff
+end subroutine execute_ffmanip
 
 !===============================================================================
 

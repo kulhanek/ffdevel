@@ -65,6 +65,8 @@ src/bin/topreport/TopReportOptions.hpp
 src/bin/vdwenefilter/CMakeLists.txt
 src/bin/vdwenefilter/vdwenefilter.f90
 src/bin/vdwgenprobe/CMakeLists.txt
+src/bin/vdwgenprobe/Sphere.cpp
+src/bin/vdwgenprobe/Sphere.hpp
 src/bin/vdwgenprobe/VDWGenProbe.cpp
 src/bin/vdwgenprobe/VDWGenProbe.hpp
 src/bin/vdwgenprobe/VDWGenProbeOptions.cpp
@@ -72,6 +74,15 @@ src/bin/vdwgenprobe/VDWGenProbeOptions.hpp
 src/lib/CMakeLists.txt
 src/lib/ffdevel/CMakeLists.txt
 src/lib/ffdevel/constants.f90
+src/lib/ffdevel/dftd3/CHANGELOG.rst
+src/lib/ffdevel/dftd3/LICENSE
+src/lib/ffdevel/dftd3/README.rst
+src/lib/ffdevel/dftd3/api.f90
+src/lib/ffdevel/dftd3/common.f90
+src/lib/ffdevel/dftd3/core.f90
+src/lib/ffdevel/dftd3/dftd3.f90
+src/lib/ffdevel/dftd3/pars.f90
+src/lib/ffdevel/dftd3/sizes.f90
 src/lib/ffdevel/forcefield/energy.f90
 src/lib/ffdevel/forcefield/geometry.f90
 src/lib/ffdevel/forcefield/geometry_dat.f90

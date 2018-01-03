@@ -732,10 +732,10 @@ subroutine ffdev_parameters_ctrl_files(fin)
 end subroutine ffdev_parameters_ctrl_files
 
 ! ==============================================================================
-! subroutine ffdev_parameters_ctrl_initff
+! subroutine ffdev_parameters_ctrl_ffmanip
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_initff(fin,noexec)
+subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -751,7 +751,7 @@ subroutine ffdev_parameters_ctrl_initff(fin,noexec)
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'INITFF', ':')
+    call ffdev_utils_heading(DEV_OUT,'FFMANIP', ':')
 
     rst = prmfile_first_section(fin)
     do while( rst )
@@ -766,13 +766,15 @@ subroutine ffdev_parameters_ctrl_initff(fin,noexec)
                 call ffdev_parameters_ctrl_bond_r0(fin,noexec)
             case('angle_a0')
                 call ffdev_parameters_ctrl_angle_a0(fin,noexec)
+            case('nbmanip')
+                call ffdev_parameters_ctrl_nbmanip(fin,noexec)
         end select
 
         rst = prmfile_next_section(fin)
     end do
 
 
-end subroutine ffdev_parameters_ctrl_initff
+end subroutine ffdev_parameters_ctrl_ffmanip
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_bond_r0
@@ -918,6 +920,173 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,noexec)
  25 format(/,'> Init mode = average  [default]')
 
 end subroutine ffdev_parameters_ctrl_angle_a0
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    logical             :: noexec
+    ! --------------------------------------------
+    logical                     :: rst
+    character(50)               :: key
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+! global parameters
+    if( prmfile_get_real8_by_key(fin,'erep1',Erep1) ) then
+        write(DEV_OUT,20) Erep1
+    else
+        write(DEV_OUT,25) Erep1
+    end if
+    if( prmfile_get_real8_by_key(fin,'erep2',Erep2) ) then
+        write(DEV_OUT,30) Erep2
+    else
+        write(DEV_OUT,35) Erep2
+    end if
+
+! programatic NB change (order dependent)
+    rst = prmfile_first_line(fin)
+    do while( rst )
+        rst = prmfile_get_field_on_line(fin,key)
+
+        select case(trim(key))
+            case('comb_rules')
+                if( prmfile_get_field_on_line(fin,string) ) then
+                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
+                end if
+            case('nb_mode')
+                if( prmfile_get_field_on_line(fin,string) ) then
+                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
+                end if
+            case default
+                ! do nothing
+        end select
+        rst = prmfile_next_line(fin)
+    end do
+
+10 format('=== [nbmanip] ==================================================================')
+20 format('Erep1 (erep1)                    = ',F10.6)
+25 format('Erep1 (erep1)                    = ',F10.6,' (default)')
+30 format('Erep2 (erep2)                    = ',F10.6)
+35 format('Erep2 (erep2)                    = ',F10.6,' (default)')
+
+end subroutine ffdev_parameters_ctrl_nbmanip
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_topology_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    character(PRMFILE_MAX_PATH) :: string
+    logical                     :: noexec
+    ! --------------------------------------------
+    integer                     :: i,comb_rules
+    ! --------------------------------------------------------------------------
+
+    comb_rules = ffdev_topology_get_comb_rules_from_string(string)
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'NB combination rules', '%')
+    write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
+
+    if( noexec ) return ! do not execute
+
+    do i=1,nsets
+        write(DEV_OUT,*)
+        write(DEV_OUT,20) i
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,1)
+
+        ! remix parameters
+        call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
+
+        ! new set of parameters
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,2)
+    end do
+
+10 format('Combination rules (comb_rules)   = ',A)
+20 format('=== SET ',I2.2)
+
+end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_topology_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    character(PRMFILE_MAX_PATH) :: string
+    logical                     :: noexec
+    ! --------------------------------------------
+    integer                     :: i,nb_mode
+    ! --------------------------------------------------------------------------
+
+    nb_mode = ffdev_topology_nb_mode_from_string(string)
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
+    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(nb_mode)
+
+    if( noexec ) return ! do not execute
+
+    do i=1,nsets
+        write(DEV_OUT,*)
+        write(DEV_OUT,20) i
+
+        if( (nb_mode .eq. NB_MODE_EXPD3BJ) .or. (nb_mode .eq. NB_MODE_ADDD3BJ) ) then
+            call ffdev_topology_print_dftd3_params(sets(i)%top)
+        end if
+
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,1)
+
+        ! remix parameters
+        call ffdev_topology_switch_nbmode(sets(i)%top,nb_mode)
+
+        ! new set of parameters
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,2)
+    end do
+
+10 format('NB mode (nb_mode)                = ',A)
+20 format('=== SET ',I2.2)
+
+end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
 
 ! ------------------------------------------------------------------------------
 

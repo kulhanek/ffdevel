@@ -34,6 +34,14 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_dat.f90
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
+
+        dftd3/sizes.f90
+        dftd3/api.f90
+        dftd3/common.f90
+        dftd3/core.f90
+        dftd3/pars.f90
+        dftd3/sizes.f90
+        dftd3/dftd3.f90
         )
 
 # create static library --------------------------------------------------------
