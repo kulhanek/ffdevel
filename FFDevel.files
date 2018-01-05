@@ -80,10 +80,14 @@ src/lib/ffdevel/dftd3/README.rst
 src/lib/ffdevel/dftd3/api.f90
 src/lib/ffdevel/dftd3/common.f90
 src/lib/ffdevel/dftd3/core.f90
-src/lib/ffdevel/dftd3/dftd3.f90
+src/lib/ffdevel/dftd3/mmd3.f90
+src/lib/ffdevel/dftd3/mmd3_control.f90
+src/lib/ffdevel/dftd3/mmd3_dat.f90
 src/lib/ffdevel/dftd3/pars.f90
 src/lib/ffdevel/dftd3/sizes.f90
 src/lib/ffdevel/forcefield/energy.f90
+src/lib/ffdevel/forcefield/energy_prmgrd.f90
+src/lib/ffdevel/forcefield/energy_utils.f90
 src/lib/ffdevel/forcefield/geometry.f90
 src/lib/ffdevel/forcefield/geometry_dat.f90
 src/lib/ffdevel/forcefield/geometry_utils.f90

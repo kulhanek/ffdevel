@@ -119,6 +119,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
             shift2zero = .false.
         end if
+        write(DEV_OUT,*)
         write(DEV_OUT,16) prmfile_onoff(shift2zero)
 
         ! count number of points
@@ -195,7 +196,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             sets(i)%geo(j)%id = j
             sets(i)%geo(j)%weight = weight
             call ffdev_geometry_load_point(sets(i)%geo(j),geoname)
-            call ffdev_geometry_info_point(sets(i)%geo(j))
+            if( shift2zero ) then
+                call ffdev_geometry_info_point(sets(i)%geo(j))
+            else
+                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+            end if
+
             call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
 
             ! do we have data for point

@@ -121,6 +121,9 @@ type NB_TYPE
     integer             :: ti,tj            ! atom types
     real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
     real(DEVDP)         :: A, B, C6, C8     ! alternative/complementary data
+    ! reverse indexes to parameters array - for analytical gradients
+    integer             :: pti_eps, pti_r0, pti_alpha
+    integer             :: pti_A, pti_B, pti_C6, pti_C8
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -169,11 +172,12 @@ end type TOPOLOGY
 
 logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
                                         ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
-! d3bj parameters
-real(DEVDP)         :: d3bj_a1                      ! damping function parameters
-real(DEVDP)         :: d3bj_a2
-logical             :: d3bj_use_frac_cn = .true.   ! use fractional CN derived from bond_r0
-real(DEVDP)         :: d3bj_k1 = 16.0               ! to derive fractional CN
+
+! possible values for lj2exp6_alpha
+! 12.0                           - identical long-range
+! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
+real(DEVDP)         :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
+
 
 ! ------------------------------------------------------------------------------
 
@@ -181,14 +185,15 @@ integer,parameter               :: NB_MODE_LJ       = 1   ! Lennard-Jones potent
 integer,parameter               :: NB_MODE_EXP6     = 2   ! Exp-6 potential (eps,r0,alpha)
 integer,parameter               :: NB_MODE_BP       = 3   ! Buckingham potential (A,B,C6)
 integer,parameter               :: NB_MODE_EXPONLY  = 4   ! Born-Mayer potential - Exp only (A,B)
-integer,parameter               :: NB_MODE_ADDD3BJ  = 5   ! D3-BJ add C6,C8
-integer,parameter               :: NB_MODE_EXPD3BJ  = 6   ! D3-BJ (A,B,C6,C8)
+integer,parameter               :: NB_MODE_ADDMMD3  = 5   ! MMD3 add C6,C8
+integer,parameter               :: NB_MODE_MMD3     = 6   ! MMD3 (A,B,C6,C8)
 
 integer,parameter               :: COMB_RULE_IN = 05  ! input data
 integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)
 integer,parameter               :: COMB_RULE_WH = 20  ! WH (Waldman-Hagler)
 integer,parameter               :: COMB_RULE_KG = 30  ! KG (Kong)
 integer,parameter               :: COMB_RULE_FB = 40  ! FB (Fender-Halsey-Berthelot)
+integer,parameter               :: COMB_RULE_GS = 50  ! GS (Gilbert-Smith)
 
 ! ------------------------------------------------------------------------------
 

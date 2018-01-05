@@ -26,6 +26,8 @@ program ffdev_optimize_program
     use ffdev_parameters_dat
     use ffdev_parameters_control
     use ffdev_targetset
+    use ffdev_mmd3
+    use ffdev_mmd3_dontrol
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname      ! input control file name
@@ -60,6 +62,10 @@ program ffdev_optimize_program
     if( prmfile_open_group(fin,'MAIN') ) then
         call ffdev_parameters_ctrl_files(fin)
     end if
+
+    ! init mmd3
+    call ffdev_mmd3_init
+    call ffdev_mmd3_ctrl(fin)
 
     ! read sections
     call ffdev_targetset_ctrl(fin,.false.)
@@ -155,9 +161,6 @@ program ffdev_optimize_program
 
     ! release the file
     call prmfile_clear(fin)
-
-    ! extract LJ parameters
-    call ffdev_parameters_extract_LJ_prms()
 
     ! finalize
     write(DEV_OUT,*)

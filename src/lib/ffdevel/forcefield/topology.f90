@@ -521,6 +521,14 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_types(i)%tj .le. 0) .or. (top%nb_types(i)%tj .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
+        ! reset parameter indexes
+        top%nb_types(i)%pti_eps = 0
+        top%nb_types(i)%pti_r0 = 0
+        top%nb_types(i)%pti_alpha = 0
+        top%nb_types(i)%pti_A = 0
+        top%nb_types(i)%pti_B = 0
+        top%nb_types(i)%pti_C6 = 0
+        top%nb_types(i)%pti_C8 = 0
     end do
 
     ! check if everything was read
@@ -799,17 +807,17 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
 
     select case(nb_mode)
         case(NB_MODE_LJ)
-            ffdev_topology_nb_mode_to_string = 'Lennard-Jones potential'
+            ffdev_topology_nb_mode_to_string = 'LJ - Lennard-Jones potential'
         case(NB_MODE_BP)
-            ffdev_topology_nb_mode_to_string = 'Buckingham potential'
+            ffdev_topology_nb_mode_to_string = 'BP - Buckingham potential'
         case(NB_MODE_EXP6)
-            ffdev_topology_nb_mode_to_string = 'Exp-6 potential'
+            ffdev_topology_nb_mode_to_string = 'EXP6 - Exp-6 potential'
         case(NB_MODE_EXPONLY)
-            ffdev_topology_nb_mode_to_string = 'Exp only (Born-Mayer) potential'
-        case(NB_MODE_EXPD3BJ)
-            ffdev_topology_nb_mode_to_string = 'Exp-d3-bj potential'
-        case(NB_MODE_ADDD3BJ)
-            ffdev_topology_nb_mode_to_string = 'Add d3-bj potential parameters'
+            ffdev_topology_nb_mode_to_string = 'EXPONLY - Born-Mayer potential'
+        case(NB_MODE_MMD3)
+            ffdev_topology_nb_mode_to_string = 'MMD3 potential'
+        case(NB_MODE_ADDMMD3)
+            ffdev_topology_nb_mode_to_string = 'ADDMMD3 - add MMD3 dispersion parameters'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -837,8 +845,8 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_MODE_EXP6
         case('EXPONLY')
             ffdev_topology_nb_mode_from_string = NB_MODE_EXPONLY
-        case('EXPD3BJ')
-            ffdev_topology_nb_mode_from_string = NB_MODE_EXPD3BJ
+        case('MMD3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_MMD3
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -868,6 +876,8 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
             ffdev_topology_comb_rules_to_string = 'KG (Kong)'
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
+        case(COMB_RULE_GS)
+            ffdev_topology_comb_rules_to_string = 'GS (Gilbert-Smith)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
     end select
@@ -897,6 +907,8 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
+        case('GS')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_GS
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
     end select
@@ -1079,7 +1091,7 @@ subroutine ffdev_topology_info_types(top,mode)
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                                top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
                     end do
-                case(NB_MODE_BP,NB_MODE_EXPONLY,NB_MODE_EXPD3BJ)
+                case(NB_MODE_BP,NB_MODE_EXPONLY,NB_MODE_MMD3)
                     write(DEV_OUT,620)
                     write(DEV_OUT,630)
                     do i=1,top%nnb_types
@@ -1134,7 +1146,7 @@ subroutine ffdev_topology_info_types(top,mode)
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 515 format('# Type of vdW interactions = ',A)
-516 format('# Combining rule           = ',A)
+
 520 format('# ID TypA TypB        eps              R0             alpha      ')
 530 format('# -- ---- ---- ---------------- ---------------- ----------------')
 540 format(I4,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7)
@@ -1212,7 +1224,7 @@ end subroutine ffdev_topology_gen_bonded
 ! function ffdev_topology_find_nbtype
 ! ==============================================================================
 
-integer function ffdev_topology_find_nbtype(top,ai,aj)
+integer function ffdev_topology_find_nbtype_by_aindex(top,ai,aj)
 
     use ffdev_utils
 
@@ -1220,26 +1232,72 @@ integer function ffdev_topology_find_nbtype(top,ai,aj)
     type(TOPOLOGY)  :: top
     integer         :: ai,aj
     ! --------------------------------------------
-    integer         :: i,j,k,ti,tj
+    integer         :: ti,tj
     ! --------------------------------------------------------------------------
 
     ! convert to types
     ti = top%atoms(ai)%typeid
     tj = top%atoms(aj)%typeid
 
+    ffdev_topology_find_nbtype_by_aindex = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+end function ffdev_topology_find_nbtype_by_aindex
+
+! ==============================================================================
+! function ffdev_topology_find_nbtype_by_tindex
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: ti,tj
+    ! --------------------------------------------
+    integer         :: i,j,k
+    ! --------------------------------------------------------------------------
+
     do i=1,top%nnb_types
         if(  ( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) .or. &
              ( (top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti) ) ) then
-             ffdev_topology_find_nbtype = i
+             ffdev_topology_find_nbtype_by_tindex = i
              return
         end if
     end do
 
     ! not found
-    ffdev_topology_find_nbtype = 0
+    ffdev_topology_find_nbtype_by_tindex = 0
     return
 
-end function ffdev_topology_find_nbtype
+end function ffdev_topology_find_nbtype_by_tindex
+
+! ==============================================================================
+! function ffdev_topology_find_nbtype_by_types
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype_by_types(top,sti,stj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    character(*)    :: sti,stj
+    ! --------------------------------------------
+    integer         :: i,ti,tj
+    ! --------------------------------------------------------------------------
+
+    ti = 0
+    tj = 0
+
+    do i=1,top%natom_types
+        if( top%atom_types(i)%name .eq. sti ) ti = i
+        if( top%atom_types(i)%name .eq. stj ) tj = i
+    end do
+
+    ffdev_topology_find_nbtype_by_types = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+end function ffdev_topology_find_nbtype_by_types
 
 ! ==============================================================================
 ! function ffdev_topology_is_nbtype_used
@@ -1270,138 +1328,13 @@ logical function ffdev_topology_is_nbtype_used(top,nbt)
 end function ffdev_topology_is_nbtype_used
 
 ! ==============================================================================
-! function ffdev_topology_get_atom_cn
-! ==============================================================================
-
-real(DEVDP) function ffdev_topology_get_atom_cn(top,ai)
-
-    use ffdev_utils
-    use ffdev_dftd3
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: ai
-    ! --------------------------------------------
-    integer         :: i
-    real(DEVDP)     :: r,rco,rr,damp
-    ! --------------------------------------------------------------------------
-
-    ffdev_topology_get_atom_cn = 0.0d0
-
-    do i=1,top%nbonds
-        if( (top%bonds(i)%ai .eq. ai) .or. (top%bonds(i)%aj .eq. ai) ) then
-            if( d3bj_use_frac_cn ) then
-                ! bond distance
-                r = top%bond_types(top%bonds(i)%bt)%d0
-                ! covalent distance in au
-                rco = ffdev_dftd3_get_rcov(top%atom_types(top%atoms(top%bonds(i)%ai)%typeid)%z) &
-                    + ffdev_dftd3_get_rcov(top%atom_types(top%atoms(top%bonds(i)%aj)%typeid)%z)
-                rr = rco/r
-                ! counting function exponential has a better long-range behavior than MH
-                damp=1.d0/(1.d0+exp(-d3bj_k1*(rr-1.0d0)))
-                ! write(*,*) r, rr, rco, damp
-                ffdev_topology_get_atom_cn = ffdev_topology_get_atom_cn + damp
-            else
-                ffdev_topology_get_atom_cn = ffdev_topology_get_atom_cn + 1.0d0
-            end if
-        end if
-    end do
-
-end function ffdev_topology_get_atom_cn
-
-! ==============================================================================
-! function ffdev_topology_get_type_cn
-! ==============================================================================
-
-real(DEVDP) function ffdev_topology_get_type_cn(top,ti)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: ti
-    ! --------------------------------------------
-    integer         :: i
-    real(DEVDP)     :: cn, prev_cn
-    logical         :: first
-    ! --------------------------------------------------------------------------
-
-    first = .true.
-
-    do i=1,top%natoms
-        if( top%atoms(i)%typeid .eq. ti ) then
-            cn = ffdev_topology_get_atom_cn(top,i)
-            if( first ) then
-                prev_cn = cn
-                first = .false.
-            end if
-            if( prev_cn .ne. cn ) then
-                call ffdev_utils_exit(DEV_OUT,1,'inconsistent CN detected in ffdev_topology_get_type_cn!')
-            end if
-        end if
-    end do
-
-    ffdev_topology_get_type_cn = cn
-
-end function ffdev_topology_get_type_cn
-
-! ==============================================================================
-! subroutine ffdev_topology_print_dftd3_params
-! ==============================================================================
-
-subroutine ffdev_topology_print_dftd3_params(top)
-
-    use ffdev_utils
-    use ffdev_dftd3
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: nb_mode
-    ! --------------------------------------------
-    integer         :: i, za, zb
-    real(DEVDP)     :: cna, cnb, r0ab, c6, c8
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,510)
-    write(DEV_OUT,550) d3bj_a1
-    write(DEV_OUT,560) d3bj_a2
-    write(DEV_OUT,*)
-    write(DEV_OUT,620)
-    write(DEV_OUT,630)
-
-    do i=1,top%nnb_types
-        za  = top%atom_types(top%nb_types(i)%ti)%z
-        cna = ffdev_topology_get_type_cn(top,top%nb_types(i)%ti)
-        zb  = top%atom_types(top%nb_types(i)%tj)%z
-        cnb = ffdev_topology_get_type_cn(top,top%nb_types(i)%tj)
-        c6 = ffdev_dftd3_get_c6(za,cna,zb,cnb)
-        c8 = ffdev_dftd3_get_c8(za,cna,zb,cnb)
-        r0ab = sqrt(c8/c6)
-        write(DEV_OUT,640) i,top%atom_types(top%nb_types(i)%ti)%name,za,cna, &
-                             top%atom_types(top%nb_types(i)%tj)%name,zb,cnb, &
-                             c6, c8, r0ab
-
-    end do
-
-510 format('# ~~~~~~~~~~~~~~~~~ DFT-d3 parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-550 format('# d3bj_a1 = ',F16.7)
-560 format('# d3bj_a2 = ',F16.7)
-
-620 format('# ID TypA ZA  CNA  TypB ZA  CNB       C6(AB)         C8(AB)       R0(AB) ')
-630 format('# -- ---- -- ----- ---- -- ----- --------------- --------------- --------')
-640 format(I4,1X,A4,1X,I2,1X,F5.3,1X,A4,1X,I2,1X,F5.3,1X,E15.7,1X,E15.7,1X,F8.5)
-
-end subroutine ffdev_topology_print_dftd3_params
-
-! ==============================================================================
 ! function ffdev_topology_switch_nbmode
 ! ==============================================================================
 
 subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 
     use ffdev_utils
-    use ffdev_dftd3
+    use ffdev_mmd3
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1429,7 +1362,7 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                 case(NB_MODE_EXP6)
                     ! keep eps, r0; derive alpha from LJ from equality of the second derivatives in r0
                     do i=1,top%nnb_types
-                        top%nb_types(i)%alpha = 0.5d0*(19.0d0 + sqrt(73.0d0))
+                        top%nb_types(i)%alpha = lj2exp6_alpha
                         top%nb_types(i)%A  = 0.0d0
                         top%nb_types(i)%B  = 0.0d0
                         top%nb_types(i)%C6 = 0.0d0
@@ -1439,25 +1372,21 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                     ! derive alpha from LJ from equality of the second derivatives in r0
                     ! and switch from ERA to ABC
                     do i=1,top%nnb_types
-                        top%nb_types(i)%alpha = 0.5d0*(19.0d0 + sqrt(73.0d0))
+                        top%nb_types(i)%alpha = lj2exp6_alpha
                         call ffdev_topology_ERA2ABC(NB_MODE_EXP6,top%nb_types(i))
                         top%nb_types(i)%eps   = 0.0d0
                         top%nb_types(i)%r0    = 0.0d0
                         top%nb_types(i)%alpha = 0.0d0
                         top%nb_types(i)%C8    = 0.0d0
                     end do
-                case(NB_MODE_EXPD3BJ)
+                case(NB_MODE_MMD3)
                     do i=1,top%nnb_types
                         ! keep repulsive parameters
-                        top%nb_types(i)%alpha = 0.5d0*(19.0d0 + sqrt(73.0d0))
+                        top%nb_types(i)%alpha = lj2exp6_alpha
                         call ffdev_topology_ERA2ABC(NB_MODE_EXP6,top%nb_types(i))
                         ! override C6 and C8 parameters
-                        za  = top%atom_types(top%nb_types(i)%ti)%z
-                        cna = ffdev_topology_get_type_cn(top,top%nb_types(i)%ti)
-                        zb  = top%atom_types(top%nb_types(i)%tj)%z
-                        cnb = ffdev_topology_get_type_cn(top,top%nb_types(i)%tj)
-                        top%nb_types(i)%c6 = ffdev_dftd3_get_c6(za,cna,zb,cnb)
-                        top%nb_types(i)%c8 = ffdev_dftd3_get_c8(za,cna,zb,cnb)
+                        top%nb_types(i)%c6 = ffdev_mmd3_get_c6(top,top%nb_types(i)%ti,top%nb_types(i)%tj)
+                        top%nb_types(i)%c8 = ffdev_mmd3_get_c8(top,top%nb_types(i)%ti,top%nb_types(i)%tj)
                         ! erase old LJ parameters
                         top%nb_types(i)%eps   = 0.0d0
                         top%nb_types(i)%r0    = 0.0d0
@@ -1466,7 +1395,7 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                 case(NB_MODE_EXPONLY)
                     do i=1,top%nnb_types
                         ! keep repulsive parameters
-                        top%nb_types(i)%alpha = 12.0d0 ! 0.5d0*(19.0d0 + sqrt(73.0d0))
+                        top%nb_types(i)%alpha = lj2exp6_alpha
                         call ffdev_topology_ERA2ABC(NB_MODE_EXP6,top%nb_types(i))
                         ! erase old LJ parameters
                         top%nb_types(i)%eps   = 0.0d0
@@ -1482,15 +1411,11 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 ! from ExpONLY ->
         case(NB_MODE_EXPONLY)
             select case(nb_mode)
-                case(NB_MODE_ADDD3BJ)
+                case(NB_MODE_ADDMMD3)
                     do i=1,top%nnb_types
                         ! add C6 and C8 parameters
-                        za  = top%atom_types(top%nb_types(i)%ti)%z
-                        cna = ffdev_topology_get_type_cn(top,top%nb_types(i)%ti)
-                        zb  = top%atom_types(top%nb_types(i)%tj)%z
-                        cnb = ffdev_topology_get_type_cn(top,top%nb_types(i)%tj)
-                        top%nb_types(i)%c6 = ffdev_dftd3_get_c6(za,cna,zb,cnb)
-                        top%nb_types(i)%c8 = ffdev_dftd3_get_c8(za,cna,zb,cnb)
+                        top%nb_types(i)%c6 = ffdev_mmd3_get_c6(top,top%nb_types(i)%ti,top%nb_types(i)%tj)
+                        top%nb_types(i)%c8 = ffdev_mmd3_get_c8(top,top%nb_types(i)%ti,top%nb_types(i)%tj)
                         ! erase old LJ parameters
                         top%nb_types(i)%eps   = 0.0d0
                         top%nb_types(i)%r0    = 0.0d0
@@ -1499,7 +1424,7 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Only EXPONLY->ADDD3BJ supported!')
             end select
-            nb_mode = NB_MODE_EXPD3BJ
+            nb_mode = NB_MODE_MMD3
 
 ! from Exp6 ->
         case(NB_MODE_EXP6)
@@ -1512,7 +1437,7 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
             call ffdev_utils_exit(DEV_OUT,1,'not implemented!')
 
 ! from EXPD3BJ ->
-        case(NB_MODE_EXPD3BJ)
+        case(NB_MODE_MMD3)
             call ffdev_utils_exit(DEV_OUT,1,'not implemented!')
 
         case default
@@ -1617,46 +1542,154 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     type(TOPOLOGY)  :: top
     integer         :: comb_rules
     ! --------------------------------------------
-    integer         :: i
-    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,tmp,epsij,r0ij,k,l
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l,aii,aij,ajj,bii,bij,bjj
+    logical         :: ok
     ! --------------------------------------------------------------------------
 
-    if( top%nb_mode .ne. NB_MODE_LJ ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Cannot apply combining rules if nb_mode .ne. NB_MODE_LJ!')
+    ! test allowed combination between nb_mode and comb_rules
+    ok = .false.
+    select case(comb_rules)
+        case(COMB_RULE_LB,COMB_RULE_KG,COMB_RULE_WH,COMB_RULE_FB)
+            if( top%nb_mode .eq. NB_MODE_LJ ) ok = .true.
+        case(COMB_RULE_GS)
+            if( top%nb_mode .eq. NB_MODE_EXPONLY ) ok = .true.
+    end select
+
+    if( .not. ok ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Combination of "' // ffdev_topology_comb_rules_to_string(comb_rules) // &
+                                        '" and "' // ffdev_topology_nb_mode_to_string(top%nb_mode) // &
+                                        '" is not implemented/allowed!')
     end if
 
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
             ! get type parameters
-            call ffdev_topology_get_nbprms(top,top%nb_types(i)%ti,top%nb_types(i)%ti,epsii,r0ii,tmp)
-            call ffdev_topology_get_nbprms(top,top%nb_types(i)%tj,top%nb_types(i)%tj,epsjj,r0jj,tmp)
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
 
             select case(comb_rules)
                 case(COMB_RULE_LB)
+                    r0ii  = top%nb_types(nbii)%r0
+                    epsii = top%nb_types(nbii)%eps
+                    r0jj  = top%nb_types(nbjj)%r0
+                    epsjj = top%nb_types(nbjj)%eps
                     r0ij = (r0ii+r0jj)*0.5d0
                     epsij = sqrt(epsii*epsjj)
+                    top%nb_types(i)%eps = epsij
+                    top%nb_types(i)%r0 = r0ij
                 case(COMB_RULE_WH)
+                    r0ii  = top%nb_types(nbii)%r0
+                    epsii = top%nb_types(nbii)%eps
+                    r0jj  = top%nb_types(nbjj)%r0
+                    epsjj = top%nb_types(nbjj)%eps
                     r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
                     epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
+                    top%nb_types(i)%eps = epsij
+                    top%nb_types(i)%r0 = r0ij
                 case(COMB_RULE_KG)
+                    r0ii  = top%nb_types(nbii)%r0
+                    epsii = top%nb_types(nbii)%eps
+                    r0jj  = top%nb_types(nbjj)%r0
+                    epsjj = top%nb_types(nbjj)%eps
                     k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
                     l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
                     r0ij = (l/k)**(1.0d0/6.0d0)
                     epsij = k / (r0ij**6)
+                    top%nb_types(i)%eps = epsij
+                    top%nb_types(i)%r0 = r0ij
                 case(COMB_RULE_FB)
+                    r0ii  = top%nb_types(nbii)%r0
+                    epsii = top%nb_types(nbii)%eps
+                    r0jj  = top%nb_types(nbjj)%r0
+                    epsjj = top%nb_types(nbjj)%eps
                     r0ij = (r0ii+r0jj)*0.5d0
                     epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
+                    top%nb_types(i)%eps = epsij
+                    top%nb_types(i)%r0 = r0ij
+                case(COMB_RULE_GS)
+                    aii  = top%nb_types(nbii)%a
+                    bii  = top%nb_types(nbii)%b
+                    ajj  = top%nb_types(nbjj)%a
+                    bjj  = top%nb_types(nbjj)%b
+                    bij  = 2.0d0*bii*bjj/(bii+bjj)
+                    aij  = ( ((aii*bii)**(1.0d0/bii) * (ajj*bjj)**(1.0d0/bjj))**(bij/2.0d0) ) / bij
+                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
+                    top%nb_types(i)%a = aij
+                    top%nb_types(i)%b = bij
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules!')
             end select
-
-            top%nb_types(i)%eps = epsij
-            top%nb_types(i)%r0 = r0ij
-            top%nb_types(i)%alpha = 0.0d0
         end if
     end do
 
 end subroutine ffdev_topology_apply_NB_comb_rules
+
+! ==============================================================================
+! function ffdev_topology_expand_exponly
+! ==============================================================================
+
+subroutine ffdev_topology_expand_exponly(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,pt,at
+    real(DEVDP)     :: aii,ajj,aij,bii,bjj,bij
+    ! --------------------------------------------------------------------------
+
+    if( top%nb_mode .ne. NB_MODE_EXPONLY ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Cannot expand exponly if nb_mode .ne. NB_MODE_EXPONLY!')
+    end if
+
+    if( top%probe_size .eq. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Cannot expand exponly if not in probe mode!')
+    end if
+
+    do i=1,top%nnb_types
+        ! skip like atoms
+        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
+
+        ! at least one atom must be a probe
+        if( .not. (top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe) ) cycle
+
+        ! determine probe and probed atom
+        if( top%atom_types(top%nb_types(i)%ti)%probe ) then
+            pt = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            at = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        else
+            pt = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+            at = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+        end if
+
+        ! get parameters of probe
+        aii = top%nb_types(pt)%a
+        bii = top%nb_types(pt)%b
+
+        ! get source parameters
+        aij = top%nb_types(i)%a
+        bij = top%nb_types(i)%b
+
+        ! write(*,*) aii,bii,aij,bij
+
+        ! get jj parameters
+        select case(comb_rules)
+            case(COMB_RULE_GS)
+                bjj = bij*bii/(2.0d0*bii-bij)
+                ajj = ((aij*bij)**(2.0d0/bij)/((aii*bii)**(1.0d0/bii)*bjj**(1.0d0/bjj)))**bjj
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported combining rule in ffdev_topology_expand_exponly!')
+        end select
+
+        ! update parameters
+        top%nb_types(at)%a = ajj
+        top%nb_types(at)%b = bjj
+    end do
+
+end subroutine ffdev_topology_expand_exponly
 
 ! ==============================================================================
 ! subroutine ffdev_topology_update_nbABC
@@ -1675,7 +1708,7 @@ subroutine ffdev_topology_update_nbABC(top)
     ! shall we convert?
     if( top%nb_mode .eq. NB_MODE_BP ) return
     if( top%nb_mode .eq. NB_MODE_EXPONLY ) return
-    if( top%nb_mode .eq. NB_MODE_EXPD3BJ ) return
+    if( top%nb_mode .eq. NB_MODE_MMD3 ) return
 
     do i=1,top%nnb_types
         call ffdev_topology_ERA2ABC(top%nb_mode,top%nb_types(i))
@@ -1703,11 +1736,13 @@ subroutine ffdev_topology_ERA2ABC(nbmode,nbtype)
             nbtype%C6 = 0.0d0
             nbtype%C8 = 0.0d0
         case(NB_MODE_EXP6)
-            nbtype%A  = 6.0d0*nbtype%eps*exp(nbtype%alpha)/(nbtype%alpha - 6.0d0)
-            nbtype%B  = nbtype%alpha/nbtype%r0
-            nbtype%C6 = nbtype%eps*nbtype%alpha*nbtype%r0**6/(nbtype%alpha - 6.0d0)
-            nbtype%C8 = 0.0d0
-        case(NB_MODE_BP,NB_MODE_EXPONLY,NB_MODE_EXPD3BJ)
+            if( nbtype%r0 .gt. 0.0d0 ) then
+                nbtype%A  = 6.0d0*nbtype%eps*exp(nbtype%alpha)/(nbtype%alpha - 6.0d0)
+                nbtype%B  = nbtype%alpha/nbtype%r0
+                nbtype%C6 = nbtype%eps*nbtype%alpha*nbtype%r0**6/(nbtype%alpha - 6.0d0)
+                nbtype%C8 = 0.0d0
+            end if
+        case(NB_MODE_BP,NB_MODE_EXPONLY,NB_MODE_MMD3)
             ! nothing to be here
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_topology_ERA2ABC!')
@@ -1810,9 +1845,21 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
             top%nb_list(ip)%ai = i
             top%nb_list(ip)%aj = j
             top%nb_list(ip)%dt = 0
-            top%nb_list(ip)%nbt = ffdev_topology_find_nbtype(top,i,j)
+            top%nb_list(ip)%nbt = ffdev_topology_find_nbtype_by_aindex(top,i,j)
             ip = ip + 1
         end do
+    end do
+
+! erase all NB parameters except of probe and probe/probed structure
+    do i=1,top%nnb_types
+        if( top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe ) cycle
+        top%nb_types(i)%eps   = 0.0d0
+        top%nb_types(i)%r0    = 0.0d0
+        top%nb_types(i)%alpha = 0.0d0
+        top%nb_types(i)%a     = 0.0d0
+        top%nb_types(i)%b     = 0.0d0
+        top%nb_types(i)%c6    = 0.0d0
+        top%nb_types(i)%c8    = 0.0d0
     end do
 
 end subroutine ffdev_topology_switch_to_probe_mode

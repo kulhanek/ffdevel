@@ -24,6 +24,7 @@ contains
 
 ! ==============================================================================
 ! subroutine ffdev_targetset_init_tops
+! at this point parameters should be extracted from topologies
 ! ==============================================================================
 
 subroutine ffdev_targetset_init_pts
@@ -32,6 +33,8 @@ subroutine ffdev_targetset_init_pts
     use ffdev_topology
     use ffdev_gradient_utils
     use ffdev_hessian_utils
+    use ffdev_parameters_dat
+    use ffdev_energy_utils
 
     implicit none
     integer     :: i,j
@@ -45,6 +48,9 @@ subroutine ffdev_targetset_init_pts
                 call ffdev_gradient_allocate(sets(i)%geo(j))
             else if( sets(i)%geo(j)%trg_grd_loaded ) then
                 call ffdev_gradient_allocate(sets(i)%geo(j))
+            end if
+            if( AnalErrEneFceGrad ) then
+                call ffdev_energy_utils_allocate_eneprmgrad(sets(i)%geo(j))
             end if
         end do
     end do

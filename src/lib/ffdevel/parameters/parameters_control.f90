@@ -478,7 +478,7 @@ subroutine change_realms(realm,enable,options)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                    case(NB_MODE_EXPD3BJ)
+                    case(NB_MODE_MMD3)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
@@ -800,6 +800,10 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
                 call ffdev_parameters_ctrl_angle_a0(fin,noexec)
             case('nbmanip')
                 call ffdev_parameters_ctrl_nbmanip(fin,noexec)
+            case('expand-exponly')
+                call ffdev_parameters_ctrl_expand_exponly(fin,noexec)
+            case('nbload')
+                call ffdev_parameters_ctrl_nbload(fin,noexec)
         end select
 
         rst = prmfile_next_section(fin)
@@ -977,18 +981,6 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-! global parameters
-    if( prmfile_get_real8_by_key(fin,'d3bj_a1',d3bj_a1) ) then
-        write(DEV_OUT,20) d3bj_a1
-    else
-        write(DEV_OUT,25) d3bj_a1
-    end if
-    if( prmfile_get_real8_by_key(fin,'d3bj_a2',d3bj_a2) ) then
-        write(DEV_OUT,30) d3bj_a2
-    else
-        write(DEV_OUT,35) d3bj_a2
-    end if
-
 ! programatic NB change (order dependent)
     rst = prmfile_first_line(fin)
     do while( rst )
@@ -1010,10 +1002,6 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
     end do
 
 10 format('=== [nbmanip] ==================================================================')
-20 format('BJ damping parameter a1 (d3bj_a1) = ',F10.6)
-25 format('BJ damping parameter a1 (d3bj_a1) = ',F10.6,' (default)')
-30 format('BJ damping parameter a2 (d3bj_a2) = ',F10.6)
-35 format('BJ damping parameter a2 (d3bj_a2) = ',F10.6,' (default)')
 
 end subroutine ffdev_parameters_ctrl_nbmanip
 
@@ -1078,6 +1066,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     use ffdev_topology_dat
     use prmfile
     use ffdev_utils
+    use ffdev_mmd3
 
     implicit none
     character(PRMFILE_MAX_PATH) :: string
@@ -1086,8 +1075,8 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     integer                     :: i,j,nb_mode
     ! --------------------------------------------------------------------------
 
-    if( trim(string) .eq. 'ADDD3BJ' ) then
-        nb_mode = NB_MODE_ADDD3BJ
+    if( trim(string) .eq. 'ADDMMD3' ) then
+        nb_mode = NB_MODE_ADDMMD3
     else
         nb_mode = ffdev_topology_nb_mode_from_string(string)
     end if
@@ -1098,8 +1087,8 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
 
     if( noexec ) then
         ! do not execute but minic that we changed the mode
-        if( nb_mode .eq. NB_MODE_ADDD3BJ ) then
-            nb_mode = NB_MODE_EXPD3BJ
+        if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
+            nb_mode = NB_MODE_MMD3
         end if
         GlobalNBMode = nb_mode
         return
@@ -1109,8 +1098,8 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
         write(DEV_OUT,*)
         write(DEV_OUT,20) i
 
-        if( (nb_mode .eq. NB_MODE_EXPD3BJ) .or. (nb_mode .eq. NB_MODE_ADDD3BJ) ) then
-            call ffdev_topology_print_dftd3_params(sets(i)%top)
+        if( (nb_mode .eq. NB_MODE_MMD3) .or. (nb_mode .eq. NB_MODE_ADDMMD3) ) then
+            call ffdev_mmd3_print_params(sets(i)%top)
         end if
 
         write(DEV_OUT,*)
@@ -1126,41 +1115,207 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
         call ffdev_topology_info_types(sets(i)%top,2)
     end do
 
-    if( nb_mode .eq. NB_MODE_ADDD3BJ ) then
-        nb_mode = NB_MODE_EXPD3BJ
+    if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
+        nb_mode = NB_MODE_MMD3
     end if
     GlobalNBMode = nb_mode
 
-    ! update parameter values
-    do i=1,nparams
-        select case(params(i)%realm)
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
-                do j=1,nsets
-                    select case(params(i)%realm)
-                        case(REALM_VDW_EPS)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
-                        case(REALM_VDW_R0)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
-                        case(REALM_VDW_ALPHA)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
-                        case(REALM_VDW_A)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%A
-                        case(REALM_VDW_B)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%B
-                        case(REALM_VDW_C6)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
-                        case(REALM_VDW_C8)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C8
-                    end select
-                end do
-        end select
-    end do
-
+    ! update nb parameters
+    call ffdev_parameters_reinit_nbparams
 
 10 format('NB mode (nb_mode)                = ',A)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_expand_exponly
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_expand_exponly(fin,noexec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_topology_dat
+    use ffdev_topology
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    logical                     :: noexec
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
+        ExpandExpOnlyCombiningRule = ffdev_topology_get_comb_rules_from_string(string)
+        write(DEV_OUT,20) trim(ffdev_topology_comb_rules_to_string(ExpandExpOnlyCombiningRule))
+    else
+        write(DEV_OUT,25) trim(ffdev_topology_comb_rules_to_string(ExpandExpOnlyCombiningRule))
+    end if
+
+    if( GlobalNBMode .ne. NB_MODE_EXPONLY ) then
+        call ffdev_utils_exit(DEV_OUT,1,'nb_mode is not NB_MODE_EXPONLY!')
+    end if
+
+    ! check supported combining rules
+    select case(ExpandExpOnlyCombiningRule)
+        case(COMB_RULE_GS)
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported combining rule in ffdev_parameters_ctrl_expand_exponly!')
+    end select
+
+    if( noexec ) return ! do not execute
+
+    call ffdev_parameters_expand_exponly
+
+10 format('=== [expand-exponly] ===========================================================')
+20 format('Combining rule = ',A)
+25 format('Combining rule = ',A,' (default)')
+
+end subroutine ffdev_parameters_ctrl_expand_exponly
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbload
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_topology_dat
+    use ffdev_topology
+    use prmfile
+    use ffdev_utils
+    use ffdev_targetset_dat
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    logical                     :: noexec
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: line, sti, stj
+    real(DEVDP)                 :: a, b, c, d
+    integer                     :: i,j,nbt
+    logical                     :: rst
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+! print header
+    write(DEV_OUT,*)
+    write(DEV_OUT,510)
+    write(DEV_OUT,515) ffdev_topology_nb_mode_to_string(GlobalNBMode)
+
+    select case(GlobalNBMode)
+        case(NB_MODE_LJ,NB_MODE_EXP6)
+            write(DEV_OUT,520)
+            write(DEV_OUT,530)
+        case(NB_MODE_BP,NB_MODE_EXPONLY)
+            write(DEV_OUT,620)
+            write(DEV_OUT,630)
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+    end select
+
+! read lines
+
+    i = 0
+    do while( prmfile_get_line(fin,line) )
+
+        select case(GlobalNBMode)
+            case(NB_MODE_LJ,NB_MODE_EXPONLY)
+                read(line,*,err=100,end=100) sti, stj, a, b
+                c = 0.0
+            case(NB_MODE_EXP6,NB_MODE_BP)
+                read(line,*,err=100,end=100) sti, stj, a, b, c
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+        end select
+        i = i + 1
+        select case(GlobalNBMode)
+            case(NB_MODE_LJ)
+                write(DEV_OUT,540) i, trim(sti),trim(stj), a,b
+            case(NB_MODE_EXP6)
+                write(DEV_OUT,540) i, trim(sti),trim(stj), a,b,c
+            case(NB_MODE_BP)
+                write(DEV_OUT,640) i, trim(sti),trim(stj), a,b,c
+            case(NB_MODE_EXPONLY)
+                write(DEV_OUT,640) i, trim(sti),trim(stj), a,b
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+        end select
+
+        if( .not. noexec ) then
+            ! for each topology update given parameters
+            do j=1,nsets
+                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
+                if( nbt .ne. 0 ) then
+                    select case(GlobalNBMode)
+                        case(NB_MODE_LJ)
+                            sets(j)%top%nb_types(nbt)%eps = a
+                            sets(j)%top%nb_types(nbt)%r0 = b
+                        case(NB_MODE_EXP6)
+                            sets(j)%top%nb_types(nbt)%eps = a
+                            sets(j)%top%nb_types(nbt)%r0 = b
+                            sets(j)%top%nb_types(nbt)%alpha = c
+                        case(NB_MODE_BP)
+                            sets(j)%top%nb_types(nbt)%a = a
+                            sets(j)%top%nb_types(nbt)%b = b
+                            sets(j)%top%nb_types(nbt)%c6 = c
+                        case(NB_MODE_EXPONLY)
+                            sets(j)%top%nb_types(nbt)%a = a
+                            sets(j)%top%nb_types(nbt)%b = b
+                        case default
+                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+                    end select
+
+                end if
+            end do
+
+        end if
+
+    end do
+
+    if( noexec ) return
+
+! print updated parameters
+    do i=1,nsets
+        write(DEV_OUT,*)
+        write(DEV_OUT,20) i
+        ! new set of parameters
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,2)
+    end do
+
+! update nb parameters
+    call ffdev_parameters_reinit_nbparams
+
+    return
+
+10 format('=== [nbload] ===================================================================')
+
+20 format('=== SET ',I2.2)
+
+100 call ffdev_utils_exit(DEV_OUT,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
+
+510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+515 format('# Type of vdW interactions = ',A)
+
+520 format('# ID TypA TypB        eps              R0             alpha      ')
+530 format('# -- ---- ---- ---------------- ---------------- ----------------')
+540 format(I4,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7)
+
+620 format('# ID TypA TypB        A              B              C6              C8        ')
+630 format('# -- ---- ---- --------------- --------------- --------------- ---------------')
+640 format(I4,1X,A4,1X,A4,1X,E15.7,1X,E15.7,1X,E15.7,1X,E15.7)
+
+end subroutine ffdev_parameters_ctrl_nbload
 
 ! ------------------------------------------------------------------------------
 

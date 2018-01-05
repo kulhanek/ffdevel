@@ -15,6 +15,8 @@ SET(FFDEVEL_SRC
         forcefield/geometry.f90
         forcefield/geometry_utils.f90
         forcefield/energy.f90
+        forcefield/energy_prmgrd.f90
+        forcefield/energy_utils.f90
         forcefield/gradient.f90
         forcefield/gradient_utils.f90
         forcefield/hessian.f90
@@ -41,7 +43,9 @@ SET(FFDEVEL_SRC
         dftd3/core.f90
         dftd3/pars.f90
         dftd3/sizes.f90
-        dftd3/dftd3.f90
+        dftd3/mmd3.f90
+        dftd3/mmd3_dat.f90
+        dftd3/mmd3_control.f90
         )
 
 # create static library --------------------------------------------------------

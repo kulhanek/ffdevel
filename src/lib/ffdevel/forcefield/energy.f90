@@ -62,7 +62,7 @@ subroutine ffdev_energy_all(top,geo)
             call ffdev_energy_nb_lj(top,geo)
         case(NB_MODE_BP,NB_MODE_EXP6)
             call ffdev_energy_nb_bp(top,geo)
-        case(NB_MODE_EXPD3BJ)
+        case(NB_MODE_MMD3)
             call ffdev_energy_nb_expd3bj(top,geo)
         case(NB_MODE_EXPONLY)
             call ffdev_energy_nb_exponly(top,geo)
@@ -471,6 +471,7 @@ subroutine ffdev_energy_nb_exponly(top,geo)
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij*ra
             geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra)
+           ! write(*,*) geo%nb_ene, 1.0/ra, aBP, bBP
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb

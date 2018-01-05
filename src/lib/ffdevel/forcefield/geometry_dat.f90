@@ -40,6 +40,7 @@ type GEOMETRY
     real(DEVDP),pointer :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
     real(DEVDP),pointer :: freq(:)          ! frequencies of normal vibrations
+    real(DEVDP),pointer :: eneprmgrd(:)     ! energy/parameters gradient
     real(DEVDP)         :: weight           ! contribution to all data
     logical             :: trg_ene_loaded
     logical             :: trg_grd_loaded

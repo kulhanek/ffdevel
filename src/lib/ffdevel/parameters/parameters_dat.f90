@@ -100,9 +100,10 @@ real(DEVDP),allocatable :: FFParamsGrd(:)
 
 ! === [control] ================================================================
 
-integer                 :: GlobalNBMode       = NB_MODE_LJ      ! global non-bonded mode
-integer                 :: FinalCombiningRule = COMB_RULE_KG    ! how to extract the final LJ parameters
-logical                 :: NumGradErrFce      = .true.          ! numerical/analytical gradients of error function
+integer                 :: GlobalNBMode                 = NB_MODE_LJ        ! global non-bonded mode
+integer                 :: FinalCombiningRule           = COMB_RULE_KG      ! how to extract the final LJ parameters
+logical                 :: AnalErrEneFceGrad            = .true.            ! numerical/analytical gradients of error function
+integer                 :: ExpandExpOnlyCombiningRule   = COMB_RULE_GS
 
 ! === [error] ==================================================================
 logical                 :: EnableEnergyError = .true.
