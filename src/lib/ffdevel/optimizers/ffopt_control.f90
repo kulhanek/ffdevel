@@ -335,6 +335,10 @@ subroutine read_nlopt_method(fin)
                 write(DEV_OUT,25) 'NLOPT_LN_NELDERMEAD'
             case(NLOPT_LN_SBPLX)
                 write(DEV_OUT,25) 'NLOPT_LN_SBPLX'
+            case(NLOPT_GN_DIRECT)
+                write(DEV_OUT,25) 'NLOPT_GN_DIRECT'
+            case(NLOPT_GN_DIRECT_L)
+                write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
         end select
         write(DEV_OUT,35) NLOpt_InitialStep
         return
@@ -357,6 +361,12 @@ subroutine read_nlopt_method(fin)
             case('NLOPT_LN_SBPLX')
                 NLOpt_Method = NLOPT_LN_SBPLX
                 write(DEV_OUT,20) trim(string)
+            case('NLOPT_GN_DIRECT')
+                NLOpt_Method = NLOPT_GN_DIRECT
+                write(DEV_OUT,20) trim(string)
+            case('NLOPT_GN_DIRECT_L')
+                NLOpt_Method = NLOPT_GN_DIRECT_L
+                write(DEV_OUT,20) trim(string)
         end select
     else
         select case(NLOpt_Method)
@@ -370,6 +380,10 @@ subroutine read_nlopt_method(fin)
                 write(DEV_OUT,25) 'NLOPT_LN_NELDERMEAD'
             case(NLOPT_LN_SBPLX)
                 write(DEV_OUT,25) 'NLOPT_LN_SBPLX'
+            case(NLOPT_GN_DIRECT)
+                write(DEV_OUT,25) 'NLOPT_GN_DIRECT'
+            case(NLOPT_GN_DIRECT_L)
+                write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
         end select
     end if
 

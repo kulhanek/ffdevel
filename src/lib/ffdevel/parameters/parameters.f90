@@ -586,6 +586,7 @@ subroutine ffdev_parameters_reinit_nbparams()
         select case(params(i)%realm)
             case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
                 do j=1,nsets
+                    if( params(i)%ids(j) .eq. 0 ) cycle
                     select case(params(i)%realm)
                         case(REALM_VDW_EPS)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
