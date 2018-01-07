@@ -31,7 +31,6 @@ implicit none
 integer, parameter      :: MINIMIZATION_STEEPEST_DESCENT    = 0
 integer, parameter      :: MINIMIZATION_LBFGS               = 1
 integer, parameter      :: MINIMIZATION_NLOPT               = 2
-integer, parameter      :: MINIMIZATION_SA                  = 3
 
 real(DEVDP),allocatable :: FFParams(:)
 real(DEVDP),allocatable :: FFParamsGrd(:)
@@ -60,26 +59,7 @@ integer         :: NumberOfCorrections
 ! === [NLOPT] ==================================================================
 integer(8)      :: NLoptID
 integer(8)      :: NLoptDummy               ! FIXME - probleme with memory aligment?
+integer         :: NLOpt_Method
 real(DEVDP)     :: NLOpt_InitialStep        ! nlo_set_initial_step
-
-! === [SA] =====================================================================
-real(DEVDP)     :: OptSA_Temp   = 0.01d0    ! initial temperature
-real(DEVDP)     :: OptSA_RT     = 0.85d0    ! the temperature reduction factor
-real(DEVDP)     :: OptSA_EPS    = 0.01      ! Error tolerance for termination
-integer         :: OptSA_NS     = 20        ! Number of cycles
-integer         :: OptSA_NT     = 10        ! Number of iterations before temperature reduction
-integer         :: OptSA_NEPS   = 4         ! Number of final function values used to decide upon termination
-integer         :: OptSA_MAXEVL = 80000     ! The maximum number of function evaluations.
-integer         :: OptSA_IPRINT = 1         ! controls printing inside SA
-integer         :: OptSA_ISEED  = 341723    ! random generator seed
-
-real(DEVDP),allocatable         :: sa_lb(:)
-real(DEVDP),allocatable         :: sa_ub(:)
-real(DEVDP),allocatable         :: sa_c(:)
-real(DEVDP),allocatable         :: sa_vm(:)
-real(DEVDP),allocatable         :: sa_xopt(:)
-real(DEVDP),allocatable         :: sa_fstar(:)
-real(DEVDP),allocatable         :: sa_xp(:)
-integer,allocatable             :: sa_nacp(:)
 
 end module ffdev_ffopt_dat

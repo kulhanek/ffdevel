@@ -53,8 +53,6 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
                 write(DEV_OUT,15) 'l-bfgs'
             case(MINIMIZATION_NLOPT)
                 write(DEV_OUT,15) 'nlopt'
-            case(MINIMIZATION_SA)
-                write(DEV_OUT,15) 'simulated annealing (sa)'
         end select
         write(DEV_OUT,25) NOptSteps
         write(DEV_OUT,35) MaxRMSG
@@ -78,9 +76,6 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             case('nlopt')
                 OptimizationMethod=MINIMIZATION_NLOPT
                 write(DEV_OUT,10) 'nlopt'
-            case('sa')
-                OptimizationMethod=MINIMIZATION_SA
-                write(DEV_OUT,10) 'simulated annealing (sa)'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
         end select
@@ -92,8 +87,6 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
                 write(DEV_OUT,15) 'l-bfgs'
             case(MINIMIZATION_NLOPT)
                 write(DEV_OUT,15) 'nlopt'
-            case(MINIMIZATION_SA)
-                write(DEV_OUT,15) 'simulated annealing (sa)'
         end select
     end if
 
@@ -186,8 +179,6 @@ subroutine read_opt_method(fin)
             call read_sd_method(fin)
         case(MINIMIZATION_LBFGS)
             call read_lbfgs_method(fin)
-        case(MINIMIZATION_SA)
-            call read_sa_method(fin)
         case(MINIMIZATION_NLOPT)
             call read_nlopt_method(fin)
     end select
@@ -324,98 +315,77 @@ subroutine read_nlopt_method(fin)
     use ffdev_utils
 
     implicit none
-    type(PRMFILE_TYPE)  :: fin
+    include 'nlopt.f'
+
+    type(PRMFILE_TYPE)          :: fin
+    character(PRMFILE_MAX_PATH) :: string
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,'(/,a)') '=== [nlopt] ===================================================================='
 
     if( .not. prmfile_open_section(fin,'nlopt') ) then
-        write(DEV_OUT,15) NLOpt_InitialStep
+        select case(NLOpt_Method)
+            case(NLOPT_LN_COBYLA)
+                write(DEV_OUT,25) 'NLOPT_LN_COBYLA'
+            case(NLOPT_LN_BOBYQA)
+                write(DEV_OUT,25) 'NLOPT_LN_BOBYQA'
+            case(NLOPT_LN_NEWUOA)
+                write(DEV_OUT,25) 'NLOPT_LN_NEWUOA'
+            case(NLOPT_LN_NELDERMEAD)
+                write(DEV_OUT,25) 'NLOPT_LN_NELDERMEAD'
+            case(NLOPT_LN_SBPLX)
+                write(DEV_OUT,25) 'NLOPT_LN_SBPLX'
+        end select
+        write(DEV_OUT,35) NLOpt_InitialStep
         return
     end if
 
-    if( prmfile_get_real8_by_key(fin,'initialstep', NLOpt_InitialStep)) then
-        write(DEV_OUT,10) NLOpt_InitialStep
+    if( prmfile_get_string_by_key(fin,'algorithm', string)) then
+        select case(trim(string))
+            case('NLOPT_LN_COBYLA')
+                NLOpt_Method = NLOPT_LN_COBYLA
+                write(DEV_OUT,20) trim(string)
+            case('NLOPT_LN_BOBYQA')
+                NLOpt_Method = NLOPT_LN_BOBYQA
+                write(DEV_OUT,20) trim(string)
+            case('NLOPT_LN_NEWUOA')
+                NLOpt_Method = NLOPT_LN_NEWUOA
+                write(DEV_OUT,20) trim(string)
+            case('NLOPT_LN_NELDERMEAD')
+                NLOpt_Method = NLOPT_LN_NELDERMEAD
+                write(DEV_OUT,20) trim(string)
+            case('NLOPT_LN_SBPLX')
+                NLOpt_Method = NLOPT_LN_SBPLX
+                write(DEV_OUT,20) trim(string)
+        end select
     else
-        write(DEV_OUT,15) NLOpt_InitialStep
+        select case(NLOpt_Method)
+            case(NLOPT_LN_COBYLA)
+                write(DEV_OUT,25) 'NLOPT_LN_COBYLA'
+            case(NLOPT_LN_BOBYQA)
+                write(DEV_OUT,25) 'NLOPT_LN_BOBYQA'
+            case(NLOPT_LN_NEWUOA)
+                write(DEV_OUT,25) 'NLOPT_LN_NEWUOA'
+            case(NLOPT_LN_NELDERMEAD)
+                write(DEV_OUT,25) 'NLOPT_LN_NELDERMEAD'
+            case(NLOPT_LN_SBPLX)
+                write(DEV_OUT,25) 'NLOPT_LN_SBPLX'
+        end select
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'initialstep', NLOpt_InitialStep)) then
+        write(DEV_OUT,30) NLOpt_InitialStep
+    else
+        write(DEV_OUT,35) NLOpt_InitialStep
     end if
 
     return
-
- 10  format ('Initial step (initialstep)             = ',f12.7)
- 15  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
+ 20  format ('Optmization algorithm (algorithm)      = ',A)
+ 25  format ('Optmization algorithm (algorithm)      = ',A20,'          (default)')
+ 30  format ('Initial step (initialstep)             = ',f12.7)
+ 35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
 
 end subroutine read_nlopt_method
-
-!===============================================================================
-!-------------------------------------------------------------------------------
-!===============================================================================
-
-subroutine read_sa_method(fin)
-
-    use ffdev_utils
-    use prmfile
-    use ffdev_ffopt_dat
-
-    implicit none
-    type(PRMFILE_TYPE)             :: fin
-    ! -----------------------------------------------
-    logical                        :: read_some
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,'(/,a)') '=== [sa] ======================================================================='
-
-    ! is set active section?
-    if( .not. prmfile_open_section(fin,'sa') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'>>> ERROR: [sa] section is not current section!')
-    end if
-
-    read_some = .false.
-
-    if( prmfile_get_real8_by_key(fin,'temp', OptSA_Temp) ) then
-        write(DEV_OUT,20) OptSA_Temp
-        read_some = .true.
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'rt', OptSA_RT) ) then
-        write(DEV_OUT,30) OptSA_RT
-        read_some = .true.
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'ns', OptSA_NS) ) then
-        write(DEV_OUT,40) OptSA_NS
-        read_some = .true.
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'nt', OptSA_NT) ) then
-        write(DEV_OUT,50) OptSA_NT
-        read_some = .true.
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'maxevl', OptSA_MAXEVL) ) then
-        write(DEV_OUT,60) OptSA_MAXEVL
-        read_some = .true.
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'iseed', OptSA_ISEED) ) then
-        write(DEV_OUT,70) OptSA_ISEED
-        read_some = .true.
-    end if
-
-    if( .not. read_some ) then
-        write(DEV_OUT,5)
-    end if
-
-  5 format('>>> Nothing changed for simmulated annealing method ...')
- 10 format('Direct chi optimization         :',A10)
- 20 format('Initial temperature             :',F18.7)
- 30 format('Temperature reduction factor    :',F18.7)
- 40 format('Number of cycles                :',I10)
- 50 format('Number of iteration to reduce T :',I10)
- 60 format('Max number of function eval     :',I10)
- 70 format('Random generator seed           :',I10)
-
-end subroutine read_sa_method
 
 !===============================================================================
 !-------------------------------------------------------------------------------

@@ -664,6 +664,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
     use ffdev_parameters_dat
     use prmfile
     use ffdev_utils
+    use ffdev_topology_dat
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -676,11 +677,11 @@ subroutine ffdev_parameters_ctrl_control(fin)
     if( .not. prmfile_open_section(fin,'control') ) then
         select case(NBParamsMode)
             case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,20) 'normal'
+                write(DEV_OUT,25) 'normal'
             case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,20) 'like-only'
+                write(DEV_OUT,25) 'like-only'
             case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,20) 'like-all'
+                write(DEV_OUT,25) 'like-all'
         end select
         write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
         return
@@ -701,11 +702,11 @@ subroutine ffdev_parameters_ctrl_control(fin)
     else
         select case(NBParamsMode)
             case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,20) 'normal'
+                write(DEV_OUT,25) 'normal'
             case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,20) 'like-only'
+                write(DEV_OUT,25) 'like-only'
             case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,20) 'like-all'
+                write(DEV_OUT,25) 'like-all'
         end select
     end if
 
@@ -715,12 +716,22 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
     end if
 
+    if( prmfile_get_real8_by_key(fin,'lj2exp6_alpha', lj2exp6_alpha)) then
+        write(DEV_OUT,40) lj2exp6_alpha
+    else
+        write(DEV_OUT,45) lj2exp6_alpha
+    end if
+
+    return
+
  10 format('=== [control] ==================================================================')
 
  20  format ('NB parameter assembly mode (nb_params) = ',a12)
  25  format ('NB parameter assembly mode (nb_params) = ',a12,'                  (default)')
  30  format ('Consider only ERA realms (era_only)    = ',a12)
  35  format ('Consider only ERA realms (era_only)    = ',a12,'                  (default)')
+ 40  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7)
+ 45  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 
