@@ -1292,9 +1292,9 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
         ! read the entire record
         select case(nb_mode)
             case(NB_MODE_LJ,NB_MODE_EXPONLY)
-                read(line,*,err=100,end=100) sti, stj, a, b, c
+                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
             case(NB_MODE_EXP6,NB_MODE_BP)
-                read(line,*,err=100,end=100) sti, stj, a, b, c              
+                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
         end select
