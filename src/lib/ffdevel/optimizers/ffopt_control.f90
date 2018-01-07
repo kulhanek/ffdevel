@@ -91,7 +91,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
     end if
 
     ! minimization criteria
-    if( prmfile_get_integer_by_key(fin,'steps', NOptSteps)) then
+    if( prmfile_get_integer_by_key(fin,'nsteps', NOptSteps)) then
         write(DEV_OUT,20) NOptSteps
         if( NOptSteps .le. 0 ) then
             call ffdev_utils_exit(DEV_OUT,1,'steps has to be grater than zero!')
@@ -146,8 +146,8 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
 
  10  format ('Minimization method (method)           = ',a16)
  15  format ('Minimization method (method)           = ',a16,'              (default)')
- 20  format ('Maximum of minimization steps (steps)  = ',i12)
- 25  format ('Maximum of minimization steps (steps)  = ',i12,'                  (default)')
+ 20  format ('Maximum of minimization steps (nsteps) = ',i12)
+ 25  format ('Maximum of minimization steps (nsteps) = ',i12,'                  (default)')
  30  format ('Maximal value of RMSDG (maxrmsg)       = ',e16.10)
  35  format ('Maximal value of RMSDG (maxrmsg)       = ',e16.10,'              (default)')
  40  format ('Max value of gradient componenr (maxg) = ',e16.10)
