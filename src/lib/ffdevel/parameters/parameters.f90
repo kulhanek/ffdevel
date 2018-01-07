@@ -1236,7 +1236,8 @@ subroutine ffdev_parameters_print_parameters()
 
     implicit none
     integer             :: i,j,count,free,act,tot
-    character(len=11)   :: tmp   
+    character(len=11)   :: tmp
+    character(len=4)    :: sti,stj,stk,stl
     real(DEVDP)         :: scaling
     ! --------------------------------------------------------------------------
 
@@ -1324,7 +1325,17 @@ subroutine ffdev_parameters_print_parameters()
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
 
-        write(DEV_OUT,35,ADVANCE='NO') params(i)%pn, params(i)%value*scaling, count
+        sti = '--'
+        if( params(i)%ti .ne. 0 ) sti = types(params(i)%ti)%name
+        stj = '--'
+        if( params(i)%tj .ne. 0 ) stj = types(params(i)%tj)%name
+        stk = '--'
+        if( params(i)%tk .ne. 0 ) stk = types(params(i)%tk)%name
+        stl = '--'
+        if( params(i)%tl .ne. 0 ) stl = types(params(i)%tl)%name
+
+        write(DEV_OUT,35,ADVANCE='NO') trim(sti), trim(stj), trim(stk), trim(stl), &
+                                        params(i)%pn, params(i)%value*scaling, count
         do j=1,nsets
             if( params(i)%ids(j) .gt. 0 ) then
                 write(DEV_OUT,40,ADVANCE='NO') params(i)%ids(j)
@@ -1414,14 +1425,14 @@ subroutine ffdev_parameters_print_parameters()
     write(DEV_OUT,230) act
 
 
- 10 format('# ID ST Iden    Realm    PN       Value      Counts     IDs in Sets')
- 20 format('# -- -- ---- ----------- -- ---------------- ------     -- -- -- -- -- -- -- -- -- -- --')
+ 10 format('# ID ST Iden    Realm    TI TJ TK TL PN       Value      Counts     IDs in Sets')
+ 20 format('# -- -- ---- ----------- -- -- -- -- -- ---------------- ------     -- -- -- -- -- -- -- -- -- -- --')
  30 format(I4,1X,L2,1X,I4,1X)
  31 format(I4,1X,L2,1X,'----',1X)
  32 format(A11,1X)
 
 
- 35 format(I2,1X,F16.4,1X,I6,5X)
+ 35 format(A2,1X,A2,1X,A2,1X,A2,1X,I2,1X,F16.4,1X,I6,5X)
  40 format(I2,1X)
  50 format('--',1X)
 
