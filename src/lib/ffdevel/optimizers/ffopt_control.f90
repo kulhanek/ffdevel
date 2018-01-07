@@ -188,6 +188,8 @@ subroutine read_opt_method(fin)
             call read_lbfgs_method(fin)
         case(MINIMIZATION_SA)
             call read_sa_method(fin)
+        case(MINIMIZATION_NLOPT)
+            call read_nlopt_method(fin)
     end select
 
 end subroutine read_opt_method
@@ -310,6 +312,40 @@ subroutine read_lbfgs_method(fin)
  15  format ('Num of corrections (numofcorrections)  = ',i12,'                  (default)')
 
 end subroutine read_lbfgs_method
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine read_nlopt_method(fin)
+
+    use prmfile
+    use ffdev_ffopt_dat
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,'(/,a)') '=== [nlopt] ===================================================================='
+
+    if( .not. prmfile_open_section(fin,'nlopt') ) then
+        write(DEV_OUT,15) NLOpt_InitialStep
+        return
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'initialstep', NLOpt_InitialStep)) then
+        write(DEV_OUT,10) NLOpt_InitialStep
+    else
+        write(DEV_OUT,15) NLOpt_InitialStep
+    end if
+
+    return
+
+ 10  format ('Initial step (initialstep)             = ',f12.7)
+ 15  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
+
+end subroutine read_nlopt_method
 
 !===============================================================================
 !-------------------------------------------------------------------------------

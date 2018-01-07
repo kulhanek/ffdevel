@@ -164,7 +164,10 @@ type TOPOLOGY
     type(ATOM_TYPE),pointer     :: atom_types(:)
     integer                     :: nnb_types
     type(NB_TYPE),pointer       :: nb_types(:)
-    integer                     :: probe_size       ! number of atoms in probe
+    integer                     :: probe_size           ! number of atoms in probe
+    ! assumed combination rules, depending on parameter optimization strategy
+    ! these rules can be easily broken !!!!
+    integer                     :: assumed_comb_rules
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -177,6 +180,7 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 ! 12.0                           - identical long-range
 ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 real(DEVDP)         :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
+logical             :: keep_era      = .true.  ! keep eps, r0, and alpha in A,B,C6 and C8 mode
 
 
 ! ------------------------------------------------------------------------------

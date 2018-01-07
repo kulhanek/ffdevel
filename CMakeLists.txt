@@ -36,6 +36,12 @@ ENDIF(NOT DEVELOPMENT_ROOT)
 # external libraries -----------------------------------------------------------
 # ==============================================================================
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${DEVELOPMENT_ROOT}/projects/cmake-modules/1.0/share/modules")
+
+# boost =======================
+FIND_PACKAGE(MyBoost REQUIRED)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS} SYSTEM)
+
 # HIPOLY ====================
 SET(HIPOLY_ROOT ${DEVELOPMENT_ROOT}/projects/hipoly/1.0)
 INCLUDE_DIRECTORIES(${HIPOLY_ROOT}/src/lib/hipoly SYSTEM)
@@ -107,7 +113,7 @@ LINK_DIRECTORIES(${RUNLUX_ROOT}/lib)
 SET(RANLUX_LIB_NAME franlux)
 
 # nlopt =====================
-SET(NLOPT_ROOT ${DEVELOPMENT_ROOT}/thirdparty/nlopt/2.3.0)
+SET(NLOPT_ROOT ${DEVELOPMENT_ROOT}/thirdparty/nlopt/2.4.2)
 INCLUDE_DIRECTORIES(${NLOPT_ROOT}/include)
 LINK_DIRECTORIES(${NLOPT_ROOT}/lib)
 SET(NLOPT_LIB_NAME nlopt)
@@ -117,9 +123,6 @@ SET(OPEN_BABEL_ROOT ${DEVELOPMENT_ROOT}/thirdparty/obcore/2.4.0)
 INCLUDE_DIRECTORIES(${OPEN_BABEL_ROOT}/include)
 LINK_DIRECTORIES(${OPEN_BABEL_ROOT}/lib)
 SET(OPEN_BABEL_LIB obcore)
-
-# boost --------------------------------------
-INCLUDE_DIRECTORIES(${DEVELOPMENT_ROOT}/thirdparty/boost/1.65.1)
 
 # ==============================================================================
 # output directories -----------------------------------------------------------

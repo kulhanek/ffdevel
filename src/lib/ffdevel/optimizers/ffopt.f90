@@ -35,14 +35,14 @@ subroutine ffdev_ffopt_set_default()
     ! --------------------------------------------------------------------------
 
 ! === [minimization] ===========================================================
-    OptimizationMethod  = MINIMIZATION_LBFGS
-    NOptSteps    = 1000      ! max number of steps
-    OutSamples   =   20      ! how often write results
+    OptimizationMethod  = MINIMIZATION_NLOPT
+    NOptSteps    = 10000      ! max number of steps
+    OutSamples   =    20      ! how often write results
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.00001d0
     MaxG                = 0.00001d0
-    MinErrorChange      = -1        ! negative number - this test is switched off by default
+    MinErrorChange      = 0.00001d0        ! negative number - this test is switched off by default
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================
@@ -53,12 +53,15 @@ subroutine ffdev_ffopt_set_default()
     AdaptiveStep        = .true.
 
 ! === [L-BFGS] =================================================================
-    NumberOfCorrections = 150
+    NumberOfCorrections = 20
 
 ! === [NLOPT] ==================================================================
+    NLOpt_InitialStep   = 0.00001d0
+
+! === [SA] =====================================================================
     OptSA_Temp   = 0.01d0    ! initial temperature
     OptSA_RT     = 0.85d0    ! the temperature reduction factor
-    OptSA_EPS    = 0.01      ! Error tolerance for termination
+    OptSA_EPS    = 0.0001    ! Error tolerance for termination
     OptSA_NS     = 20        ! Number of cycles
     OptSA_NT     = 10        ! Number of iterations before temperature reduction
     OptSA_NEPS   = 4         ! Number of final function values used to decide upon termination
@@ -368,16 +371,13 @@ subroutine opt_nlopt
     real(DEVDP)             :: final
     ! --------------------------------------------------------------------------
 
-    ! NLOPT_G_MLSL_LDS
-
     NLoptID = 0
-!    call nlo_create(NLoptID,NLOPT_GN_DIRECT_L, nactparms)
-    call nlo_create(NLoptID,NLOPT_GN_CRS2_LM, nactparms)
-!    call nlo_create(locoptid,NLOPT_LD_LBFGS, nactparms)
-!    call nlo_set_local_optimizer(ires, NLoptID, locoptid)
-    call nlo_set_maxeval(ires, NLoptID, 500000)
-    call nlo_set_population(ires, NLoptID, 500)
-    call nlo_set_stopval(ires,NLoptID,-1e-20)
+    call nlo_create(NLoptID,NLOPT_LN_COBYLA, nactparms)
+    ! FIXME - there is a bug in passing of NLOpt_InitialStep to NLopt
+    call nlo_set_initial_step(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
+    call nlo_set_maxeval(ires, NLoptID, NOptSteps)
+    call nlo_set_stopval(ires,NLoptID,0.0d0)
+    call nlo_set_ftol_abs(ires, NLoptID, real(MinErrorChange,DEVDP))
 
     ! allocate working array
     allocate(tmp_xg(nactparms), stat=alloc_status)
@@ -395,14 +395,40 @@ subroutine opt_nlopt
     call nlo_set_min_objective(ires, NLoptID, opt_nlopt_fce, istep)
 
     tmp_xg(:) = FFParams(:)
+
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
-    write(DEV_OUT,10) ires
+
+    write(DEV_OUT,*)
+    select case(ires)
+        case(NLOPT_SUCCESS)
+            write(DEV_OUT,10) ires, 'NLOPT_SUCCESS'
+        case(NLOPT_STOPVAL_REACHED)
+            write(DEV_OUT,10) ires, 'NLOPT_STOPVAL_REACHED'
+        case(NLOPT_FTOL_REACHED)
+            write(DEV_OUT,10) ires, 'NLOPT_FTOL_REACHED'
+        case(NLOPT_XTOL_REACHED)
+            write(DEV_OUT,10) ires, 'NLOPT_XTOL_REACHED'
+        case(NLOPT_MAXEVAL_REACHED)
+            write(DEV_OUT,10) ires, 'NLOPT_MAXEVAL_REACHED'
+        case(NLOPT_MAXTIME_REACHED)
+            write(DEV_OUT,10) ires, 'NLOPT_MAXTIME_REACHED'
+        case(NLOPT_FAILURE)
+            write(DEV_OUT,10) ires, 'NLOPT_FAILURE'
+        case(NLOPT_INVALID_ARGS)
+            write(DEV_OUT,10) ires, 'NLOPT_INVALID_ARGS'
+        case(NLOPT_OUT_OF_MEMORY)
+            write(DEV_OUT,10) ires, 'NLOPT_OUT_OF_MEMORY'
+        case(NLOPT_ROUNDOFF_LIMITED)
+            write(DEV_OUT,10) ires, 'NLOPT_ROUNDOFF_LIMITED'
+        case(NLOPT_FORCED_STOP)
+            write(DEV_OUT,10) ires, 'NLOPT_FORCED_STOP'
+    end select
 
     deallocate(tmp_xg)
 
     call nlo_destroy(NLoptID)
 
-10 format('NLOpt finished with return status = ',I6)
+10 format('NLOpt finished with return status = ',I6,' ',A)
 
 end subroutine opt_nlopt
 
@@ -518,6 +544,8 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
 
     istep = istep + 1
 
+    ! write(*,*) x
+
     FFParams(:) = x(:)
     if( need_gradient .gt. 0 ) then
         call ffdev_parameters_error(FFParams,FFError,FFParamsGrd)
@@ -549,6 +577,7 @@ subroutine write_header()
     use ffdev_geometry
 
     implicit none
+    integer     :: major, minor, bugfix
     ! --------------------------------------------------------------------------
 
     select case(OptimizationMethod)
@@ -557,7 +586,8 @@ subroutine write_header()
         case(MINIMIZATION_LBFGS)
             write(DEV_OUT,15)
         case(MINIMIZATION_NLOPT)
-            write(DEV_OUT,17)
+            call nloptv(major, minor, bugfix)
+            write(DEV_OUT,17) major, minor, bugfix
     end select
 
     write(DEV_OUT,20)
@@ -565,7 +595,7 @@ subroutine write_header()
 
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
- 17 format('# Mode = NLOPT')
+ 17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
  20 format('# STEP    Error       Err(Ene)    Err(Grad)    Err(Hess)      RMSG         maxG     ')
  30 format('#----- ------------ ------------ ------------ ------------ ------------ ------------')
 

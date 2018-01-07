@@ -30,6 +30,7 @@ subroutine ffdev_gradient_all(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
+    use ffdev_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -59,7 +60,12 @@ subroutine ffdev_gradient_all(top,geo)
     end if
 
     ! non-bonded terms
-    call ffdev_gradient_nb(top,geo)
+    select case(top%nb_mode)
+        case(NB_MODE_LJ)
+            call ffdev_gradient_nb_lj(top,geo)
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_gradient_all!')
+    end select
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
@@ -423,10 +429,10 @@ subroutine ffdev_gradient_impropers(top,geo)
 end subroutine ffdev_gradient_impropers
 
 !===============================================================================
-! subroutine ffdev_gradient_nb
+! subroutine ffdev_gradient_nb_lj
 !===============================================================================
 
-subroutine ffdev_gradient_nb(top,geo)
+subroutine ffdev_gradient_nb_lj(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -449,8 +455,8 @@ subroutine ffdev_gradient_nb(top,geo)
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
-        aLJa  = top%nb_types(nbt)%A
-        bLJa  = top%nb_types(nbt)%B
+        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
+        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
         crgij = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
         ! calculate dx, r and r2
@@ -492,7 +498,7 @@ subroutine ffdev_gradient_nb(top,geo)
         geo%grd(3,j) = geo%grd(3,j) + dxa3
     end do
 
-end subroutine ffdev_gradient_nb
+end subroutine ffdev_gradient_nb_lj
 
 ! ------------------------------------------------------------------------------
 

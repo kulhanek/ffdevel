@@ -60,6 +60,7 @@ program ffdev_optimize_program
 
     ! read files
     if( prmfile_open_group(fin,'MAIN') ) then
+        call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
     end if
 
@@ -165,6 +166,11 @@ program ffdev_optimize_program
     ! finalize
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Finalize', ':')
+
+    ! be sure that optimized parameters are in all topologies
+    ! (which is not case if numerical gradient of error function is employed)
+    call ffdev_parameters_to_tops()
+
     ! save topologies if requested
     call ffdev_targetset_save_final_stops()
 

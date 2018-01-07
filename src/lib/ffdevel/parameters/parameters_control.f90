@@ -260,10 +260,10 @@ subroutine ffdev_parameters_ctrl_realms(fin)
         select case(key)
             case('enable')
                 call change_realms(realm,.true.,string)
-                write(DEV_OUT,30) adjustl(key),trim(realm)
+                write(DEV_OUT,30) trim(string)
             case('disable')
                 call change_realms(realm,.false.,string)
-                write(DEV_OUT,30) adjustl(key),trim(realm)
+                write(DEV_OUT,30) trim(string)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported action key '''//trim(key)//'''!')
         end select
@@ -284,7 +284,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
 
 10 format('=== [parameters] ===============================================================')
 20 format('disable                                           all            (initial setup)')
-30 format(A10,40X,A)
+30 format(A)
 40 format('Number of active parameters = ',I6)
 
 end subroutine ffdev_parameters_ctrl_realms
@@ -325,9 +325,12 @@ subroutine change_realms(realm,enable,options)
     logical         :: enable
     character(*)    :: options
     ! --------------------------------------------
-    integer         :: realmid, i
+    integer         :: realmid, i, pid, ti, tj, tk, tl
     logical         :: lenable
+    character(80)   :: k1, k2, k3, sti, stj, stk, stl
     ! --------------------------------------------------------------------------
+
+    pid = 0
 
     ! decode realm
     select case(realm)
@@ -449,14 +452,71 @@ subroutine change_realms(realm,enable,options)
         case('all')
             realmid = -1
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported realm key '''//trim(realm)//'''!')
+            ! is it integer
+            read(realm,*,end=333,err=333) pid
+            goto 444
+
+333         call ffdev_utils_exit(DEV_OUT,1,'Unsupported realm key '''//trim(realm)//'''!')
     end select
 
-    do i=1,nparams
-        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
+    ti = 0
+    tj = 0
+    tk = 0
+    tl = 0
+
+    ! this option is generic  - filter by types
+    if( is_realm_option(options,'types') ) then
+        ! read types
+        read(options,*,end=555,err=555) k1, k2, k3, sti, stj, stk, stl
+555     do i=1,ntypes
+            if( types(i)%name .eq. sti ) ti = i
+            if( types(i)%name .eq. stj ) tj = i
+            if( types(i)%name .eq. stk ) tk = i
+            if( types(i)%name .eq. stl ) tl = i
+        end do
+        ! we need at least two types
+        if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) return
+    end if
+
+444 do i=1,nparams
+
+        ! these two options have application only for NB
+        ! but for simplicity we will consider them for all parameters
+        if( is_realm_option(options,'like') ) then
+            if( params(i)%ti .ne. params(i)%tj ) cycle
+        end if
+        if( is_realm_option(options,'unlike') ) then
+            if( params(i)%ti .eq. params(i)%tj ) cycle
+        end if
+        if( is_realm_option(options,'types') ) then
+            if( (tk .eq. 0) .and. (tl .eq. 0) ) then
+                ! bond or NB
+                if( (params(i)%tk .ne. 0) .or. (params(i)%tl .ne. 0) ) cycle   ! incompatible parameter
+                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) ) cycle   ! incompatible parameter
+                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) ) .or. &
+                            ( (ti .eq. params(i)%tj) .and. (tj .eq. params(i)%ti) ) ) ) cycle
+            else if ( tl .eq. 0 ) then
+                ! angle
+                if( params(i)%tl .ne. 0 ) continue   ! incompatible parameter
+                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. (params(i)%tk .eq. 0)  ) cycle   ! incompatible parameter
+                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%tk) ) .or. &
+                            ( (ti .eq. params(i)%tk) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%ti) ) ) ) cycle
+            else
+                ! dihedral
+                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. &
+                    (params(i)%tk .eq. 0) .or. (params(i)%tl .eq. 0)  ) cycle   ! incompatible parameter
+                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. &
+                              (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%tl) ) .or. &
+                            ( (ti .eq. params(i)%tl) .and. (tj .eq. params(i)%tj) .and. &
+                              (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%ti) ) ) ) cycle
+
+            end if
+        end if
+
+        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) .or. (pid .eq. i) ) then
             if( params(i)%identity .eq. 0 ) then
                 lenable = enable
-                select case(GlobalNBMode)
+                select case(LastNBMode)
                     case(NB_MODE_LJ)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
@@ -595,6 +655,76 @@ subroutine change_dih_realm_pn(realmid,enable,options)
 end subroutine change_dih_realm_pn
 
 ! ==============================================================================
+! subroutine ffdev_parameters_ctrl_control
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_control(fin)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'control') ) then
+        select case(NBParamsMode)
+            case(NB_PARAMS_MODE_NORMAL)
+                write(DEV_OUT,20) 'normal'
+            case(NB_PARAMS_MODE_LIKE_ONLY)
+                write(DEV_OUT,20) 'like-only'
+            case(NB_PARAMS_MODE_LIKE_ALL)
+                write(DEV_OUT,20) 'like-all'
+        end select
+        write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
+        return
+    end if
+
+    if( prmfile_get_string_by_key(fin,'nb_params', string)) then
+        select case(trim(string))
+            case('normal')
+                NBParamsMode = NB_PARAMS_MODE_NORMAL
+                write(DEV_OUT,20) trim(string)
+            case('like-only')
+                NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
+                write(DEV_OUT,20) trim(string)
+            case('like-all')
+                NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
+                write(DEV_OUT,20) trim(string)
+        end select
+    else
+        select case(NBParamsMode)
+            case(NB_PARAMS_MODE_NORMAL)
+                write(DEV_OUT,20) 'normal'
+            case(NB_PARAMS_MODE_LIKE_ONLY)
+                write(DEV_OUT,20) 'like-only'
+            case(NB_PARAMS_MODE_LIKE_ALL)
+                write(DEV_OUT,20) 'like-all'
+        end select
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'era_only', NBERAOnly)) then
+        write(DEV_OUT,30) prmfile_onoff(NBERAOnly)
+    else
+        write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
+    end if
+
+ 10 format('=== [control] ==================================================================')
+
+ 20  format ('NB parameter assembly mode (nb_params) = ',a12)
+ 25  format ('NB parameter assembly mode (nb_params) = ',a12,'                  (default)')
+ 30  format ('Consider only ERA realms (era_only)    = ',a12)
+ 35  format ('Consider only ERA realms (era_only)    = ',a12,'                  (default)')
+
+end subroutine ffdev_parameters_ctrl_control
+
+! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_error
 ! ==============================================================================
 
@@ -655,6 +785,12 @@ subroutine ffdev_parameters_ctrl_error(fin)
         write(DEV_OUT,75) HessianErrorWeight
     end if
 
+    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
+        write(DEV_OUT,60) prmfile_onoff(ApplyCombinationRules)
+    else
+        write(DEV_OUT,65) prmfile_onoff(ApplyCombinationRules)
+    end if
+
  10 format('=== [errors] ===================================================================')
 
  20  format ('Energy error (energy)                  = ',a12)
@@ -671,6 +807,9 @@ subroutine ffdev_parameters_ctrl_error(fin)
  65  format ('Hessian error (hessian)                = ',a12,'                  (default)')
  70  format ('Hessian error weight (hessian_weight)  = ',f21.8)
  75  format ('Hessian error weight (hessian_weight)  = ',f21.8,'         (default)')
+
+ 80  format ('Apply combination rules (comb_rules)   = ',a12)
+ 85  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_error
 
@@ -717,39 +856,6 @@ subroutine ffdev_parameters_ctrl_files(fin)
         write (DEV_OUT,30) trim(OutAmberPrmsFileName)
     end if
 
-    if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
-        write(DEV_OUT,*)
-        select case(trim(string))
-            case('LB')
-                FinalCombiningRule = COMB_RULE_LB
-                write(DEV_OUT,40) 'LB (Lorentz-Berthelot)'
-            case('WH')
-                FinalCombiningRule = COMB_RULE_WH
-                write(DEV_OUT,40) 'WH (Waldman-Hagler)'
-            case('KG')
-                FinalCombiningRule = COMB_RULE_KG
-                write(DEV_OUT,40) 'KG (Kong)'
-            case('FB')
-                FinalCombiningRule = COMB_RULE_FB
-                write(DEV_OUT,40) 'FB (Fender-Halsey-Berthelot)'
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_parameters_ctrl_files!')
-        end select
-    else
-        select case(FinalCombiningRule)
-            case(COMB_RULE_LB)
-                write(DEV_OUT,40) 'LB (Lorentz-Berthelot)'
-            case(COMB_RULE_WH)
-                write(DEV_OUT,40) 'WH (Waldman-Hagler)'
-            case(COMB_RULE_KG)
-                write(DEV_OUT,40) 'KG (Kong)'
-            case(COMB_RULE_FB)
-                write(DEV_OUT,40) 'FB (Fender-Halsey-Berthelot)'
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported comb_rules in ffdev_parameters_ctrl_files!')
-        end select
-    end if
-
     return
 
 10 format('Input parameters (input)               = ',a)
@@ -758,8 +864,6 @@ subroutine ffdev_parameters_ctrl_files(fin)
 25 format('Final parameters file (final)          = ',a12,'                  (default)')
 30 format('Final AMBER parameters (amber)         = ',a)
 35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
-40 format('Combining rules (comb_rules)           = ',a)
-45 format('Combining rules (comb_rules)           = ',a12,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_files
 
@@ -800,8 +904,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
                 call ffdev_parameters_ctrl_angle_a0(fin,noexec)
             case('nbmanip')
                 call ffdev_parameters_ctrl_nbmanip(fin,noexec)
-            case('expand-exponly')
-                call ffdev_parameters_ctrl_expand_exponly(fin,noexec)
             case('nbload')
                 call ffdev_parameters_ctrl_nbload(fin,noexec)
         end select
@@ -1090,7 +1192,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
         if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
             nb_mode = NB_MODE_MMD3
         end if
-        GlobalNBMode = nb_mode
+        LastNBMode = nb_mode
         return
     end if
 
@@ -1118,7 +1220,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
         nb_mode = NB_MODE_MMD3
     end if
-    GlobalNBMode = nb_mode
+    LastNBMode = nb_mode
 
     ! update nb parameters
     call ffdev_parameters_reinit_nbparams
@@ -1127,57 +1229,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_expand_exponly
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_expand_exponly(fin,noexec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_topology_dat
-    use ffdev_topology
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    type(PRMFILE_TYPE)          :: fin
-    logical                     :: noexec
-    ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( prmfile_get_string_by_key(fin,'comb_rules',string) ) then
-        ExpandExpOnlyCombiningRule = ffdev_topology_get_comb_rules_from_string(string)
-        write(DEV_OUT,20) trim(ffdev_topology_comb_rules_to_string(ExpandExpOnlyCombiningRule))
-    else
-        write(DEV_OUT,25) trim(ffdev_topology_comb_rules_to_string(ExpandExpOnlyCombiningRule))
-    end if
-
-    if( GlobalNBMode .ne. NB_MODE_EXPONLY ) then
-        call ffdev_utils_exit(DEV_OUT,1,'nb_mode is not NB_MODE_EXPONLY!')
-    end if
-
-    ! check supported combining rules
-    select case(ExpandExpOnlyCombiningRule)
-        case(COMB_RULE_GS)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported combining rule in ffdev_parameters_ctrl_expand_exponly!')
-    end select
-
-    if( noexec ) return ! do not execute
-
-    call ffdev_parameters_expand_exponly
-
-10 format('=== [expand-exponly] ===========================================================')
-20 format('Combining rule = ',A)
-25 format('Combining rule = ',A,' (default)')
-
-end subroutine ffdev_parameters_ctrl_expand_exponly
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload
@@ -1197,9 +1248,9 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: noexec
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: line, sti, stj
+    character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
     real(DEVDP)                 :: a, b, c, d
-    integer                     :: i,j,nbt
+    integer                     :: i,j,nbt,nb_mode
     logical                     :: rst
     ! --------------------------------------------------------------------------
 
@@ -1209,53 +1260,43 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
 ! print header
     write(DEV_OUT,*)
     write(DEV_OUT,510)
-    write(DEV_OUT,515) ffdev_topology_nb_mode_to_string(GlobalNBMode)
-
-    select case(GlobalNBMode)
-        case(NB_MODE_LJ,NB_MODE_EXP6)
-            write(DEV_OUT,520)
-            write(DEV_OUT,530)
-        case(NB_MODE_BP,NB_MODE_EXPONLY)
-            write(DEV_OUT,620)
-            write(DEV_OUT,630)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-    end select
+    write(DEV_OUT,*)
+    write(DEV_OUT,520)
+    write(DEV_OUT,530)
 
 ! read lines
 
-    i = 0
     do while( prmfile_get_line(fin,line) )
 
-        select case(GlobalNBMode)
+        ! read nb_mode and types first
+        read(line,*,err=100,end=100) snb_mode, sti, stj
+
+        nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
+
+        a = 0.0d0
+        b = 0.0d0
+        c = 0.0d0
+        d = 0.0d0
+
+        ! read the entire record
+        select case(nb_mode)
             case(NB_MODE_LJ,NB_MODE_EXPONLY)
-                read(line,*,err=100,end=100) sti, stj, a, b
-                c = 0.0
-            case(NB_MODE_EXP6,NB_MODE_BP)
                 read(line,*,err=100,end=100) sti, stj, a, b, c
+            case(NB_MODE_EXP6,NB_MODE_BP)
+                read(line,*,err=100,end=100) sti, stj, a, b, c              
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
         end select
-        i = i + 1
-        select case(GlobalNBMode)
-            case(NB_MODE_LJ)
-                write(DEV_OUT,540) i, trim(sti),trim(stj), a,b
-            case(NB_MODE_EXP6)
-                write(DEV_OUT,540) i, trim(sti),trim(stj), a,b,c
-            case(NB_MODE_BP)
-                write(DEV_OUT,640) i, trim(sti),trim(stj), a,b,c
-            case(NB_MODE_EXPONLY)
-                write(DEV_OUT,640) i, trim(sti),trim(stj), a,b
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-        end select
+
+        write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
 
         if( .not. noexec ) then
             ! for each topology update given parameters
             do j=1,nsets
+                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
                 nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
                 if( nbt .ne. 0 ) then
-                    select case(GlobalNBMode)
+                    select case(nb_mode)
                         case(NB_MODE_LJ)
                             sets(j)%top%nb_types(nbt)%eps = a
                             sets(j)%top%nb_types(nbt)%r0 = b
@@ -1305,15 +1346,9 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
 100 call ffdev_utils_exit(DEV_OUT,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-515 format('# Type of vdW interactions = ',A)
-
-520 format('# ID TypA TypB        eps              R0             alpha      ')
-530 format('# -- ---- ---- ---------------- ---------------- ----------------')
-540 format(I4,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7)
-
-620 format('# ID TypA TypB        A              B              C6              C8        ')
-630 format('# -- ---- ---- --------------- --------------- --------------- ---------------')
-640 format(I4,1X,A4,1X,A4,1X,E15.7,1X,E15.7,1X,E15.7,1X,E15.7)
+520 format('# NBMode TypA TypB      eps/A             R0/B          alpha/C6             C8       ')
+530 format('# ------ ---- ---- ---------------- ---------------- ----------------  ---------------')
+540 format(2X,A6,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7,1X,F16.7)
 
 end subroutine ffdev_parameters_ctrl_nbload
 

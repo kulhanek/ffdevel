@@ -87,23 +87,26 @@ type(PARM_TYPE),allocatable :: types(:)  ! types
 ! error function
 
 type FFERROR_TYPE
-    real(DEVDP)         :: total        ! total error
-    real(DEVDP)         :: energy       ! energy part of error
-    real(DEVDP)         :: grad         ! gradient part of error
-    real(DEVDP)         :: hess         ! hessian part of error
+    real(DEVDP)         :: total        ! total error - !!square errror!!
+    real(DEVDP)         :: energy       ! energy part of error - RMSE
+    real(DEVDP)         :: grad         ! gradient part of error - RMSE
+    real(DEVDP)         :: hess         ! hessian part of error - RMSE
 end type FFERROR_TYPE
 
-
 type(FFERROR_TYPE)      :: FFError
-real(DEVDP),allocatable :: FFParams(:)
-real(DEVDP),allocatable :: FFParamsGrd(:)
+
+! ------------------------------------------------------------------------------
+! experimental/unfinished setup
+logical                 :: AnalErrEneFceGrad            = .false.           ! numerical/analytical gradients of error function
+integer                 :: LastNBMode                   = NB_MODE_LJ        ! determine which realms will be activated for NB
+
+integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup
+integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1 ! only like nb_types except of probes
+integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2 ! only_like nb_types including probes
 
 ! === [control] ================================================================
-
-integer                 :: GlobalNBMode                 = NB_MODE_LJ        ! global non-bonded mode
-integer                 :: FinalCombiningRule           = COMB_RULE_KG      ! how to extract the final LJ parameters
-logical                 :: AnalErrEneFceGrad            = .true.            ! numerical/analytical gradients of error function
-integer                 :: ExpandExpOnlyCombiningRule   = COMB_RULE_GS
+integer                 :: NBParamsMode                = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
+logical                 :: NBERAOnly                   = .false.                    ! consider only ERA realms
 
 ! === [error] ==================================================================
 logical                 :: EnableEnergyError = .true.
@@ -114,6 +117,8 @@ real(DEVDP)             :: GradientErrorWeight = 1.0
 
 logical                 :: EnableHessianError = .true.
 real(DEVDP)             :: HessianErrorWeight = 1.0
+
+logical                 :: ApplyCombinationRules = .false.     ! apply combination rules in every error evaluation
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

@@ -37,27 +37,28 @@ subroutine ffdev_energy_prmgrd_all(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
 
+    ! EXPERIMENTAL/UNFINISHED
+
     ! reset eneprmgrad
     geo%eneprmgrd(:) = 0.0d0
 
-    ! we will simply go through all energy elemenets and
-
     ! bonded terms
     if( top%probe_size .eq. 0 ) then
-        call ffdev_energy_prmgrd_bonds(top,geo)
-        call ffdev_energy_prmgrd_angles(top,geo)
-        call ffdev_energy_prmgrd_dihedrals(top,geo)
-        call ffdev_energy_prmgrd_impropers(top,geo)
+!        call ffdev_energy_prmgrd_bonds(top,geo)
+!        call ffdev_energy_prmgrd_angles(top,geo)
+!        call ffdev_energy_prmgrd_dihedrals(top,geo)
+!        call ffdev_energy_prmgrd_impropers(top,geo)
+        call ffdev_utils_exit(DEV_OUT,1,'bonded terms not implemented in ffdev_energy_prmgrd_all!')
     end if
 
     ! non-bonded terms
     select case(top%nb_mode)
         case(NB_MODE_LJ)
             call ffdev_energy_prmgrd_nb_lj(top,geo)
-        case(NB_MODE_BP,NB_MODE_EXP6)
+        case(NB_MODE_BP)
             call ffdev_energy_prmgrd_nb_bp(top,geo)
-        case(NB_MODE_MMD3)
-            call ffdev_energy_prmgrd_nb_expd3bj(top,geo)
+        case(NB_MODE_EXP6)
+            call ffdev_energy_prmgrd_nb_exp6(top,geo)
         case(NB_MODE_EXPONLY)
             call ffdev_energy_prmgrd_nb_exponly(top,geo)
         case default
@@ -66,79 +67,6 @@ subroutine ffdev_energy_prmgrd_all(top,geo)
 
 
 end subroutine ffdev_energy_prmgrd_all
-
-!===============================================================================
-! subroutine ffdev_energy_prmgrd_bonds
-!===============================================================================
-
-subroutine ffdev_energy_prmgrd_bonds(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------------------------------------
-
-    ! FIXME
-
-end subroutine ffdev_energy_prmgrd_bonds
-
-!===============================================================================
-! subroutine ffdev_energy_prmgrd_angles
-!===============================================================================
-
-subroutine ffdev_energy_prmgrd_angles(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------------------------------------
-
-    ! FIXME
-
-end subroutine ffdev_energy_prmgrd_angles
-
-!===============================================================================
-! subroutine ffdev_energy_prmgrd_dihedrals
-!===============================================================================
-
-subroutine ffdev_energy_prmgrd_dihedrals(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! -----------------------------------------------------------------------------
-
-    ! FIXME
-
-end subroutine ffdev_energy_prmgrd_dihedrals
-
-!===============================================================================
-! subroutine ffdev_energy_prmgrd_impropers
-!===============================================================================
-
-subroutine ffdev_energy_prmgrd_impropers(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! -----------------------------------------------------------------------------
-
-    ! FIXME
-
-end subroutine ffdev_energy_prmgrd_impropers
 
 !===============================================================================
 ! subroutine ffdev_energy_prmgrd_nb_lj
@@ -153,38 +81,109 @@ subroutine ffdev_energy_prmgrd_nb_lj(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a
+    integer         :: ip, i, j, nbt, pti_eps, pti_r0
+    real(DEVDP)     :: inv_scnb,r0,eps,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r
     ! --------------------------------------------------------------------------
 
-!    do ip=1,top%nb_size
-!        i = top%nb_list(ip)%ai
-!        j = top%nb_list(ip)%aj
-!        nbt = top%nb_list(ip)%nbt
-!        aLJa  = top%nb_types(nbt)%A
-!        bLJa  = top%nb_types(nbt)%B
+    do ip=1,top%nb_size
+        nbt = top%nb_list(ip)%nbt
+        pti_eps = top%nb_types(nbt)%pti_eps
+        pti_r0 = top%nb_types(nbt)%pti_r0
+        if( (pti_eps .eq. 0) .and. (pti_r0 .eq. 0) ) cycle
 
-!        ! calculate dx, r and r2
-!        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-!        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-!        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        eps  = top%nb_types(nbt)%eps
+        r0  = top%nb_types(nbt)%r0
 
-!        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-!        r2a = 1.0d0/r2a
-!        ra  = sqrt(r2a)
-!        r6a = r2a*r2a*r2a
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-!        if( top%nb_list(ip)%dt .eq. 0 ) then
-!            geo%nb_ene  = geo%nb_ene + aLJa*r6a*r6a - bLJa*r6a
-!        else
-!            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-!            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-!            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(aLJa*r6a*r6a - bLJa*r6a)
-!        end if
-!    end do
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            if( pti_eps .ne. 0 ) then
+                geo%eneprmgrd(pti_eps) = geo%eneprmgrd(pti_eps) + (r0/r)**12 - 2.0d0*(r0/r)**6
+            end if
+            if( pti_r0 .ne. 0 ) then
+                geo%eneprmgrd(pti_r0) = geo%eneprmgrd(pti_r0) + eps*(12*(r0/r)**11/r - 12.0d0*(r0/r)**5/r)
+            end if
+        else
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            if( pti_eps .ne. 0 ) then
+                geo%eneprmgrd(pti_eps) = geo%eneprmgrd(pti_eps) + inv_scnb*((r0/r)**12 - 2.0d0*(r0/r)**6)
+            end if
+            if( pti_r0 .ne. 0 ) then
+                geo%eneprmgrd(pti_r0) = geo%eneprmgrd(pti_r0) + inv_scnb*eps*(12*(r0/r)**11/r - 12.0d0*(r0/r)**5/r)
+            end if
+        end if
+    end do
 
 end subroutine ffdev_energy_prmgrd_nb_lj
+
+!===============================================================================
+! subroutine ffdev_energy_prmgrd_nb_exp6
+!===============================================================================
+
+subroutine ffdev_energy_prmgrd_nb_exp6(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, pti_eps, pti_r0, pti_alpha
+    real(DEVDP)     :: inv_scnb,eps,r0,alpha,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r,ra,r6a,k
+    ! --------------------------------------------------------------------------
+
+    do ip=1,top%nb_size
+        nbt = top%nb_list(ip)%nbt
+        pti_eps = top%nb_types(nbt)%pti_eps
+        pti_r0 = top%nb_types(nbt)%pti_r0
+        pti_alpha = top%nb_types(nbt)%pti_alpha
+        if( (pti_eps .eq. 0) .and. (pti_r0 .eq. 0).and. (pti_alpha .eq. 0) ) cycle
+
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        eps = top%nb_types(nbt)%eps
+        r0  = top%nb_types(nbt)%r0
+        alpha  = top%nb_types(nbt)%alpha
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+        k = 1.0d0 - r/r0
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            if( pti_eps .ne. 0 ) then
+                geo%eneprmgrd(pti_eps) = geo%eneprmgrd(pti_eps) &
+                                       + (6.0d0/(alpha-6.0d0)*exp(alpha*k) - alpha/(alpha-6.0d0)*(r0/r)**6)
+            end if
+            if( pti_r0 .ne. 0 ) then
+                geo%eneprmgrd(pti_r0) = geo%eneprmgrd(pti_r0) + &
+                                     eps * (6.0d0/(alpha-6.0d0)*alpha*r*exp(alpha*k)/r0**2 - 6.0d0*alpha/(alpha-6.0d0)*(r0/r)**5/r)
+            end if
+            if( pti_alpha .ne. 0 ) then
+                geo%eneprmgrd(pti_alpha) = geo%eneprmgrd(pti_alpha) + &
+                                     eps * ( 6.0d0*exp(k*alpha)*(k*(alpha-6.0d0)-1.0d0)/(alpha-6.0d0)**2 &
+                                     + 6.0d0*(r0/r)**6 / (alpha-6.0d0)**2 )
+            end if
+        else
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+        end if
+    end do
+
+end subroutine ffdev_energy_prmgrd_nb_exp6
 
 !===============================================================================
 ! subroutine ffdev_energy_prmgrd_nb_bp
@@ -199,37 +198,56 @@ subroutine ffdev_energy_prmgrd_nb_bp(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j, nbt
+    integer         :: ip, i, j, nbt, pti_A, pti_B, pti_C6
     real(DEVDP)     :: inv_scee,inv_scnb,aBP,bBP,cBP,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2a,ra,r6a
     ! --------------------------------------------------------------------------
 
-!    do ip=1,top%nb_size
-!        i = top%nb_list(ip)%ai
-!        j = top%nb_list(ip)%aj
-!        nbt = top%nb_list(ip)%nbt
-!        aBP  = top%nb_types(nbt)%A
-!        bBP  = top%nb_types(nbt)%B
-!        cBP  = top%nb_types(nbt)%C6
+    do ip=1,top%nb_size
+        nbt = top%nb_list(ip)%nbt
+        pti_A = top%nb_types(nbt)%pti_A
+        pti_B = top%nb_types(nbt)%pti_B
+        pti_C6 = top%nb_types(nbt)%pti_C6
+        if( (pti_A .eq. 0) .and. (pti_B .eq. 0).and. (pti_C6 .eq. 0) ) cycle
 
-!        ! calculate dx, r and r2
-!        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-!        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-!        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        aBP  = top%nb_types(nbt)%A
+        bBP  = top%nb_types(nbt)%B
+        cBP  = top%nb_types(nbt)%C6
 
-!        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-!        r2a = 1.0d0/r2a
-!        ra  = sqrt(r2a)
-!        r6a = r2a*r2a*r2a
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-!        if( top%nb_list(ip)%dt .eq. 0 ) then
-!            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra) - cBP*r6a
-!        else
-!            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-!            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-!            geo%nb14_ene  = geo%nb_ene + inv_scnb*(aBP*exp(-bBP/ra) - cBP*r6a)
-!        end if
-!    end do
+        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2a
+        ra  = sqrt(r2a)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            if( pti_A .ne. 0 ) then
+                geo%eneprmgrd(pti_A) = geo%eneprmgrd(pti_A) + exp(-bBP/ra)
+            end if
+            if( pti_B .ne. 0 ) then
+                geo%eneprmgrd(pti_B) = geo%eneprmgrd(pti_B) + aBP*exp(-bBP/ra)*(-1/ra)
+            end if
+            if( pti_C6 .ne. 0 ) then
+                geo%eneprmgrd(pti_C6) = geo%eneprmgrd(pti_C6) - r6a
+            end if
+        else
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            if( pti_A .ne. 0 ) then
+                geo%eneprmgrd(pti_A) = geo%eneprmgrd(pti_A) + inv_scnb*exp(-bBP/ra)
+            end if
+            if( pti_B .ne. 0 ) then
+                geo%eneprmgrd(pti_B) = geo%eneprmgrd(pti_B) + inv_scnb*aBP*exp(-bBP/ra)*(-1/ra)
+            end if
+            if( pti_C6 .ne. 0 ) then
+                geo%eneprmgrd(pti_C6) = geo%eneprmgrd(pti_C6) - inv_scnb*r6a
+            end if
+        end if
+    end do
 
 end subroutine ffdev_energy_prmgrd_nb_bp
 
@@ -290,53 +308,6 @@ subroutine ffdev_energy_prmgrd_nb_exponly(top,geo)
     end do
 
 end subroutine ffdev_energy_prmgrd_nb_exponly
-
-!===============================================================================
-! subroutine ffdev_energy_nb_expd3bj
-!===============================================================================
-
-subroutine ffdev_energy_prmgrd_nb_expd3bj(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------------------------------------
-
-
-! FIXME
-
-!    do ip=1,top%nb_size
-!        i = top%nb_list(ip)%ai
-!        j = top%nb_list(ip)%aj
-!        nbt = top%nb_list(ip)%nbt
-!        aBP  = top%nb_types(nbt)%A
-!        bBP  = top%nb_types(nbt)%B
-!        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
-
-!        ! calculate dx, r and r2
-!        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-!        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-!        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-
-!        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-!        r2a = 1.0d0/r2a
-!        ra  = sqrt(r2a)
-
-!        if( top%nb_list(ip)%dt .eq. 0 ) then
-!            geo%ele_ene = geo%ele_ene + crgij*ra
-!            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra)
-!        else
-!            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-!            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-!            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij*ra
-!            geo%nb14_ene  = geo%nb_ene + inv_scnb*aBP*exp(-bBP/ra)
-!        end if
-!    end do
-
-end subroutine ffdev_energy_prmgrd_nb_expd3bj
 
 ! ------------------------------------------------------------------------------
 

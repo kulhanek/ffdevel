@@ -24,6 +24,7 @@ use smf_xyzfile_type
 implicit none
 
 ! WARNING: default values are set in ffdev_ffopt_set_default() !!!!!!!!!!!!!!!!!
+! this is because the programs can be repeated
 
 ! ------------------------------------------------------------------------------
 ! minimization methods
@@ -31,6 +32,9 @@ integer, parameter      :: MINIMIZATION_STEEPEST_DESCENT    = 0
 integer, parameter      :: MINIMIZATION_LBFGS               = 1
 integer, parameter      :: MINIMIZATION_NLOPT               = 2
 integer, parameter      :: MINIMIZATION_SA                  = 3
+
+real(DEVDP),allocatable :: FFParams(:)
+real(DEVDP),allocatable :: FFParamsGrd(:)
 
 ! === [minimization] ===========================================================
 integer         :: OptimizationMethod
@@ -55,8 +59,10 @@ integer         :: NumberOfCorrections
 
 ! === [NLOPT] ==================================================================
 integer(8)      :: NLoptID
+integer(8)      :: NLoptDummy               ! FIXME - probleme with memory aligment?
+real(DEVDP)     :: NLOpt_InitialStep        ! nlo_set_initial_step
 
-! === [NLOPT] ==================================================================
+! === [SA] =====================================================================
 real(DEVDP)     :: OptSA_Temp   = 0.01d0    ! initial temperature
 real(DEVDP)     :: OptSA_RT     = 0.85d0    ! the temperature reduction factor
 real(DEVDP)     :: OptSA_EPS    = 0.01      ! Error tolerance for termination
