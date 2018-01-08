@@ -105,8 +105,8 @@ integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1 ! only like nb_types
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2 ! only_like nb_types including probes
 
 ! === [control] ================================================================
-integer                 :: NBParamsMode                = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
-logical                 :: NBERAOnly                   = .false.                    ! consider only ERA realms
+integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
+logical                 :: NBERAOnly                    = .false.                    ! consider only ERA realms
 
 ! === [error] ==================================================================
 logical                 :: EnableEnergyError = .true.

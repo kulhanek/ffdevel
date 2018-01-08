@@ -41,7 +41,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     integer                     :: i,j,alloc_status,minj,probesize,nb_mode,comb_rules
     logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
+    logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
+
+    ! default setup for each set
+    unique_probe_types = .true.
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'{TARGETS}', ':')
@@ -107,7 +111,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             probesize = 0
         end if
         write(DEV_OUT,17) probesize
-        call ffdev_topology_switch_to_probe_mode(sets(i)%top,probesize)
+
+        if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
+            write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
+        else
+            write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
+        end if
+
+        call ffdev_topology_switch_to_probe_mode(sets(i)%top,probesize,unique_probe_types)
 
         call ffdev_topology_info(sets(i)%top)
 
@@ -258,6 +269,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  15 format('Final topology name (final)        = ',A)
  16 format('Shift minimum to zero (shift2zero) = ',A)
  17 format('Probe size (probesize)             = ',I6)
+
+ 30 format('Unique probe (unique_probe_types)  = ',a12)
+ 35 format('Unique probe (unique_probe_types)  = ',a12,'                  (default)')
 
 200 format('Number of target points            = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)

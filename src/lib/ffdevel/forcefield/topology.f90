@@ -1812,7 +1812,7 @@ end subroutine ffdev_topology_get_nbprms
 ! function ffdev_topology_switch_to_probe_mode
 ! ==============================================================================
 
-subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
+subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -1820,6 +1820,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
     implicit none
     type(TOPOLOGY)  :: top
     integer         :: probe_size
+    logical         :: unique_probe_types
     ! --------------------------------------------
     integer         :: i,j,ip,it,k,alloc_stat
     ! --------------------------------------------------------------------------
@@ -1828,19 +1829,21 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size)
 
     top%probe_size = probe_size
 
-    ! label atom types with probe
-    do i=top%natoms - top%probe_size+1,top%natoms
-        it = top%atoms(i)%typeid
-        top%atom_types(it)%probe = .true.
-    end do
+    if( unique_probe_types ) then
+        ! label atom types with probe
+        do i=top%natoms - top%probe_size+1,top%natoms
+            it = top%atoms(i)%typeid
+            top%atom_types(it)%probe = .true.
+        end do
 
-    ! test probe atom type overlaps
-    do i=1,top%natoms - top%probe_size
-        it = top%atoms(i)%typeid
-        if( top%atom_types(it)%probe ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type of probe cannot be used in probed structure!')
-        end if
-    end do
+        ! test probe atom type overlaps
+        do i=1,top%natoms - top%probe_size
+            it = top%atoms(i)%typeid
+            if( top%atom_types(it)%probe ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Atom type of probe cannot be used in probed structure!')
+            end if
+        end do
+    end if
 
     ! check covalent bonds between probe and probed structure
     do i=1,top%natoms - top%probe_size
