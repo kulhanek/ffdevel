@@ -610,6 +610,7 @@ subroutine ffdev_topology_save(top,name)
         write(DEV_TOP,30)   i, adjustl(top%atom_types(i)%name), &
                                top%atom_types(i)%mass, &
                                top%atom_types(i)%z
+        top%atom_types(i)%probe = .false.
     end do
  30 format(I7,1X,A4,1X,F10.4,1X,I2)
 
@@ -1881,17 +1882,19 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
     end do
 
 ! erase all NB parameters except of probe and probe/probed structure
-    if( NBParamsMode .eq. NB_PARAMS_MODE_NORMAL ) then
-        do i=1,top%nnb_types
-            if( top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe ) cycle
-            top%nb_types(i)%eps   = 0.0d0
-            top%nb_types(i)%r0    = 0.0d0
-            top%nb_types(i)%alpha = 0.0d0
-            top%nb_types(i)%a     = 0.0d0
-            top%nb_types(i)%b     = 0.0d0
-            top%nb_types(i)%c6    = 0.0d0
-            top%nb_types(i)%c8    = 0.0d0
-        end do
+    if( unique_probe_types ) then
+        if( NBParamsMode .eq. NB_PARAMS_MODE_NORMAL ) then
+            do i=1,top%nnb_types
+                if( top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe ) cycle
+                top%nb_types(i)%eps   = 0.0d0
+                top%nb_types(i)%r0    = 0.0d0
+                top%nb_types(i)%alpha = 0.0d0
+                top%nb_types(i)%a     = 0.0d0
+                top%nb_types(i)%b     = 0.0d0
+                top%nb_types(i)%c6    = 0.0d0
+                top%nb_types(i)%c8    = 0.0d0
+            end do
+        end if
     end if
 
 end subroutine ffdev_topology_switch_to_probe_mode
