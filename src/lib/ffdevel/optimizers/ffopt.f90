@@ -362,6 +362,7 @@ subroutine opt_nlopt
 
     NLoptID = 0
     call nlo_create(NLoptID,NLOpt_Method, nactparms)
+    ! write(*,*) 'NLoptID = ', NLoptID
     ! FIXME - there is a bug in passing of NLOpt_InitialStep to NLopt
     call nlo_set_initial_step(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
     call nlo_set_maxeval(ires, NLoptID, NOptSteps)
@@ -375,15 +376,27 @@ subroutine opt_nlopt
     end if
 
     call ffdev_params_get_lower_bounds(tmp_xg)
+    ! write(*,*) tmp_xg
     call nlo_set_lower_bounds(ires, NLoptID, tmp_xg)
+    if( ires .ne. NLOPT_SUCCESS ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_lower_bounds!')
+    end if
 
     call ffdev_params_get_upper_bounds(tmp_xg)
+    ! write(*,*) tmp_xg
     call nlo_set_upper_bounds(ires, NLoptID, tmp_xg)
+    if( ires .ne. NLOPT_SUCCESS ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_upper_bounds!')
+    end if
 
     istep = 0
     call nlo_set_min_objective(ires, NLoptID, opt_nlopt_fce, istep)
+    if( ires .ne. NLOPT_SUCCESS ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_min_objective!')
+    end if
 
     tmp_xg(:) = FFParams(:)
+    ! write(*,*) tmp_xg
 
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 

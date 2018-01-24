@@ -1711,7 +1711,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
 end subroutine ffdev_params_get_lower_bounds
 
 ! ==============================================================================
-! subroutine ffdev_params_get_lower_bounds
+! subroutine ffdev_params_get_upper_bounds
 ! ==============================================================================
 
 subroutine ffdev_params_get_upper_bounds(tmpx)
