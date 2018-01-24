@@ -1338,6 +1338,8 @@ logical function ffdev_topology_is_nbtype_used(top,nbt)
                 ffdev_topology_is_nbtype_used = .true.
                 return
             end if
+        case(NB_PARAMS_MODE_ALL)
+            ffdev_topology_is_nbtype_used = .true.
         case default
             call ffdev_utils_exit(DEV_OUT,1,'not implemented in ffdev_topology_is_nbtype_used!')
     end select

@@ -237,7 +237,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     implicit none
     type(PRMFILE_TYPE)  :: fin
     ! --------------------------------------------
-    integer                     :: i
+    integer                     :: i,nchanged
     character(PRMFILE_MAX_PATH) :: string,realm
     logical                     :: rst
     character(10)               :: key
@@ -248,7 +248,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
-    write(DEV_OUT,20)
+    write(DEV_OUT,30) nparams,'disable all (initial setup)'
 
     if( .not. prmfile_open_section(fin,'parameters') ) then
         call ffdev_utils_exit(DEV_OUT,1,'No parameters to optimize! No [parameters] section found!')
@@ -259,11 +259,11 @@ subroutine ffdev_parameters_ctrl_realms(fin)
         read(string,*) key, realm
         select case(key)
             case('enable')
-                call change_realms(realm,.true.,string)
-                write(DEV_OUT,30) trim(string)
+                call change_realms(realm,.true.,string,nchanged)
+                write(DEV_OUT,30) nchanged,trim(string)
             case('disable')
-                call change_realms(realm,.false.,string)
-                write(DEV_OUT,30) trim(string)
+                call change_realms(realm,.false.,string,nchanged)
+                write(DEV_OUT,30) nchanged,trim(string)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported action key '''//trim(key)//'''!')
         end select
@@ -283,8 +283,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     end if
 
 10 format('=== [parameters] ===============================================================')
-20 format('disable                                           all            (initial setup)')
-30 format(A)
+30 format('Altered parameters = ',I3,' | ', A)
 40 format('Number of active parameters = ',I6)
 
 end subroutine ffdev_parameters_ctrl_realms
@@ -314,7 +313,7 @@ end function is_realm_option
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_realms(realm,enable,options)
+subroutine change_realms(realm,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -324,6 +323,7 @@ subroutine change_realms(realm,enable,options)
     character(*)    :: realm
     logical         :: enable
     character(*)    :: options
+    integer         :: nchanged
     ! --------------------------------------------
     integer         :: realmid, i, pid, ti, tj, tk, tl
     logical         :: lenable
@@ -478,6 +478,8 @@ subroutine change_realms(realm,enable,options)
         if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) return
     end if
 
+    nchanged = 0
+
 444 do i=1,nparams
 
         ! these two options have application only for NB
@@ -544,6 +546,7 @@ subroutine change_realms(realm,enable,options)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                 end select
                 params(i)%enabled = lenable
+                nchanged = nchanged + 1
             end if
         end if
     end do
@@ -682,6 +685,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'like-only'
             case(NB_PARAMS_MODE_LIKE_ALL)
                 write(DEV_OUT,25) 'like-all'
+            case(NB_PARAMS_MODE_ALL)
+                write(DEV_OUT,25) 'all'
         end select
         write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
         return
@@ -698,6 +703,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case('like-all')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
                 write(DEV_OUT,20) trim(string)
+            case('all')
+                NBParamsMode = NB_PARAMS_MODE_ALL
+                write(DEV_OUT,20) trim(string)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_params ('//trim(string)//')')
         end select
@@ -709,6 +717,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'like-only'
             case(NB_PARAMS_MODE_LIKE_ALL)
                 write(DEV_OUT,25) 'like-all'
+            case(NB_PARAMS_MODE_ALL)
+                write(DEV_OUT,25) 'all'
         end select
     end if
 
@@ -838,8 +848,6 @@ subroutine ffdev_parameters_ctrl_files(fin)
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
-    ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string
     ! -----------------------------------------------------------------------------
 
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
@@ -1187,7 +1195,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     character(PRMFILE_MAX_PATH) :: string
     logical                     :: noexec
     ! --------------------------------------------
-    integer                     :: i,j,nb_mode
+    integer                     :: i,nb_mode
     ! --------------------------------------------------------------------------
 
     if( trim(string) .eq. 'ADDMMD3' ) then
@@ -1264,7 +1272,6 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
     character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
     real(DEVDP)                 :: a, b, c, d
     integer                     :: i,j,nbt,nb_mode
-    logical                     :: rst
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)

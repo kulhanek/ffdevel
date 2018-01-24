@@ -103,6 +103,7 @@ integer                 :: LastNBMode                   = NB_MODE_LJ        ! de
 integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1 ! only like nb_types except of probes
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2 ! only_like nb_types including probes
+integer,parameter       :: NB_PARAMS_MODE_ALL           = 3 ! all nb types
 
 ! === [control] ================================================================
 integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
