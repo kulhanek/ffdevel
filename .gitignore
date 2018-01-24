@@ -7,3 +7,5 @@ Makefile
 /bin/
 /lib/
 /include/
+/tests/
+FFDevel.creator.user

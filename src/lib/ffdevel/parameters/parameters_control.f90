@@ -698,6 +698,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case('like-all')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
                 write(DEV_OUT,20) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_params ('//trim(string)//')')
         end select
     else
         select case(NBParamsMode)
