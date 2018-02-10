@@ -4,3 +4,4 @@ src/bin/vdwoptimize
 src/bin/vdwenefilter
 src/lib/ffdevel/dftd3
 src/lib/ffdevel/forcefield
+src/bin/getd3

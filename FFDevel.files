@@ -35,6 +35,8 @@ src/bin/genrotors/GenRotors.cpp
 src/bin/genrotors/GenRotors.hpp
 src/bin/genrotors/GenRotorsOptions.cpp
 src/bin/genrotors/GenRotorsOptions.hpp
+src/bin/getd3/CMakeLists.txt
+src/bin/getd3/getd3.f90
 src/bin/getrmsd/CMakeLists.txt
 src/bin/getrmsd/getrmsd.f90
 src/bin/mmoptimize/CMakeLists.txt

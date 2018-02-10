@@ -63,6 +63,25 @@ real(DEVDP) function ffdev_mmd3_get_c6(top,ti,tj)
 end function ffdev_mmd3_get_c6
 
 ! ==============================================================================
+! function ffdev_mmd3_get_c6_by_z
+! ==============================================================================
+
+real(DEVDP) function ffdev_mmd3_get_c6_by_z(za,cna,zb,cnb)
+
+    implicit none
+    integer         :: za,zb
+    real(DEVDP)     :: cna,cnb
+    ! --------------------------------------------
+    real(DEVDP)     :: c6
+    ! --------------------------------------------------------------------------
+
+    call getc6(maxc,max_elem,loc_dftd3_calc%c6ab,loc_dftd3_calc%mxc,za,zb,cna,cnb,c6)
+
+    ffdev_mmd3_get_c6_by_z = c6 * 627.50960803059d0 / 1.889725989d0**6
+
+end function ffdev_mmd3_get_c6_by_z
+
+! ==============================================================================
 ! function ffdev_mmd3_get_c8
 ! ==============================================================================
 
@@ -88,6 +107,25 @@ real(DEVDP) function ffdev_mmd3_get_c8(top,ti,tj)
     ffdev_mmd3_get_c8 = 3.0d0*c6*r2r4(za)*r2r4(zb) * 627.50960803059d0 / 1.889725989d0**8
 
 end function ffdev_mmd3_get_c8
+
+! ==============================================================================
+! function ffdev_mmd3_get_c8_by_z
+! ==============================================================================
+
+real(DEVDP) function ffdev_mmd3_get_c8_by_z(za,cna,zb,cnb)
+
+    implicit none
+    integer         :: za,zb
+    real(DEVDP)     :: cna,cnb
+    ! --------------------------------------------
+    real(DEVDP)     :: c8,c6
+    ! --------------------------------------------------------------------------
+
+    call getc6(maxc,max_elem,loc_dftd3_calc%c6ab,loc_dftd3_calc%mxc,za,zb,cna,cnb,c6)
+
+    ffdev_mmd3_get_c8_by_z = 3.0d0*c6*r2r4(za)*r2r4(zb) * 627.50960803059d0 / 1.889725989d0**8
+
+end function ffdev_mmd3_get_c8_by_z
 
 ! ==============================================================================
 ! function ffdev_mmd3_get_rcov
