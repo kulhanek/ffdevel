@@ -163,7 +163,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
 
     # default compiler setups - gfortran
     SET(CMAKE_Fortran_FLAGS_RELEASE "-O0")
-    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0")
+    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all")
 
     # ifort
     IF(FCOMP_NAME STREQUAL ifort)

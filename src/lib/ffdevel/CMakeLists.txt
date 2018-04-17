@@ -15,8 +15,6 @@ SET(FFDEVEL_SRC
         forcefield/geometry.f90
         forcefield/geometry_utils.f90
         forcefield/energy.f90
-        forcefield/energy_prmgrd.f90
-        forcefield/energy_utils.f90
         forcefield/gradient.f90
         forcefield/gradient_utils.f90
         forcefield/hessian.f90

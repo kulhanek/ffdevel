@@ -49,9 +49,6 @@ subroutine ffdev_targetset_init_pts
             else if( sets(i)%geo(j)%trg_grd_loaded ) then
                 call ffdev_gradient_allocate(sets(i)%geo(j))
             end if
-            if( AnalErrEneFceGrad ) then
-                call ffdev_energy_utils_allocate_eneprmgrad(sets(i)%geo(j))
-            end if
         end do
     end do
 

@@ -58,7 +58,6 @@ integer         :: NumberOfCorrections
 
 ! === [NLOPT] ==================================================================
 integer(8)      :: NLoptID
-integer(8)      :: NLoptDummy               ! FIXME - probleme with memory aligment?
 integer         :: NLOpt_Method
 real(DEVDP)     :: NLOpt_InitialStep        ! nlo_set_initial_step
 

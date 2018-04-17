@@ -21,6 +21,71 @@ use ffdev_sizes
 use ffdev_constants
 
 implicit none
+
+interface
+    ! nlop interfaces
+    subroutine nlo_create(id,method,nprms)
+        integer(8)      :: id
+        integer(4)      :: method
+        integer(4)      :: nprms
+    end subroutine nlo_create
+
+    subroutine nlo_set_initial_step(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: v
+    end subroutine nlo_set_initial_step
+
+    subroutine nlo_set_maxeval(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        integer(4)      :: v
+    end subroutine nlo_set_maxeval
+
+    subroutine nlo_set_stopval(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: v
+    end subroutine nlo_set_stopval
+
+    subroutine nlo_set_ftol_abs(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: v
+    end subroutine nlo_set_ftol_abs
+
+    subroutine nlo_set_lower_bounds(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: v(*)
+    end subroutine nlo_set_lower_bounds
+
+    subroutine nlo_set_upper_bounds(ret,id,v)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: v(*)
+    end subroutine nlo_set_upper_bounds
+
+    subroutine nlo_set_min_objective(ret,id,fce,d)
+        integer(4)                  :: ret
+        integer(8)                  :: id
+        external                    :: fce
+        integer(4)                  :: d
+    end subroutine nlo_set_min_objective
+
+    subroutine nlo_optimize(ret,id,x,f)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: x(*)
+        real(8)         :: f
+    end subroutine nlo_optimize
+
+    subroutine nlo_destroy(id)
+        integer(8)      :: id
+    end subroutine nlo_destroy
+
+end interface
+
 contains
 
 !===============================================================================
@@ -354,37 +419,34 @@ subroutine opt_nlopt
     include 'nlopt.f'
 
     integer                 :: istep,alloc_status
-    real(DEVDP),allocatable :: tmp_xg(:)
+    real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
     integer                 :: ires
-    integer(8)              :: locoptid,oldlocoptid
     real(DEVDP)             :: final
     ! --------------------------------------------------------------------------
 
     NLoptID = 0
     call nlo_create(NLoptID,NLOpt_Method, nactparms)
-    ! write(*,*) 'NLoptID = ', NLoptID
-    ! FIXME - there is a bug in passing of NLOpt_InitialStep to NLopt
     call nlo_set_initial_step(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
     call nlo_set_maxeval(ires, NLoptID, NOptSteps)
-    call nlo_set_stopval(ires,NLoptID,0.0d0)
+    call nlo_set_stopval(ires,NLoptID,real(0.0,DEVDP))
     call nlo_set_ftol_abs(ires, NLoptID, real(MinErrorChange,DEVDP))
 
     ! allocate working array
-    allocate(tmp_xg(nactparms), stat=alloc_status)
+    allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
     if( alloc_status .ne. 0 ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for NLOPT optimization!')
     end if
 
-    call ffdev_params_get_lower_bounds(tmp_xg)
-    ! write(*,*) tmp_xg
-    call nlo_set_lower_bounds(ires, NLoptID, tmp_xg)
+    call ffdev_params_get_lower_bounds(tmp_lb)
+    ! write(*,*) tmp_lb
+    call nlo_set_lower_bounds(ires, NLoptID, tmp_lb)
     if( ires .ne. NLOPT_SUCCESS ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_lower_bounds!')
     end if
 
-    call ffdev_params_get_upper_bounds(tmp_xg)
-    ! write(*,*) tmp_xg
-    call nlo_set_upper_bounds(ires, NLoptID, tmp_xg)
+    call ffdev_params_get_upper_bounds(tmp_ub)
+    ! write(*,*) tmp_ub
+    call nlo_set_upper_bounds(ires, NLoptID, tmp_ub)
     if( ires .ne. NLOPT_SUCCESS ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_upper_bounds!')
     end if
@@ -396,8 +458,6 @@ subroutine opt_nlopt
     end if
 
     tmp_xg(:) = FFParams(:)
-    ! write(*,*) tmp_xg
-
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
     write(DEV_OUT,*)
@@ -426,9 +486,11 @@ subroutine opt_nlopt
             write(DEV_OUT,10) ires, 'NLOPT_FORCED_STOP'
     end select
 
-    deallocate(tmp_xg)
-
     call nlo_destroy(NLoptID)
+
+    deallocate(tmp_lb)
+    deallocate(tmp_ub)
+    deallocate(tmp_xg)
 
 10 format('NLOpt finished with return status = ',I6,' ',A)
 
@@ -452,12 +514,10 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     integer         :: istep
     ! --------------------------------------------
     real(DEVDP)     :: rmsg, maxgrad, lasterror, eps, xtol
-    integer         :: ires
+    integer         :: ires,i
     ! --------------------------------------------------------------------------
 
     istep = istep + 1
-
-    ! write(*,*) x
 
     FFParams(:) = x(:)
     if( need_gradient .gt. 0 ) then

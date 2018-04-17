@@ -97,7 +97,6 @@ type(FFERROR_TYPE)      :: FFError
 
 ! ------------------------------------------------------------------------------
 ! experimental/unfinished setup
-logical                 :: AnalErrEneFceGrad            = .false.           ! numerical/analytical gradients of error function
 integer                 :: LastNBMode                   = NB_MODE_LJ        ! determine which realms will be activated for NB
 
 integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup

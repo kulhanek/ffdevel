@@ -1663,6 +1663,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_topology
+    use ffdev_utils
 
     implicit none
     real(DEVDP)     :: tmpx(:)
@@ -1705,8 +1706,11 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
                 tmpx(id) = 0.5d0
             case(REALM_VDW_ALPHA)
                 tmpx(id) = 11.0d0
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
         end select
     end do
+    if( id .ne. nactparms ) stop ! safety fuse
 
 end subroutine ffdev_params_get_lower_bounds
 
@@ -1719,6 +1723,7 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_topology
+    use ffdev_utils
 
     implicit none
     real(DEVDP)     :: tmpx(:)
@@ -1761,8 +1766,11 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
                 tmpx(id) = 5.0d0
             case(REALM_VDW_ALPHA)
                 tmpx(id) = 20.0d0
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
         end select
     end do
+    if( id .ne. nactparms ) stop ! safety fuse
 
 end subroutine ffdev_params_get_upper_bounds
 
@@ -1790,20 +1798,7 @@ subroutine ffdev_parameters_error(prms,error,grads)
 
     grads(:) = 0.0d0
 
-    if( AnalErrEneFceGrad ) then
-        allocate( tmp_prms(nparams) )
-        tmp_prms(:) = 0.0d0
-        call ffdev_parameters_error_grad(prms,error,tmp_prms)
-        ! copy only active params        
-        do i=1,nparams
-            if( params(i)%pidx .gt. 0 ) then
-                grads(params(i)%pidx) = grads(params(i)%pidx) + tmp_prms(i)
-            end if
-        end do
-        deallocate(tmp_prms)
-    else
-        call ffdev_parameters_error_num(prms,error,grads)
-    end if
+    call ffdev_parameters_error_num(prms,error,grads)
 
 end subroutine ffdev_parameters_error
 
@@ -1893,7 +1888,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     call ffdev_parameters_scatter(prms)
     call ffdev_parameters_to_tops()
 
-   ! call ffdev_topology_info_types(sets(1)%top,2)
+    ! call ffdev_topology_info_types(sets(1)%top,2)
 
     if( ApplyCombinationRules ) then
         do i=1,nsets
@@ -1976,89 +1971,6 @@ subroutine ffdev_parameters_error_only(prms,error)
                 + HessianErrorWeight * seterrhess
 
 end subroutine ffdev_parameters_error_only
-
-! ==============================================================================
-! subroutine ffdev_parameters_error_grad
-! ==============================================================================
-
-subroutine ffdev_parameters_error_grad(prms,error,grads)
-
-    use ffdev_parameters_dat
-    use ffdev_targetset
-    use ffdev_targetset_dat
-    use ffdev_energy
-    use ffdev_gradient
-    use ffdev_hessian
-    use ffdev_utils
-    use ffdev_energy_prmgrd
-
-    implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    real(DEVDP)         :: grads(:)
-    ! --------------------------------------------
-    integer                 :: i,j,q,w,e,r,nene
-    real(DEVDP)             :: err,seterrene
-    ! --------------------------------------------------------------------------
-
-    ! EXPERIMENTAL/UNFINISHED
-
-    error%total = 0.0d0
-    error%energy = 0.0d0
-    error%grad = 0.0d0
-    error%hess = 0.0d0
-
-    if( EnableHessianError ) then
-        call ffdev_utils_exit(DEV_OUT,1,'EnableHessianError - not implemented in ffdev_parameters_error_grad!')
-    end if
-    if( EnableGradientError ) then
-        call ffdev_utils_exit(DEV_OUT,1,'EnableGradientError - not implemented in ffdev_parameters_error_grad!')
-    end if
-
-    if( ApplyCombinationRules ) then
-        call ffdev_utils_exit(DEV_OUT,1,'ApplyCombinationRules - not implemented in ffdev_parameters_error_grad!')
-    end if
-
-    ! scatter parameters
-    call ffdev_parameters_scatter(prms)
-    call ffdev_parameters_to_tops()
-
-    ! calculate all energies
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
-                call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
-                call ffdev_energy_prmgrd_all(sets(i)%top,sets(i)%geo(j))
-            end if
-        end do
-    end do
-
-    ! calculate error
-    nene = 0
-    seterrene = 0.0
-
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
-                nene = nene + 1
-                err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
-                seterrene = seterrene + sets(i)%geo(j)%weight * err**2
-                grads(:) = grads(:) + 2.0d0*err*sets(i)%geo(j)%eneprmgrd(:)
-            end if
-        end do
-    end do
-
-    if( nene .gt. 0 ) then
-        error%energy = error%energy + sqrt(seterrene/real(nene))
-    end if
-
-    grads(:) = EnergyErrorWeight * grads(:)
-    error%total = EnergyErrorWeight * seterrene
-
-    ! write(*,*) grads(:)
-
-end subroutine ffdev_parameters_error_grad
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set
