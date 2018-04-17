@@ -147,19 +147,19 @@ subroutine opt_steepest_descent(fout,top,geo)
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
         if( istep .ne. 1 .and. abs(geo%total_ene - lastenergy) .le. MinEnergyChange ) then
-            write(DEV_OUT,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(geo%total_ene - lastenergy)
-            write(DEV_OUT,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
-            write(DEV_OUT,'(a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
+            write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(geo%total_ene - lastenergy)
+            write(fout,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
+            write(fout,'(a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
             exit
         end if
 
         if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
-            write(DEV_OUT,'(/,a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
-            write(DEV_OUT,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
-            write(DEV_OUT,'(a,F16.4)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
-            write(DEV_OUT,'(a,F16.4)')   ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(DEV_OUT,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
-            write(DEV_OUT,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+            write(fout,'(/,a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
+            write(fout,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
+            write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
+            write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component treshold : ', MaxG
+            write(fout,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
+            write(fout,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
             exit
         end if
 
@@ -207,8 +207,8 @@ subroutine opt_steepest_descent(fout,top,geo)
             write(fout,*)
             call ffdev_utils_heading(fout,'Final results', '-')
         else
-            write(DEV_OUT,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
-            write(DEV_OUT,'(a,/)') ' >>> WARNING: Minimization was not completed!'
+            write(fout,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
+            write(fout,'(a,/)') ' >>> WARNING: Minimization was not completed!'
             call ffdev_utils_heading(fout,'Intermediate results', '-')
         end if
         call write_header(fout)
@@ -288,12 +288,12 @@ subroutine opt_lbfgs(fout,top,geo)
         end if
 
         if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
-            write(DEV_OUT,'(/,a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
-            write(DEV_OUT,'(a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
-            write(DEV_OUT,'(a,F16.4)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
-            write(DEV_OUT,'(a,F16.4)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
-            write(DEV_OUT,'(a,F16.4)') ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(DEV_OUT,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
+            write(fout,'(/,a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+            write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
+            write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
+            write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
+            write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component treshold : ', MaxG
+            write(fout,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
             exit
         end if
 
@@ -312,7 +312,7 @@ subroutine opt_lbfgs(fout,top,geo)
 
         if( iflag .eq. 0 ) exit
         if( iflag .le. 0 ) then
-            write(DEV_OUT,'(/,a,i2,/)') '>>> ERROR: Internal L-BFGS driver error! Code = ', iflag
+            write(fout,'(/,a,i2,/)') '>>> ERROR: Internal L-BFGS driver error! Code = ', iflag
             exit
         end if
 
@@ -325,8 +325,8 @@ subroutine opt_lbfgs(fout,top,geo)
             write(fout,*)
             call ffdev_utils_heading(fout,'Final results', '-')
         else
-            write(DEV_OUT,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
-            write(DEV_OUT,'(a,/)') ' >>> WARNING: Minimization was not completed!'
+            write(fout,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
+            write(fout,'(a,/)') ' >>> WARNING: Minimization was not completed!'
             call ffdev_utils_heading(fout,'Intermediate results', '-')
         end if
         call write_header(fout)

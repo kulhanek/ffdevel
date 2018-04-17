@@ -1870,13 +1870,15 @@ subroutine ffdev_parameters_error_only(prms,error)
     use ffdev_energy
     use ffdev_gradient
     use ffdev_hessian
+    use ffdev_utils    
 
     implicit none
     real(DEVDP)         :: prms(:)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,w,e,r,nene,ngrd,nhess
-    real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess
+    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al
+    real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors
+    real(DEVDP)         :: ri(3),rj(3),rk(3),rl(3),d0,dt    
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0
@@ -1888,37 +1890,22 @@ subroutine ffdev_parameters_error_only(prms,error)
     call ffdev_parameters_scatter(prms)
     call ffdev_parameters_to_tops()
 
-    ! call ffdev_topology_info_types(sets(1)%top,2)
 
-    if( ApplyCombinationRules ) then
-        do i=1,nsets
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
-        end do
-        call ffdev_parameters_reinit_nbparams()
-    end if
-
-    ! call ffdev_topology_info_types(sets(1)%top,2)
-
-    ! calculate all energies, gradients, hessians
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_hess_loaded .and. EnableHessianError) then
-                call ffdev_hessian_all(sets(i)%top,sets(i)%geo(j))
-            else if( sets(i)%geo(j)%trg_grd_loaded .and. EnableGradientError ) then
-                call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
-            else if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
-                call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
-            end if
-        end do
-    end do
+    call ffdev_targetset_calc_all
 
     ! calculate error
     seterrene = 0.0
     seterrgrd = 0.0
     seterrhess = 0.0
+    seterrbond = 0.0
+    seterrangle = 0.0
+    seterrtors = 0.0    
     nene = 0
     ngrd = 0
     nhess = 0
+    nbond = 0
+    nangle = 0
+    ntors = 0
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
@@ -1953,22 +1940,55 @@ subroutine ffdev_parameters_error_only(prms,error)
                 err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
                 seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end if
+            ! ------------------------------------------------------------------
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError ) then
+                do q=1,sets(i)%top%nbonds
+                    ai = sets(i)%top%bonds(q)%ai
+                    aj = sets(i)%top%bonds(q)%aj
+                    ri(:) = sets(i)%geo(j)%crd(:,ai)
+                    rj(:) = sets(i)%geo(j)%crd(:,aj)
+                    d0 = sqrt( (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 )
+                    ri(:) = sets(i)%geo(j)%trg_crd(:,ai)
+                    rj(:) = sets(i)%geo(j)%trg_crd(:,aj)                    
+                    dt = sqrt( (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2)
+                    nbond = nbond + 1
+                    err = d0 - dt
+                    seterrbond = seterrbond + sets(i)%geo(j)%weight * err**2
+                end do
+            end if
         end do
     end do
 
+    ! energy
     if( nene .gt. 0 ) then
-        error%energy = error%energy + sqrt(seterrene/real(nene))
+        error%energy = sqrt(seterrene/real(nene))
     end if
     if( ngrd .gt. 0 ) then
-        error%grad = error%grad + sqrt(seterrgrd/real(ngrd))
+        error%grad = sqrt(seterrgrd/real(ngrd))
     end if
     if( nhess .gt. 0 ) then
-        error%hess = error%hess + sqrt(seterrhess/real(nhess))
+        error%hess = sqrt(seterrhess/real(nhess))
     end if
+    if( nhess .gt. 0 ) then
+        error%hess = sqrt(seterrhess/real(nhess))
+    end if 
+    ! geometry
+    if( nbond .gt. 0 ) then
+        error%bond = sqrt(seterrbond/real(nbond))
+    end if
+    if( nangle .gt. 0 ) then
+        error%angle = sqrt(seterrangle/real(nangle))
+    end if 
+    if( ntors .gt. 0 ) then
+        error%tors = sqrt(seterrtors/real(ntors))
+    end if     
 
     error%total = EnergyErrorWeight * seterrene &
                 + GradientErrorWeight * seterrgrd &
-                + HessianErrorWeight * seterrhess
+                + HessianErrorWeight * seterrhess &
+                + BondErrorWeight * seterrbond &
+                + AngleErrorWeight * seterrangle &
+                + TorsionErrorWeight * seterrtors 
 
 end subroutine ffdev_parameters_error_only
 

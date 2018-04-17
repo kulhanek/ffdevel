@@ -48,11 +48,13 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_energy = 0
     geo%total_ene = 0
     geo%weight = 1.0
-
+    
     geo%trg_ene_loaded = .false.
+    geo%trg_crd_loaded = .false.
     geo%trg_grd_loaded = .false.
     geo%trg_hess_loaded = .false.
     geo%trg_esp_loaded = .false.
+    geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
 end subroutine ffdev_geometry_init
@@ -272,7 +274,15 @@ subroutine ffdev_geometry_load_point(geo,name)
             read(sym,*) geo%z(i)
         end if
     end do
-
+    ! always load trg_geo
+    allocate( geo%trg_crd(3,geo%natoms), stat = alloc_stat )
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+    end if
+    geo%trg_crd = geo%crd
+    geo%trg_crd_loaded = .true.
+    
+    
     ! extra data - optional
     do while( .true. )
         ! read key line

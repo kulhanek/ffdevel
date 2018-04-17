@@ -766,14 +766,48 @@ subroutine ffdev_parameters_ctrl_error(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'error') ) then
+        write(DEV_OUT,85) prmfile_onoff(ApplyCombinationRules)
+        write(DEV_OUT,95) prmfile_onoff(OptimizeGeometry)
+        write(DEV_OUT,105) prmfile_onoff(OptimizeGeometryVerbose)
+        write(DEV_OUT,107) prmfile_onoff(OptimizeOriginGeometry)
+          
         write(DEV_OUT,25) prmfile_onoff(EnableEnergyError)
         write(DEV_OUT,35) EnergyErrorWeight
         write(DEV_OUT,45) prmfile_onoff(EnableGradientError)
         write(DEV_OUT,55) GradientErrorWeight
         write(DEV_OUT,65) prmfile_onoff(EnableHessianError)
         write(DEV_OUT,75) HessianErrorWeight
+        
+        write(DEV_OUT,115) prmfile_onoff(EnableBondError)
+        write(DEV_OUT,125) BondErrorWeight
+        write(DEV_OUT,215) prmfile_onoff(EnableAngleError)
+        write(DEV_OUT,225) AngleErrorWeight
+        write(DEV_OUT,315) prmfile_onoff(EnableTorsionError)
+        write(DEV_OUT,325) TorsionErrorWeight        
         return
     end if
+    
+    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
+        write(DEV_OUT,80) prmfile_onoff(ApplyCombinationRules)
+    else
+        write(DEV_OUT,85) prmfile_onoff(ApplyCombinationRules)
+    end if
+    if( prmfile_get_logical_by_key(fin,'geoopt', OptimizeGeometry)) then
+        write(DEV_OUT,90) prmfile_onoff(OptimizeGeometry)
+    else
+        write(DEV_OUT,95) prmfile_onoff(OptimizeGeometry)
+    end if
+    if( prmfile_get_logical_by_key(fin,'geoverbose', OptimizeGeometryVerbose)) then
+        write(DEV_OUT,100) prmfile_onoff(OptimizeGeometryVerbose)
+    else
+        write(DEV_OUT,105) prmfile_onoff(OptimizeGeometryVerbose)
+    end if 
+    if( prmfile_get_logical_by_key(fin,'origingeo', OptimizeOriginGeometry)) then
+        write(DEV_OUT,106) prmfile_onoff(OptimizeOriginGeometry)
+    else
+        write(DEV_OUT,107) prmfile_onoff(OptimizeOriginGeometry)
+    end if       
+    
 
     if( prmfile_get_logical_by_key(fin,'energy', EnableEnergyError)) then
         write(DEV_OUT,20) prmfile_onoff(EnableEnergyError)
@@ -807,15 +841,54 @@ subroutine ffdev_parameters_ctrl_error(fin)
     else
         write(DEV_OUT,75) HessianErrorWeight
     end if
-
-    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
-        write(DEV_OUT,60) prmfile_onoff(ApplyCombinationRules)
+    
+    if( prmfile_get_logical_by_key(fin,'bond', EnableBondError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableBondError)
     else
-        write(DEV_OUT,65) prmfile_onoff(ApplyCombinationRules)
+        write(DEV_OUT,115) prmfile_onoff(EnableBondError)
     end if
+    if( prmfile_get_real8_by_key(fin,'bond_weight', BondErrorWeight)) then
+        write(DEV_OUT,120) BondErrorWeight
+    else
+        write(DEV_OUT,125) BondErrorWeight
+    end if   
+    
+    if( prmfile_get_logical_by_key(fin,'angle', EnableAngleError)) then
+        write(DEV_OUT,210) prmfile_onoff(EnableAngleError)
+    else
+        write(DEV_OUT,215) prmfile_onoff(EnableAngleError)
+    end if
+    if( prmfile_get_real8_by_key(fin,'angle_weight', AngleErrorWeight)) then
+        write(DEV_OUT,220) AngleErrorWeight
+    else
+        write(DEV_OUT,225) AngleErrorWeight
+    end if    
 
+    if( prmfile_get_logical_by_key(fin,'torsion', EnableTorsionError)) then
+        write(DEV_OUT,310) prmfile_onoff(EnableTorsionError)
+    else
+        write(DEV_OUT,315) prmfile_onoff(EnableTorsionError)
+    end if
+    if( prmfile_get_real8_by_key(fin,'torsion_weight', TorsionErrorWeight)) then
+        write(DEV_OUT,320) TorsionErrorWeight
+    else
+        write(DEV_OUT,325) TorsionErrorWeight
+    end if    
+    
  10 format('=== [errors] ===================================================================')
 
+ 80  format ('Apply combination rules (comb_rules)   = ',a12)
+ 85  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
+
+ 90  format ('Optimize geometry (geoopt)             = ',a12)
+ 95  format ('Optimize geometry (geoopt)             = ',a12,'                  (default)')
+ 
+100  format ('Show geo opt progress (geoverbose)     = ',a12)
+105  format ('Show geo opt progress (geoverbose)     = ',a12,'                  (default)') 
+
+106  format ('Optimize origin geometry (origingeo)   = ',a12)
+107  format ('Optimize origin geometry (origingeo)   = ',a12,'                  (default)') 
+ 
  20  format ('Energy error (energy)                  = ',a12)
  25  format ('Energy error (energy)                  = ',a12,'                  (default)')
  30  format ('Energy error weight (energy_weight)    = ',f21.8)
@@ -831,9 +904,22 @@ subroutine ffdev_parameters_ctrl_error(fin)
  70  format ('Hessian error weight (hessian_weight)  = ',f21.8)
  75  format ('Hessian error weight (hessian_weight)  = ',f21.8,'         (default)')
 
- 80  format ('Apply combination rules (comb_rules)   = ',a12)
- 85  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
-
+110  format ('Bond error (bond)                      = ',a12)
+115  format ('Bond error (bond)                      = ',a12,'                  (default)')
+120  format ('Bond error weight (bond_weight)        = ',f21.8)
+125  format ('Bond error weight (bond_weight)        = ',f21.8,'         (default)')
+ 
+210  format ('Angle error (angle)                    = ',a12)
+215  format ('Angle error (angle)                    = ',a12,'                  (default)')
+220  format ('Angle error weight (angle_weight)      = ',f21.8)
+225  format ('Angle error weight (angle_weight)      = ',f21.8,'         (default)') 
+ 
+310  format ('Torsion error (torsion)                = ',a12)
+315  format ('Torsion error (torsion)                = ',a12,'                  (default)')
+320  format ('Torsion error weight (torsion_weight)  = ',f21.8)
+325  format ('Torsion error weight (torsion_weight)  = ',f21.8,'         (default)')  
+ 
+ 
 end subroutine ffdev_parameters_ctrl_error
 
 !===============================================================================

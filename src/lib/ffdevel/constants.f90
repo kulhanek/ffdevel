@@ -124,6 +124,7 @@ integer,parameter       :: DEV_OTRAJ    = 126
 integer,parameter       :: DEV_GEO      = 287
 integer,parameter       :: DEV_TOP      = 289
 integer,parameter       :: DEV_PRMS     = 298
+integer,parameter       :: DEV_NULL     = 456
 
 !===============================================================================
 

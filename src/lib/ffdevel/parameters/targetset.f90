@@ -34,7 +34,6 @@ subroutine ffdev_targetset_init_pts
     use ffdev_gradient_utils
     use ffdev_hessian_utils
     use ffdev_parameters_dat
-    use ffdev_energy_utils
 
     implicit none
     integer     :: i,j
@@ -46,7 +45,8 @@ subroutine ffdev_targetset_init_pts
             if( sets(i)%geo(j)%trg_hess_loaded ) then
                 call ffdev_hessian_allocate(sets(i)%geo(j))
                 call ffdev_gradient_allocate(sets(i)%geo(j))
-            else if( sets(i)%geo(j)%trg_grd_loaded ) then
+            else
+                ! always init grd
                 call ffdev_gradient_allocate(sets(i)%geo(j))
             end if
         end do
@@ -56,6 +56,7 @@ end subroutine ffdev_targetset_init_pts
 
 ! ==============================================================================
 ! subroutine ffdev_targetset_calc_all
+! NOTE - it requires a program to be loaded
 ! ==============================================================================
 
 subroutine ffdev_targetset_calc_all
@@ -64,11 +65,46 @@ subroutine ffdev_targetset_calc_all
     use ffdev_energy
     use ffdev_gradient
     use ffdev_hessian
+    use ffdev_parameters_dat 
+    use ffdev_parameters
+    use ffdev_geoopt
 
     implicit none
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
+    ! apply combination rules
+    if( ApplyCombinationRules ) then
+        do i=1,nsets
+            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
+        end do
+        call ffdev_parameters_reinit_nbparams()
+    end if    
+    
+    ! optimize geometry
+    if( OptimizeGeometry ) then
+        do i=1,nsets
+            do j=1,sets(i)%ngeos
+                if( OptimizeOriginGeometry ) then
+                    sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                end if
+                if( OptimizeGeometryVerbose ) then
+                    call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
+                else
+                    call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))
+                end if
+                sets(i)%geo(j)%trg_crd_optimized = .true.
+            end do
+        end do
+    else
+        do i=1,nsets
+            do j=1,sets(i)%ngeos
+                sets(i)%geo(j)%trg_crd_optimized = .false.
+            end do
+        end do
+    end if
+    
+    ! calculate all energies, gradients, hessians    
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( sets(i)%geo(j)%trg_hess_loaded ) then

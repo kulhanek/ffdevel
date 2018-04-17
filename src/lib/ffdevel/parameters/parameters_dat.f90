@@ -91,6 +91,9 @@ type FFERROR_TYPE
     real(DEVDP)         :: energy       ! energy part of error - RMSE
     real(DEVDP)         :: grad         ! gradient part of error - RMSE
     real(DEVDP)         :: hess         ! hessian part of error - RMSE
+    real(DEVDP)         :: bond
+    real(DEVDP)         :: angle
+    real(DEVDP)         :: tors
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError
@@ -118,7 +121,19 @@ real(DEVDP)             :: GradientErrorWeight = 1.0
 logical                 :: EnableHessianError = .true.
 real(DEVDP)             :: HessianErrorWeight = 1.0
 
-logical                 :: ApplyCombinationRules = .false.     ! apply combination rules in every error evaluation
+logical                 :: EnableBondError = .true.
+real(DEVDP)             :: BondErrorWeight = 1.0
+
+logical                 :: EnableAngleError = .true.
+real(DEVDP)             :: AngleErrorWeight = 1.0
+
+logical                 :: EnableTorsionError = .true.
+real(DEVDP)             :: TorsionErrorWeight = 1.0
+
+logical                 :: OptimizeGeometry         = .false.   ! optimize geometry in each error evaluation
+logical                 :: OptimizeGeometryVerbose  = .false.   ! print geometry optimization progress 
+logical                 :: OptimizeOriginGeometry   = .true.    ! 
+logical                 :: ApplyCombinationRules    = .false.   ! apply combination rules in every error evaluation
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

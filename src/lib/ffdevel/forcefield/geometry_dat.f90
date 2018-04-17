@@ -42,10 +42,13 @@ type GEOMETRY
     real(DEVDP),pointer :: freq(:)          ! frequencies of normal vibrations
     real(DEVDP)         :: weight           ! contribution to all data
     logical             :: trg_ene_loaded
+    logical             :: trg_crd_loaded   ! always loaded
     logical             :: trg_grd_loaded
     logical             :: trg_hess_loaded
     logical             :: trg_esp_loaded
+    logical             :: trg_crd_optimized
     real(DEVDP)         :: trg_energy           ! target energy
+    real(DEVDP),pointer :: trg_crd(:,:)         ! target geometry (3,natoms)
     real(DEVDP),pointer :: trg_grd(:,:)         ! target gradient (3,natoms)
     real(DEVDP),pointer :: trg_hess(:,:,:,:)    ! target hessian (3,natoms,3,natoms)
     integer             :: esp_npoints          ! number of ESP points

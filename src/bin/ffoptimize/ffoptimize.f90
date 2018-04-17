@@ -46,6 +46,9 @@ program ffdev_optimize_program
     end if
 
     call get_command_argument(1, ctrlname)
+    
+    ! open dev null
+    call ffdev_utils_open(DEV_NULL,'/dev/null','O')
 
     ! process control file -----------------------------------------------------
     write(DEV_OUT,*)

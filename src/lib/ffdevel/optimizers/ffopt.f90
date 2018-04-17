@@ -145,7 +145,7 @@ subroutine ffdev_ffopt_run()
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'FF Parameter Optimalization', ':')
+    call ffdev_utils_heading(DEV_OUT,'FF Parameter Optimization', ':')
 
     allocate(FFParams(nactparms), FFParamsGrd(nactparms), stat=alloc_stat)
     if( alloc_stat .ne. 0 ) then
@@ -421,7 +421,7 @@ subroutine opt_nlopt
     integer                 :: istep,alloc_status
     real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
     integer                 :: ires
-    real(DEVDP)             :: final
+    real(DEVDP)             :: final,rmsg, maxgrad
     ! --------------------------------------------------------------------------
 
     NLoptID = 0
@@ -460,6 +460,9 @@ subroutine opt_nlopt
     tmp_xg(:) = FFParams(:)
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
+    rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
+    call write_results(istep,FFError,rmsg,maxgrad,.true.)
+    
     write(DEV_OUT,*)
     select case(ires)
         case(NLOPT_SUCCESS)
@@ -548,6 +551,7 @@ subroutine write_header()
     use ffdev_ffopt_dat
     use ffdev_topology
     use ffdev_geometry
+    use ffdev_parameters_dat
 
     implicit none
     integer     :: major, minor, bugfix
@@ -563,15 +567,53 @@ subroutine write_header()
             write(DEV_OUT,17) major, minor, bugfix
     end select
 
-    write(DEV_OUT,20)
-    write(DEV_OUT,30)
-
+    write(DEV_OUT,20,ADVANCE='NO')
+    if( EnableEnergyError ) then
+        write(DEV_OUT,30,ADVANCE='NO')
+    end if
+    if( EnableGradientError ) then
+        write(DEV_OUT,31,ADVANCE='NO')
+    end if
+    if( EnableHessianError ) then
+        write(DEV_OUT,32,ADVANCE='NO')
+    end if 
+    if( EnableBondError ) then
+        write(DEV_OUT,33,ADVANCE='NO')
+    end if     
+    write(DEV_OUT,60)
+    
+    write(DEV_OUT,25,ADVANCE='NO')
+    if( EnableEnergyError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableGradientError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableHessianError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if   
+    if( EnableBondError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if      
+    write(DEV_OUT,65)    
+    
+    
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
 
- 20 format('# STEP    Error       Err(Ene)    Err(Grad)    Err(Hess)      RMSG         maxG     ')
- 30 format('#----- ------------ ------------ ------------ ------------ ------------ ------------')
+ 20 format('# STEP    Error     ')
+ 25 format('#----- ------------ ')
+ 
+ 30 format('  Err(Ene)   ')
+ 31 format('  Err(Grad)  ')
+ 32 format('  Err(Hess)  ')
+ 33 format('  Err(Bond)  ') 
+
+ 50 format('------------ ')
+  
+ 60 format('   RMSG         maxG     ') 
+ 65 format('------------ ------------')
 
 end subroutine write_header
 
@@ -594,11 +636,25 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
 
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
-        write(DEV_OUT,10) istep, error%total, error%energy, error%grad, error%hess, &
-                          rmsg,maxgrad
+        write(DEV_OUT,10,ADVANCE='NO') istep, error%total
+        if( EnableEnergyError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%energy
+        end if
+        if( EnableGradientError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%grad
+        end if
+        if( EnableHessianError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%hess
+        end if 
+        if( EnableBondError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%bond
+        end if            
+        write(DEV_OUT,20) rmsg,maxgrad
     end if
 
- 10 format(I6,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5,1X,E12.5)
+ 10 format(I6,1X,E12.5,1X)
+ 15 format(E12.5,1X)
+ 20 format(E12.5,1X,E12.5)
 
 end subroutine write_results
 
