@@ -25,17 +25,28 @@ use ffdev_topology
 
 ! this training set associated with the topology
 type TARGETSET
-    type(TOPOLOGY)          :: top      ! set topology
-    character(len=255)      :: final_name
-    integer                 :: ngeos    ! number of training points in the set
-    type(GEOMETRY),pointer  :: geo(:)   ! training data
-    real(DEVDP)             :: offset   ! energy offset
-    integer                 :: mineneid ! geometry with minimum of energy
+    type(TOPOLOGY)          :: top          ! set topology
+    character(len=255)      :: final_stop   ! final name of topology
+    integer                 :: ngeos        ! number of training points in the set
+    type(GEOMETRY),pointer  :: geo(:)       ! training data
+    real(DEVDP)             :: offset       ! energy offset
+    integer                 :: mineneid     ! geometry with minimum of energy
+    logical                 :: optgeo       ! optimize geometry
+    logical                 :: keepoptgeo   ! kee optimized geometry
+    character(len=255)      :: name         ! target name 
+    integer                 :: nrefs        ! number of references
+    integer,pointer         :: refs(:)      ! references
 end type TARGETSET
 
 integer                     :: nsets    ! number of sets
 type(TARGETSET),allocatable :: sets(:)  ! all training sets
 
 ! ------------------------------------------------------------------------------
+
+! [setup] ----------------------------------------------------------------------
+logical                 :: OptimizeGeometry             = .false.   ! optimize geometry in each error evaluation
+logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress 
+logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
+logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
 
 end module ffdev_targetset_dat

@@ -274,14 +274,14 @@ subroutine ffdev_geometry_load_point(geo,name)
             read(sym,*) geo%z(i)
         end if
     end do
-    ! always load trg_geo
-    allocate( geo%trg_crd(3,geo%natoms), stat = alloc_stat )
-    if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+    if( geo%trg_crd_loaded ) then
+        ! always load trg_geo
+        allocate( geo%trg_crd(3,geo%natoms), stat = alloc_stat )
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+        end if
+        geo%trg_crd = geo%crd
     end if
-    geo%trg_crd = geo%crd
-    geo%trg_crd_loaded = .true.
-    
     
     ! extra data - optional
     do while( .true. )
@@ -822,13 +822,13 @@ end subroutine ffdev_geometry_check_z
 ! subroutine ffdev_geometry_get_length
 ! ==============================================================================
 
-real(DEVDP) function ffdev_geometry_get_length(geo,ai,aj)
+real(DEVDP) function ffdev_geometry_get_length(crd,ai,aj)
 
     use ffdev_utils
     use ffdev_topology
 
     implicit none
-    type(GEOMETRY)  :: geo
+    real(DEVDP)     :: crd(:,:)
     integer         :: ai
     integer         :: aj
     ! --------------------------------------------
@@ -836,9 +836,9 @@ real(DEVDP) function ffdev_geometry_get_length(geo,ai,aj)
     ! --------------------------------------------------------------------------
 
     v = 0.0
-    v = v + (geo%crd(1,ai) - geo%crd(1,aj))**2
-    v = v + (geo%crd(2,ai) - geo%crd(2,aj))**2
-    v = v + (geo%crd(3,ai) - geo%crd(3,aj))**2
+    v = v + (crd(1,ai) - crd(1,aj))**2
+    v = v + (crd(2,ai) - crd(2,aj))**2
+    v = v + (crd(3,ai) - crd(3,aj))**2
     ffdev_geometry_get_length = sqrt(v)
 
 end function ffdev_geometry_get_length
@@ -847,13 +847,13 @@ end function ffdev_geometry_get_length
 ! subroutine ffdev_geometry_get_angle
 ! ==============================================================================
 
-real(DEVDP) function ffdev_geometry_get_angle(geo,ai,aj,ak)
+real(DEVDP) function ffdev_geometry_get_angle(crd,ai,aj,ak)
 
     use ffdev_utils
     use ffdev_topology
 
     implicit none
-    type(GEOMETRY)  :: geo
+    real(DEVDP)     :: crd(:,:)
     integer         :: ai
     integer         :: aj
     integer         :: ak
@@ -864,8 +864,8 @@ real(DEVDP) function ffdev_geometry_get_angle(geo,ai,aj,ak)
     ! --------------------------------------------------------------------------
 
     ! calculate rji and rjk
-    rji(:) = geo%crd(:,ai) - geo%crd(:,aj)
-    rjk(:) = geo%crd(:,ak) - geo%crd(:,aj)
+    rji(:) = crd(:,ai) - crd(:,aj)
+    rjk(:) = crd(:,ak) - crd(:,aj)
 
     ! calculate bjiinv and bjkinv and their squares
     bji2inv = 1.0d0/(rji(1)**2 + rji(2)**2 + rji(3)**2 )
@@ -890,13 +890,13 @@ end function ffdev_geometry_get_angle
 ! subroutine ffdev_geometry_get_dihedral
 ! ==============================================================================
 
-real(DEVDP) function ffdev_geometry_get_dihedral(geo,ai,aj,ak,al)
+real(DEVDP) function ffdev_geometry_get_dihedral(crd,ai,aj,ak,al)
 
     use ffdev_utils
     use ffdev_topology
 
     implicit none
-    type(GEOMETRY)  :: geo
+    real(DEVDP)     :: crd(:,:)
     integer         :: ai
     integer         :: aj
     integer         :: ak
@@ -908,9 +908,9 @@ real(DEVDP) function ffdev_geometry_get_dihedral(geo,ai,aj,ak,al)
     ! --------------------------------------------------------------------------
 
     ! calculate rji and rjk
-    rji(:) = geo%crd(:,ai) - geo%crd(:,aj)
-    rjk(:) = geo%crd(:,ak) - geo%crd(:,aj)
-    rkl(:) = geo%crd(:,al) - geo%crd(:,ak)
+    rji(:) = crd(:,ai) - crd(:,aj)
+    rjk(:) = crd(:,ak) - crd(:,aj)
+    rkl(:) = crd(:,al) - crd(:,ak)
     rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
     rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
     rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)

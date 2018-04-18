@@ -42,7 +42,7 @@ type GEOMETRY
     real(DEVDP),pointer :: freq(:)          ! frequencies of normal vibrations
     real(DEVDP)         :: weight           ! contribution to all data
     logical             :: trg_ene_loaded
-    logical             :: trg_crd_loaded   ! always loaded
+    logical             :: trg_crd_loaded
     logical             :: trg_grd_loaded
     logical             :: trg_hess_loaded
     logical             :: trg_esp_loaded

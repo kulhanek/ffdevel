@@ -37,15 +37,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: allow_nopoints
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight
-    integer                     :: i,j,alloc_status,minj,probesize,nb_mode,comb_rules
+    character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field
+    integer                     :: i,j,k,l,alloc_status,minj,probesize,nb_mode,comb_rules
     logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
-
-    ! default setup for each set
-    unique_probe_types = .true.
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'{TARGETS}', ':')
@@ -54,9 +51,25 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     if( .not. prmfile_open_group(fin,'TARGETS') ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to open {TARGETS} group!')
     end if
+    
+    ! load [setup] configuration
+    call ffdev_targetset_ctrl_setup(fin)
 
     ! get number of sets
-    nsets = prmfile_count_group(fin)
+    nsets = 0
+    rst = prmfile_first_section(fin)
+    do while( rst )
+        ! open section
+        if( .not. prmfile_get_section_name(fin,string) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to get section name!')
+        end if
+
+        if( string .eq. 'SET' ) then
+            nsets = nsets + 1
+        end if
+        rst = prmfile_next_section(fin)
+    end do
+        
     if( nsets .lt. 0 ) then
         call ffdev_utils_exit(DEV_OUT,1,'At least one target set must be defined!')
     end if
@@ -73,7 +86,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     i = 1
     do while( rst )
         write(DEV_OUT,*)
-        write(DEV_OUT,10) i
+        write(DEV_OUT,1) i
 
         ! open set section
         if( .not. prmfile_get_section_name(fin,string) ) then
@@ -81,12 +94,19 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
 
         if( string .ne. 'SET' ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Section '''//trim(string)//''' must be [SET]!')
+            rst = prmfile_next_section(fin)
+            cycle
         end if
 
 !----------------------
 ! topology
 !----------------------
+        ! get name - optional
+        if( .not. prmfile_get_string_by_key(fin,'name',sets(i)%name) ) then
+            sets(i)%name = ''
+        else
+            write(DEV_OUT,5) trim(sets(i)%name)
+        end if
 
         ! get topology name
         if( .not. prmfile_get_string_by_key(fin,'topology',topin) ) then
@@ -95,43 +115,104 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         write(DEV_OUT,12) trim(topin)
 
         ! get name of resulting topology
-        if( .not. prmfile_get_string_by_key(fin,'final',sets(i)%final_name) ) then
-            sets(i)%final_name = ''
+        if( .not. prmfile_get_string_by_key(fin,'final',sets(i)%final_stop) ) then
+            sets(i)%final_stop = ''
             write(DEV_OUT,15) trim('-none-')
         else
-            write(DEV_OUT,15) trim(sets(i)%final_name)
+            write(DEV_OUT,15) trim(sets(i)%final_stop)
+        end if
+        
+        probesize = 0        
+        if( prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
+            write(DEV_OUT,20) probesize
+        else
+            write(DEV_OUT,25) probesize
         end if
 
-        ! load topology and print info
-        write(DEV_OUT,*)
-        call ffdev_topology_init(sets(i)%top)
-        call ffdev_topology_load(sets(i)%top,topin)
-
-        if( .not. prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
-            probesize = 0
-        end if
-        write(DEV_OUT,17) probesize
-
+        unique_probe_types = .true.        
         if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
             write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
         else
             write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
-        end if
-
+        end if        
+        
+        ! load topology and print info
+        write(DEV_OUT,*)
+        call ffdev_topology_init(sets(i)%top)
+        call ffdev_topology_load(sets(i)%top,topin)        
         call ffdev_topology_switch_to_probe_mode(sets(i)%top,probesize,unique_probe_types)
+        call ffdev_topology_info(sets(i)%top)        
 
-        call ffdev_topology_info(sets(i)%top)
-
+        write(DEV_OUT,*)
+        sets(i)%optgeo = OptimizeGeometry
+        if( prmfile_get_logical_by_key(fin,'optgeo', sets(i)%optgeo)) then
+            write(DEV_OUT,40) prmfile_onoff(sets(i)%optgeo)
+        else
+            write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
+        end if 
+        
+        sets(i)%optgeo = KeepOptimizedGeometry
+        if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
+            write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
+        else
+            write(DEV_OUT,55) prmfile_onoff(sets(i)%keepoptgeo)
+        end if  
+        
+        sets(i)%nrefs = 0 
+        nullify(sets(i)%refs)
+        
+        if( prmfile_init_field_by_key(fin,'references') ) then
+            do while ( prmfile_get_field_by_key(fin,field) )
+                sets(i)%nrefs = sets(i)%nrefs + 1
+            end do
+            allocate(sets(i)%refs(sets(i)%nrefs), stat = alloc_status)
+            if( alloc_status .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for references!')
+            end if
+            rst = prmfile_init_field_by_key(fin,'references')
+            k = 1
+            do while ( prmfile_get_field_by_key(fin,field) )
+                ! find set
+                sets(i)%refs(k) = 0
+                do l=1,nsets
+                    if( trim(sets(l)%name) .eq. trim(field) ) then
+                        sets(i)%refs(k) = l
+                        exit
+                    end if
+                end do
+                if( sets(i)%refs(k) .eq. 0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to find reference (' // trim(field) // ')!')
+                end if
+                k = k + 1
+            end do
+            rst = prmfile_get_string_by_key(fin,'references', string)
+            write(DEV_OUT,70) trim(string)
+            ! check size consitency
+            k = 0
+            do l=1,sets(i)%nrefs
+                k = k + sets(sets(i)%refs(l))%top%natoms
+            end do
+            if( k .ne. sets(i)%top%natoms ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Size (natoms) inconsistency between reference systems and the set detected!')
+            end if
+        end if
+        
+        sets(i)%offset = 0.0d0
+        shift2zero = .false.
+        if( sets(i)%nrefs .eq. 0 ) then
+            if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
+                write(DEV_OUT,65) prmfile_onoff(shift2zero)
+            else
+                write(DEV_OUT,60) prmfile_onoff(shift2zero)
+            end if 
+        else
+            ! we cannot manipulate with energy in reference mode
+            write(DEV_OUT,65) prmfile_onoff(shift2zero)
+        end if
+        
 !----------------------
 ! points
 !----------------------
-
-        sets(i)%offset = 0.0d0
-        if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
-            shift2zero = .false.
-        end if
-        write(DEV_OUT,*)
-        write(DEV_OUT,16) prmfile_onoff(shift2zero)
 
         ! count number of points
         sets(i)%ngeos = 0
@@ -151,6 +232,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             if( allow_nopoints .eqv. .false. ) then
                 call ffdev_utils_exit(DEV_OUT,1,'No points for current set!')
             end if
+        end if
+        
+        if( (len(trim(sets(i)%name)) .gt. 0) .and. (sets(i)%ngeos .ne. 1) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Named set can contain only one point!')
         end if
 
         if( sets(i)%ngeos .gt. 0 ) then
@@ -206,6 +291,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             call ffdev_geometry_init(sets(i)%geo(j))
             sets(i)%geo(j)%id = j
             sets(i)%geo(j)%weight = weight
+            sets(i)%geo(j)%trg_crd_loaded  = sets(i)%optgeo
             call ffdev_geometry_load_point(sets(i)%geo(j),geoname)
             if( shift2zero ) then
                 call ffdev_geometry_info_point(sets(i)%geo(j))
@@ -218,7 +304,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             ! do we have data for point
             data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
                          sets(i)%geo(j)%trg_grd_loaded .or. &
-                         sets(i)%geo(j)%trg_hess_loaded
+                         sets(i)%geo(j)%trg_hess_loaded .or. &
+                         sets(i)%optgeo .or. ( len(sets(i)%name) .gt. 0)
 
             if( .not. data_avail ) then
                 call ffdev_utils_exit(DEV_OUT,1,'No training data are available in the point!')
@@ -264,19 +351,95 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
     end do
 
- 10 format('=== [SET] #',I2.2,' ==================================================================')
- 12 format('Input topology name (topology)     = ',A)
- 15 format('Final topology name (final)        = ',A)
- 16 format('Shift minimum to zero (shift2zero) = ',A)
- 17 format('Probe size (probesize)             = ',I6)
+  1 format('=== [SET] #',I2.2,' ==================================================================')
+  5 format('Set name (name)                         = ',A) 
+ 12 format('Input topology name (topology)          = ',A)
+ 15 format('Final topology name (final)             = ',A)
+ 
+ 20 format('Probe size (probesize)                  = ',I12)
+ 25 format('Probe size (probesize)                  = ',I12,'                  (default)')
+ 
+ 30 format('Unique probe (unique_probe_types)       = ',A12)
+ 35 format('Unique probe (unique_probe_types)       = ',A12,'                  (default)')
+ 
+ 40 format('Optimize geometry (optgeo)              = ',A12)
+ 45 format('Optimize geometry (optgeo)              = ',A12,'                  (default)') 
+ 
+ 50 format('Keep optimized geometry (keepoptgeo)    = ',A12)
+ 55 format('Keep optimized geometry (keepoptgeo)    = ',A12,'                  (default)')
+ 
+ 60 format('Shift minimum to zero (shift2zero)      = ',A12) 
+ 65 format('Shift minimum to zero (shift2zero)      = ',A12,'                  (default)')
+  
+ 70 format('Reference sets (references)             = ',A)
 
- 30 format('Unique probe (unique_probe_types)  = ',a12)
- 35 format('Unique probe (unique_probe_types)  = ',a12,'                  (default)')
-
-200 format('Number of target points            = ',I6)
+200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 
 end subroutine ffdev_targetset_ctrl
+
+
+! ==============================================================================
+! subroutine ffdev_targetset_ctrl_setup
+! ==============================================================================
+
+subroutine ffdev_targetset_ctrl_setup(fin)
+
+    use ffdev_targetset_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'setup') ) then
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+        write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
+        write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
+        write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
+        return
+    end if
+    
+    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
+        write(DEV_OUT,20) prmfile_onoff(ApplyCombinationRules)
+    else
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+    end if
+    if( prmfile_get_logical_by_key(fin,'optgeo', OptimizeGeometry)) then
+        write(DEV_OUT,30) prmfile_onoff(OptimizeGeometry)
+    else
+        write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
+    end if
+    if( prmfile_get_logical_by_key(fin,'optprogress', ShowOptimizationProgress)) then
+        write(DEV_OUT,40) prmfile_onoff(ShowOptimizationProgress)
+    else
+        write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
+    end if 
+    if( prmfile_get_logical_by_key(fin,'keepoptgeo', KeepOptimizedGeometry)) then
+        write(DEV_OUT,50) prmfile_onoff(KeepOptimizedGeometry)
+    else
+        write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
+    end if       
+      
+ 10 format('=== [setup] ====================================================================')
+
+ 20  format ('Apply combination rules (comb_rules)   = ',a12)
+ 25  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
+
+ 30  format ('Optimize geometry (optgeo)             = ',a12)
+ 35  format ('Optimize geometry (optgeo)             = ',a12,'                  (default)')
+ 
+ 40  format ('Show geo opt progress (optprogress)    = ',a12)
+ 45  format ('Show geo opt progress (optprogress)    = ',a12,'                  (default)') 
+
+ 50  format ('Keep optimized geometry (keepgeo)      = ',a12)
+ 55  format ('Keep optimized geometry (keepgeo)      = ',a12,'                  (default)') 
+  
+end subroutine ffdev_targetset_ctrl_setup
 
 ! ------------------------------------------------------------------------------
 

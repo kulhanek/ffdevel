@@ -94,6 +94,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: bond
     real(DEVDP)         :: angle
     real(DEVDP)         :: tors
+    real(DEVDP)         :: nbdist
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError
@@ -130,10 +131,11 @@ real(DEVDP)             :: AngleErrorWeight = 1.0
 logical                 :: EnableTorsionError = .true.
 real(DEVDP)             :: TorsionErrorWeight = 1.0
 
-logical                 :: OptimizeGeometry         = .false.   ! optimize geometry in each error evaluation
-logical                 :: OptimizeGeometryVerbose  = .false.   ! print geometry optimization progress 
-logical                 :: OptimizeOriginGeometry   = .true.    ! 
-logical                 :: ApplyCombinationRules    = .false.   ! apply combination rules in every error evaluation
+logical                 :: EnableNBDistanceError = .true.
+real(DEVDP)             :: NBDistanceErrorWeight = 1.0
+
+real(DEVDP)             :: NBDistanceSWPosition = 3.0   ! switch function parameters
+real(DEVDP)             :: NBDistanceSWAlpha = 3.0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

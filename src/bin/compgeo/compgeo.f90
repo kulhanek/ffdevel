@@ -149,8 +149,8 @@ subroutine compare_bonds()
     do i=1,top%nbonds
         ai = top%bonds(i)%ai
         aj = top%bonds(i)%aj
-        d1 = ffdev_geometry_get_length(geo1,ai,aj)
-        d2 = ffdev_geometry_get_length(geo2,ai,aj)
+        d1 = ffdev_geometry_get_length(geo1%crd,ai,aj)
+        d2 = ffdev_geometry_get_length(geo2%crd,ai,aj)
         diff = d2 - d1
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &
@@ -204,8 +204,8 @@ subroutine compare_bonds()
 
             ai = top%bonds(j)%ai
             aj = top%bonds(j)%aj
-            d1 = ffdev_geometry_get_length(geo1,ai,aj)
-            d2 = ffdev_geometry_get_length(geo2,ai,aj)
+            d1 = ffdev_geometry_get_length(geo1%crd,ai,aj)
+            d2 = ffdev_geometry_get_length(geo2%crd,ai,aj)
             diff = d2 - d1
 
             if( serr .gt. abs(diff) ) serr = abs(diff)
@@ -260,8 +260,8 @@ subroutine compare_angles()
         ai = top%angles(i)%ai
         aj = top%angles(i)%aj
         ak = top%angles(i)%ak
-        d1 = ffdev_geometry_get_angle(geo1,ai,aj,ak)
-        d2 = ffdev_geometry_get_angle(geo2,ai,aj,ak)
+        d1 = ffdev_geometry_get_angle(geo1%crd,ai,aj,ak)
+        d2 = ffdev_geometry_get_angle(geo2%crd,ai,aj,ak)
         diff = d2 - d1
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &
@@ -321,8 +321,8 @@ subroutine compare_angles()
             ai = top%angles(j)%ai
             aj = top%angles(j)%aj
             ak = top%angles(j)%ak
-            d1 = ffdev_geometry_get_angle(geo1,ai,aj,ak)
-            d2 = ffdev_geometry_get_angle(geo2,ai,aj,ak)
+            d1 = ffdev_geometry_get_angle(geo1%crd,ai,aj,ak)
+            d2 = ffdev_geometry_get_angle(geo2%crd,ai,aj,ak)
             diff = d2 - d1
             if( serr .gt. abs(diff) ) serr = abs(diff)
             if( lerr .lt. abs(diff) ) lerr = abs(diff)
@@ -378,8 +378,8 @@ subroutine compare_dihedrals()
         aj = top%dihedrals(i)%aj
         ak = top%dihedrals(i)%ak
         al = top%dihedrals(i)%al
-        d1 = ffdev_geometry_get_dihedral(geo1,ai,aj,ak,al)
-        d2 = ffdev_geometry_get_dihedral(geo2,ai,aj,ak,al)
+        d1 = ffdev_geometry_get_dihedral(geo1%crd,ai,aj,ak,al)
+        d2 = ffdev_geometry_get_dihedral(geo2%crd,ai,aj,ak,al)
         diff = d2 - d1
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &
@@ -444,8 +444,8 @@ subroutine compare_dihedrals()
             aj = top%dihedrals(j)%aj
             ak = top%dihedrals(j)%ak
             al = top%dihedrals(j)%al
-            d1 = ffdev_geometry_get_dihedral(geo1,ai,aj,ak,al)
-            d2 = ffdev_geometry_get_dihedral(geo2,ai,aj,ak,al)
+            d1 = ffdev_geometry_get_dihedral(geo1%crd,ai,aj,ak,al)
+            d2 = ffdev_geometry_get_dihedral(geo2%crd,ai,aj,ak,al)
             diff = d2 - d1
             if( serr .gt. abs(diff) ) serr = abs(diff)
             if( lerr .lt. abs(diff) ) lerr = abs(diff)

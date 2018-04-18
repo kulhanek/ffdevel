@@ -568,46 +568,6 @@ subroutine ffdev_parameters_init()
 
 end subroutine ffdev_parameters_init
 
-! ==============================================================================
-! subroutine ffdev_parameters_reinit_nbparams
-! ==============================================================================
-
-subroutine ffdev_parameters_reinit_nbparams()
-
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-
-    implicit none
-    integer     :: i,j
-    ! --------------------------------------------------------------------------
-
-    ! update parameter values
-    do i=1,nparams
-        select case(params(i)%realm)
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
-                do j=1,nsets
-                    if( params(i)%ids(j) .eq. 0 ) cycle
-                    select case(params(i)%realm)
-                        case(REALM_VDW_EPS)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
-                        case(REALM_VDW_R0)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
-                        case(REALM_VDW_ALPHA)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
-                        case(REALM_VDW_A)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%A
-                        case(REALM_VDW_B)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%B
-                        case(REALM_VDW_C6)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
-                        case(REALM_VDW_C8)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C8
-                    end select
-                end do
-        end select
-    end do
-
-end subroutine ffdev_parameters_reinit_nbparams
 
 ! ------------------------------------------------------------------------------
 
@@ -1870,21 +1830,26 @@ subroutine ffdev_parameters_error_only(prms,error)
     use ffdev_energy
     use ffdev_gradient
     use ffdev_hessian
-    use ffdev_utils    
+    use ffdev_utils   
+    use ffdev_geometry
 
     implicit none
     real(DEVDP)         :: prms(:)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al
-    real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors
-    real(DEVDP)         :: ri(3),rj(3),rk(3),rl(3),d0,dt    
+    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al,nbds
+    real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors,seterrnbdist
+    real(DEVDP)         :: d0,dt    
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0
     error%energy = 0.0d0
     error%grad = 0.0d0
     error%hess = 0.0d0
+    error%bond = 0.0d0
+    error%angle = 0.0d0
+    error%tors = 0.0d0
+    error%nbdist = 0.0d0
 
     ! scatter parameters
     call ffdev_parameters_scatter(prms)
@@ -1899,13 +1864,15 @@ subroutine ffdev_parameters_error_only(prms,error)
     seterrhess = 0.0
     seterrbond = 0.0
     seterrangle = 0.0
-    seterrtors = 0.0    
+    seterrtors = 0.0
+    seterrnbdist = 0.0 
     nene = 0
     ngrd = 0
     nhess = 0
     nbond = 0
     nangle = 0
     ntors = 0
+    nbds = 0
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
@@ -1941,21 +1908,45 @@ subroutine ffdev_parameters_error_only(prms,error)
                 seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end if
             ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError ) then
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError .and. sets(i)%optgeo) then
                 do q=1,sets(i)%top%nbonds
                     ai = sets(i)%top%bonds(q)%ai
                     aj = sets(i)%top%bonds(q)%aj
-                    ri(:) = sets(i)%geo(j)%crd(:,ai)
-                    rj(:) = sets(i)%geo(j)%crd(:,aj)
-                    d0 = sqrt( (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 )
-                    ri(:) = sets(i)%geo(j)%trg_crd(:,ai)
-                    rj(:) = sets(i)%geo(j)%trg_crd(:,aj)                    
-                    dt = sqrt( (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2 + (ri(1)-rj(1))**2)
+                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
+                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
                     nbond = nbond + 1
                     err = d0 - dt
                     seterrbond = seterrbond + sets(i)%geo(j)%weight * err**2
                 end do
             end if
+            ! ------------------------------------------------------------------
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableAngleError .and. sets(i)%optgeo) then
+                do q=1,sets(i)%top%nangles
+                    ai = sets(i)%top%angles(q)%ai
+                    aj = sets(i)%top%angles(q)%aj
+                    ak = sets(i)%top%angles(q)%ak
+                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak)                 
+                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak)
+                    nangle = nangle + 1
+                    err = d0 - dt
+                    seterrangle = seterrangle + sets(i)%geo(j)%weight * err**2
+                end do
+            end if 
+            ! ------------------------------------------------------------------
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableTorsionError .and. sets(i)%optgeo) then
+                do q=1,sets(i)%top%ndihedrals
+                    ai = sets(i)%top%dihedrals(q)%ai
+                    aj = sets(i)%top%dihedrals(q)%aj
+                    ak = sets(i)%top%dihedrals(q)%ak
+                    al = sets(i)%top%dihedrals(q)%al
+                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)                 
+                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
+                    ntors = ntors + 1
+                    ! FIXME: periodicity
+                    err = d0 - dt
+                    seterrtors = seterrtors + sets(i)%geo(j)%weight * err**2
+                end do
+            end if             
         end do
     end do
 
@@ -1981,14 +1972,18 @@ subroutine ffdev_parameters_error_only(prms,error)
     end if 
     if( ntors .gt. 0 ) then
         error%tors = sqrt(seterrtors/real(ntors))
-    end if     
+    end if
+    if( nbds .gt. 0 ) then
+        error%nbdist = sqrt(seterrnbdist/real(nbds))
+    end if       
 
-    error%total = EnergyErrorWeight * seterrene &
-                + GradientErrorWeight * seterrgrd &
-                + HessianErrorWeight * seterrhess &
-                + BondErrorWeight * seterrbond &
-                + AngleErrorWeight * seterrangle &
-                + TorsionErrorWeight * seterrtors 
+    error%total = EnergyErrorWeight * error%energy &
+                + GradientErrorWeight * error%grad &
+                + HessianErrorWeight * error%hess &
+                + BondErrorWeight * error%bond &
+                + AngleErrorWeight * error%angle &
+                + TorsionErrorWeight * error%tors &
+                + NBDistanceErrorWeight * error%nbdist                 
 
 end subroutine ffdev_parameters_error_only
 
@@ -2030,7 +2025,7 @@ subroutine ffdev_parameters_bond_r0_init(tid,mode)
                 if( sets( i )%top%bonds(k)%bt .ne. bt ) cycle
                 ai = sets( i )%top%bonds(k)%ai
                 aj = sets( i )%top%bonds(k)%aj
-                v = ffdev_geometry_get_length( sets( i )%geo( j ), ai, aj )
+                v = ffdev_geometry_get_length( sets(i)%geo(j)%crd, ai, aj )
                 write(DEV_OUT,30) i,bt,j,ai,aj,v
                 if( v .le. lowest) then
                     lowest = v
@@ -2110,7 +2105,7 @@ subroutine ffdev_parameters_angle_a0_init(tid,mode)
                 ai = sets( i )%top%angles(k)%ai
                 aj = sets( i )%top%angles(k)%aj
                 ak = sets( i )%top%angles(k)%ak
-                v = ffdev_geometry_get_angle( sets( i )%geo( j ), ai, aj, ak )
+                v = ffdev_geometry_get_angle( sets(i)%geo(j)%crd, ai, aj, ak )
                 write(DEV_OUT,30) i,at,j,ai,aj,ak,v*DEV_R2D
                 if( v .le. lowest) then
                     lowest = v

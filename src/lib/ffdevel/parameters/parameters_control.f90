@@ -765,12 +765,7 @@ subroutine ffdev_parameters_ctrl_error(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'error') ) then
-        write(DEV_OUT,85) prmfile_onoff(ApplyCombinationRules)
-        write(DEV_OUT,95) prmfile_onoff(OptimizeGeometry)
-        write(DEV_OUT,105) prmfile_onoff(OptimizeGeometryVerbose)
-        write(DEV_OUT,107) prmfile_onoff(OptimizeOriginGeometry)
-          
+    if( .not. prmfile_open_section(fin,'error') ) then         
         write(DEV_OUT,25) prmfile_onoff(EnableEnergyError)
         write(DEV_OUT,35) EnergyErrorWeight
         write(DEV_OUT,45) prmfile_onoff(EnableGradientError)
@@ -787,28 +782,6 @@ subroutine ffdev_parameters_ctrl_error(fin)
         return
     end if
     
-    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
-        write(DEV_OUT,80) prmfile_onoff(ApplyCombinationRules)
-    else
-        write(DEV_OUT,85) prmfile_onoff(ApplyCombinationRules)
-    end if
-    if( prmfile_get_logical_by_key(fin,'geoopt', OptimizeGeometry)) then
-        write(DEV_OUT,90) prmfile_onoff(OptimizeGeometry)
-    else
-        write(DEV_OUT,95) prmfile_onoff(OptimizeGeometry)
-    end if
-    if( prmfile_get_logical_by_key(fin,'geoverbose', OptimizeGeometryVerbose)) then
-        write(DEV_OUT,100) prmfile_onoff(OptimizeGeometryVerbose)
-    else
-        write(DEV_OUT,105) prmfile_onoff(OptimizeGeometryVerbose)
-    end if 
-    if( prmfile_get_logical_by_key(fin,'origingeo', OptimizeOriginGeometry)) then
-        write(DEV_OUT,106) prmfile_onoff(OptimizeOriginGeometry)
-    else
-        write(DEV_OUT,107) prmfile_onoff(OptimizeOriginGeometry)
-    end if       
-    
-
     if( prmfile_get_logical_by_key(fin,'energy', EnableEnergyError)) then
         write(DEV_OUT,20) prmfile_onoff(EnableEnergyError)
     else
@@ -876,18 +849,6 @@ subroutine ffdev_parameters_ctrl_error(fin)
     end if    
     
  10 format('=== [errors] ===================================================================')
-
- 80  format ('Apply combination rules (comb_rules)   = ',a12)
- 85  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
-
- 90  format ('Optimize geometry (geoopt)             = ',a12)
- 95  format ('Optimize geometry (geoopt)             = ',a12,'                  (default)')
- 
-100  format ('Show geo opt progress (geoverbose)     = ',a12)
-105  format ('Show geo opt progress (geoverbose)     = ',a12,'                  (default)') 
-
-106  format ('Optimize origin geometry (origingeo)   = ',a12)
-107  format ('Optimize origin geometry (origingeo)   = ',a12,'                  (default)') 
  
  20  format ('Energy error (energy)                  = ',a12)
  25  format ('Energy error (energy)                  = ',a12,'                  (default)')
@@ -1272,6 +1233,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     use ffdev_parameters
     use ffdev_parameters_dat
     use ffdev_targetset_dat
+    use ffdev_targetset
     use ffdev_topology_dat
     use prmfile
     use ffdev_utils
@@ -1350,6 +1312,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
     use prmfile
     use ffdev_utils
     use ffdev_targetset_dat
+    use ffdev_targetset    
 
     implicit none
     type(PRMFILE_TYPE)          :: fin

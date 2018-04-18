@@ -579,6 +579,15 @@ subroutine write_header()
     end if 
     if( EnableBondError ) then
         write(DEV_OUT,33,ADVANCE='NO')
+    end if 
+    if( EnableAngleError ) then
+        write(DEV_OUT,34,ADVANCE='NO')
+    end if
+    if( EnableTorsionError ) then
+        write(DEV_OUT,35,ADVANCE='NO')
+    end if 
+    if( EnableNBDistanceError ) then
+        write(DEV_OUT,36,ADVANCE='NO')
     end if     
     write(DEV_OUT,60)
     
@@ -594,7 +603,16 @@ subroutine write_header()
     end if   
     if( EnableBondError ) then
         write(DEV_OUT,50,ADVANCE='NO')
-    end if      
+    end if     
+    if( EnableAngleError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if   
+    if( EnableTorsionError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if 
+    if( EnableNBDistanceError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if        
     write(DEV_OUT,65)    
     
     
@@ -609,6 +627,9 @@ subroutine write_header()
  31 format('  Err(Grad)  ')
  32 format('  Err(Hess)  ')
  33 format('  Err(Bond)  ') 
+ 34 format(' Err(Angle)  ')
+ 35 format('  Err(Tors)  ') 
+ 36 format('Err(NBDist)  ')   
 
  50 format('------------ ')
   
@@ -648,7 +669,16 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
         end if 
         if( EnableBondError ) then
             write(DEV_OUT,15,ADVANCE='NO') error%bond
-        end if            
+        end if 
+        if( EnableAngleError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%angle
+        end if 
+        if( EnableTorsionError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%tors
+        end if
+        if( EnableTorsionError ) then
+            write(DEV_OUT,15,ADVANCE='NO') error%nbdist
+        end if           
         write(DEV_OUT,20) rmsg,maxgrad
     end if
 
