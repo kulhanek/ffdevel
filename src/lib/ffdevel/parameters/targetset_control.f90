@@ -152,7 +152,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
         end if 
         
-        sets(i)%optgeo = KeepOptimizedGeometry
+        sets(i)%keepoptgeo = KeepOptimizedGeometry
         if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
             write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
         else
@@ -437,8 +437,8 @@ subroutine ffdev_targetset_ctrl_setup(fin)
  40  format ('Show geo opt progress (optprogress)    = ',a12)
  45  format ('Show geo opt progress (optprogress)    = ',a12,'                  (default)') 
 
- 50  format ('Keep optimized geometry (keepgeo)      = ',a12)
- 55  format ('Keep optimized geometry (keepgeo)      = ',a12,'                  (default)') 
+ 50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
+ 55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)') 
   
 end subroutine ffdev_targetset_ctrl_setup
 
