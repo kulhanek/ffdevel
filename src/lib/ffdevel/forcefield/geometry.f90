@@ -949,13 +949,13 @@ end function ffdev_geometry_get_dihedral
 ! it consider periodicity of torsion
 !===============================================================================
 
-real(PMFDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
+real(DEVDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
 
     implicit none
-    real(PMFDP)     :: value1
-    real(PMFDP)     :: value2
+    real(DEVDP)     :: value1
+    real(DEVDP)     :: value2
     ! --------------------------------------------
-    real(PMFDP)     :: minv,maxv,vec
+    real(DEVDP)     :: minv,maxv,vec
     ! --------------------------------------------------------------------------
 
     minv = -DEV_PI
