@@ -1942,8 +1942,7 @@ subroutine ffdev_parameters_error_only(prms,error)
                     d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)                 
                     dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
                     ntors = ntors + 1
-                    ! FIXME: periodicity
-                    err = d0 - dt
+                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)
                     seterrtors = seterrtors + sets(i)%geo(j)%weight * err**2
                 end do
             end if 

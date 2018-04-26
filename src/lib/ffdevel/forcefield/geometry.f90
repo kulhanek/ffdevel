@@ -943,6 +943,43 @@ real(DEVDP) function ffdev_geometry_get_dihedral(crd,ai,aj,ak,al)
 
 end function ffdev_geometry_get_dihedral
 
+
+!===============================================================================
+! Function:  ffdev_geometry_get_dihedral_deviation
+! it consider periodicity of torsion
+!===============================================================================
+
+real(PMFDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
+
+    implicit none
+    real(PMFDP)     :: value1
+    real(PMFDP)     :: value2
+    ! --------------------------------------------
+    real(PMFDP)     :: minv,maxv,vec
+    ! --------------------------------------------------------------------------
+
+    minv = -DEV_PI
+    maxv =  DEV_PI
+
+    if( abs(value1-value2) .lt. 0.5d0*(maxv-minv) ) then
+        ffdev_geometry_get_dihedral_deviation = value1 - value2
+        return
+    else
+        ! get vector
+        vec = value1 - value2
+        ! shift to box center
+        vec = vec + 0.5d0*(maxv+minv)
+        ! image as point
+        vec = vec - (maxv-minv)*floor((vec-minv)/(maxv-minv))
+        ! return vector back
+        ffdev_geometry_get_dihedral_deviation = vec - 0.5d0*(maxv+minv)
+        
+        ! debug
+        ! write(PMF_DEBUG,*) 'get_deviation:',value1,value2,get_deviation
+    end if
+        
+end function ffdev_geometry_get_dihedral_deviation
+        
 ! ------------------------------------------------------------------------------
 
 end module ffdev_geometry

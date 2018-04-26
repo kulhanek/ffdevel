@@ -208,7 +208,7 @@ subroutine ffdev_targetset_summary()
     implicit none
     real(DEVDP)         :: toterr_ene,err_ene,toterr_grd,toterr_hess,difgrd,difhess
     real(DEVDP)         :: toterr_bond,toterr_angle,toterr_tors,difbond,difangle,diftors
-    real(DEVDP)         :: d0,dt,difnbs,toterr_nbs,sw,err   
+    real(DEVDP)         :: d0,dt,difnbs,toterr_nbs,sw,err,diff  
     integer             :: s,i,j,k,nene,ngrd,nhess,l,m,ai,aj,ak,al,nbond,nangle,ntors,q,rnbds,nbs
     character(len=20)   :: lname
     ! --------------------------------------------------------------------------
@@ -314,8 +314,8 @@ subroutine ffdev_targetset_summary()
                     al = sets(s)%top%dihedrals(i)%al
                     d0 = ffdev_geometry_get_dihedral(sets(s)%geo(i)%crd,ai,aj,ak,al) * DEV_R2D 
                     dt = ffdev_geometry_get_dihedral(sets(s)%geo(i)%trg_crd,ai,aj,ak,al) * DEV_R2D 
-                    ! FIXME: periodicity
-                    diftors = diftors + (d0 - dt)**2
+                    diff = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    diftors = diftors + diff**2
                 end do
                 ntors = ntors + 1
                 diftors = sqrt(diftors/real(sets(s)%top%ndihedrals))
