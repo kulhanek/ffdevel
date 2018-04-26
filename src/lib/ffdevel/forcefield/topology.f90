@@ -48,6 +48,7 @@ subroutine ffdev_topology_init(top)
     top%nb_mode = NB_MODE_LJ
     top%probe_size = 0
     top%assumed_comb_rules = COMB_RULE_IN
+    top%nfragments = 0
 
 end subroutine ffdev_topology_init
 
@@ -141,6 +142,7 @@ subroutine ffdev_topology_load(top,name)
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [atoms] section!')
         end if
         top%atoms(i)%nbonds = 0
+        top%atoms(i)%frgid = 0
     end do
 
     ! read types -------------------------------------
@@ -541,7 +543,13 @@ subroutine ffdev_topology_load(top,name)
 
     ! release the file
     call prmfile_clear(fin)
-
+    
+    ! create list of bonded atoms
+    call ffdev_topology_gen_bonded(top)
+    
+    ! create fragments
+    call ffdev_topology_gen_fragments(top)
+        
     return
 
 end subroutine ffdev_topology_load
@@ -771,6 +779,7 @@ subroutine ffdev_topology_info(top)
     write(DEV_OUT,200) top%nimproper_types
     end if
     write(DEV_OUT,210) top%nb_size
+    write(DEV_OUT,230) top%nfragments
     if( top%probe_size .ne. 0 ) then
     write(DEV_OUT,220) top%probe_size
     end if
@@ -792,6 +801,7 @@ subroutine ffdev_topology_info(top)
 210 format('Number of NB size                  = ',I6)
 215 format('Type of vdW interactions           = ',A)
 220 format('Number of atoms in probe           = ',I6)
+230 format('Number of fragments                = ',I6)
 
 end subroutine ffdev_topology_info
 
@@ -1220,6 +1230,60 @@ subroutine ffdev_topology_gen_bonded(top)
     end do
 
 end subroutine ffdev_topology_gen_bonded
+
+! ==============================================================================
+! subroutine ffdev_topology_gen_fragments
+! ==============================================================================
+
+subroutine ffdev_topology_gen_fragments(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,j
+    logical         :: changed,found 
+    ! --------------------------------------------------------------------------
+
+    ! calculate number of fragments
+    
+    top%nfragments = 0
+    
+    do while (.true.)
+    
+        found = .false.
+        ! mark first unprocessed atom
+        do i=1,top%natoms
+            if( top%atoms(i)%frgid .eq. 0 ) then
+                top%nfragments = top%nfragments + 1            
+                top%atoms(i)%frgid = top%nfragments
+                found = .true.
+                exit
+            end if
+        end do
+        
+        if( .not. found ) exit 
+        
+        ! 
+        changed = .true.
+        do while (changed)
+            changed = .false.
+            do i=1,top%natoms
+                if( top%atoms(i)%frgid .eq. top%nfragments ) then
+                    do j=1,top%atoms(i)%nbonds
+                        if( top%atoms(top%atoms(i)%bonded(j))%frgid .eq. 0 ) then
+                            top%atoms(top%atoms(i)%bonded(j))%frgid = top%nfragments
+                            changed = .true.
+                        end if
+                    end do
+                end if
+            end do
+        end do
+
+    end do
+
+end subroutine ffdev_topology_gen_fragments
 
 ! ==============================================================================
 ! function ffdev_topology_find_nbtype

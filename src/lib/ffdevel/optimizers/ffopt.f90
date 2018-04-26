@@ -589,7 +589,12 @@ subroutine write_header()
     if( EnableNBDistanceError ) then
         write(DEV_OUT,36,ADVANCE='NO')
     end if     
-    write(DEV_OUT,60)
+    select case(OptimizationMethod)
+        case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
+            write(DEV_OUT,60)
+        case(MINIMIZATION_NLOPT)
+            write(DEV_OUT,*) 
+    end select    
     
     write(DEV_OUT,25,ADVANCE='NO')
     if( EnableEnergyError ) then
@@ -612,10 +617,14 @@ subroutine write_header()
     end if 
     if( EnableNBDistanceError ) then
         write(DEV_OUT,50,ADVANCE='NO')
-    end if        
-    write(DEV_OUT,65)    
-    
-    
+    end if    
+    select case(OptimizationMethod)
+        case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
+            write(DEV_OUT,65)
+        case(MINIMIZATION_NLOPT)
+            write(DEV_OUT,*) 
+    end select    
+   
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
@@ -623,13 +632,13 @@ subroutine write_header()
  20 format('# STEP    Error     ')
  25 format('#----- ------------ ')
  
- 30 format('  Err(Ene)   ')
- 31 format('  Err(Grad)  ')
- 32 format('  Err(Hess)  ')
- 33 format('  Err(Bond)  ') 
- 34 format(' Err(Angle)  ')
- 35 format('  Err(Tors)  ') 
- 36 format('Err(NBDist)  ')   
+ 30 format('  E          ')
+ 31 format('  Grad       ')
+ 32 format('  Hess       ')
+ 33 format('  Bond [A]   ') 
+ 34 format('  Angle[rad] ')
+ 35 format('  Tors [rad] ') 
+ 36 format('  d(NBs) [A] ')   
 
  50 format('------------ ')
   
@@ -676,10 +685,15 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
         if( EnableTorsionError ) then
             write(DEV_OUT,15,ADVANCE='NO') error%tors
         end if
-        if( EnableTorsionError ) then
+        if( EnableNBDistanceError ) then
             write(DEV_OUT,15,ADVANCE='NO') error%nbdist
-        end if           
-        write(DEV_OUT,20) rmsg,maxgrad
+        end if 
+        select case(OptimizationMethod)
+            case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
+                write(DEV_OUT,20) rmsg,maxgrad
+            case(MINIMIZATION_NLOPT)
+                write(DEV_OUT,*) 
+        end select    
     end if
 
  10 format(I6,1X,E12.5,1X)

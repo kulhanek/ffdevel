@@ -208,8 +208,8 @@ subroutine ffdev_targetset_summary()
     implicit none
     real(DEVDP)         :: toterr_ene,err_ene,toterr_grd,toterr_hess,difgrd,difhess
     real(DEVDP)         :: toterr_bond,toterr_angle,toterr_tors,difbond,difangle,diftors
-    real(DEVDP)         :: d0,dt    
-    integer             :: s,i,j,k,nene,ngrd,nhess,l,m,ai,aj,ak,al,nbond,nangle,ntors,q
+    real(DEVDP)         :: d0,dt,difnbs,toterr_nbs,sw,err   
+    integer             :: s,i,j,k,nene,ngrd,nhess,l,m,ai,aj,ak,al,nbond,nangle,ntors,q,rnbds,nbs
     character(len=20)   :: lname
     ! --------------------------------------------------------------------------
 
@@ -223,15 +223,17 @@ subroutine ffdev_targetset_summary()
         toterr_ene = 0.0d0
         toterr_grd = 0.0d0
         toterr_hess = 0.0d0
-        toterr_bond = 0.0d0
+        toterr_bond = 0.0d0 
         toterr_angle = 0.0d0
         toterr_tors = 0.0d0
+        toterr_nbs = 0.0d0
         nene = 0
         ngrd = 0
         nhess = 0
         nbond = 0
         nangle = 0
         ntors = 0
+        nbs = 0
         
         do i=1,sets(s)%ngeos
         
@@ -320,6 +322,34 @@ subroutine ffdev_targetset_summary()
                 toterr_tors = toterr_tors + diftors
             end if
             ! ------------------------------------------------------------------
+            difnbs = 0.0
+            if( sets(s)%geo(i)%trg_crd_loaded .and. sets(s)%geo(i)%trg_crd_optimized .and. (sets(s)%top%nfragments .gt. 1) ) then
+                rnbds = 0 
+                do q=1,sets(s)%top%nb_size
+                    ai = sets(s)%top%nb_list(q)%ai
+                    aj = sets(s)%top%nb_list(q)%aj
+
+                    if( sets(s)%top%atoms(ai)%frgid .eq. sets(s)%top%atoms(aj)%frgid ) cycle
+                    
+                    d0 = ffdev_geometry_get_length(sets(s)%geo(i)%crd,ai,aj)                 
+                    dt = ffdev_geometry_get_length(sets(s)%geo(i)%trg_crd,ai,aj)
+                    rnbds = rnbds + 1
+                    err = d0 - dt
+                    
+                    ! calculate switch function
+                    sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
+                    err = err * sw
+                    difnbs = difnbs + sets(s)%geo(i)%weight * err**2
+                end do
+                
+                nbs = nbs + 1
+                if( rnbds .gt. 0 ) then
+                    difnbs = sqrt(difnbs/real(rnbds))
+                    toterr_nbs = toterr_nbs + difnbs
+                end if
+                
+            end if             
+            ! ------------------------------------------------------------------
             
             if( i .eq. 1 ) then
                 write(DEV_OUT,10,advance='NO')
@@ -340,7 +370,10 @@ subroutine ffdev_targetset_summary()
                 end if  
                 if( ntors .gt. 0 ) then
                     write(DEV_OUT,16,advance='NO')
-                end if  
+                end if 
+                if( nbs .gt. 0 ) then
+                    write(DEV_OUT,17,advance='NO')
+                end if                  
                 write(DEV_OUT,*)
                 
                 write(DEV_OUT,20,advance='NO')
@@ -362,6 +395,9 @@ subroutine ffdev_targetset_summary()
                 if( ntors .gt. 0 ) then
                     write(DEV_OUT,26,advance='NO')
                 end if
+                if( nbs .gt. 0 ) then
+                    write(DEV_OUT,26,advance='NO')
+                end if                
                 write(DEV_OUT,*)
              end if
 
@@ -385,6 +421,9 @@ subroutine ffdev_targetset_summary()
             if( ntors .gt. 0 ) then
                 write(DEV_OUT,32,advance='NO') diftors
             end if  
+            if( nbs .gt. 0 ) then
+                write(DEV_OUT,32,advance='NO') difnbs
+            end if              
             write(DEV_OUT,*)
 
         end do
@@ -409,6 +448,9 @@ subroutine ffdev_targetset_summary()
             if( ntors .gt. 0 ) then
                 write(DEV_OUT,26,advance='NO')
             end if
+            if( nbs .gt. 0 ) then
+                write(DEV_OUT,26,advance='NO')
+            end if            
             write(DEV_OUT,*)     
             
             if( nene .gt. 0 ) then
@@ -428,7 +470,10 @@ subroutine ffdev_targetset_summary()
             end if    
             if( ntors .gt. 0 ) then
                 toterr_tors = toterr_tors / real(ntors)
-            end if 
+            end if
+            if( nbs .gt. 0 ) then
+                toterr_nbs = toterr_nbs / real(nbs)
+            end if             
             
             write(DEV_OUT,40,advance='NO')
             if( nene .gt. 0 ) then
@@ -449,6 +494,9 @@ subroutine ffdev_targetset_summary()
             if( ntors .gt. 0 ) then
                 write(DEV_OUT,32,advance='NO') toterr_tors
             end if
+            if( nbs .gt. 0 ) then
+                write(DEV_OUT,32,advance='NO') toterr_nbs
+            end if            
             write(DEV_OUT,*)             
 
         end if
@@ -463,23 +511,26 @@ subroutine ffdev_targetset_summary()
 10 format('# ID   File                 Weight ')
 20 format('# ---- -------------------- ------ ')
 
-11 format('   E(MM)     E(TGR)     E(ERR)   ')
+11 format('   E(MM)     E(TGR)     E(Err)   ')
 21 format('---------- ---------- ---------- ')
 
-12 format('  G/c(MM)  ')
+12 format(' G/c(Err)  ')
 22 format('---------- ')
 
-13 format(' H/c(ERR)  ')
+13 format(' H/c(Err)  ')
 23 format('---------- ')
 
-14 format(' Bond(ERR) ')
+14 format(' Bond [A]  ')
 24 format('---------- ')
 
-15 format('Angle(ERR) ')
+15 format('Angle[deg] ')
 25 format('---------- ')
 
-16 format('Tors(ERR)  ')
+16 format('Tors [deg] ')
 26 format('---------- ')
+
+17 format('d(NBs) [A] ')
+27 format('---------- ')
 
 
 30 format(I6,1X,A20,1X,F6.3,1X)

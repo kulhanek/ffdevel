@@ -112,7 +112,6 @@ program ffdev_genpoints_program
 
     ! finalize topology and geometry setup
     call ffdev_topology_finalize_setup(top)
-    call ffdev_topology_gen_bonded(top)
 
     if( RotorListLoaded ) then
         write(DEV_OUT,*)

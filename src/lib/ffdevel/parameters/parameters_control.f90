@@ -778,7 +778,10 @@ subroutine ffdev_parameters_ctrl_error(fin)
         write(DEV_OUT,215) prmfile_onoff(EnableAngleError)
         write(DEV_OUT,225) AngleErrorWeight
         write(DEV_OUT,315) prmfile_onoff(EnableTorsionError)
-        write(DEV_OUT,325) TorsionErrorWeight        
+        write(DEV_OUT,325) TorsionErrorWeight 
+        
+        write(DEV_OUT,415) prmfile_onoff(EnableNBDistanceError)
+        write(DEV_OUT,425) NBDistanceErrorWeight 
         return
     end if
     
@@ -846,7 +849,19 @@ subroutine ffdev_parameters_ctrl_error(fin)
         write(DEV_OUT,320) TorsionErrorWeight
     else
         write(DEV_OUT,325) TorsionErrorWeight
-    end if    
+    end if  
+    
+    
+    if( prmfile_get_logical_by_key(fin,'nbdist', EnableNBDistanceError)) then
+        write(DEV_OUT,410) prmfile_onoff(EnableNBDistanceError)
+    else
+        write(DEV_OUT,415) prmfile_onoff(EnableNBDistanceError)
+    end if
+    if( prmfile_get_real8_by_key(fin,'nbdist_weight', NBDistanceErrorWeight)) then
+        write(DEV_OUT,420) NBDistanceErrorWeight
+    else
+        write(DEV_OUT,425) NBDistanceErrorWeight
+    end if       
     
  10 format('=== [errors] ===================================================================')
  
@@ -879,6 +894,11 @@ subroutine ffdev_parameters_ctrl_error(fin)
 315  format ('Torsion error (torsion)                = ',a12,'                  (default)')
 320  format ('Torsion error weight (torsion_weight)  = ',f21.8)
 325  format ('Torsion error weight (torsion_weight)  = ',f21.8,'         (default)')  
+
+410  format ('NB distance error (nbdist)             = ',a12)
+415  format ('NB distance error (nbdist)             = ',a12,'                  (default)')
+420  format ('NB distance error wght (nbdist_weight) = ',f21.8)
+425  format ('NB distance error wght (nbdist_weight) = ',f21.8,'         (default)')  
  
  
 end subroutine ffdev_parameters_ctrl_error

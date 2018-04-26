@@ -29,6 +29,7 @@ type ATOM
     integer             :: typeid
     integer             :: nbonds
     integer,pointer     :: bonded(:)
+    integer             :: frgid        ! fragment ID for NB error function
 end type ATOM
 
 ! ------------------------------------------------------------------------------
@@ -165,6 +166,7 @@ type TOPOLOGY
     integer                     :: nnb_types
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size           ! number of atoms in probe
+    integer                     :: nfragments
     ! assumed combination rules, depending on parameter optimization strategy
     ! these rules can be easily broken !!!!
     integer                     :: assumed_comb_rules

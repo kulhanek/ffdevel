@@ -134,9 +134,6 @@ real(DEVDP)             :: TorsionErrorWeight = 1.0
 logical                 :: EnableNBDistanceError = .true.
 real(DEVDP)             :: NBDistanceErrorWeight = 1.0
 
-real(DEVDP)             :: NBDistanceSWPosition = 3.0   ! switch function parameters
-real(DEVDP)             :: NBDistanceSWAlpha = 3.0
-
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
 character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

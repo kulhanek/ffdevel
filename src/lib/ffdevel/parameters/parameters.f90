@@ -1839,7 +1839,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     ! --------------------------------------------
     integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al,nbds
     real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors,seterrnbdist
-    real(DEVDP)         :: d0,dt    
+    real(DEVDP)         :: d0,dt,sw    
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0
@@ -1945,6 +1945,26 @@ subroutine ffdev_parameters_error_only(prms,error)
                     ! FIXME: periodicity
                     err = d0 - dt
                     seterrtors = seterrtors + sets(i)%geo(j)%weight * err**2
+                end do
+            end if 
+            ! ------------------------------------------------------------------
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableNBDistanceError .and. &
+                sets(i)%optgeo .and. sets(i)%top%nfragments .gt. 1) then
+                do q=1,sets(i)%top%nb_size
+                    ai = sets(i)%top%nb_list(q)%ai
+                    aj = sets(i)%top%nb_list(q)%aj
+
+                    if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
+                    
+                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
+                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
+                    nbds = nbds + 1
+                    err = d0 - dt
+                    
+                    ! calculate switch function
+                    sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
+                    err = err * sw
+                    seterrnbdist = seterrnbdist + sets(i)%geo(j)%weight * err**2
                 end do
             end if             
         end do
