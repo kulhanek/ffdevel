@@ -85,8 +85,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     ! load sets ----------------------------------
     i = 1
     do while( rst )
-        write(DEV_OUT,*)
-        write(DEV_OUT,1) i
 
         ! open set section
         if( .not. prmfile_get_section_name(fin,string) ) then
@@ -97,6 +95,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             rst = prmfile_next_section(fin)
             cycle
         end if
+        
+        write(DEV_OUT,*)
+        write(DEV_OUT,1) i        
 
 !----------------------
 ! topology
@@ -335,12 +336,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         if( sets(i)%mineneid .gt. 0 ) then
             write(DEV_OUT,*)
             write(DEV_OUT,300) sets(i)%mineneid,minenergy
-            write(DEV_OUT,*)
             if( shift2zero ) then
                 call ffdev_geometry_info_point_header_ext()
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
+                    write(DEV_OUT,*)
                     call ffdev_geometry_info_point_ext(sets(i)%geo(j))
                 end do
             end if

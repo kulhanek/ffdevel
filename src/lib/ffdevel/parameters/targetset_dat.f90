@@ -48,7 +48,7 @@ logical                 :: OptimizeGeometry             = .false.   ! optimize g
 logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress 
 logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
 logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
-real(DEVDP)             :: NBDistanceSWPosition         = 3.0       ! switch function parameters
+real(DEVDP)             :: NBDistanceSWPosition         = 4.0       ! switch function parameters
 real(DEVDP)             :: NBDistanceSWAlpha            = 1.0
 
 end module ffdev_targetset_dat

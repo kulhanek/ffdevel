@@ -339,9 +339,10 @@ subroutine ffdev_targetset_summary()
                     ! calculate switch function
                     sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
                     err = err * sw
+                    ! DEBUG
+                    ! write(1578,*) d0,dt,sw
                     difnbs = difnbs + sets(s)%geo(i)%weight * err**2
                 end do
-                
                 nbs = nbs + 1
                 if( rnbds .gt. 0 ) then
                     difnbs = sqrt(difnbs/real(rnbds))
