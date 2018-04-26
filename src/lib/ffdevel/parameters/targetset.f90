@@ -285,8 +285,10 @@ subroutine ffdev_targetset_summary()
                     dt = ffdev_geometry_get_length(sets(s)%geo(i)%trg_crd,ai,aj)
                     difbond = difbond + (d0 - dt)**2
                 end do
-                nbond = nbond + 1                
-                difbond = sqrt(difbond/real(sets(s)%top%nbonds)) 
+                nbond = nbond + 1     
+                if( sets(s)%top%nbonds .gt. 0 ) then                
+                    difbond = sqrt(difbond/real(sets(s)%top%nbonds)) 
+                end if
                 toterr_bond = toterr_bond +  difbond              
             end if
             ! ------------------------------------------------------------------
@@ -300,8 +302,10 @@ subroutine ffdev_targetset_summary()
                     dt = ffdev_geometry_get_angle(sets(s)%geo(i)%trg_crd,ai,aj,ak) * DEV_R2D  
                     difangle = difangle + (d0 - dt)**2
                 end do
-                nangle = nangle + 1                
-                difangle = sqrt(difangle/real(sets(s)%top%nangles))
+                nangle = nangle + 1  
+                if( sets(s)%top%nangles .gt. 0 ) then
+                    difangle = sqrt(difangle/real(sets(s)%top%nangles))
+                end if
                 toterr_angle = toterr_angle + difangle
             end if
             ! ------------------------------------------------------------------
@@ -318,7 +322,9 @@ subroutine ffdev_targetset_summary()
                     diftors = diftors + diff**2
                 end do
                 ntors = ntors + 1
-                diftors = sqrt(diftors/real(sets(s)%top%ndihedrals))
+                if( sets(s)%top%ndihedrals .gt. 0 ) then                
+                    diftors = sqrt(diftors/real(sets(s)%top%ndihedrals))
+                end if
                 toterr_tors = toterr_tors + diftors
             end if
             ! ------------------------------------------------------------------

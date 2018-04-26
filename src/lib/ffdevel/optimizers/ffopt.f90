@@ -693,7 +693,8 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
                 write(DEV_OUT,20) rmsg,maxgrad
             case(MINIMIZATION_NLOPT)
                 write(DEV_OUT,*) 
-        end select    
+        end select  
+        flush(DEV_OUT)
     end if
 
  10 format(I6,1X,E12.5,1X)

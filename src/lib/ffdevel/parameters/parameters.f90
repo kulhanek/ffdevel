@@ -1979,9 +1979,6 @@ subroutine ffdev_parameters_error_only(prms,error)
     if( nhess .gt. 0 ) then
         error%hess = sqrt(seterrhess/real(nhess))
     end if
-    if( nhess .gt. 0 ) then
-        error%hess = sqrt(seterrhess/real(nhess))
-    end if 
     ! geometry
     if( nbond .gt. 0 ) then
         error%bond = sqrt(seterrbond/real(nbond))
