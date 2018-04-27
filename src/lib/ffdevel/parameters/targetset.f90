@@ -206,18 +206,19 @@ subroutine ffdev_targetset_summary()
     use ffdev_geometry
 
     implicit none
-    real(DEVDP)         :: toterr_ene,err_ene,toterr_grd,toterr_hess,difgrd,difhess
-    real(DEVDP)         :: toterr_bond,toterr_angle,toterr_tors,difbond,difangle,diftors
-    real(DEVDP)         :: d0,dt,difnbs,toterr_nbs,sw,err,diff  
-    integer             :: s,i,j,k,nene,ngrd,nhess,l,m,ai,aj,ak,al,nbond,nangle,ntors,q,rnbds,nbs
-    character(len=20)   :: lname
+    real(DEVDP)             :: toterr_ene,err_ene,toterr_grd,toterr_hess,difgrd,difhess
+    real(DEVDP)             :: toterr_bond,toterr_angle,toterr_tors,difbond,difangle,diftors
+    real(DEVDP)             :: d0,dt,difnbs,toterr_nbs,sw,err,diff  
+    integer                 :: i,j,k,l,m,n,nene,ngrd,nhess,ai,aj,ak,al,nbond,nangle,ntors,q,rnbds,nbs
+    character(len=20)       :: lname
+    character(len=MAX_PATH) :: sname
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,2)
 
-    do s=1,nsets
+    do i=1,nsets
         write(DEV_OUT,*)
-        write(DEV_OUT,5) s
+        write(DEV_OUT,5) i
         write(DEV_OUT,*)
 
         toterr_ene = 0.0d0
@@ -235,110 +236,116 @@ subroutine ffdev_targetset_summary()
         ntors = 0
         nbs = 0
         
-        do i=1,sets(s)%ngeos
+        do j=1,sets(i)%ngeos
+        
+            ! save geometry if requested
+            if( sets(i)%savegeo .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                sname = trim(sets(i)%geo(j)%name) // '.spts'
+                call ffdev_geometry_save_xyz(sets(i)%geo(j),sname)
+            end if
         
             ! ------------------------------------------------------------------        
             err_ene = 0.0
-            if( sets(s)%geo(i)%trg_ene_loaded ) then
-                err_ene = sets(s)%geo(i)%total_ene - sets(s)%offset - sets(s)%geo(i)%trg_energy
-                toterr_ene = toterr_ene + sets(s)%geo(i)%weight * err_ene**2
+            if( sets(i)%geo(j)%trg_ene_loaded ) then
+                err_ene = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                toterr_ene = toterr_ene + sets(i)%geo(j)%weight * err_ene**2
                 nene = nene + 1
             end if
 
             ! ------------------------------------------------------------------            
             difgrd = 0.0
-            if( sets(s)%geo(i)%trg_grd_loaded ) then
-                do j=1,sets(s)%geo(i)%natoms
-                    do k=1,3
-                        difgrd = difgrd + (sets(s)%geo(i)%grd(k,j) - sets(s)%geo(i)%trg_grd(k,j))**2
+            if( sets(i)%geo(j)%trg_grd_loaded ) then
+                do k=1,sets(i)%geo(j)%natoms
+                    do l=1,3
+                        difgrd = difgrd + (sets(i)%geo(j)%grd(l,k) - sets(i)%geo(j)%trg_grd(l,k))**2
                     end do
                 end do
                 ngrd = ngrd + 1
-                difgrd = sqrt(difgrd/real(3*sets(s)%geo(i)%natoms))
+                difgrd = sqrt(difgrd/real(3*sets(i)%geo(j)%natoms))
                 toterr_grd = toterr_grd + difgrd
             end if
 
             ! ------------------------------------------------------------------            
             difhess = 0.0
-            if( sets(s)%geo(i)%trg_hess_loaded ) then
-                do j=1,sets(s)%geo(i)%natoms
-                    do k=1,3
-                        do l=1,sets(s)%geo(i)%natoms
-                            do m=1,3
-                                difhess = difhess + (sets(s)%geo(i)%hess(m,l,k,j) - sets(s)%geo(i)%trg_hess(m,l,k,j))**2
+            if( sets(i)%geo(j)%trg_hess_loaded ) then
+                do k=1,sets(i)%geo(j)%natoms
+                    do l=1,3
+                        do m=1,sets(i)%geo(j)%natoms
+                            do n=1,3
+                                difhess = difhess + (sets(i)%geo(j)%hess(l,k,n,m) - sets(i)%geo(j)%trg_hess(l,k,n,m))**2
                             end do
                         end do
                     end do
                 end do
                 nhess = nhess + 1
-                difhess = sqrt(difhess/real(3*sets(s)%geo(i)%natoms)**2)
+                difhess = sqrt(difhess/real(3*sets(i)%geo(j)%natoms)**2)
                 toterr_hess = toterr_hess + difhess
             end if
             
             ! ------------------------------------------------------------------
             difbond =  0.0
-            if( sets(s)%geo(i)%trg_crd_loaded .and. sets(s)%geo(i)%trg_crd_optimized ) then
-                do q=1,sets(s)%top%nbonds
-                    ai = sets(s)%top%bonds(q)%ai
-                    aj = sets(s)%top%bonds(q)%aj
-                    d0 = ffdev_geometry_get_length(sets(s)%geo(i)%crd,ai,aj)                 
-                    dt = ffdev_geometry_get_length(sets(s)%geo(i)%trg_crd,ai,aj)
+            if( sets(i)%geo(j)%trg_crd_loaded .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                do q=1,sets(i)%top%nbonds
+                    ai = sets(i)%top%bonds(q)%ai
+                    aj = sets(i)%top%bonds(q)%aj
+                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
+                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
                     difbond = difbond + (d0 - dt)**2
                 end do
                 nbond = nbond + 1     
-                if( sets(s)%top%nbonds .gt. 0 ) then                
-                    difbond = sqrt(difbond/real(sets(s)%top%nbonds)) 
+                if( sets(i)%top%nbonds .gt. 0 ) then                
+                    difbond = sqrt(difbond/real(sets(i)%top%nbonds)) 
                 end if
                 toterr_bond = toterr_bond +  difbond              
             end if
             ! ------------------------------------------------------------------
             difangle = 0.0
-            if( sets(s)%geo(i)%trg_crd_loaded .and. sets(s)%geo(i)%trg_crd_optimized ) then
-                do q=1,sets(s)%top%nangles
-                    ai = sets(s)%top%angles(q)%ai
-                    aj = sets(s)%top%angles(q)%aj
-                    ak = sets(s)%top%angles(q)%ak
-                    d0 = ffdev_geometry_get_angle(sets(s)%geo(i)%crd,ai,aj,ak) * DEV_R2D                 
-                    dt = ffdev_geometry_get_angle(sets(s)%geo(i)%trg_crd,ai,aj,ak) * DEV_R2D  
+            if( sets(i)%geo(j)%trg_crd_loaded .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                do q=1,sets(i)%top%nangles
+                    ai = sets(i)%top%angles(q)%ai
+                    aj = sets(i)%top%angles(q)%aj
+                    ak = sets(i)%top%angles(q)%ak
+                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D                 
+                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D  
                     difangle = difangle + (d0 - dt)**2
                 end do
                 nangle = nangle + 1  
-                if( sets(s)%top%nangles .gt. 0 ) then
-                    difangle = sqrt(difangle/real(sets(s)%top%nangles))
+                if( sets(i)%top%nangles .gt. 0 ) then
+                    difangle = sqrt(difangle/real(sets(i)%top%nangles))
                 end if
                 toterr_angle = toterr_angle + difangle
             end if
             ! ------------------------------------------------------------------
             diftors = 0.0
-            if( sets(s)%geo(i)%trg_crd_loaded .and. sets(s)%geo(i)%trg_crd_optimized ) then
-                do q=1,sets(s)%top%ndihedrals
-                    ai = sets(s)%top%dihedrals(i)%ai
-                    aj = sets(s)%top%dihedrals(i)%aj
-                    ak = sets(s)%top%dihedrals(i)%ak
-                    al = sets(s)%top%dihedrals(i)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(s)%geo(i)%crd,ai,aj,ak,al) * DEV_R2D 
-                    dt = ffdev_geometry_get_dihedral(sets(s)%geo(i)%trg_crd,ai,aj,ak,al) * DEV_R2D 
+            if( sets(i)%geo(j)%trg_crd_loaded .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                do q=1,sets(i)%top%ndihedrals
+                    ai = sets(i)%top%dihedrals(i)%ai
+                    aj = sets(i)%top%dihedrals(i)%aj
+                    ak = sets(i)%top%dihedrals(i)%ak
+                    al = sets(i)%top%dihedrals(i)%al
+                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D 
+                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D 
                     diff = ffdev_geometry_get_dihedral_deviation(d0,dt)
                     diftors = diftors + diff**2
                 end do
                 ntors = ntors + 1
-                if( sets(s)%top%ndihedrals .gt. 0 ) then                
-                    diftors = sqrt(diftors/real(sets(s)%top%ndihedrals))
+                if( sets(i)%top%ndihedrals .gt. 0 ) then                
+                    diftors = sqrt(diftors/real(sets(i)%top%ndihedrals))
                 end if
                 toterr_tors = toterr_tors + diftors
             end if
             ! ------------------------------------------------------------------
             difnbs = 0.0
-            if( sets(s)%geo(i)%trg_crd_loaded .and. sets(s)%geo(i)%trg_crd_optimized .and. (sets(s)%top%nfragments .gt. 1) ) then
+            if( sets(i)%geo(j)%trg_crd_loaded .and. sets(i)%geo(j)%trg_crd_optimized .and. (sets(i)%top%nfragments .gt. 1) ) then
                 rnbds = 0 
-                do q=1,sets(s)%top%nb_size
-                    ai = sets(s)%top%nb_list(q)%ai
-                    aj = sets(s)%top%nb_list(q)%aj
+                do q=1,sets(i)%top%nb_size
+                    ai = sets(i)%top%nb_list(q)%ai
+                    aj = sets(i)%top%nb_list(q)%aj
 
-                    if( sets(s)%top%atoms(ai)%frgid .eq. sets(s)%top%atoms(aj)%frgid ) cycle
+                    if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
                     
-                    d0 = ffdev_geometry_get_length(sets(s)%geo(i)%crd,ai,aj)                 
-                    dt = ffdev_geometry_get_length(sets(s)%geo(i)%trg_crd,ai,aj)
+                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
+                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
                     rnbds = rnbds + 1
                     err = d0 - dt
                     
@@ -347,7 +354,7 @@ subroutine ffdev_targetset_summary()
                     err = err * sw
                     ! DEBUG
                     ! write(1578,*) d0,dt,sw
-                    difnbs = difnbs + sets(s)%geo(i)%weight * err**2
+                    difnbs = difnbs + sets(i)%geo(j)%weight * err**2
                 end do
                 nbs = nbs + 1
                 if( rnbds .gt. 0 ) then
@@ -408,10 +415,10 @@ subroutine ffdev_targetset_summary()
                 write(DEV_OUT,*)
              end if
 
-            lname = trim(sets(s)%geo(i)%name)
-            write(DEV_OUT,30,advance='NO') sets(s)%geo(i)%id,adjustl(lname),sets(s)%geo(i)%weight
+            lname = trim(sets(i)%geo(j)%name)
+            write(DEV_OUT,30,advance='NO') sets(i)%geo(j)%id,adjustl(lname),sets(i)%geo(j)%weight
             if( nene .gt. 0 ) then
-                write(DEV_OUT,31,advance='NO') sets(s)%geo(i)%total_ene-sets(s)%offset,sets(s)%geo(i)%trg_energy,err_ene
+                write(DEV_OUT,31,advance='NO') sets(i)%geo(j)%total_ene-sets(i)%offset,sets(i)%geo(j)%trg_energy,err_ene
             end if
             if( ngrd .gt. 0) then
                 write(DEV_OUT,32,advance='NO') difgrd
@@ -435,7 +442,7 @@ subroutine ffdev_targetset_summary()
 
         end do
         
-        if( sets(s)%ngeos .gt. 0 ) then
+        if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,20,advance='NO')
             if( nene .gt. 0 ) then
                 write(DEV_OUT,21,advance='NO')

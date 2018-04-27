@@ -159,6 +159,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,55) prmfile_onoff(sets(i)%keepoptgeo)
         end if  
         
+        sets(i)%savegeo = SaveGeometry
+        if( prmfile_get_logical_by_key(fin,'savegeo', sets(i)%savegeo)) then
+            write(DEV_OUT,80) prmfile_onoff(sets(i)%savegeo)
+        else
+            write(DEV_OUT,85) prmfile_onoff(sets(i)%savegeo)
+        end if         
+        
         sets(i)%nrefs = 0 
         nullify(sets(i)%refs)
         
@@ -373,6 +380,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  65 format('Shift minimum to zero (shift2zero)      = ',A12,'                  (default)')
   
  70 format('Reference sets (references)             = ',A)
+ 
+ 80  format ('Save geometry (savegeo)                = ',a12)
+ 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')   
 
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
@@ -398,18 +408,20 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'setup') ) then
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+
         write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
         write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
         write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+        write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
+
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)        
+        write(DEV_OUT,65) NBDistanceSWPosition
+        write(DEV_OUT,75) NBDistanceSWAlpha 
         return
     end if
     
-    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
-        write(DEV_OUT,20) prmfile_onoff(ApplyCombinationRules)
-    else
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
-    end if
+
     if( prmfile_get_logical_by_key(fin,'optgeo', OptimizeGeometry)) then
         write(DEV_OUT,30) prmfile_onoff(OptimizeGeometry)
     else
@@ -424,6 +436,28 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,50) prmfile_onoff(KeepOptimizedGeometry)
     else
         write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
+    end if
+    if( prmfile_get_logical_by_key(fin,'savegeo', SaveGeometry)) then
+        write(DEV_OUT,80) prmfile_onoff(SaveGeometry)
+    else
+        write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
+    end if   
+    
+    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
+        write(DEV_OUT,20) prmfile_onoff(ApplyCombinationRules)
+    else
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+    end if    
+    if( prmfile_get_real8_by_key(fin,'swr0', NBDistanceSWPosition)) then
+        write(DEV_OUT,60) NBDistanceSWPosition
+    else
+        write(DEV_OUT,65) NBDistanceSWPosition
+    end if   
+    
+    if( prmfile_get_real8_by_key(fin,'swa', NBDistanceSWAlpha)) then
+        write(DEV_OUT,60) NBDistanceSWAlpha
+    else
+        write(DEV_OUT,65) NBDistanceSWAlpha
     end if       
       
  10 format('=== [setup] ====================================================================')
@@ -439,6 +473,15 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 
  50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
  55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)') 
+ 
+ 60  format ('NB distance switch r0 (swr0)           = ',f12.6)
+ 65  format ('NB distance switch r0 (swr0)           = ',f12.6,'                  (default)') 
+ 
+ 70  format ('NB distance switch alpha (swa)         = ',f12.6)
+ 75  format ('NB distance switch alpha (swa)         = ',f12.6,'                  (default)')  
+ 
+ 80  format ('Save geometry (savegeo)                = ',a12)
+ 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')  
   
 end subroutine ffdev_targetset_ctrl_setup
 

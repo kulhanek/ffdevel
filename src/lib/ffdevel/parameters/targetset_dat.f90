@@ -32,7 +32,8 @@ type TARGETSET
     real(DEVDP)             :: offset       ! energy offset
     integer                 :: mineneid     ! geometry with minimum of energy
     logical                 :: optgeo       ! optimize geometry
-    logical                 :: keepoptgeo   ! kee optimized geometry
+    logical                 :: keepoptgeo   ! keep optimized geometry
+    logical                 :: savegeo      ! save optimized geometry
     character(len=255)      :: name         ! target name 
     integer                 :: nrefs        ! number of references
     integer,pointer         :: refs(:)      ! references
@@ -47,6 +48,8 @@ type(TARGETSET),allocatable :: sets(:)  ! all training sets
 logical                 :: OptimizeGeometry             = .false.   ! optimize geometry in each error evaluation
 logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress 
 logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
+logical                 :: SaveGeometry                 = .false.   
+
 logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
 real(DEVDP)             :: NBDistanceSWPosition         = 4.0       ! switch function parameters
 real(DEVDP)             :: NBDistanceSWAlpha            = 1.0
