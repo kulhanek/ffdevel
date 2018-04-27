@@ -1837,9 +1837,9 @@ subroutine ffdev_parameters_error_only(prms,error)
     real(DEVDP)         :: prms(:)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al,nbds
+    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al
     real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors,seterrnbdist
-    real(DEVDP)         :: d0,dt,sw    
+    real(DEVDP)         :: d0,dt,sw,swsum    
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0
@@ -1872,7 +1872,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     nbond = 0
     nangle = 0
     ntors = 0
-    nbds = 0
+    swsum = 0.0
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
@@ -1908,7 +1908,7 @@ subroutine ffdev_parameters_error_only(prms,error)
                 seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end if
             ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError .and. sets(i)%optgeo) then
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError) then
                 do q=1,sets(i)%top%nbonds
                     ai = sets(i)%top%bonds(q)%ai
                     aj = sets(i)%top%bonds(q)%aj
@@ -1920,7 +1920,7 @@ subroutine ffdev_parameters_error_only(prms,error)
                 end do
             end if
             ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableAngleError .and. sets(i)%optgeo) then
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableAngleError) then
                 do q=1,sets(i)%top%nangles
                     ai = sets(i)%top%angles(q)%ai
                     aj = sets(i)%top%angles(q)%aj
@@ -1933,7 +1933,7 @@ subroutine ffdev_parameters_error_only(prms,error)
                 end do
             end if 
             ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableTorsionError .and. sets(i)%optgeo) then
+            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableTorsionError) then
                 do q=1,sets(i)%top%ndihedrals
                     ai = sets(i)%top%dihedrals(q)%ai
                     aj = sets(i)%top%dihedrals(q)%aj
@@ -1948,7 +1948,7 @@ subroutine ffdev_parameters_error_only(prms,error)
             end if 
             ! ------------------------------------------------------------------
             if( sets(i)%geo(j)%trg_crd_optimized .and. EnableNBDistanceError .and. &
-                sets(i)%optgeo .and. sets(i)%top%nfragments .gt. 1) then
+                sets(i)%top%nfragments .gt. 1) then
                 do q=1,sets(i)%top%nb_size
                     ai = sets(i)%top%nb_list(q)%ai
                     aj = sets(i)%top%nb_list(q)%aj
@@ -1957,11 +1957,11 @@ subroutine ffdev_parameters_error_only(prms,error)
                     
                     d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
                     dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    nbds = nbds + 1
                     err = d0 - dt
                     
                     ! calculate switch function
                     sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
+                    swsum = swsum + sw
                     err = err * sw
                     seterrnbdist = seterrnbdist + sets(i)%geo(j)%weight * err**2
                 end do
@@ -1989,8 +1989,8 @@ subroutine ffdev_parameters_error_only(prms,error)
     if( ntors .gt. 0 ) then
         error%tors = sqrt(seterrtors/real(ntors))
     end if
-    if( nbds .gt. 0 ) then
-        error%nbdist = sqrt(seterrnbdist/real(nbds))
+    if( swsum .gt. 0 ) then
+        error%nbdist = sqrt(seterrnbdist/swsum)
     end if       
 
     error%total = EnergyErrorWeight * error%energy &

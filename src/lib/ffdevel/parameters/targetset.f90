@@ -206,16 +206,40 @@ subroutine ffdev_targetset_summary()
     use ffdev_geometry
 
     implicit none
-    real(DEVDP)             :: toterr_ene,err_ene,toterr_grd,toterr_hess,difgrd,difhess
-    real(DEVDP)             :: toterr_bond,toterr_angle,toterr_tors,difbond,difangle,diftors
-    real(DEVDP)             :: d0,dt,difnbs,toterr_nbs,sw,err,diff  
+    real(DEVDP)             :: toterr_ene,toterr_grd,toterr_hess,toterr_bond,toterr_angle,toterr_tors,toterr_nbs
+    real(DEVDP)             :: diffene,difgrd,difhess,difbond,difangle,diftors,difnbs
+    real(DEVDP)             :: d0,dt,sw,err,swsum,sswsum 
+    real(DEVDP)             :: stoterr_ene,stoterr_grd,stoterr_hess,stoterr_bond,stoterr_angle,stoterr_tors,stoterr_nbs
+    integer                 :: snene,sngrd,snhess,snbond,snangle,sntors,snbs
     integer                 :: i,j,k,l,m,n,nene,ngrd,nhess,ai,aj,ak,al,nbond,nangle,ntors,q,rnbds,nbs
     character(len=20)       :: lname
     character(len=MAX_PATH) :: sname
     ! --------------------------------------------------------------------------
 
+    stoterr_ene = 0.0d0
+    stoterr_grd = 0.0d0
+    stoterr_hess = 0.0d0
+    stoterr_bond = 0.0d0 
+    stoterr_angle = 0.0d0
+    stoterr_tors = 0.0d0
+    stoterr_nbs = 0.0d0  
+    
+    snene = 0
+    sngrd = 0
+    snhess = 0
+    snbond = 0
+    snangle = 0
+    sntors = 0
+    snbs = 0    
+    
+    sswsum = 0.0
+    
+    ! NOTES - partial errors are not weighted
+    
+    write(DEV_OUT,*)       
     write(DEV_OUT,2)
-
+    write(DEV_OUT,3)    
+    
     do i=1,nsets
         write(DEV_OUT,*)
         write(DEV_OUT,5) i
@@ -240,16 +264,19 @@ subroutine ffdev_targetset_summary()
         
             ! save geometry if requested
             if( sets(i)%savegeo .and. sets(i)%geo(j)%trg_crd_optimized ) then
-                sname = trim(sets(i)%geo(j)%name) // '.spts'
+                sname = trim(sets(i)%geo(j)%name) // 's'
                 call ffdev_geometry_save_xyz(sets(i)%geo(j),sname)
             end if
         
             ! ------------------------------------------------------------------        
-            err_ene = 0.0
+            diffene = 0.0
             if( sets(i)%geo(j)%trg_ene_loaded ) then
-                err_ene = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
-                toterr_ene = toterr_ene + sets(i)%geo(j)%weight * err_ene**2
+                err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                diffene = err
+                toterr_ene = toterr_ene + err**2
                 nene = nene + 1
+                stoterr_ene = stoterr_ene + sets(i)%geo(j)%weight * err**2
+                snene = snene + 1
             end if
 
             ! ------------------------------------------------------------------            
@@ -257,7 +284,10 @@ subroutine ffdev_targetset_summary()
             if( sets(i)%geo(j)%trg_grd_loaded ) then
                 do k=1,sets(i)%geo(j)%natoms
                     do l=1,3
-                        difgrd = difgrd + (sets(i)%geo(j)%grd(l,k) - sets(i)%geo(j)%trg_grd(l,k))**2
+                        err = (sets(i)%geo(j)%grd(l,k) - sets(i)%geo(j)%trg_grd(l,k))**2
+                        difgrd = difgrd + err**2
+                        sngrd = sngrd + 1
+                        stoterr_grd = stoterr_grd + sets(i)%geo(j)%weight*err**2
                     end do
                 end do
                 ngrd = ngrd + 1
@@ -272,7 +302,10 @@ subroutine ffdev_targetset_summary()
                     do l=1,3
                         do m=1,sets(i)%geo(j)%natoms
                             do n=1,3
-                                difhess = difhess + (sets(i)%geo(j)%hess(l,k,n,m) - sets(i)%geo(j)%trg_hess(l,k,n,m))**2
+                                err = (sets(i)%geo(j)%hess(l,k,n,m) - sets(i)%geo(j)%trg_hess(l,k,n,m))**2
+                                difhess = difhess + err**2
+                                snhess = snhess + 1
+                                stoterr_hess = stoterr_hess + sets(i)%geo(j)%weight*err**2                               
                             end do
                         end do
                     end do
@@ -290,7 +323,10 @@ subroutine ffdev_targetset_summary()
                     aj = sets(i)%top%bonds(q)%aj
                     d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
                     dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    difbond = difbond + (d0 - dt)**2
+                    err = d0 - dt
+                    difbond = difbond + err**2
+                    snbond = snbond + 1
+                    stoterr_bond = stoterr_bond + sets(i)%geo(j)%weight*err**2  
                 end do
                 nbond = nbond + 1     
                 if( sets(i)%top%nbonds .gt. 0 ) then                
@@ -305,9 +341,12 @@ subroutine ffdev_targetset_summary()
                     ai = sets(i)%top%angles(q)%ai
                     aj = sets(i)%top%angles(q)%aj
                     ak = sets(i)%top%angles(q)%ak
-                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D                 
-                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D  
-                    difangle = difangle + (d0 - dt)**2
+                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak)                
+                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak)
+                    err = d0 - dt
+                    difangle = difangle + err**2
+                    snangle = snangle + 1 
+                    stoterr_angle = stoterr_angle + sets(i)%geo(j)%weight*err**2
                 end do
                 nangle = nangle + 1  
                 if( sets(i)%top%nangles .gt. 0 ) then
@@ -323,10 +362,12 @@ subroutine ffdev_targetset_summary()
                     aj = sets(i)%top%dihedrals(i)%aj
                     ak = sets(i)%top%dihedrals(i)%ak
                     al = sets(i)%top%dihedrals(i)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D 
-                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D 
-                    diff = ffdev_geometry_get_dihedral_deviation(d0,dt)
-                    diftors = diftors + diff**2
+                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
+                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
+                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    diftors = diftors + err**2
+                    sntors = sntors + 1
+                    stoterr_tors = stoterr_tors + sets(i)%geo(j)%weight*err**2
                 end do
                 ntors = ntors + 1
                 if( sets(i)%top%ndihedrals .gt. 0 ) then                
@@ -336,8 +377,8 @@ subroutine ffdev_targetset_summary()
             end if
             ! ------------------------------------------------------------------
             difnbs = 0.0
+            swsum = 0.0
             if( sets(i)%geo(j)%trg_crd_loaded .and. sets(i)%geo(j)%trg_crd_optimized .and. (sets(i)%top%nfragments .gt. 1) ) then
-                rnbds = 0 
                 do q=1,sets(i)%top%nb_size
                     ai = sets(i)%top%nb_list(q)%ai
                     aj = sets(i)%top%nb_list(q)%aj
@@ -346,26 +387,28 @@ subroutine ffdev_targetset_summary()
                     
                     d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
                     dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    rnbds = rnbds + 1
                     err = d0 - dt
                     
                     ! calculate switch function
                     sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
+                    swsum = swsum + sw
                     err = err * sw
-                    ! DEBUG
-                    ! write(1578,*) d0,dt,sw
-                    difnbs = difnbs + sets(i)%geo(j)%weight * err**2
+                    difnbs = difnbs + sets(i)%geo(j)%weight*err**2
+                    
+                    sswsum = sswsum + sw                    
+                    snbs = snbs + 1
+                    stoterr_nbs = stoterr_nbs + sets(i)%geo(j)%weight*err**2
                 end do
                 nbs = nbs + 1
-                if( rnbds .gt. 0 ) then
-                    difnbs = sqrt(difnbs/real(rnbds))
+                if( swsum .gt. 0 ) then
+                    difnbs = sqrt(difnbs/swsum)
                     toterr_nbs = toterr_nbs + difnbs
                 end if
                 
             end if             
             ! ------------------------------------------------------------------
             
-            if( i .eq. 1 ) then
+            if( j .eq. 1 ) then
                 write(DEV_OUT,10,advance='NO')
                 if( nene .gt. 0 ) then
                     write(DEV_OUT,11,advance='NO')
@@ -418,7 +461,7 @@ subroutine ffdev_targetset_summary()
             lname = trim(sets(i)%geo(j)%name)
             write(DEV_OUT,30,advance='NO') sets(i)%geo(j)%id,adjustl(lname),sets(i)%geo(j)%weight
             if( nene .gt. 0 ) then
-                write(DEV_OUT,31,advance='NO') sets(i)%geo(j)%total_ene-sets(i)%offset,sets(i)%geo(j)%trg_energy,err_ene
+                write(DEV_OUT,31,advance='NO') sets(i)%geo(j)%total_ene-sets(i)%offset,sets(i)%geo(j)%trg_energy,diffene
             end if
             if( ngrd .gt. 0) then
                 write(DEV_OUT,32,advance='NO') difgrd
@@ -430,10 +473,10 @@ subroutine ffdev_targetset_summary()
                 write(DEV_OUT,32,advance='NO') difbond
             end if 
             if( nangle .gt. 0 ) then
-                write(DEV_OUT,32,advance='NO') difangle
+                write(DEV_OUT,32,advance='NO') difangle * DEV_R2D
             end if 
             if( ntors .gt. 0 ) then
-                write(DEV_OUT,32,advance='NO') diftors
+                write(DEV_OUT,32,advance='NO') diftors * DEV_R2D
             end if  
             if( nbs .gt. 0 ) then
                 write(DEV_OUT,32,advance='NO') difnbs
@@ -503,10 +546,10 @@ subroutine ffdev_targetset_summary()
                 write(DEV_OUT,32,advance='NO') toterr_bond
             end if
             if( nangle .gt. 0 ) then
-                write(DEV_OUT,32,advance='NO') toterr_angle
+                write(DEV_OUT,32,advance='NO') toterr_angle * DEV_R2D
             end if  
             if( ntors .gt. 0 ) then
-                write(DEV_OUT,32,advance='NO') toterr_tors
+                write(DEV_OUT,32,advance='NO') toterr_tors * DEV_R2D
             end if
             if( nbs .gt. 0 ) then
                 write(DEV_OUT,32,advance='NO') toterr_nbs
@@ -518,14 +561,115 @@ subroutine ffdev_targetset_summary()
     
     write(DEV_OUT,*) 
 
+! final summary
+
+    write(DEV_OUT,6,advance='NO')
+    if( nene .gt. 0 ) then
+        write(DEV_OUT,9,advance='NO')
+    end if
+    if( ngrd .gt. 0 ) then
+        write(DEV_OUT,12,advance='NO')
+    end if
+    if( nhess .gt. 0 ) then
+        write(DEV_OUT,13,advance='NO')
+    end if 
+    if( nbond .gt. 0 ) then
+        write(DEV_OUT,14,advance='NO')
+    end if
+    if( nangle .gt. 0 ) then
+        write(DEV_OUT,15,advance='NO')
+    end if  
+    if( ntors .gt. 0 ) then
+        write(DEV_OUT,16,advance='NO')
+    end if 
+    if( nbs .gt. 0 ) then
+        write(DEV_OUT,17,advance='NO')
+    end if                  
+    write(DEV_OUT,*)
+                
+    write(DEV_OUT,20,advance='NO')
+    if( nene .gt. 0 ) then
+        write(DEV_OUT,21,advance='NO')
+    end if
+    if( ngrd .gt. 0 ) then
+        write(DEV_OUT,22,advance='NO')
+    end if
+    if( ngrd .gt. 0 ) then
+        write(DEV_OUT,23,advance='NO')
+    end if 
+    if( nbond .gt. 0 ) then
+        write(DEV_OUT,24,advance='NO')
+    end if
+    if( nangle .gt. 0 ) then
+        write(DEV_OUT,25,advance='NO')
+    end if  
+    if( ntors .gt. 0 ) then
+        write(DEV_OUT,26,advance='NO')
+    end if
+    if( nbs .gt. 0 ) then
+        write(DEV_OUT,26,advance='NO')
+    end if            
+    write(DEV_OUT,*)     
+    
+    if( snene .gt. 0 ) then
+        stoterr_ene = sqrt(stoterr_ene / real(snene))
+    end if
+    if( sngrd .gt. 0 ) then
+        stoterr_grd = sqrt(stoterr_grd / real(sngrd))
+    end if
+    if( snhess .gt. 0 ) then
+        stoterr_hess = sqrt(stoterr_hess / real(snhess))
+    end if
+    if( snbond .gt. 0 ) then
+        stoterr_bond = sqrt(stoterr_bond / real(snbond))
+    end if 
+    if( snangle .gt. 0 ) then
+        stoterr_angle = sqrt(stoterr_angle / real(snangle))
+    end if    
+    if( sntors .gt. 0 ) then
+        stoterr_tors = sqrt(stoterr_tors / real(sntors))
+    end if
+    if( snbs .gt. 0 ) then
+        stoterr_nbs = sqrt(stoterr_nbs / sswsum)
+    end if             
+    
+    write(DEV_OUT,40,advance='NO')
+    if( nene .gt. 0 ) then
+        write(DEV_OUT,41,advance='NO') stoterr_ene
+    end if
+    if( ngrd .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_grd
+    end if
+    if( ngrd .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_hess
+    end if 
+    if( nbond .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_bond
+    end if
+    if( nangle .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_angle * DEV_R2D
+    end if  
+    if( ntors .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_tors * DEV_R2D
+    end if
+    if( nbs .gt. 0 ) then
+        write(DEV_OUT,32,advance='NO') stoterr_nbs
+    end if            
+    write(DEV_OUT,*)
+    
+    write(DEV_OUT,*)    
+    
  2 format('Target set summaries ...')
+ 3 format('NOTE: Errors reported for individual points are not weighted.')
  
  5 format('=== [SET] #',I2.2,' ==================================================================')
 
 10 format('# ID   File                 Weight ')
+ 6 format('#                                  ')
 20 format('# ---- -------------------- ------ ')
 
 11 format('   E(MM)     E(TGR)     E(Err)   ')
+ 9 format('                        E(Err)   ')
 21 format('---------- ---------- ---------- ')
 
 12 format(' G/c(Err)  ')

@@ -381,8 +381,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
   
  70 format('Reference sets (references)             = ',A)
  
- 80  format ('Save geometry (savegeo)                = ',a12)
- 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')   
+ 80 format('Save geometry (savegeo)                 = ',a12)
+ 85 format('Save geometry (savegeo)                 = ',a12,'                  (default)')   
 
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
