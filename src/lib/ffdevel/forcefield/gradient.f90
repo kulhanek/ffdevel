@@ -260,7 +260,7 @@ subroutine ffdev_gradient_dihedrals(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         ::  i,j,k,l,ic,ip,pn
-    real(DEVDP)     ::  scp,phi,arg,dv
+    real(DEVDP)     ::  scp,phi,arg,dv,diff
     real(DEVDP)     ::  a2,b2,gv,fg,hg
     real(DEVDP)     ::  f(3),g(3),h(3),a(3),b(3)
     ! -----------------------------------------------------------------------------
@@ -327,13 +327,14 @@ subroutine ffdev_gradient_dihedrals(top,geo)
             case(DIH_GRBF)
                 do pn=1,top%dihedral_types(ic)%n
                     if( .not. top%dihedral_types(ic)%enabled(pn) ) cycle
+                    diff = ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(ic)%p(pn))
                     ! calculate energy
                     geo%dih_ene = geo%dih_ene + top%dihedral_types(ic)%c(pn) &
-                                  *exp(-((phi-top%dihedral_types(ic)%p(pn))**2)/top%dihedral_types(ic)%w(pn))
+                                  * exp(-diff**2/top%dihedral_types(ic)%w2(pn))
                     ! calculate gradient
                     dv = dv - top%dihedral_types(ic)%c(pn) &
-                            * exp(-((phi-top%dihedral_types(ic)%p(pn))**2)/top%dihedral_types(ic)%w(pn)) &
-                            * 2.0*(phi-top%dihedral_types(ic)%p(pn))/top%dihedral_types(ic)%w(pn)
+                            * exp(-diff**2/top%dihedral_types(ic)%w2(pn)) &
+                            * 2.0*diff/top%dihedral_types(ic)%w2(pn)
                 end do
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_gradient_dihedrals]!')

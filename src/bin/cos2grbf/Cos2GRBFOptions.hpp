@@ -1,5 +1,5 @@
-#ifndef Top2STopOptionsH
-#define Top2STopOptionsH
+#ifndef Cos2GRBFOptionsH
+#define Cos2GRBFOptionsH
 // =============================================================================
 // This file is part of FFDevel.
 //    Copyright (C) 2013 Petr Kulhanek, kulhanek@chemi.muni.cz
@@ -21,18 +21,18 @@
 
 //------------------------------------------------------------------------------
 
-class CTop2STopOptions : public CSimpleOptions {
+class CCos2GRBFOptions : public CSimpleOptions {
 public:
     // constructor - tune option setup
-    CTop2STopOptions(void);
+    CCos2GRBFOptions(void);
 
 // program name and description -----------------------------------------------
     CSO_PROG_NAME_BEGIN
-    "top2stop"
+    "cos2grbf"
     CSO_PROG_NAME_END
 
     CSO_PROG_DESC_BEGIN
-    "Convert the AMBER topology to the simplified topology used by the ffoptimize program and other ffdevel utilities."
+    "Convert the cosinus dihedral series to rational gaussian basis functions."
     CSO_PROG_DESC_END
 
     CSO_PROG_VERS_BEGIN
@@ -42,13 +42,11 @@ public:
 // list of all options and arguments ------------------------------------------
     CSO_LIST_BEGIN
     // arguments ----------------------------
-    CSO_ARG(CSmallString,TopologyName)
-    CSO_ARG(CSmallString,STopologyName)
+    CSO_ARG(CSmallString,Input)
+    CSO_ARG(CSmallString,Output)
     // options ------------------------------
     CSO_OPT(int,DihedralSeriesSize)
-    CSO_OPT(CSmallString,DihedralMode)
-    CSO_OPT(bool,ZeroDihPhase)
-    CSO_OPT(CSmallString,Transform)
+    CSO_OPT(int,DihedralSamplingSize)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -57,17 +55,17 @@ public:
     CSO_MAP_BEGIN
 // description of arguments ---------------------------------------------------
     CSO_MAP_ARG(CSmallString,                   /* argument type */
-                TopologyName,                          /* argument name */
+                Input,                          /* argument name */
                 NULL,                           /* default value */
                 true,                           /* is argument mandatory */
-                "TOPOLOGY",                           /* parametr name */
-                "AMBER topology name. If the name is '-' then the AMBER topology is read from the standard input.")   /* argument description */
+                "COS",                           /* parametr name */
+                "Name of file with cosinus series in the AMBER frcmod format.")  /* argument description */
     CSO_MAP_ARG(CSmallString,                   /* argument type */
-                STopologyName,                          /* argument name */
+                Output,                          /* argument name */
                 NULL,                           /* default value */
                 true,                           /* is argument mandatory */
-                "STOPOLOGY",                           /* parametr name */
-                "Simplified topology name. If the name is '-' then the simplified topology is written to the standard output.")   /* argument description */
+                "OUT",                           /* parametr name */
+                "Output file name.")   /* argument description */
 // description of options -----------------------------------------------------
     CSO_MAP_OPT(int,                           /* option type */
                 DihedralSeriesSize,                        /* option name */
@@ -77,31 +75,14 @@ public:
                 "dihsize",                      /* long option name */
                 "SIZE",                           /* parametr name */
                 "dihedral series size")   /* option description */
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                DihedralMode,                        /* option name */
-                "cos",                          /* default value */
+    CSO_MAP_OPT(int,                           /* option type */
+                DihedralSamplingSize,                        /* option name */
+                10,                          /* default value */
                 false,                          /* is option mandatory */
-                'm',                           /* short option name */
-                "dihmode",                      /* long option name */
+                's',                           /* short option name */
+                "sampling",                      /* long option name */
                 NULL,                           /* parametr name */
-                "dihedral mode: cos - cosine series, grbf - gaussian radial basis functions")   /* option description */
-    CSO_MAP_OPT(bool,                           /* option type */
-                ZeroDihPhase,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                'z',                           /* short option name */
-                "zerophase",                      /* long option name */
-                NULL,                           /* parametr name */
-                "transform all dihedral phases to zero")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                Transform,                        /* option name */
-                "none",                          /* default value */
-                false,                          /* is option mandatory */
-                't',                           /* short option name */
-                "transform",                      /* long option name */
-                "MODE",                           /* parametr name */
-                "transform atom type name. Allowed modes are: none, both.")   /* option description */
+                "number of samples per segment")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

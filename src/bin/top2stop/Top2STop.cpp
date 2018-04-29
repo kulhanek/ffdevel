@@ -524,6 +524,9 @@ CDihedralType CTop2STop::FindImproperByTypes(int ia,int ib,int ic,int id)
 
 void CTop2STop::WriteDihedralTypes(ostream& sout)
 {
+    
+    ndihedral_seq_size = Options.GetOptDihedralSeriesSize();
+    
     // generate list of dihedral types
     int idx = 1;
     for(int i=0; i < Topology.DihedralList.GetNumberOfDihedrals(); i++) {
@@ -546,7 +549,7 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
 
         if( dtype.idx == -1 ){
             // new type
-            dtype.SetSeriesSize(Options.GetOptDihedralSeriesSize());
+            dtype.SetSeriesSize(ndihedral_seq_size);
             dtype.idx = idx;
             idx++;
             dtype.at1 = FindAtomTypeIdx(ip);
@@ -604,7 +607,6 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
     }
 
     ndihedral_types = DihedralTypes.size();
-    ndihedral_seq_size = Options.GetOptDihedralSeriesSize();
 
     switch(dih_mode){
         case 1:
@@ -659,7 +661,7 @@ void CTop2STop::TransformCosToGRBF(void)
     vout << "Transforming dihedral cos series to rgbf series ..." << endl;
     vout << "   Number of series (dihedral types) = " << ndihedral_types << endl;
     vout << "   Series size                       = " << ndihedral_seq_size << endl;
-    vout << "   Number of training points         = " << ndihedral_seq_size*dih_samp_freq << endl;
+    vout << "   Number of training points         = " << (ndihedral_seq_size+1)*dih_samp_freq << endl;
 
     std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
@@ -678,76 +680,12 @@ void CTop2STop::SolveTransformation(int type)
 {
     vout << "   fitting dihedral type " << setw(4) << type << " ... final error = ";
 
-    CVector         rhs;
-    CFortranMatrix  A;
-
-    A.CreateMatrix(ndihedral_seq_size,ndihedral_seq_size);
-    rhs.CreateVector(ndihedral_seq_size);
-
-    // central matrix
-    for(int i=0; i < ndihedral_seq_size;i++){
-        double p1 = DihedralTypes[type].p[i];
-        double w1 = DihedralTypes[type].w2[i];
-        for(int j=0; j < ndihedral_seq_size;j++){
-            double p2 = DihedralTypes[type].p[j];
-            double w2 = DihedralTypes[type].w2[j];
-            double a = 0;
-            for(int k=0; k < ndihedral_seq_size*dih_samp_freq;k++){
-                double x = -M_PI + 2.0*M_PI*k/(ndihedral_seq_size*dih_samp_freq-1);
-                a += exp(-(x-p1)*(x-p1)/w1)*exp(-(x-p2)*(x-p2)/w2);
-            }
-            A[i][j] = a;
-        }
-    }
-
-    // rhs
-    for(int i=0; i < ndihedral_seq_size;i++){
-        double p1 = DihedralTypes[type].p[i];
-        double w1 = DihedralTypes[type].w2[i];
-        double a = 0;
-        for(int k=0; k < ndihedral_seq_size*dih_samp_freq;k++){
-            double x = -M_PI + 2.0*M_PI*k/(ndihedral_seq_size*dih_samp_freq-1);
-            double value = 0;
-            for(int l=0;l<ndihedral_seq_size;l++){
-                double arg = (l+1)*x - DihedralTypes[type].phase[l];
-                value += DihedralTypes[type].v0[l]*(1.0+cos(arg));
-            }
-            a += exp(-(x-p1)*(x-p1)/w1)*value;
-        }
-        rhs[i] = a;
-    }
-
-    // solv equations
-    if( CLapack::solvle(A,rhs) != 0 ){
-        RUNTIME_ERROR("unable to solve transformation");
-    }
-
-    // copy final result
-    for(int l=0;l<ndihedral_seq_size;l++){
-        DihedralTypes[type].c[l] = rhs[l];
-    }
-
+    // transform
+    DihedralTypes[type].Cos2GRBF(dih_samp_freq);
+    
     // calculate rmse
-    double rmse = 0.0;
-    for(int k=0; k < ndihedral_seq_size*dih_samp_freq;k++){
-        double x = -M_PI + 2.0*M_PI*k/(ndihedral_seq_size*dih_samp_freq-1);
-        double value1 = 0;
-        for(int l=0;l<ndihedral_seq_size;l++){
-            double arg = (l+1)*x - DihedralTypes[type].phase[l];
-            value1 += DihedralTypes[type].v0[l]*(1.0+cos(arg));
-        }
-        double value2 = 0;
-        for(int l=0;l<ndihedral_seq_size;l++){
-            double c1 = DihedralTypes[type].c[l];
-            double p1 = DihedralTypes[type].p[l];
-            double w1 = DihedralTypes[type].w2[l];
-            value2 += c1*exp(-(x-p1)*(x-p1)/w1);
-        }
-        double error = value2-value1;
-        rmse += error*error;
-    }
-    rmse /= ndihedral_seq_size*dih_samp_freq;
-    rmse = sqrt(rmse);
+    double rmse = DihedralTypes[type].RMSECos2GRBF(dih_samp_freq);
+
     vout << fixed << setw(13) << setprecision(8) << rmse << endl;
 }
 

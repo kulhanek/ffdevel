@@ -3,6 +3,7 @@
 # ==============================================================================
 
 ADD_SUBDIRECTORY(top2stop)
+ADD_SUBDIRECTORY(cos2grbf)
 ADD_SUBDIRECTORY(genrotors)
 ADD_SUBDIRECTORY(ffenergy)
 ADD_SUBDIRECTORY(ffexternal)

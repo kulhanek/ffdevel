@@ -247,7 +247,8 @@ subroutine ffdev_energy_dihedrals(top,geo)
                 do pn=1,top%dihedral_types(ic)%n
                     if( .not. top%dihedral_types(ic)%enabled(pn) ) cycle
                     geo%dih_ene = geo%dih_ene + top%dihedral_types(ic)%c(pn) &
-                                  *exp(-((phi-top%dihedral_types(ic)%p(pn))**2)/top%dihedral_types(ic)%w(pn))
+                                  * exp(-(ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(ic)%p(pn))**2) &
+                                  / top%dihedral_types(ic)%w2(pn))
                 end do
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_energy_dihedrals]!')

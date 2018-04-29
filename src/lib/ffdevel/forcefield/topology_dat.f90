@@ -83,7 +83,7 @@ type DIHEDRAL_TYPE
     real(DEVDP),pointer :: g(:)             ! cos - phases
     real(DEVDP),pointer :: c(:)             ! grbf - weights
     real(DEVDP),pointer :: p(:)             ! grbf - positions
-    real(DEVDP),pointer :: w(:)             ! grbf - widths
+    real(DEVDP),pointer :: w2(:)            ! grbf - widths
     logical,pointer     :: enabled(:)       ! what is enabled, apllicable only to cos
 
 end type DIHEDRAL_TYPE

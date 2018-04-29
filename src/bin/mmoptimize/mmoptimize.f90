@@ -38,7 +38,8 @@ program ffdev_mmoptimize
     call ffdev_utils_header('MM Optimize')
 
     ! check if control file was provided
-    if( command_argument_count() .ne. 1 ) then
+    if( (command_argument_count() .ne. 1) .and. (command_argument_count() .ne. 2) &
+        .and. (command_argument_count() .ne. 3) .and. (command_argument_count() .ne. 4) ) then
         call print_usage
         call ffdev_utils_exit(DEV_OUT,1,'No input file specified on the command line!')
     end if
@@ -59,6 +60,19 @@ program ffdev_mmoptimize
     if( .not. prmfile_open_group(fin,'MAIN') ) then
         call ffdev_utils_exit(DEV_OUT,1,'Specified control file does not contain {MAIN} group!')
     end if
+    
+    if( command_argument_count() .gt. 1 ) then
+        call get_command_argument(2, OptTopName)
+    end if
+    
+    if( command_argument_count() .gt. 2 ) then
+        call get_command_argument(3, OptCrdName)
+        OptRstName = OptCrdName
+    end if 
+    
+    if( command_argument_count() .gt. 3 ) then
+        call get_command_argument(4, OptRstName)
+    end if       
 
     call ffdev_geoopt_ctrl_files(fin)
     call ffdev_geoopt_ctrl_minimize(fin)
@@ -135,7 +149,7 @@ subroutine print_usage()
 
     return
 
-10 format('    mmoptimize <ctrlfile>')
+10 format('    mmoptimize <ctrlfile> [topology [input [output]]]')
 
 end subroutine print_usage
 

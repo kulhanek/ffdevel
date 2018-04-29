@@ -307,7 +307,7 @@ subroutine ffdev_topology_load(top,name)
                  top%dihedral_types(i)%g(top%dihedral_types(i)%n), &
                  top%dihedral_types(i)%c(top%dihedral_types(i)%n), &
                  top%dihedral_types(i)%p(top%dihedral_types(i)%n), &
-                 top%dihedral_types(i)%w(top%dihedral_types(i)%n), &
+                 top%dihedral_types(i)%w2(top%dihedral_types(i)%n), &
                  top%dihedral_types(i)%enabled(top%dihedral_types(i)%n), stat = alloc_stat )
         if( alloc_stat .ne. 0 ) then
             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate dihedral arrays!')
@@ -316,7 +316,7 @@ subroutine ffdev_topology_load(top,name)
         top%dihedral_types(i)%g(:) = 0.0d0
         top%dihedral_types(i)%c(:) = 0.0d0
         top%dihedral_types(i)%p(:) = 0.0d0
-        top%dihedral_types(i)%w(:) = 0.0d0
+        top%dihedral_types(i)%w2(:) = 0.0d0
         top%dihedral_types(i)%enabled(:) = .true.
     end do
 
@@ -410,7 +410,7 @@ subroutine ffdev_topology_load(top,name)
 
             top%dihedral_types(idx)%c(pn) = c
             top%dihedral_types(idx)%p(pn) = p
-            top%dihedral_types(idx)%w(pn) = w
+            top%dihedral_types(idx)%w2(pn) = w
         end do
     end if
 
@@ -702,7 +702,7 @@ subroutine ffdev_topology_save(top,name)
                 write(DEV_TOP,93)   i, j, &
                                        top%dihedral_types(i)%c(j), &
                                        top%dihedral_types(i)%p(j), &
-                                       top%dihedral_types(i)%w(j)
+                                       top%dihedral_types(i)%w2(j)
             end do
         end if
     end do
@@ -1065,7 +1065,7 @@ subroutine ffdev_topology_info_types(top,mode)
                     if( top%dihedral_types(i)%mode .ne. DIH_GRBF ) cycle
                     do j=1,top%dihedral_types(i)%n
                         write(DEV_OUT,385)   i, top%dihedral_types(i)%enabled(j), j, top%dihedral_types(i)%c(j), &
-                                               top%dihedral_types(i)%p(j)*DEV_R2D, sqrt(top%dihedral_types(i)%w(j))*DEV_R2D
+                                               top%dihedral_types(i)%p(j)*DEV_R2D, sqrt(top%dihedral_types(i)%w2(j))*DEV_R2D
                     end do
                 end do
             end if

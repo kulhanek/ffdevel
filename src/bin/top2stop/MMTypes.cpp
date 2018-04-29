@@ -17,6 +17,8 @@
 
 #include "MMTypes.hpp"
 #include <math.h>
+#include <SimpleVector.hpp>
+#include <Lapack.hpp>
 
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -127,17 +129,15 @@ void CDihedralType::SetSeriesSize(int size)
     c.resize(size);
     p.resize(size);
     w2.resize(size);
-    if( size > 2) {
-        p[0] = -M_PI;
-        p[size-1] = M_PI;
-        for(int i=1; i < size-1; i++){
-            p[i] = -M_PI + 2.0*M_PI*i/(size-1);
-        }
-        for(int i=0; i < size; i++){
-            w2[i] = pow(2.0*M_PI/(size-1),2.0);
-        }
+    
+    for(int i=0; i < size; i++){
+        defined[i] = false;
+        v0[i] = 0.0;
+        phase[i] = 0.0;
+        c[i] = 0.0;
+        p[i] = -M_PI + 2.0*M_PI*i/size; 
+        w2[i] = pow(2.0*M_PI/size,2.0);
     }
-
 }
 
 //------------------------------------------------------------------------------
@@ -145,6 +145,127 @@ void CDihedralType::SetSeriesSize(int size)
 int CDihedralType::GetSeriesSize(void)
 {
     return(v0.size());
+}
+
+//------------------------------------------------------------------------------
+
+void CDihedralType::Cos2GRBF(int dih_samp_freq)
+{
+    CVector         rhs;
+    CFortranMatrix  A;
+
+    A.CreateMatrix(GetSeriesSize(),GetSeriesSize());
+    rhs.CreateVector(GetSeriesSize());
+    
+    // central matrix
+    for(int i=0; i < GetSeriesSize(); i++){
+        double sp1 = p[i];
+        double sw1 = w2[i];
+        for(int j=0; j < GetSeriesSize(); j++){
+            double sp2 = p[j];
+            double sw2 = w2[j];
+            double a = 0;
+            for(int k=0; k < (GetSeriesSize()+1)*dih_samp_freq; k++){
+                double x = -M_PI + 2.0*M_PI*k/((GetSeriesSize()+1)*dih_samp_freq);
+                a += exp(-(GetDihDeviation(x,sp1))*(GetDihDeviation(x,sp1))/sw1)*exp(-(GetDihDeviation(x,sp2))*(GetDihDeviation(x,sp2))/sw2);
+            }
+            A[i][j] = a;
+        }
+    }
+
+    // rhs
+    for(int i=0; i < GetSeriesSize(); i++){
+        double p1 = p[i];
+        double w1 = w2[i];
+        double a = 0;
+        for(int k=0; k < (GetSeriesSize()+1)*dih_samp_freq; k++){
+            double x = -M_PI + 2.0*M_PI*k/((GetSeriesSize()+1)*dih_samp_freq);
+            double value = GetCOSValue(x);
+            a += exp(-(GetDihDeviation(x,p1))*(GetDihDeviation(x,p1))/w1)*value;
+        }
+        rhs[i] = a;
+        // std::cout << p[i]*180.0/M_PI << " " << sqrt(w2[i])*180.0/M_PI << " " << a << std::endl;          
+    }
+    
+    // solv equations
+    if( CLapack::solvle(A,rhs) != 0 ){
+        RUNTIME_ERROR("unable to solve transformation");
+    }
+
+    // copy final result
+    for(int l=0; l < GetSeriesSize(); l++){
+        c[l] = rhs[l];
+    }
+}
+    
+//------------------------------------------------------------------------------    
+    
+double CDihedralType::RMSECos2GRBF(int dih_samp_freq)
+{    
+    // calculate rmse
+    double rmse = 0.0;
+    for(int k=0; k < (GetSeriesSize()+1)*dih_samp_freq; k++){
+        double x = -M_PI + 2.0*M_PI*k/((GetSeriesSize()+1)*dih_samp_freq);
+        double value1 = GetCOSValue(x);
+        double value2 = GetGRBFValue(x);
+        double error = value2-value1;
+        rmse += error*error;
+    }
+    if( (GetSeriesSize()+1)*dih_samp_freq > 0 ) {
+        rmse /= (GetSeriesSize()+1)*dih_samp_freq;
+    }
+    rmse = sqrt(rmse);
+    return(rmse);
+}
+
+//------------------------------------------------------------------------------  
+
+double  CDihedralType::GetCOSValue(double x)
+{
+    double value1 = 0;
+    for(int l=1; l <= GetSeriesSize(); l++){
+        double arg = l*x - phase[l-1];
+        value1 += v0[l-1]*(1.0+cos(arg));
+    }
+    return(value1);
+}
+
+//------------------------------------------------------------------------------  
+
+double  CDihedralType::GetGRBFValue(double x)
+{
+    double value2 = 0;
+    for(int l=0; l < GetSeriesSize(); l++){
+        double c1 = c[l];
+        double p1 = p[l];
+        double w1 = w2[l];
+        value2 += c1*exp(-(GetDihDeviation(x,p1))*(GetDihDeviation(x,p1))/w1);
+    } 
+    return(value2);
+}
+
+//------------------------------------------------------------------------------  
+
+double CDihedralType::GetDihDeviation(double value1, double value2)
+{
+       
+    double minv,maxv,vec;
+
+    minv = -M_PI;
+    maxv =  M_PI;
+
+    if( fabs(value1-value2) <  0.5*(maxv-minv) ) {
+        return(value1 - value2);
+    } else {
+        //! get vector
+        vec = value1 - value2;
+        //! shift to box center
+        vec = vec + 0.5*(maxv+minv);
+        //! image as point
+        vec = vec - (maxv-minv)*floor((vec-minv)/(maxv-minv));
+        //! return vector back
+        return(vec - 0.5*(maxv+minv));
+    }
 }
 
 //==============================================================================

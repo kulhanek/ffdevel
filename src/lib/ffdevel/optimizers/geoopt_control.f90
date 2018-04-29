@@ -322,7 +322,17 @@ subroutine ffdev_geoopt_ctrl_files(fin)
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
 
     if(.not. prmfile_open_section(fin,'files')) then
-        call ffdev_utils_exit(DEV_OUT,1,'[files] section not found.')
+        if( len(OptTopName) .eq. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Topology (topology) is not specified!')
+        end if
+        write (DEV_OUT,10) trim(OptTopName)
+        if( len(OptCrdName) .eq. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Input coordinates (input) are required!')
+        end if        
+        write (DEV_OUT,20) trim(OptCrdName)      
+        write (DEV_OUT,35) trim(OptRstName)
+        write (DEV_OUT,45) trim(OptTrajName)
+        return
     end if
 
     ! topology file

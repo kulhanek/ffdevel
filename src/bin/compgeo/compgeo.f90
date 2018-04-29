@@ -380,7 +380,7 @@ subroutine compare_dihedrals()
         al = top%dihedrals(i)%al
         d1 = ffdev_geometry_get_dihedral(geo1%crd,ai,aj,ak,al)
         d2 = ffdev_geometry_get_dihedral(geo2%crd,ai,aj,ak,al)
-        diff = d2 - d1
+        diff = ffdev_geometry_get_dihedral_deviation(d2,d1)
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &
                             aj, top%atoms(aj)%name, top%atom_types(top%atoms(aj)%typeid)%name, &

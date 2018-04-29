@@ -68,11 +68,11 @@ public:
 
 class CDihedralType {
 public:
-    int         idx;
-    int         at1;
-    int         at2;
-    int         at3;
-    int         at4;
+    int                 idx;
+    int                 at1;
+    int                 at2;
+    int                 at3;
+    int                 at4;
     std::vector<bool>   defined;
     // cos series
     std::vector<double> v0;
@@ -81,13 +81,18 @@ public:
     std::vector<double> c;
     std::vector<double> p;
     std::vector<double> w2;
-    double      scee;
-    double      scnb;
-    bool        nb_processed;
+    double              scee;
+    double              scnb;
+    bool                nb_processed;
 public:
     CDihedralType(void);
-    void SetSeriesSize(int size);
-    int  GetSeriesSize(void);
+    void    SetSeriesSize(int size);
+    int     GetSeriesSize(void);
+    void    Cos2GRBF(int dih_samp_freq);
+    double  RMSECos2GRBF(int dih_samp_freq);
+    double  GetCOSValue(double x);
+    double  GetGRBFValue(double x);
+    double  GetDihDeviation(double value1, double value2);
 };
 
 //------------------------------------------------------------------------------
