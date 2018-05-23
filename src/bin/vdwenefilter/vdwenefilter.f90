@@ -32,9 +32,9 @@ program ffdev_enefilter_program
     character(len=MAX_PATH)     :: itrjname
     character(len=MAX_PATH)     :: otrjname
     logical                     :: rst
-    character(PRMFILE_MAX_PATH) :: string
+    character(PRMFILE_MAX_PATH) :: string, fmethod
     integer                     :: i, probe_size, snap, kept, removed
-    real(DEVDP)                 :: enetreshold, ene
+    real(DEVDP)                 :: enemin,enemax, ene
     type(TOPOLOGY)              :: top
     type(GEOMETRY)              :: geo
     type(XYZFILE_TYPE)          :: fin
@@ -44,9 +44,9 @@ program ffdev_enefilter_program
     call ffdev_utils_header('vdWEneFilter')
 
     ! test number of input arguments
-    if( command_argument_count() .ne. 5 ) then
+    if( command_argument_count() .lt. 5 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (five expected)!')
+        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least 5 expected)!')
     end if
 
     ! input data
@@ -58,16 +58,42 @@ program ffdev_enefilter_program
     read(string,*,end=200,err=200) probe_size
     write(DEV_OUT,110) probe_size
 
-    call get_command_argument(3, string)
-    read(string,*,end=210,err=210) enetreshold
-    write(DEV_OUT,120) enetreshold
-
-    call get_command_argument(4, itrjname)
+    call get_command_argument(3, itrjname)
     write(DEV_OUT,130) trim(itrjname)
 
-    call get_command_argument(5, otrjname)
+    call get_command_argument(4, otrjname)
     write(DEV_OUT,140) trim(otrjname)
 
+    call get_command_argument(5, fmethod)
+    write(DEV_OUT,141) trim(fmethod)  
+    
+    select case(trim(fmethod))
+        case('lj')   
+            if( command_argument_count() .ne. 6 ) then
+                call print_usage()
+                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the lj mode (six expected)!')
+            end if        
+            call get_command_argument(6, string)
+            read(string,*,end=210,err=210) enemax
+            write(DEV_OUT,146) enemax            
+        case('expr')
+            if( command_argument_count() .ne. 7 ) then
+                call print_usage()
+                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the expr mode (seven expected)!')
+            end if        
+            call get_command_argument(6, string)
+            read(string,*,end=210,err=210) enemin
+            write(DEV_OUT,142) enemin 
+            
+            call get_command_argument(7, string)
+            read(string,*,end=210,err=210) enemax
+            write(DEV_OUT,146) enemax          
+        case default
+            call print_usage()
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+    end select
+    
+    
     ! load topology
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Simplified Topology','=')
@@ -77,6 +103,16 @@ program ffdev_enefilter_program
 
     ! switch to probe mode and finalizae topology 
     call ffdev_topology_switch_to_probe_mode(top,probe_size,.false.)
+    
+    select case(trim(fmethod))
+        case('lj')   
+            call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)         
+        case('expr')
+            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)  
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+    end select    
+
     call ffdev_topology_finalize_setup(top)
     call ffdev_topology_info(top)
 
@@ -108,17 +144,35 @@ program ffdev_enefilter_program
         ! calculate energy
         call ffdev_energy_all(top,geo)
         ene = geo%total_ene
-        if( ene .le. enetreshold ) then
-            write(DEV_OUT,170) snap, ene, 'OK'
-            ! save snapshot
-            call ffdev_geometry_save_xyz_snapshot(geo,fout)
-            call write_xyz(DEV_OTRAJ,fout)
-            kept = kept + 1
-        else
-            write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
-            ! skip snapshot
-            removed = removed + 1
-        end if
+        select case(trim(fmethod))
+            case('lj')   
+                if( ene .le. enemax ) then
+                    write(DEV_OUT,170) snap, ene, 'OK'
+                    ! save snapshot
+                    call ffdev_geometry_save_xyz_snapshot(geo,fout)
+                    call write_xyz(DEV_OTRAJ,fout)
+                    kept = kept + 1
+                else
+                    write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
+                    ! skip snapshot
+                    removed = removed + 1
+                end if          
+            case('expr')
+                if( (ene .gt. enemin) .and. (ene .le. enemax) ) then
+                    write(DEV_OUT,170) snap, ene, 'OK'
+                    ! save snapshot
+                    call ffdev_geometry_save_xyz_snapshot(geo,fout)
+                    call write_xyz(DEV_OTRAJ,fout)
+                    kept = kept + 1
+                else
+                    write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
+                    ! skip snapshot
+                    removed = removed + 1
+                end if   
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+        end select
+
         snap = snap + 1
     end do
 
@@ -136,9 +190,12 @@ program ffdev_enefilter_program
 
 100 format('Simplified topology   : ',A)
 110 format('Probe size (natoms)   : ',I6)
-120 format('Energy treshold       : ',F10.6,' [kcal/mol]')
 130 format('Input XYZ trajectory  : ',A)
 140 format('Output XYZ trajectory : ',A)
+141 format('Filter mode           : ',A)
+142 format('Min energy treshold   : ',F10.6,' [kcal/mol]')
+146 format('Max energy treshold   : ',F10.6,' [kcal/mol]')
+
 150 format('# snapshot   energy   flag')
 160 format('# -------- ---------- ----')
 170 format(2X,I8,1X,F10.4,1X,A)
@@ -162,11 +219,14 @@ subroutine print_usage()
     write(DEV_OUT,*)
     write(DEV_OUT,'(/,a,/)') '=== [usage] ===================================================================='
     write(DEV_OUT,10)
+    write(DEV_OUT,20)    
     write(DEV_OUT,*)
 
     return
 
-10 format('    vdwenefilter <stop> <probesize> <enetreshold> <inxyz> <outxyz>')
+10 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> lj   <maxene>')
+20 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> expr <minene> <maxene>')
+
 
 end subroutine print_usage
 
