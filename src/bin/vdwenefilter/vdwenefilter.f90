@@ -76,10 +76,10 @@ program ffdev_enefilter_program
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemax
             write(DEV_OUT,146) enemax            
-        case('expr')
+        case('exp')
             if( command_argument_count() .ne. 7 ) then
                 call print_usage()
-                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the expr mode (seven expected)!')
+                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (seven expected)!')
             end if        
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemin
@@ -107,7 +107,7 @@ program ffdev_enefilter_program
     select case(trim(fmethod))
         case('lj')   
             call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)         
-        case('expr')
+        case('exp')
             call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)  
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
@@ -157,7 +157,7 @@ program ffdev_enefilter_program
                     ! skip snapshot
                     removed = removed + 1
                 end if          
-            case('expr')
+            case('exp')
                 if( (ene .gt. enemin) .and. (ene .le. enemax) ) then
                     write(DEV_OUT,170) snap, ene, 'OK'
                     ! save snapshot
@@ -225,7 +225,7 @@ subroutine print_usage()
     return
 
 10 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> lj   <maxene>')
-20 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> expr <minene> <maxene>')
+20 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> exp  <minene> <maxene>')
 
 
 end subroutine print_usage
