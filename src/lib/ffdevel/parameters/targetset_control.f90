@@ -412,7 +412,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
         write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
         write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
 
         write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)        

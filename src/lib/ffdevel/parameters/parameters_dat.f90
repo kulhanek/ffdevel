@@ -40,8 +40,11 @@ integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
 integer,parameter       :: REALM_VDW_A      = 16
 integer,parameter       :: REALM_VDW_B      = 17
-integer,parameter       :: REALM_VDW_C6     = 18
-integer,parameter       :: REALM_VDW_C8     = 19
+integer,parameter       :: REALM_VDW_G      = 18
+integer,parameter       :: REALM_VDW_C6     = 19
+integer,parameter       :: REALM_VDW_C8     = 20
+integer,parameter       :: REALM_VDW_C10    = 21
+integer,parameter       :: REALM_VDW_RC     = 22
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
 integer,parameter       :: REALM_LAST    = REALM_VDW_C8

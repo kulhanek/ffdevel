@@ -33,8 +33,9 @@ program ffdev_enefilter_program
     character(len=MAX_PATH)     :: otrjname
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string, fmethod
-    integer                     :: i, probe_size, snap, kept, removed
-    real(DEVDP)                 :: enemin,enemax, ene
+    integer                     :: i, probe_size, snap, kept, removed, nbins, nstrperbin, idx
+    real(DEVDP)                 :: enemin,enemax, ene, binsize
+    integer,allocatable         :: bins(:) 
     type(TOPOLOGY)              :: top
     type(GEOMETRY)              :: geo
     type(XYZFILE_TYPE)          :: fin
@@ -87,7 +88,23 @@ program ffdev_enefilter_program
             
             call get_command_argument(7, string)
             read(string,*,end=210,err=210) enemax
-            write(DEV_OUT,146) enemax          
+            write(DEV_OUT,146) enemax  
+        case('exp-bin')
+            if( command_argument_count() .ne. 8 ) then
+                call print_usage()
+                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (eight expected)!')
+            end if        
+            call get_command_argument(6, string)
+            read(string,*,end=210,err=210) binsize
+            write(DEV_OUT,147) binsize 
+            
+            call get_command_argument(7, string)
+            read(string,*,end=210,err=210) enemax
+            write(DEV_OUT,146) enemax  
+            
+            call get_command_argument(8, string)
+            read(string,*,end=210,err=210) nstrperbin
+            write(DEV_OUT,148) nstrperbin             
         case default
             call print_usage()
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
@@ -108,7 +125,12 @@ program ffdev_enefilter_program
         case('lj')   
             call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)         
         case('exp')
-            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)  
+            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)
+        case('exp-bin')
+            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)
+            nbins = enemax / binsize
+            allocate(bins(nbins))
+            bins(:) = 0
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
     end select    
@@ -168,7 +190,28 @@ program ffdev_enefilter_program
                     write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
                     ! skip snapshot
                     removed = removed + 1
-                end if   
+                end if  
+            case('exp-bin')
+                ! determine bin position
+                idx = floor(ene / binsize) + 1
+                if( (idx .ge. 1) .and. (idx .le. nbins) ) then
+                    bins(idx) = bins(idx) + 1
+                    if( bins(idx) .le. nstrperbin ) then
+                        write(DEV_OUT,170) snap, ene, 'OK'
+                        ! save snapshot
+                        call ffdev_geometry_save_xyz_snapshot(geo,fout)
+                        call write_xyz(DEV_OTRAJ,fout)
+                        kept = kept + 1
+                    else
+                        write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
+                        ! skip snapshot
+                        removed = removed + 1
+                    end if
+                else
+                    write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
+                    ! skip snapshot
+                    removed = removed + 1
+                end if
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
         end select
@@ -179,6 +222,27 @@ program ffdev_enefilter_program
     ! close all streams
     call close_xyz(DEV_TRAJ,fin)
     call close_xyz(DEV_OTRAJ,fout)
+    
+    
+    select case(trim(fmethod))
+        case('lj')   
+            ! nothing        
+        case('exp')
+            ! nothing 
+        case('exp-bin')
+            write(DEV_OUT,*)
+            write(DEV_OUT,'(A)') '# Histogram stat'
+            do i=1,nbins
+                if( bins(i) .ge. nstrperbin ) then
+                    write(DEV_OUT,'(F6.3,1X,I6,1X,A)') i*binsize - binsize*0.5d0,bins(i),'OK'
+                else
+                    write(DEV_OUT,'(F6.3,1X,I6,1X,A)') i*binsize - binsize*0.5d0,bins(i),' NOT SAMPLED'                
+                end if
+            end do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+    end select        
+    
 
     write(DEV_OUT,*)
     write(DEV_OUT,180) removed
@@ -195,6 +259,8 @@ program ffdev_enefilter_program
 141 format('Filter mode           : ',A)
 142 format('Min energy treshold   : ',F10.6,' [kcal/mol]')
 146 format('Max energy treshold   : ',F10.6,' [kcal/mol]')
+147 format('Bin size              : ',F10.6)
+148 format('Number of str per bin : ',I3)
 
 150 format('# snapshot   energy   flag')
 160 format('# -------- ---------- ----')
@@ -219,13 +285,15 @@ subroutine print_usage()
     write(DEV_OUT,*)
     write(DEV_OUT,'(/,a,/)') '=== [usage] ===================================================================='
     write(DEV_OUT,10)
-    write(DEV_OUT,20)    
+    write(DEV_OUT,20)
+    write(DEV_OUT,30)      
     write(DEV_OUT,*)
 
     return
 
-10 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> lj   <maxene>')
-20 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> exp  <minene> <maxene>')
+10 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> lj <maxene>')
+20 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> exp <minene> <maxene>')
+30 format('    vdwenefilter <stop> <probesize> <inxyz> <outxyz> exp-bin <binsize> <maxene> <nstrperbin>')
 
 
 end subroutine print_usage

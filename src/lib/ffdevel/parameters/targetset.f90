@@ -147,7 +147,8 @@ subroutine ffdev_parameters_reinit_nbparams()
     ! update parameter values
     do i=1,nparams
         select case(params(i)%realm)
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C6,REALM_VDW_C8)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_G, &
+                 REALM_VDW_C6,REALM_VDW_C8,REALM_VDW_C10,REALM_VDW_RC)
                 do j=1,nsets
                     if( params(i)%ids(j) .eq. 0 ) cycle
                     select case(params(i)%realm)
@@ -161,10 +162,16 @@ subroutine ffdev_parameters_reinit_nbparams()
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%A
                         case(REALM_VDW_B)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%B
+                        case(REALM_VDW_G)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%G                           
                         case(REALM_VDW_C6)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
                         case(REALM_VDW_C8)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C8
+                        case(REALM_VDW_C10)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C10
+                        case(REALM_VDW_RC)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%rc                            
                     end select
                 end do
         end select

@@ -119,12 +119,9 @@ end type ATOM_TYPE
 ! ------------------------------------------------------------------------------
 
 type NB_TYPE
-    integer             :: ti,tj            ! atom types
-    real(DEVDP)         :: eps, r0, alpha   ! vdW parameters
-    real(DEVDP)         :: A, B, C6, C8     ! alternative/complementary data
-    ! reverse indexes to parameters array - for analytical gradients
-    integer             :: pti_eps, pti_r0, pti_alpha
-    integer             :: pti_A, pti_B, pti_C6, pti_C8
+    integer             :: ti,tj                    ! atom types
+    real(DEVDP)         :: eps, r0, alpha           ! vdW parameters
+    real(DEVDP)         :: A, B, G, C6, C8, C10, rc ! alternative/complementary data
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -191,8 +188,10 @@ integer,parameter               :: NB_MODE_LJ       = 1   ! Lennard-Jones potent
 integer,parameter               :: NB_MODE_EXP6     = 2   ! Exp-6 potential (eps,r0,alpha)
 integer,parameter               :: NB_MODE_BP       = 3   ! Buckingham potential (A,B,C6)
 integer,parameter               :: NB_MODE_EXPONLY  = 4   ! Born-Mayer potential - Exp only (A,B)
-integer,parameter               :: NB_MODE_ADDMMD3  = 5   ! MMD3 add C6,C8
-integer,parameter               :: NB_MODE_MMD3     = 6   ! MMD3 (A,B,C6,C8)
+integer,parameter               :: NB_MODE_REXPR    = 5   ! a*r^g*expr(-b*r)
+integer,parameter               :: NB_MODE_EXPR2    = 6   ! a*expr(-b*r-g*r^2)
+integer,parameter               :: NB_MODE_ADDMMD3  = 7   ! MMD3 add C6,C8
+integer,parameter               :: NB_MODE_MMD3     = 8   ! MMD3 (A,B,C6,C8)
 
 integer,parameter               :: COMB_RULE_IN = 05  ! input data
 integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)

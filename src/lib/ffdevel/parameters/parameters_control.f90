@@ -523,23 +523,52 @@ subroutine change_realms(realm,enable,options,nchanged)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
                     case(NB_MODE_EXP6)
                         if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
                     case(NB_MODE_BP)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.                        
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.                        
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                        
                     case(NB_MODE_EXPONLY)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.                        
                         if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                         
+                    case(NB_MODE_REXPR)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                      
+                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
+                    case(NB_MODE_EXPR2)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                      
+                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                       
                     case(NB_MODE_MMD3)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
