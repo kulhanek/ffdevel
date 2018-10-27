@@ -1604,6 +1604,10 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 ! from ExpONLY ->
         case(NB_MODE_EXPONLY)
             select case(nb_mode)
+                case(NB_MODE_REXPR)
+                    nb_mode = NB_MODE_REXPR                
+                case(NB_MODE_EXPR2)
+                    nb_mode = NB_MODE_EXPR2  
                 case(NB_MODE_ADDMMD3)
                     do i=1,top%nnb_types
                         ! add C6 and C8 parameters
@@ -1616,10 +1620,11 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                             top%nb_types(i)%alpha = 0.0d0
                         end if
                     end do
+                    nb_mode = NB_MODE_MMD3
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Only EXPONLY->ADDD3BJ supported!')
             end select
-            nb_mode = NB_MODE_MMD3
+
 
 ! from Exp6 ->
         case(NB_MODE_EXP6)

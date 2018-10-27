@@ -1835,7 +1835,7 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_VDW_ALPHA)
                 tmpx(id) = 20.0d0
             case(REALM_VDW_A)
-                tmpx(id) = 1.0d6 
+                tmpx(id) = 1.0d7 
             case(REALM_VDW_B)
                 tmpx(id) = 10.0d0
             case(REALM_VDW_G)

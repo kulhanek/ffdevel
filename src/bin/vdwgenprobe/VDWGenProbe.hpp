@@ -25,6 +25,9 @@
 #include <set>
 #include <Point.hpp>
 #include <XYZStructure.hpp>
+#include <openbabel/mol.h>
+
+using namespace OpenBabel;
 
 //------------------------------------------------------------------------------
 
@@ -82,16 +85,18 @@ public:
 
 // section of private data -----------------------------------------------------
 private:
-    CVDWGenProbeOptions     Options;    // program options
-    CXYZStructure           Structure;  // input structure
-    std::vector<CProbe>     MSMSProbes;     // probes from MSMS surface
-    std::vector<bool>       SelectedAtoms;    // consider only these atoms
+    CVDWGenProbeOptions     Options;            // program options
+    CXYZStructure           Structure;          // input structure
+    std::vector<CProbe>     MSMSProbes;         // probes from MSMS surface
+    std::vector<bool>       SelectedAtoms;      // consider only these atoms
+    std::vector<double>     Weighths;           // point weights
     std::set<int>           SelectedAtomIds;
-    FILE*                   OutputFile; // output file
-    CXYZStructure           StructureWithProbe;  // output structure
-    CPoint                  Min,Max;    // min/max conners
+    FILE*                   OutputFile;         // output file
+    CXYZStructure           StructureWithProbe; // output structure
+    CPoint                  Min,Max;            // min/max conners
     std::vector<EFilter>    Filters;
     int                     NumOfProbes;
+    OBMol                   Mol;
 
 
     // output ------------------------------------
@@ -100,7 +105,7 @@ private:
 
     /// load/save structure
     bool LoadStructure(void);
-    bool SaveStructure(void);
+    bool SaveStructure(double w=1.0);
     bool LoadMSMSProbes(void);
 
     /// generators
@@ -112,7 +117,8 @@ private:
     bool GeneratorMSMSRandomPerAtomWithMinPreFilter(void);
     bool GeneratorMSMSRandomPerAll(void);
     bool GeneratorMSMSRandomPerAllWithMinPreFilter(void);
-    bool SphereMinRepulsion(void);
+    bool GeneratorSphereMinRepulsion(void);
+    bool GeneratorVSEPR(void);
 
     /// filters
     EFilterResult FilterProbe(const CPoint& probe);

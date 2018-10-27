@@ -108,7 +108,7 @@ subroutine ffdev_ffopt_set_default()
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.00001d0
     MaxG                = 0.00001d0
-    MinErrorChange      = 0.00001d0        ! negative number - this test is switched off by default
+    MinErrorChange      = 0.0000001d0        ! negative number - this test is switched off by default
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================

@@ -55,6 +55,7 @@ public:
     "  * sphere-min-repulsion - select those vertices on discretized spheres constructed around selected atoms\n"
     "                   that exhibit minimum repulsion\n"
     "                   spheres are constructed with radius ranging from <b>--min</b> to <b>--max</b> with <b>--spacing</b>"
+    "  * vsepr        - vertices are generated in the range <b>--min</b> to <b>--max</b> with <b>--spacing</b> following VSEPR rules"
     "\n"
     "<b>Supported filters:</b>\n"
     "  * none         - all probes are accepted\n"
@@ -173,7 +174,7 @@ public:
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 ProbeSymbol,                        /* option name */
-                "Ar",                          /* default value */
+                "Ne",                          /* default value */
                 false,                          /* is option mandatory */
                 'p',                           /* short option name */
                 "probe",                      /* long option name */
@@ -187,7 +188,7 @@ public:
                 's',                           /* short option name */
                 "selected",                      /* long option name */
                 "LIST",                           /* parametr name */
-                "comma separated list of atom indexes (counted from 1), or 'all', or 'symclasses' ")   /* option description */
+                "comma separated list of atom indexes (counted from 1), or 'all', or 'symclasses' or 'symclasses-redundant' ")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Append,                        /* option name */

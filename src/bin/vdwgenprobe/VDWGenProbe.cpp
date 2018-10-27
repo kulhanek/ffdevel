@@ -22,7 +22,6 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <set>
-#include <openbabel/mol.h>
 #include <openbabel/graphsym.h>
 #include <openbabel/obconversion.h>
 #include <boost/random/mersenne_twister.hpp>
@@ -35,7 +34,6 @@
 using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
-using namespace OpenBabel;
 
 MAIN_ENTRY(CVDWGenProbe);
 
@@ -209,7 +207,9 @@ bool CVDWGenProbe::Run(void)
     } else if( Options.GetOptGenerator() == "msms-random-per-all-with-min-prefilter" ){
         result = GeneratorMSMSRandomPerAllWithMinPreFilter();
     } else if( Options.GetOptGenerator() == "sphere-min-repulsion" ){
-        result = SphereMinRepulsion();
+        result = GeneratorSphereMinRepulsion();
+    } else if( Options.GetOptGenerator() == "vsepr" ){
+        result = GeneratorVSEPR();
     } else {
         vout << "<red>>>> ERROR: Unsupported generator: " << Options.GetOptGenerator() << "</red>" << endl;
         return(false);
@@ -287,11 +287,43 @@ bool CVDWGenProbe::LoadStructure(void)
 
 // generate selected atoms
     SelectedAtoms.resize(Structure.GetNumberOfAtoms());
+    Weighths.resize(Structure.GetNumberOfAtoms());
     for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
         SelectedAtoms[i] = false;
+        Weighths[i] = 0.0;
     }
 
     vout << "# Selected atoms                 = " << Options.GetOptSelectedAtoms() <<  endl;
+
+    // read structure as OBMol
+    ifstream sin;
+    sin.open(Options.GetArgStructureName());
+    if( !sin ) {
+        vout << "<red>>>> ERROR: Unable to load (as OBMol) the XYZ structure: " << Options.GetArgStructureName() << "</red>" << endl;
+        return(false);
+    }
+
+    OBConversion    conv(&sin, &cout);
+    OBFormat*       obFormat = conv.FormatFromExt(Options.GetArgStructureName());
+
+
+    if( obFormat == NULL ) {
+        vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
+        return(false);
+    }
+
+    if( ! conv.SetInFormat(obFormat) ) {
+        vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
+        return(false);
+    }
+
+    if( ! conv.Read(&Mol) ) {
+        vout << "<red>>>> ERROR: Unable to load obmol from the stream!</red>" << endl;
+        return(false);
+    }
+
+    Mol.ConnectTheDots();
+    Mol.PerceiveBondOrders();
 
     int sat = 0;
     // gen list of selected atoms
@@ -300,41 +332,13 @@ bool CVDWGenProbe::LoadStructure(void)
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
             SelectedAtoms[i] = true;
             SelectedAtomIds.insert(i);
+            Weighths[i] = 1.0;
         }
         sat = Structure.GetNumberOfAtoms();
-    } else if( Options.GetOptSelectedAtoms() == "symclasses" ){
-        // read structure as OBMol
-        ifstream sin;
-        sin.open(Options.GetArgStructureName());
-        if( !sin ) {
-            vout << "<red>>>> ERROR: Unable to load (as OBMol) the XYZ structure: " << Options.GetArgStructureName() << "</red>" << endl;
-            return(false);
-        }
-
-        OBConversion    conv(&sin, &cout);
-        OBFormat*       obFormat = conv.FormatFromExt(Options.GetArgStructureName());
-        OBMol           mol;
-
-        if( obFormat == NULL ) {
-            vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
-            return(false);
-        }
-
-        if( ! conv.SetInFormat(obFormat) ) {
-            vout << "<red>>>> ERROR: Unsupported input file format!</red>" << endl;
-            return(false);
-        }
-
-        if( ! conv.Read(&mol) ) {
-            vout << "<red>>>> ERROR: Unable to load obmol from the stream!</red>" << endl;
-            return(false);
-        }
-
-        mol.ConnectTheDots();
-        mol.PerceiveBondOrders();
+    } else if( (Options.GetOptSelectedAtoms() == "symclasses") || (Options.GetOptSelectedAtoms() == "symclasses-redundant") ){
 
         // generate symmetry classes
-        OBGraphSym  graph_sym(&mol);
+        OBGraphSym  graph_sym(&Mol);
         std::vector<unsigned int> symclasses;
         graph_sym.GetSymmetry(symclasses);
 
@@ -381,14 +385,76 @@ bool CVDWGenProbe::LoadStructure(void)
             if( da == -1 ){
                 ES_ERROR("da == -1");
             }
+
+            double  nst = 0;
+            for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
+                unsigned int asc = symclasses[i];
+                if( asc != ssc ) continue;
+                nst++;
+            }
+
             com_num++;
             com_sum = com_sum + Structure.GetPosition(da);
             com = com_sum * (1.0/com_num);
             SelectedAtomIds.insert(da);
+            SelectedAtoms[da] = true;
+            Weighths[da] = nst;
+
             if( sats != NULL ) sats << ",";
             sats << da+1;
             sat++;
             it++;
+        }
+
+        // extend selection
+        if( Options.GetOptSelectedAtoms() == "symclasses-redundant" ){
+            std::set<int>::iterator  it = SelectedAtomIds.begin();
+            std::set<int>::iterator  ie = SelectedAtomIds.end();
+
+            while( it != ie ){
+                int     atomid = *it;
+                int     asc = symclasses[atomid];
+                OBAtom* p_atom = Mol.GetAtom(atomid+1);
+                it++;
+
+                // only terminals
+                if( p_atom->GetValence() != 1 ) continue;
+
+                OBBondIterator bi;
+
+                // root atom
+                OBAtom* p_na = p_atom->BeginNbrAtom(bi);
+
+                // calc correction to weight
+                double ext = 1;
+                OBAtom* p_sa = p_na->BeginNbrAtom(bi);
+                while( p_sa != NULL ){
+                    if( p_sa != p_atom ){
+                        int da = p_sa->GetIdx()-1;
+                        if( symclasses[da] == asc ){
+                            ext++;
+                        }
+                    }
+                    p_sa = p_na->NextNbrAtom(bi);
+                }
+
+                Weighths[atomid] =  Weighths[atomid] / ext;
+
+                // again
+                p_sa = p_na->BeginNbrAtom(bi);
+                while( p_sa != NULL ){
+                    if( p_sa != p_atom ){
+                        int da = p_sa->GetIdx()-1;
+                        if( symclasses[da] == asc ){
+                            SelectedAtomIds.insert(da);
+                            SelectedAtoms[da] = true;
+                            Weighths[da] = Weighths[atomid];
+                        }
+                    }
+                    p_sa = p_na->NextNbrAtom(bi);
+                }
+            }
+
         }
 
         vout << "# Selected atoms                 = " << sats <<  endl;
@@ -405,10 +471,13 @@ bool CVDWGenProbe::LoadStructure(void)
                 if( SelectedAtoms[indx] == false ) sat++;
                 SelectedAtoms[indx] = true;
                 SelectedAtomIds.insert(indx);
+                Weighths[i] = 1.0;
             }
         }
     }
     vout << "# Number of selected atoms       = " << sat <<  endl;
+
+
 
     return(true);
 }
@@ -464,9 +533,15 @@ bool CVDWGenProbe::LoadMSMSProbes(void)
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::SaveStructure(void)
+bool CVDWGenProbe::SaveStructure(double w)
 {
     NumOfProbes++;
+
+    CSmallString comment;
+    CSmallString sw;
+    sw.DoubleToStr(w,"%10.6f");
+    comment << "W= " << sw;
+    StructureWithProbe.SetComment(comment);
 
     if( StructureWithProbe.Save(OutputFile) == false ){
         vout << "<red>>>> ERROR: Unable to save a structure to the output file: " << Options.GetArgOutputName() << "</red>" << endl;
@@ -735,7 +810,7 @@ bool CVDWGenProbe::GeneratorMSMSRandomPerAll(void)
 
 //------------------------------------------------------------------------------
 
-bool CVDWGenProbe::SphereMinRepulsion(void)
+bool CVDWGenProbe::GeneratorSphereMinRepulsion(void)
 {
     std::set<int>::iterator  it = SelectedAtomIds.begin();
     std::set<int>::iterator  ie = SelectedAtomIds.end();
@@ -785,6 +860,122 @@ bool CVDWGenProbe::SphereMinRepulsion(void)
         }
 
         it++;
+    }
+
+    return(true);
+
+}
+
+//------------------------------------------------------------------------------
+
+bool CVDWGenProbe::GeneratorVSEPR(void)
+{
+    std::set<int>::iterator  it = SelectedAtomIds.begin();
+    std::set<int>::iterator  ie = SelectedAtomIds.end();
+
+    while( it != ie ){
+        int     atomid = *it;
+        it++;
+        OBAtom* p_atom = Mol.GetAtom(atomid+1);
+        int     valence = p_atom->GetValence();
+        CPoint  origin = Structure.GetPosition(atomid);
+        CPoint  dir;
+        bool    bothsides = false;
+        switch(valence){
+            case 1:{
+                OBBondIterator bi;
+                OBAtom* p_na = p_atom->BeginNbrAtom(bi);
+                if( p_na == NULL ) continue;
+                dir = origin - Structure.GetPosition(p_na->GetIdx()-1);
+                dir.Normalize();
+            }
+            break;
+            case 2:{
+                OBBondIterator bi;
+                OBAtom* p_na = p_atom->BeginNbrAtom(bi);
+                CPoint first = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                first.Normalize();
+                p_na = p_atom->NextNbrAtom(bi);
+                CPoint second = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                second.Normalize();
+
+                if( Angle(first,second) > 160.0*M_PI/180.0 ){
+                    // linear
+                    ES_ERROR("linear AB2 - not implemented");
+                } else {
+                    // like H2O
+                    dir = - first - second;
+                    dir.Normalize();
+                    bothsides = true;
+                }
+            }
+            break;
+            case 3:{
+                CPoint sum;
+                OBBondIterator bi;
+                OBAtom* p_na = p_atom->BeginNbrAtom(bi);
+                while( p_na != NULL ){
+                    CPoint diff = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                    diff.Normalize();
+                    sum += diff;
+                    p_na = p_atom->NextNbrAtom(bi);
+                }
+                if( Size(sum) > 0.5 ){
+                    // like NH3
+                    dir = -sum;
+                    dir.Normalize();
+                } else {
+                    // planar
+                    OBAtom* p_na = p_atom->BeginNbrAtom(bi);
+                    CPoint first = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                    first.Normalize();
+                    p_na = p_atom->NextNbrAtom(bi);
+                    CPoint second = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                    second.Normalize();
+                    p_na = p_atom->NextNbrAtom(bi);
+                    CPoint third = Structure.GetPosition(p_na->GetIdx()-1) - origin;
+                    third.Normalize();
+
+                    CPoint v1 = CrossDot(first,second);
+                    CPoint v2 = CrossDot(first,third);
+                    CPoint v3 = CrossDot(second,third);
+                    v2 = v2*VectDot(v1,v2);
+                    v3 = v3*VectDot(v1,v3);
+
+                    dir = v1 + v2 + v3;
+                    dir.Normalize();
+                    bothsides = true;
+                }
+            }
+            break;
+            default:
+                ES_WARNING("atom ignored");
+                continue;
+        }
+
+        for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+            CPoint probe;
+            probe = origin + dir*r;
+            double w = Weighths[atomid];
+            if( bothsides ) w /= 2.0;
+
+            EFilterResult result = FilterProbe(probe);
+            if( result == EFR_STOP ) return(false);
+
+            if( result == EFR_OK ){
+                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                if( SaveStructure(w) == false ) return(false);
+            }
+            if( bothsides ){
+                probe = origin - dir*r;
+                EFilterResult result = FilterProbe(probe);
+                if( result == EFR_STOP ) return(false);
+                if( result == EFR_OK ){
+                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                    if( SaveStructure(w) == false ) return(false);
+                }
+            }
+        }
     }
 
     return(true);

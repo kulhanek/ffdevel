@@ -37,7 +37,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: allow_nopoints
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field
+    character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
     integer                     :: i,j,k,l,alloc_status,minj,probesize,nb_mode,comb_rules
     logical                     :: data_avail,rst,shift2zero
     real(DEVDP)                 :: minenergy,weight
@@ -164,6 +164,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,80) prmfile_onoff(sets(i)%savegeo)
         else
             write(DEV_OUT,85) prmfile_onoff(sets(i)%savegeo)
+        end if  
+        
+        wmode = 'auto'
+        if( prmfile_get_string_by_key(fin,'wmode', wmode)) then
+            write(DEV_OUT,90) trim(wmode)
+        else
+            write(DEV_OUT,95) trim(wmode)
         end if         
         
         sets(i)%nrefs = 0 
@@ -306,6 +313,18 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             else
                 call ffdev_geometry_info_point_ext(sets(i)%geo(j))
             end if
+            
+            ! overwrite weights
+            select case(trim(wmode))
+                case('auto')
+                    ! nothing to do
+                case('ire2')
+                    if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
+                        sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
+                    end if
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+            end select
 
             call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
 
@@ -383,7 +402,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  
  80 format('Save geometry (savegeo)                 = ',a12)
  85 format('Save geometry (savegeo)                 = ',a12,'                  (default)')   
-
+ 
+ 90 format('Point weights mode (wmode)              = ',a12)
+ 95 format('Point weights mode (wmode)              = ',a12,'                  (default)') 
+ 
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 
