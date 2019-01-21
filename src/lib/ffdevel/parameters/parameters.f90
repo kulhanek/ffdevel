@@ -61,7 +61,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 7*sets(i)%top%nnb_types       ! NB
+        maxnparams = maxnparams + 10*sets(i)%top%nnb_types       ! NB
     end do
 
     write(DEV_OUT,*)
@@ -1851,275 +1851,6 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
 end subroutine ffdev_params_get_upper_bounds
 
 ! ==============================================================================
-! subroutine ffdev_parameters_error
-! ==============================================================================
-
-subroutine ffdev_parameters_error(prms,error,grads)
-
-    use ffdev_parameters_dat
-
-    implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    real(DEVDP)         :: grads(:)
-    ! --------------------------------------------------------------------------
-    real(DEVDP),allocatable :: tmp_prms(:)
-    integer                 :: i
-    ! --------------------------------------------------------------------------
-
-    error%total = 0.0d0
-    error%energy = 0.0d0
-    error%grad = 0.0d0
-    error%hess = 0.0d0
-
-    grads(:) = 0.0d0
-
-    call ffdev_parameters_error_num(prms,error,grads)
-
-end subroutine ffdev_parameters_error
-
-! ==============================================================================
-! subroutine ffdev_parameters_error_num
-! ==============================================================================
-
-subroutine ffdev_parameters_error_num(prms,error,grads)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-
-    implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    real(DEVDP)         :: grads(:)
-    ! --------------------------------------------------------------------------
-    real(DEVDP),allocatable :: tmp_prms(:)
-    real(DEVDP)             :: d
-    type(FFERROR_TYPE)      :: ene1,ene2
-    integer                 :: i
-    ! --------------------------------------------------------------------------
-
-    d = 0.5d-6  ! differentiation parameter
-
-    ! calculate base energy
-    call ffdev_parameters_error_only(prms,error)
-
-    ! write(*,*) 'total= ',error%total
-
-    ! allocate temporary geometry object
-    allocate( tmp_prms(nactparms) )
-
-    tmp_prms(:) = prms(:)
-
-    ! gradient by numerical differentiation
-    do i=1,nactparms
-        ! left
-        tmp_prms(i) = prms(i) + d
-        call ffdev_parameters_error_only(tmp_prms,ene1)
-
-        ! right
-        tmp_prms(i) = prms(i) - d
-        call ffdev_parameters_error_only(tmp_prms,ene2)
-
-        ! write(*,*) ene1%total,ene2%total
-
-        ! gradient
-        grads(i) = 0.5d0*(ene1%total-ene2%total)/d
-
-        ! move back
-        tmp_prms(i) = prms(i)
-    end do
-
-    ! release temporary geometry object
-    deallocate(tmp_prms)
-
-end subroutine ffdev_parameters_error_num
-
-! ==============================================================================
-! subroutine ffdev_parameters_error_only
-! ==============================================================================
-
-subroutine ffdev_parameters_error_only(prms,error)
-
-    use ffdev_parameters_dat
-    use ffdev_targetset
-    use ffdev_targetset_dat
-    use ffdev_energy
-    use ffdev_gradient
-    use ffdev_hessian
-    use ffdev_utils   
-    use ffdev_geometry
-
-    implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    ! --------------------------------------------
-    integer             :: i,j,q,w,e,r,nene,ngrd,nhess,nbond,nangle,ntors,ai,aj,ak,al
-    real(DEVDP)         :: err,seterrene,seterrgrd,seterrhess,seterrbond,seterrangle,seterrtors,seterrnbdist
-    real(DEVDP)         :: d0,dt,sw,swsum    
-    ! --------------------------------------------------------------------------
-
-    error%total = 0.0d0
-    error%energy = 0.0d0
-    error%grad = 0.0d0
-    error%hess = 0.0d0
-    error%bond = 0.0d0
-    error%angle = 0.0d0
-    error%tors = 0.0d0
-    error%nbdist = 0.0d0
-
-    ! scatter parameters
-    call ffdev_parameters_scatter(prms)
-    call ffdev_parameters_to_tops()
-
-
-    call ffdev_targetset_calc_all
-
-    ! calculate error
-    seterrene = 0.0
-    seterrgrd = 0.0
-    seterrhess = 0.0
-    seterrbond = 0.0
-    seterrangle = 0.0
-    seterrtors = 0.0
-    seterrnbdist = 0.0 
-    nene = 0
-    ngrd = 0
-    nhess = 0
-    nbond = 0
-    nangle = 0
-    ntors = 0
-    swsum = 0.0
-
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_hess_loaded .and. EnableHessianError ) then
-                do q=1,sets(i)%geo(j)%natoms
-                    do w=1,3
-                        do e=1,sets(i)%geo(j)%natoms
-                            do r=1,3
-                                nhess = nhess + 1
-                                err = sets(i)%geo(j)%hess(r,e,w,q) - sets(i)%geo(j)%trg_hess(r,e,w,q)
-                                seterrhess = seterrhess + sets(i)%geo(j)%weight * err**2
-                            end do
-                        end do
-                    end do
-                end do
-
-            end if
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_grd_loaded .and. EnableGradientError ) then
-                do q=1,sets(i)%geo(j)%natoms
-                    do w=1,3
-                        ngrd = ngrd + 1
-                        err = sets(i)%geo(j)%grd(w,q) - sets(i)%geo(j)%trg_grd(w,q)
-                        seterrgrd = seterrgrd + sets(i)%geo(j)%weight * err**2
-                    end do
-                end do
-            end if
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_ene_loaded .and. EnableEnergyError ) then
-                nene = nene + 1
-                err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
-                seterrene = seterrene + sets(i)%geo(j)%weight * err**2
-            end if
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableBondError) then
-                do q=1,sets(i)%top%nbonds
-                    ai = sets(i)%top%bonds(q)%ai
-                    aj = sets(i)%top%bonds(q)%aj
-                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
-                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    nbond = nbond + 1
-                    err = d0 - dt
-                    seterrbond = seterrbond + sets(i)%geo(j)%weight * err**2
-                end do
-            end if
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableAngleError) then
-                do q=1,sets(i)%top%nangles
-                    ai = sets(i)%top%angles(q)%ai
-                    aj = sets(i)%top%angles(q)%aj
-                    ak = sets(i)%top%angles(q)%ak
-                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak)                 
-                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak)
-                    nangle = nangle + 1
-                    err = d0 - dt
-                    seterrangle = seterrangle + sets(i)%geo(j)%weight * err**2
-                end do
-            end if 
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableTorsionError) then
-                do q=1,sets(i)%top%ndihedrals
-                    ai = sets(i)%top%dihedrals(q)%ai
-                    aj = sets(i)%top%dihedrals(q)%aj
-                    ak = sets(i)%top%dihedrals(q)%ak
-                    al = sets(i)%top%dihedrals(q)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)                 
-                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
-                    ntors = ntors + 1
-                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)
-                    seterrtors = seterrtors + sets(i)%geo(j)%weight * err**2
-                end do
-            end if 
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized .and. EnableNBDistanceError .and. &
-                sets(i)%top%nfragments .gt. 1) then
-                do q=1,sets(i)%top%nb_size
-                    ai = sets(i)%top%nb_list(q)%ai
-                    aj = sets(i)%top%nb_list(q)%aj
-
-                    if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
-                    
-                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)                 
-                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    err = d0 - dt
-                    
-                    ! calculate switch function
-                    sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
-                    swsum = swsum + sw
-                    err = err * sw
-                    seterrnbdist = seterrnbdist + sets(i)%geo(j)%weight * err**2
-                end do
-            end if             
-        end do
-    end do
-
-    ! energy
-    if( nene .gt. 0 ) then
-        error%energy = sqrt(seterrene/real(nene))
-    end if
-    if( ngrd .gt. 0 ) then
-        error%grad = sqrt(seterrgrd/real(ngrd))
-    end if
-    if( nhess .gt. 0 ) then
-        error%hess = sqrt(seterrhess/real(nhess))
-    end if
-    ! geometry
-    if( nbond .gt. 0 ) then
-        error%bond = sqrt(seterrbond/real(nbond))
-    end if
-    if( nangle .gt. 0 ) then
-        error%angle = sqrt(seterrangle/real(nangle))
-    end if 
-    if( ntors .gt. 0 ) then
-        error%tors = sqrt(seterrtors/real(ntors))
-    end if
-    if( swsum .gt. 0 ) then
-        error%nbdist = sqrt(seterrnbdist/swsum)
-    end if       
-
-    error%total = EnergyErrorWeight * error%energy &
-                + GradientErrorWeight * error%grad &
-                + HessianErrorWeight * error%hess &
-                + BondErrorWeight * error%bond &
-                + AngleErrorWeight * error%angle &
-                + TorsionErrorWeight * error%tors &
-                + NBDistanceErrorWeight * error%nbdist                 
-
-end subroutine ffdev_parameters_error_only
-
-! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set
 ! ==============================================================================
 
@@ -2278,6 +2009,115 @@ subroutine ffdev_parameters_angle_a0_init(tid,mode)
  80 format('RMSF                           ',F9.3)
 
 end subroutine ffdev_parameters_angle_a0_init
+
+! ==============================================================================
+! subroutine ffdev_parameters_error
+! ==============================================================================
+
+subroutine ffdev_parameters_error(prms,error,grads)
+
+    use ffdev_parameters_dat
+    use ffdev_errors_dat
+
+    implicit none
+    real(DEVDP)         :: prms(:)
+    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: grads(:)
+    ! --------------------------------------------------------------------------
+    real(DEVDP),allocatable :: tmp_prms(:)
+    integer                 :: i
+    ! --------------------------------------------------------------------------
+
+    error%total = 0.0d0
+    grads(:) = 0.0d0
+
+    call ffdev_parameters_error_num(prms,error,grads)
+
+end subroutine ffdev_parameters_error
+
+! ==============================================================================
+! subroutine ffdev_parameters_error_num
+! ==============================================================================
+
+subroutine ffdev_parameters_error_num(prms,error,grads)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+    use ffdev_errors_dat
+
+    implicit none
+    real(DEVDP)         :: prms(:)
+    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: grads(:)
+    ! --------------------------------------------------------------------------
+    real(DEVDP),allocatable :: tmp_prms(:)
+    real(DEVDP)             :: d
+    type(FFERROR_TYPE)      :: ene1,ene2
+    integer                 :: i
+    ! --------------------------------------------------------------------------
+
+    d = 0.5d-6  ! differentiation parameter
+
+    ! calculate base energy
+    call ffdev_parameters_error_only(prms,error)
+
+    ! write(*,*) 'total= ',error%total
+
+    ! allocate temporary geometry object
+    allocate( tmp_prms(nactparms) )
+
+    tmp_prms(:) = prms(:)
+
+    ! gradient by numerical differentiation
+    do i=1,nactparms
+        ! left
+        tmp_prms(i) = prms(i) + d
+        call ffdev_parameters_error_only(tmp_prms,ene1)
+
+        ! right
+        tmp_prms(i) = prms(i) - d
+        call ffdev_parameters_error_only(tmp_prms,ene2)
+
+        ! write(*,*) ene1%total,ene2%total
+
+        ! gradient
+        grads(i) = 0.5d0*(ene1%total-ene2%total)/d
+
+        ! move back
+        tmp_prms(i) = prms(i)
+    end do
+
+    ! release temporary geometry object
+    deallocate(tmp_prms)
+
+end subroutine ffdev_parameters_error_num
+
+! ==============================================================================
+! subroutine ffdev_parameters_error_only
+! ==============================================================================
+
+subroutine ffdev_parameters_error_only(prms,error)
+
+    use ffdev_errors_dat
+    use ffdev_errors
+    use ffdev_targetset
+
+    implicit none
+    real(DEVDP)         :: prms(:)
+    type(FFERROR_TYPE)  :: error
+    ! --------------------------------------------------------------------------
+
+    ! scatter parameters
+    call ffdev_parameters_scatter(prms)
+    call ffdev_parameters_to_tops()
+
+    ! optimize geometry if requested and then calculate energy, and optionaly gradients and hessians
+    call ffdev_targetset_calc_all
+
+    ! calculate error
+    call ffdev_errors_error_only(error)
+
+end subroutine ffdev_parameters_error_only
 
 ! ------------------------------------------------------------------------------
 

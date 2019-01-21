@@ -437,8 +437,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
 
         write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)        
-        write(DEV_OUT,65) NBDistanceSWPosition
-        write(DEV_OUT,75) NBDistanceSWAlpha 
         return
     end if
     
@@ -469,17 +467,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     else
         write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
     end if    
-    if( prmfile_get_real8_by_key(fin,'swr0', NBDistanceSWPosition)) then
-        write(DEV_OUT,60) NBDistanceSWPosition
-    else
-        write(DEV_OUT,65) NBDistanceSWPosition
-    end if   
-    
-    if( prmfile_get_real8_by_key(fin,'swa', NBDistanceSWAlpha)) then
-        write(DEV_OUT,60) NBDistanceSWAlpha
-    else
-        write(DEV_OUT,65) NBDistanceSWAlpha
-    end if       
+
       
  10 format('=== [setup] ====================================================================')
 
@@ -494,12 +482,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 
  50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
  55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)') 
- 
- 60  format ('NB distance switch r0 (swr0)           = ',f12.6)
- 65  format ('NB distance switch r0 (swr0)           = ',f12.6,'                  (default)') 
- 
- 70  format ('NB distance switch alpha (swa)         = ',f12.6)
- 75  format ('NB distance switch alpha (swa)         = ',f12.6,'                  (default)')  
  
  80  format ('Save geometry (savegeo)                = ',a12)
  85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')  

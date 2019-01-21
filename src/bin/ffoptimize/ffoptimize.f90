@@ -137,6 +137,11 @@ program ffdev_optimize_program
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
         end if
 
+    ! fferror -------------------------------------
+        if( string .eq. 'FFERROR' ) then
+            call execute_fferror(fin,.false.)
+        end if
+
     ! manipff -------------------------------------
         if( string .eq. 'FFMANIP' ) then
             call execute_ffmanip(fin,.false.)
@@ -235,7 +240,6 @@ subroutine execute_program(grpin)
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
     call ffdev_parameters_ctrl_realms(grpin)
-    call ffdev_parameters_ctrl_error(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)
 
     ! print final parameter list
@@ -268,7 +272,6 @@ subroutine execute_program_fake(grpin)
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
     call ffdev_parameters_ctrl_realms(grpin)
-    call ffdev_parameters_ctrl_error(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)
 
     return
@@ -303,6 +306,26 @@ subroutine execute_ffmanip(grpin,noexec)
     return
 
 end subroutine execute_ffmanip
+
+!===============================================================================
+! subroutine:  execute_fferror
+!===============================================================================
+
+subroutine execute_fferror(grpin,noexec)
+
+    use ffdev_errors_control
+
+    implicit none
+    type(PRMFILE_TYPE)  :: grpin
+    logical             :: noexec
+    ! --------------------------------------------------------------------------
+
+    ! load and execute error setup
+    call ffdev_errors_ctrl(grpin)
+
+    return
+
+end subroutine execute_fferror
 
 !===============================================================================
 

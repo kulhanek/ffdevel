@@ -25,18 +25,18 @@ use ffdev_topology
 
 ! this training set associated with the topology
 type TARGETSET
-    type(TOPOLOGY)          :: top          ! set topology
-    character(len=255)      :: final_stop   ! final name of topology
-    integer                 :: ngeos        ! number of training points in the set
-    type(GEOMETRY),pointer  :: geo(:)       ! training data
-    real(DEVDP)             :: offset       ! energy offset
-    integer                 :: mineneid     ! geometry with minimum of energy
-    logical                 :: optgeo       ! optimize geometry
-    logical                 :: keepoptgeo   ! keep optimized geometry
-    logical                 :: savegeo      ! save optimized geometry
-    character(len=255)      :: name         ! target name 
-    integer                 :: nrefs        ! number of references
-    integer,pointer         :: refs(:)      ! references
+    type(TOPOLOGY)              :: top          ! set topology
+    character(len=MAX_PATH)     :: final_stop   ! final name of topology
+    integer                     :: ngeos        ! number of training points in the set
+    type(GEOMETRY),pointer      :: geo(:)       ! training data
+    real(DEVDP)                 :: offset       ! energy offset
+    integer                     :: mineneid     ! geometry with minimum of energy
+    logical                     :: optgeo       ! optimize geometry
+    logical                     :: keepoptgeo   ! keep optimized geometry
+    logical                     :: savegeo      ! save optimized geometry
+    character(len=MAX_PATH)     :: name         ! target name
+    integer                     :: nrefs        ! number of references
+    integer,pointer             :: refs(:)      ! references
 end type TARGETSET
 
 integer                     :: nsets    ! number of sets
@@ -51,7 +51,5 @@ logical                 :: KeepOptimizedGeometry        = .true.    ! keep geome
 logical                 :: SaveGeometry                 = .false.   
 
 logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
-real(DEVDP)             :: NBDistanceSWPosition         = 4.0       ! switch function parameters
-real(DEVDP)             :: NBDistanceSWAlpha            = 1.0
 
 end module ffdev_targetset_dat

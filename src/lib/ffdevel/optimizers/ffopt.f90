@@ -190,6 +190,7 @@ subroutine opt_steepest_descent()
 
     use ffdev_ffopt_dat
     use ffdev_utils
+    use ffdev_errors_dat
     use ffdev_parameters_dat
     use ffdev_parameters
 
@@ -303,8 +304,9 @@ end subroutine opt_steepest_descent
 subroutine opt_lbfgs
 
     use ffdev_ffopt_dat
-    use ffdev_parameters_dat
     use ffdev_utils
+    use ffdev_errors_dat
+    use ffdev_parameters_dat
     use ffdev_parameters
 
     implicit none
@@ -410,8 +412,9 @@ end subroutine opt_lbfgs
 subroutine opt_nlopt
 
     use ffdev_ffopt_dat
-    use ffdev_parameters_dat
     use ffdev_utils
+    use ffdev_errors_dat
+    use ffdev_parameters_dat
     use ffdev_parameters
 
     implicit none
@@ -506,6 +509,7 @@ end subroutine opt_nlopt
 subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
 
     use ffdev_ffopt_dat
+    use ffdev_errors_dat
     use ffdev_parameters_dat
     use ffdev_parameters
 
@@ -551,7 +555,7 @@ subroutine write_header()
     use ffdev_ffopt_dat
     use ffdev_topology
     use ffdev_geometry
-    use ffdev_parameters_dat
+    use ffdev_errors
 
     implicit none
     integer     :: major, minor, bugfix
@@ -567,57 +571,17 @@ subroutine write_header()
             write(DEV_OUT,17) major, minor, bugfix
     end select
 
-    write(DEV_OUT,20,ADVANCE='NO')
-    if( EnableEnergyError ) then
-        write(DEV_OUT,30,ADVANCE='NO')
-    end if
-    if( EnableGradientError ) then
-        write(DEV_OUT,31,ADVANCE='NO')
-    end if
-    if( EnableHessianError ) then
-        write(DEV_OUT,32,ADVANCE='NO')
-    end if 
-    if( EnableBondError ) then
-        write(DEV_OUT,33,ADVANCE='NO')
-    end if 
-    if( EnableAngleError ) then
-        write(DEV_OUT,34,ADVANCE='NO')
-    end if
-    if( EnableTorsionError ) then
-        write(DEV_OUT,35,ADVANCE='NO')
-    end if 
-    if( EnableNBDistanceError ) then
-        write(DEV_OUT,36,ADVANCE='NO')
-    end if     
+    call ffdev_errors_ffopt_header_I
+
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,60)
         case(MINIMIZATION_NLOPT)
             write(DEV_OUT,*) 
-    end select    
-    
-    write(DEV_OUT,25,ADVANCE='NO')
-    if( EnableEnergyError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if
-    if( EnableGradientError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if
-    if( EnableHessianError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if   
-    if( EnableBondError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if     
-    if( EnableAngleError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if   
-    if( EnableTorsionError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if 
-    if( EnableNBDistanceError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if    
+    end select
+
+    call ffdev_errors_ffopt_header_II
+
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,65)
@@ -629,21 +593,11 @@ subroutine write_header()
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
 
- 20 format('# STEP    Error     ')
- 25 format('#----- ------------ ')
- 
- 30 format('  E          ')
- 31 format('  Grad       ')
- 32 format('  Hess       ')
- 33 format('  Bond [A]   ') 
- 34 format('  Angle[rad] ')
- 35 format('  Tors [rad] ') 
- 36 format('  d(NBs) [A] ')   
-
- 50 format('------------ ')
+ 20 format('# STEP    Error    ')
+ 25 format('#----- ------------')
   
- 60 format('   RMSG         maxG     ') 
- 65 format('------------ ------------')
+ 60 format('    RMSG         maxG     ')
+ 65 format(' ------------ ------------')
 
 end subroutine write_header
 
@@ -654,7 +608,8 @@ end subroutine write_header
 subroutine write_results(istep,error,rmsg,maxgrad,done)
 
     use ffdev_ffopt_dat
-    use ffdev_parameters_dat
+    use ffdev_errors_dat
+    use ffdev_errors
 
     implicit none
     integer             :: istep
@@ -667,27 +622,9 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
         write(DEV_OUT,10,ADVANCE='NO') istep, error%total
-        if( EnableEnergyError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%energy
-        end if
-        if( EnableGradientError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%grad
-        end if
-        if( EnableHessianError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%hess
-        end if 
-        if( EnableBondError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%bond
-        end if 
-        if( EnableAngleError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%angle
-        end if 
-        if( EnableTorsionError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%tors
-        end if
-        if( EnableNBDistanceError ) then
-            write(DEV_OUT,15,ADVANCE='NO') error%nbdist
-        end if 
+
+        call ffdev_errors_ffopt_results(error)
+
         select case(OptimizationMethod)
             case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
                 write(DEV_OUT,20) rmsg,maxgrad
@@ -697,9 +634,8 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
         flush(DEV_OUT)
     end if
 
- 10 format(I6,1X,E12.5,1X)
- 15 format(E12.5,1X)
- 20 format(E12.5,1X,E12.5)
+ 10 format(I6,1X,E12.5)
+ 20 format(1X,E12.5,1X,E12.5)
 
 end subroutine write_results
 

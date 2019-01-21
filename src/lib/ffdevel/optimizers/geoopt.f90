@@ -120,7 +120,7 @@ subroutine opt_steepest_descent(fout,top,geo)
     type(GEOMETRY)          :: geo
     ! --------------------------------------------
     integer                 :: istep,maxatom,alloc_status
-    real(DEVDP)             :: rmsg, maxgrad, lastenergy, stepsize
+    real(DEVDP)             :: rmsg, maxgrad, lastenergy, stepsize, totene
     real(DEVDP),allocatable :: tmp_xg1(:,:),tmp_xg2(:,:)
     ! --------------------------------------------------------------------------
 
@@ -142,12 +142,17 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
+        ! cvs penalty
+        call ffdev_geometry_get_cvs_penalty(geo)
+
+        totene = geo%total_ene + geo%cvs_energy
+
         !===============================================================================
         ! check all criteria
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
-        if( istep .ne. 1 .and. abs(geo%total_ene - lastenergy) .le. MinEnergyChange ) then
-            write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(geo%total_ene - lastenergy)
+        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange ) then
+            write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
             write(fout,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
             write(fout,'(a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
             exit
@@ -158,7 +163,7 @@ subroutine opt_steepest_descent(fout,top,geo)
             write(fout,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
             write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
             write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(fout,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
+            write(fout,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
             write(fout,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
             exit
         end if
@@ -173,17 +178,17 @@ subroutine opt_steepest_descent(fout,top,geo)
         !===============================================================================
         ! correct step size and do steepest-descent minimization
 
-        if( AdaptiveStep .and. istep .ne. 1 .and. geo%total_ene .lt. lastenergy ) then
+        if( AdaptiveStep .and. istep .ne. 1 .and. totene .lt. lastenergy ) then
             stepsize = stepsize * AcceptRatio
             if( stepsize .gt. MaximalStepSize ) then
                 stepsize = MaximalStepSize
             end if
             tmp_xg1(:,:)    = geo%crd(:,:)
             tmp_xg2(:,:)    = geo%grd(:,:)
-            lastenergy      = geo%total_ene
+            lastenergy      = totene
             geo%crd(:,:)       = geo%crd(:,:) - geo%grd(:,:)*stepsize/sqrt(rmsg)
             !write(DEV_OUT,'(/,a,I10,a)') '>>> INFO: Minimization step ',istep,' was accepted!'
-        else if ( adaptivestep .and. istep .ne. 1 .and. geo%total_ene .ge. lastenergy ) then
+        else if ( adaptivestep .and. istep .ne. 1 .and. totene .ge. lastenergy ) then
             ! go back and try smaller step
             stepsize = stepsize * RejectRatio
             geo%crd(:,:)       = tmp_xg1(:,:)
@@ -195,7 +200,7 @@ subroutine opt_steepest_descent(fout,top,geo)
             ! first step
             tmp_xg1(:,:)    = geo%crd(:,:)
             tmp_xg2(:,:)    = geo%grd(:,:)
-            lastenergy      = geo%total_ene
+            lastenergy      = totene
             geo%crd(:,:)    = geo%crd(:,:) - geo%grd(:,:)*stepsize/sqrt(rmsg)
         end if
 
@@ -245,7 +250,7 @@ subroutine opt_lbfgs(fout,top,geo)
     type(GEOMETRY)          :: geo
     ! --------------------------------------------
     integer                 :: istep,maxatom,alloc_status
-    real(DEVDP)             :: rmsg, maxgrad, lastenergy, eps, xtol
+    real(DEVDP)             :: rmsg, maxgrad, lastenergy, eps, xtol, totene
     integer                 :: iprint(2),iflag
     real(DEVDP),allocatable :: work(:)
     real(DEVDP),allocatable :: tmp_xg(:,:)
@@ -274,14 +279,19 @@ subroutine opt_lbfgs(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
+        ! cvs penalty
+        call ffdev_geometry_get_cvs_penalty(geo)
+
+        totene = geo%total_ene + geo%cvs_energy
+
         !===============================================================================
         ! check all criteria
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
-        if( istep .ne. 1 .and. abs(geo%total_ene - lastenergy) .le. MinEnergyChange ) then
+        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
-                write(fout,'(a,F16.4)') ' >>> INFO: Last energy change     : ', abs(geo%total_ene - lastenergy)
+                write(fout,'(a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
                 write(fout,'(a,F16.4)') ' >>> INFO: Energy change treshold : ', MinEnergyChange
             end if
             exit
@@ -293,7 +303,7 @@ subroutine opt_lbfgs(fout,top,geo)
             write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
             write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
             write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(fout,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(geo%total_ene - lastenergy)
+            write(fout,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
             exit
         end if
 
@@ -307,7 +317,7 @@ subroutine opt_lbfgs(fout,top,geo)
         !===============================================================================
         ! do L-BFGS minimization
         call LBFGS( top%natoms*3,NumberOfCorrections, &
-                    geo%crd,geo%total_ene,geo%grd,&
+                    geo%crd,totene,geo%grd,&
                     .false.,tmp_xg,iprint,eps,xtol,work,iflag)
 
         if( iflag .eq. 0 ) exit
@@ -316,7 +326,7 @@ subroutine opt_lbfgs(fout,top,geo)
             exit
         end if
 
-        lastenergy = geo%total_ene
+        lastenergy = totene
     end do
 
     !===============================================================================
@@ -372,8 +382,9 @@ subroutine write_header(fout)
 
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
- 20 format('# STEP     Etot       Ebonded       Enb          RMSG         maxG      maxAtom ')
- 30 format('#----- ------------ ------------ ------------ ------------ ------------ --------')
+ 20 format('# STEP     Etot      Ebonded      Enb        Ecvs       RMSG       maxG    maxAt')
+ 30 format('#----- ------------ ---------- ---------- ---------- ---------- ---------- -----')
+!30 format('#-------------------------------------------------------------------------------'
 
 end subroutine write_header
 
@@ -399,8 +410,8 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
 
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
-        write(fout,10) istep, geo%total_ene, geo%bond_ene+geo%angle_ene+geo%dih_ene+geo%impropr_ene, &
-                       geo%ele14_ene+geo%nb14_ene+geo%ele_ene+geo%nb_ene,rmsg,maxgrad,maxatom
+        write(fout,10) istep, geo%total_ene+geo%cvs_energy, geo%bond_ene+geo%angle_ene+geo%dih_ene+geo%impropr_ene, &
+                       geo%ele14_ene+geo%nb14_ene+geo%ele_ene+geo%nb_ene,geo%cvs_energy,rmsg,maxgrad,maxatom
     end if
 
     ! write trajectory
@@ -411,7 +422,7 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
         end if
     end if
 
- 10 format(I6,1X,F12.6,1X,F12.6,1X,F12.6,1X,F12.6,1X,F12.6,1X,I8)
+ 10 format(I6,1X,F12.6,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,I5)
 
 end subroutine write_results
 

@@ -105,7 +105,7 @@ program ffdev_mmoptimize
     call ffdev_utils_heading(DEV_OUT,'XYZ Coordinates','=')
 
     call ffdev_geometry_init(geo)
-    call ffdev_geometry_load_xyz(geo,OptCrdName)
+    call ffdev_geometry_load_point(geo,OptCrdName)
     call ffdev_geometry_info_input(geo)
     call ffdev_gradient_allocate(geo)
 

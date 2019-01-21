@@ -47,7 +47,7 @@ integer,parameter       :: REALM_VDW_C10    = 21
 integer,parameter       :: REALM_VDW_RC     = 22
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_VDW_C8
+integer,parameter       :: REALM_LAST    = REALM_VDW_RC
 
 ! ------------------------------------------------------------------------------
 
@@ -87,22 +87,6 @@ integer                     :: ntypes    ! number of types
 type(PARM_TYPE),allocatable :: types(:)  ! types
 
 ! ------------------------------------------------------------------------------
-! error function
-
-type FFERROR_TYPE
-    real(DEVDP)         :: total        ! total error - !!square errror!!
-    real(DEVDP)         :: energy       ! energy part of error - RMSE
-    real(DEVDP)         :: grad         ! gradient part of error - RMSE
-    real(DEVDP)         :: hess         ! hessian part of error - RMSE
-    real(DEVDP)         :: bond
-    real(DEVDP)         :: angle
-    real(DEVDP)         :: tors
-    real(DEVDP)         :: nbdist
-end type FFERROR_TYPE
-
-type(FFERROR_TYPE)      :: FFError
-
-! ------------------------------------------------------------------------------
 ! experimental/unfinished setup
 integer                 :: LastNBMode                   = NB_MODE_LJ        ! determine which realms will be activated for NB
 
@@ -114,28 +98,6 @@ integer,parameter       :: NB_PARAMS_MODE_ALL           = 3 ! all nb types
 ! === [control] ================================================================
 integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
 logical                 :: NBERAOnly                    = .false.                    ! consider only ERA realms
-
-! === [error] ==================================================================
-logical                 :: EnableEnergyError = .true.
-real(DEVDP)             :: EnergyErrorWeight = 1.0
-
-logical                 :: EnableGradientError = .true.
-real(DEVDP)             :: GradientErrorWeight = 1.0
-
-logical                 :: EnableHessianError = .true.
-real(DEVDP)             :: HessianErrorWeight = 1.0
-
-logical                 :: EnableBondError = .true.
-real(DEVDP)             :: BondErrorWeight = 1.0
-
-logical                 :: EnableAngleError = .true.
-real(DEVDP)             :: AngleErrorWeight = 1.0
-
-logical                 :: EnableTorsionError = .true.
-real(DEVDP)             :: TorsionErrorWeight = 1.0
-
-logical                 :: EnableNBDistanceError = .true.
-real(DEVDP)             :: NBDistanceErrorWeight = 1.0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

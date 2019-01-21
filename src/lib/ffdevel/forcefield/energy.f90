@@ -47,6 +47,7 @@ subroutine ffdev_energy_all(top,geo)
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
     geo%total_ene = 0.0d0
+    geo%cvs_energy = 0.0d0
 
     ! bonded terms
     if( top%probe_size .eq. 0 ) then

@@ -20,6 +20,26 @@ SET(FFDEVEL_SRC
         forcefield/hessian.f90
         forcefield/hessian_utils.f90
 
+        parameters/errors/errors.f90
+        parameters/errors/errors_dat.f90
+        parameters/errors/errors_control.f90
+
+        parameters/errors/bonds_dat.f90
+        parameters/errors/bonds.f90
+        parameters/errors/bonds_control.f90
+        parameters/errors/angles_dat.f90
+        parameters/errors/angles.f90
+        parameters/errors/angles_control.f90
+        parameters/errors/tors_dat.f90
+        parameters/errors/tors.f90
+        parameters/errors/tors_control.f90
+        parameters/errors/nbdists_dat.f90
+        parameters/errors/nbdists.f90
+        parameters/errors/nbdists_control.f90
+        parameters/errors/energy_dat.f90
+        parameters/errors/energy.f90
+        parameters/errors/energy_control.f90
+
         parameters/targetset_dat.f90
         parameters/targetset.f90
         parameters/targetset_control.f90

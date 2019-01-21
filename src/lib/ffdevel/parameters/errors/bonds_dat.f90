@@ -1,6 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
-!    Copyright (C) 2013 Petr Kulhanek, kulhanek@chemi.muni.cz
+!    Copyright (C) 2018 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -15,18 +15,15 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_sizes
+module ffdev_err_bonds_dat
 
-implicit none
-
-! ------------------------------------------------------------------------------
-integer, parameter     :: MAX_PATH      = 255  ! max length of file names
-integer, parameter     :: MAX_CVTYPE    =   5  ! max length of colvar type
-
-! real numbers -----------------------------------------------------------------
-integer, parameter     :: DEVDP         = 8
+use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_sizes
+logical                 :: EnableBondError = .false.
+real(DEVDP)             :: BondErrorWeight = 1.0
 
+! ------------------------------------------------------------------------------
+
+end module ffdev_err_bonds_dat

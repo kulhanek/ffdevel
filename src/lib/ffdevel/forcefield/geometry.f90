@@ -57,7 +57,75 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
+    geo%ncvs = 0
+    geo%cvs_energy = 0.0
+
+    geo%z       => null()
+    geo%crd     => null()
+
+    geo%grd     => null()
+    geo%hess    => null()
+    geo%freq    => null()
+
+    geo%trg_crd     => null()
+    geo%trg_grd     => null()
+    geo%trg_hess    => null()
+    geo%trg_esp     => null()
+
+    geo%cvs     => null()
+
 end subroutine ffdev_geometry_init
+
+! ==============================================================================
+! subroutine ffdev_geometry_init
+! ==============================================================================
+
+subroutine ffdev_geometry_destroy(geo)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    if( associated(geo%z) ) then
+        deallocate(geo%z)
+    end if
+    if( associated(geo%crd) ) then
+        deallocate(geo%crd)
+    end if
+
+    if( associated(geo%grd) ) then
+        deallocate(geo%grd)
+    end if
+    if( associated(geo%hess) ) then
+        deallocate(geo%hess)
+    end if
+    if( associated(geo%freq) ) then
+        deallocate(geo%freq)
+    end if
+
+    if( associated(geo%trg_crd) ) then
+        deallocate(geo%trg_crd)
+    end if
+    if( associated(geo%trg_grd) ) then
+        deallocate(geo%trg_grd)
+    end if
+    if( associated(geo%trg_hess) ) then
+        deallocate(geo%trg_hess)
+    end if
+    if( associated(geo%trg_esp) ) then
+        deallocate(geo%trg_esp)
+    end if
+
+    if( associated(geo%cvs) ) then
+        do i=1,geo%ncvs
+            deallocate(geo%cvs(i)%ai)
+        end do
+        deallocate(geo%cvs)
+    end if
+
+end subroutine ffdev_geometry_destroy
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_load_xyz
@@ -232,16 +300,79 @@ subroutine ffdev_geometry_load_point(geo,name)
     implicit none
     type(GEOMETRY)      :: geo
     character(*)        :: name
-    ! --------------------------------------------
-    integer             :: i,j,k,l,alloc_stat,read_stat
-    character(len=255)  :: line,buffer
-    character(len=80)   :: key,sym
     ! --------------------------------------------------------------------------
 
     geo%name = name
 
     ! open file
     call ffdev_utils_open(DEV_GEO,name,'O')
+
+    ! read 1 point
+    call ffdev_geometry_load_1point(geo)
+
+    ! close file
+    close(DEV_GEO)
+
+end subroutine ffdev_geometry_load_point
+
+! ==============================================================================
+! subroutine ffdev_geometry_num_of_points
+! ==============================================================================
+
+integer function ffdev_geometry_num_of_points(name)
+
+    use smf_xyzfile
+    use smf_xyzfile_type
+    use ffdev_utils
+    use smf_periodic_table
+
+    implicit none
+    character(*)        :: name
+    ! --------------------------------------------
+    type(GEOMETRY)      :: geo
+    ! --------------------------------------------------------------------------
+
+    ! open file
+    call ffdev_utils_open(DEV_GEO,name,'O')
+
+    ffdev_geometry_num_of_points = 0
+    do while(.true.)
+        ! init empty geo
+        call ffdev_geometry_init(geo)
+        ! read 1 point
+        call ffdev_geometry_load_1point(geo)
+        ! was it read?
+        if( geo%natoms .eq. 0 ) then
+            exit   ! no -> exit
+        end if
+        ffdev_geometry_num_of_points = ffdev_geometry_num_of_points + 1
+        ! release data
+        call ffdev_geometry_destroy(geo)
+    end do
+
+    ! close file
+    close(DEV_GEO)
+
+end function ffdev_geometry_num_of_points
+
+! ==============================================================================
+! subroutine ffdev_geometry_load_1point
+! ==============================================================================
+
+subroutine ffdev_geometry_load_1point(geo)
+
+    use smf_xyzfile
+    use smf_xyzfile_type
+    use ffdev_utils
+    use smf_periodic_table
+
+    implicit none
+    type(GEOMETRY)      :: geo
+    ! --------------------------------------------
+    integer             :: i,j,k,l,alloc_stat,read_stat
+    character(len=255)  :: line,buffer
+    character(len=80)   :: key,sym
+    ! --------------------------------------------------------------------------
 
     ! load number of atoms - mandatory
     read(DEV_GEO,*,iostat = read_stat) geo%natoms
@@ -291,6 +422,14 @@ subroutine ffdev_geometry_load_point(geo,name)
         if( read_stat .lt. 0 ) exit ! end of file
         if( read_stat .gt. 0 ) then
             call ffdev_utils_exit(DEV_OUT,1,'Unable to read data key token!')
+        end if
+
+        ! is it a number?
+        read(key,*,iostat = read_stat) k
+        if( read_stat .eq. 0 ) then
+            ! backspace record and return
+            backspace(DEV_GEO)
+            exit
         end if
 
         ! parse keys
@@ -358,15 +497,97 @@ subroutine ffdev_geometry_load_point(geo,name)
                     end if
                 end do
                 geo%trg_esp_loaded = .true.
+            case('CVS')
+                read(DEV_GEO,*,iostat = read_stat) geo%ncvs
+                if( read_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read ncvs entry!')
+                end if
+                if( geo%ncvs .gt. 0 ) then
+                    allocate( geo%cvs(geo%ncvs), stat = alloc_stat )
+                    if( alloc_stat .ne. 0 ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate aray for cvs!')
+                    end if
+                    do i=1,geo%ncvs
+                        read(DEV_GEO,'(A255)',iostat = read_stat) line
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3)') 'Unable to read CV entry! CV line = ',i
+                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        end if
+                        geo%cvs(i)%cvtype = ''
+                        j = 0
+                        read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype
+                        if( i .ne. j ) then
+                            write(buffer,'(A,I3)') 'Unable to read CV entry - order mismatch! CV line = ',i
+                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        end if
+                        select case(trim(geo%cvs(i)%cvtype))
+                            case('B')
+                                allocate( geo%cvs(i)%ai(2), stat = alloc_stat )
+                                if( alloc_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry B! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value, geo%cvs(i)%ai(1), &
+                                                                   geo%cvs(i)%ai(2)
+                                if( read_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to read CV entry B! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                            case('A')
+                                allocate( geo%cvs(i)%ai(3), stat = alloc_stat )
+                                if( alloc_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry A! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value,geo%cvs(i)%ai(1), &
+                                                                   geo%cvs(i)%ai(2),geo%cvs(i)%ai(3)
+                                if( read_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to read CV entry A! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                            case('D')
+                                allocate( geo%cvs(i)%ai(4), stat = alloc_stat )
+                                if( alloc_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry D! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value,geo%cvs(i)%ai(1), &
+                                                                   geo%cvs(i)%ai(2),geo%cvs(i)%ai(3),geo%cvs(i)%ai(4)
+                                if( read_stat .ne. 0 ) then
+                                    write(buffer,'(A,I3)') 'Unable to read CV entry D! CV line = ',i
+                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                end if
+                            case default
+                                write(buffer,'(A,A,A,I3)') 'Unsupported CV type ',trim(geo%cvs(i)%cvtype),'! CV line = ',i
+                                call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        end select
+                    end do
+                end if
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unrecognized data point key ''' // trim(key) // '''!')
         end select
     end do
 
-    ! close file
-    close(DEV_GEO)
+end subroutine ffdev_geometry_load_1point
 
-end subroutine ffdev_geometry_load_point
+! ==============================================================================
+! subroutine ffdev_geometry_load_cvs
+! ==============================================================================
+
+subroutine ffdev_geometry_load_cvs(geo,name)
+
+    use smf_xyzfile
+    use smf_xyzfile_type
+    use ffdev_utils
+    use smf_periodic_table
+
+    implicit none
+    type(GEOMETRY)      :: geo
+    character(*)        :: name
+    ! --------------------------------------------
+
+
+end subroutine ffdev_geometry_load_cvs
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_save_point
@@ -585,10 +806,12 @@ subroutine ffdev_geometry_info_input(geo)
     write(DEV_OUT,90)  trim(geo%name)
     write(DEV_OUT,95)  trim(geo%title)
     write(DEV_OUT,100) geo%natoms
+    write(DEV_OUT,110) geo%ncvs
 
  90 format('Geometry name          = ',A)
  95 format('Geometry comment       = ',A)
 100 format('Number of atoms        = ',I6)
+110 format('Number of CVs          = ',I6)
 
 end subroutine ffdev_geometry_info_input
 
@@ -943,7 +1166,6 @@ real(DEVDP) function ffdev_geometry_get_dihedral(crd,ai,aj,ak,al)
 
 end function ffdev_geometry_get_dihedral
 
-
 !===============================================================================
 ! Function:  ffdev_geometry_get_dihedral_deviation
 ! it consider periodicity of torsion
@@ -979,6 +1201,146 @@ real(DEVDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
     end if
         
 end function ffdev_geometry_get_dihedral_deviation
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_cvs_penalty
+! ==============================================================================
+
+subroutine ffdev_geometry_get_cvs_penalty(geo)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    ! reset penalty
+    geo%cvs_energy = 0.0d0
+
+    do i=1,geo%ncvs
+        select case(trim(geo%cvs(i)%cvtype))
+            case('B')
+                call ffdev_geometry_get_bond_penalty(geo,i)
+            case('A')
+                call ffdev_geometry_get_angle_penalty(geo,i)
+            case('D')
+                call ffdev_geometry_get_torsion_penalty(geo,i)
+        end select
+    end do
+
+end subroutine ffdev_geometry_get_cvs_penalty
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_bond_penalty
+! ==============================================================================
+
+subroutine ffdev_geometry_get_bond_penalty(geo,cvidx)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    integer         :: cvidx
+    ! --------------------------------------------
+    integer         :: i,j
+    real(DEVDP)     :: b,db,dv,rij(3)
+    ! --------------------------------------------------------------------------
+
+    ! for each bond
+    i  = geo%cvs(cvidx)%ai(1)
+    j  = geo%cvs(cvidx)%ai(2)
+
+    ! calculate rij
+    rij(:) = geo%crd(:,j) - geo%crd(:,i)
+
+    ! calculate penalty
+    b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
+    db = b - geo%cvs(cvidx)%value
+    geo%cvs_energy = geo%cvs_energy + 0.5d0*DIS_FC*db**2
+
+    ! calculate gradient
+    dv = DIS_FC*db/b
+    geo%grd(:,j) = geo%grd(:,j) + rij(:)*dv
+    geo%grd(:,i) = geo%grd(:,i) - rij(:)*dv
+
+end subroutine ffdev_geometry_get_bond_penalty
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_angle_penalty
+! ==============================================================================
+
+subroutine ffdev_geometry_get_angle_penalty(geo,cvidx)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    integer         :: cvidx
+    ! --------------------------------------------
+    integer         :: i,j,k
+    real(DEVDP)     :: bji2inv,bjk2inv,bjiinv,bjkinv,scp,angv,da,dv,f1
+    real(DEVDP)     :: rji(3),rjk(3),di(3),dk(3)
+    ! --------------------------------------------------------------------------
+
+    i  = geo%cvs(cvidx)%ai(1)
+    j  = geo%cvs(cvidx)%ai(2)
+    k  = geo%cvs(cvidx)%ai(3)
+
+    ! calculate rji and rjk
+    rji(:) = geo%crd(:,i) - geo%crd(:,j)
+    rjk(:) = geo%crd(:,k) - geo%crd(:,j)
+
+    ! calculate bjiinv and bjkinv and their squares
+    bji2inv = 1.0d0/(rji(1)**2 + rji(2)**2 + rji(3)**2 )
+    bjk2inv = 1.0d0/(rjk(1)**2 + rjk(2)**2 + rjk(3)**2 )
+    bjiinv = sqrt(bji2inv)
+    bjkinv = sqrt(bjk2inv)
+
+        ! calculate scp and angv
+    scp = ( rji(1)*rjk(1) + rji(2)*rjk(2) + rji(3)*rjk(3) )
+    scp = scp * bjiinv*bjkinv
+    if ( scp .gt.  1.0d0 ) then
+        scp =  1.0d0
+    else if ( scp .lt. -1.0d0 ) then
+        scp = -1.0d0
+    end if
+    angv = acos(scp)
+
+    ! calculate energy
+    da = angv - geo%cvs(cvidx)%value
+    geo%cvs_energy = geo%cvs_energy + 0.5*ANG_FC*da**2
+
+    ! calculate gradient
+    dv = ANG_FC*da
+
+    f1 = sin ( angv )
+    if ( abs(f1) .lt. 1.0d-3 ) then
+        ! sin(0.1 deg) = 1.7e-3
+        ! this is set for angles close to 0 deg or 180 deg by 0.1 deg
+        ! the aim is to avoid division be zero
+        f1 = -1.0d3
+    else
+        f1 = -1.0d0 / f1
+    end if
+
+    di(:) = f1 * ( rjk(:)*bjiinv*bjkinv - scp*rji(:)*bji2inv )
+    dk(:) = f1 * ( rji(:)*bjiinv*bjkinv - scp*rjk(:)*bjk2inv )
+
+    geo%grd(:,i) = geo%grd(:,i) + dv*di(:)
+    geo%grd(:,k) = geo%grd(:,k) + dv*dk(:)
+    geo%grd(:,j) = geo%grd(:,j) - dv*( di(:) + dk(:) )
+
+end subroutine ffdev_geometry_get_angle_penalty
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_torsion_penalty
+! ==============================================================================
+
+subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    integer         :: cvidx
+    ! ------------------------------
+
+
+end subroutine ffdev_geometry_get_torsion_penalty
         
 ! ------------------------------------------------------------------------------
 
