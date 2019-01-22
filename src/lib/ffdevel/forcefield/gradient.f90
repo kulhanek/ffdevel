@@ -266,6 +266,8 @@ subroutine ffdev_gradient_dihedrals(top,geo)
     real(DEVDP)     ::  f(3),g(3),h(3),a(3),b(3)
     ! -----------------------------------------------------------------------------
 
+    ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
+
     geo%dih_ene = 0.0d0
 
     do ip=1,top%ndihedrals

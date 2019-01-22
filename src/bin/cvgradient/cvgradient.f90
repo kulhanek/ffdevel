@@ -94,7 +94,7 @@ program ffdev_gradient_program
     call ffdev_gradient_allocate(ngeo)
 
     ! calculate energy and gradient
-    ! include CV restarints if any
+    ! only CV restraints if any
     write(DEV_OUT,*)
     if( do_numerical ) then
         write(DEV_OUT,'(A)') 'Numerical gradient ...'

@@ -1558,7 +1558,65 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
     type(GEOMETRY)  :: geo
     integer         :: cvidx
     ! ------------------------------
+    integer         :: i,j,k,l
+    real(DEVDP)     :: f(3),g(3),h(3),dv,fg,hg,a2,b2,gv,scp,phi,a(3),b(3),da
+    ! --------------------------------------------------------------------------
 
+    ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
+
+    i  = geo%cvs(cvidx)%ai(1)
+    j  = geo%cvs(cvidx)%ai(2)
+    k  = geo%cvs(cvidx)%ai(3)
+    l  = geo%cvs(cvidx)%ai(4)
+
+    f(:) = geo%crd(:,i) - geo%crd(:,j)
+    g(:) = geo%crd(:,j) - geo%crd(:,k)
+    h(:) = geo%crd(:,l) - geo%crd(:,k)
+
+    a(1) = f(2)*g(3) - f(3)*g(2)
+    a(2) = f(3)*g(1) - f(1)*g(3)
+    a(3) = f(1)*g(2) - f(2)*g(1)
+
+    b(1) = h(2)*g(3) - h(3)*g(2)
+    b(2) = h(3)*g(1) - h(1)*g(3)
+    b(3) = h(1)*g(2) - h(2)*g(1)
+
+    fg = dot_product(f,g)
+    hg = dot_product(h,g)
+    a2 = a(1)**2 + a(2)**2 + a(3)**2
+    b2 = b(1)**2 + b(2)**2 + b(3)**2
+    gv = sqrt( g(1)**2 + g(2)**2 + g(3)**2 )
+
+    ! calculate scp and phi
+    scp = (a(1)*b(1)+a(2)*b(2)+a(3)*b(3))/sqrt(a2*b2)
+    if ( scp .gt.  1.0 ) then
+            scp =  1.0
+            phi = acos(1.0)    ! const
+    else if ( scp .lt. -1.0 ) then
+            scp = -1.0
+            phi = acos(-1.0)   ! const
+    else
+        phi = acos( scp )
+    end if
+    if( g(1)*(a(2)*b(3)-a(3)*b(2)) &
+       +g(2)*(a(3)*b(1)-a(1)*b(3)) &
+       +g(3)*(a(1)*b(2)-a(2)*b(1)) .gt. 0) then
+                phi = -phi
+    end if
+
+    ! deviation and value
+    da = ffdev_geometry_get_dihedral_deviation(phi,geo%cvs(cvidx)%trg_value)
+    geo%cvs(cvidx)%value = 0.5*ANG_FC*da**2
+    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
+
+    ! contribution to grad
+    dv = ANG_FC*da
+
+    ! calculate gradient
+    geo%grd(:,i) = geo%grd(:,i) + dv*( -gv/a2*a(:) )
+    geo%grd(:,j) = geo%grd(:,j) + dv*(  (gv/a2 + fg/(a2*gv))*a(:) - hg/(b2*gv)*b(:) )
+    geo%grd(:,k) = geo%grd(:,k) + dv*(  (hg/(b2*gv) - gv/b2)*b(:) - fg/(a2*gv)*a(:) )
+    geo%grd(:,l) = geo%grd(:,l) + dv*( gv/b2*b(:) )
 
 end subroutine ffdev_geometry_get_torsion_penalty
         
