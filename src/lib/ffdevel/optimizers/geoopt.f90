@@ -39,6 +39,13 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
 
+    if( PrintCVSummary ) then
+        ! print summary about CVs
+        write(fout,*)
+        call ffdev_geometry_cvsum(fout,geo)
+        write(fout,*)
+    end if
+
     call write_header(fout)
 
     select case(OptimizationMethod)
@@ -220,6 +227,12 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! write final results
         call write_results(fout,istep,geo,rmsg,maxgrad,maxatom,.true.) ! results to stdout
 
+        if( PrintCVSummary ) then
+            ! print summary about CVs
+            write(fout,*)
+            call ffdev_geometry_cvsum(fout,geo)
+        end if
+
         if( PrintFinalGradient ) then
             write(fout,*)
             call ffdev_utils_heading(fout,'Final gradient', '-')
@@ -339,9 +352,16 @@ subroutine opt_lbfgs(fout,top,geo)
             write(fout,'(a,/)') ' >>> WARNING: Minimization was not completed!'
             call ffdev_utils_heading(fout,'Intermediate results', '-')
         end if
+
         call write_header(fout)
         ! write final results
         call write_results(fout,istep,geo,rmsg,maxgrad,maxatom,.true.) ! results to stdout
+
+        if( PrintCVSummary ) then
+            ! print summary about CVs
+            write(fout,*)
+            call ffdev_geometry_cvsum(fout,geo)
+        end if
 
         if( PrintFinalGradient ) then
             write(fout,*)

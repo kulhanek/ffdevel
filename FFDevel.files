@@ -41,6 +41,8 @@ src/bin/getrmsd/CMakeLists.txt
 src/bin/getrmsd/getrmsd.f90
 src/bin/mmoptimize/CMakeLists.txt
 src/bin/mmoptimize/mmoptimize.f90
+src/bin/cvgradient/CMakeLists.txt
+src/bin/cvgradient/cvgradient.f90
 src/bin/ptsfreq/CMakeLists.txt
 src/bin/ptsfreq/ptsfreq.f90
 src/bin/rmsdfit/CMakeLists.txt

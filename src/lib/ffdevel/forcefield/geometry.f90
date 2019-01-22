@@ -527,7 +527,7 @@ subroutine ffdev_geometry_load_1point(geo)
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry B! CV line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value, geo%cvs(i)%ai(1), &
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value, geo%cvs(i)%ai(1), &
                                                                    geo%cvs(i)%ai(2)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read CV entry B! CV line = ',i
@@ -539,24 +539,28 @@ subroutine ffdev_geometry_load_1point(geo)
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry A! CV line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value,geo%cvs(i)%ai(1), &
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value,geo%cvs(i)%ai(1), &
                                                                    geo%cvs(i)%ai(2),geo%cvs(i)%ai(3)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read CV entry A! CV line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
+                                ! convert to rad
+                                geo%cvs(i)%value = geo%cvs(i)%value * DEV_D2R
                             case('D')
                                 allocate( geo%cvs(i)%ai(4), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry D! CV line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%value,geo%cvs(i)%ai(1), &
+                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value,geo%cvs(i)%ai(1), &
                                                                    geo%cvs(i)%ai(2),geo%cvs(i)%ai(3),geo%cvs(i)%ai(4)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read CV entry D! CV line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
+                                ! convert to rad
+                                geo%cvs(i)%value = geo%cvs(i)%value * DEV_D2R
                             case default
                                 write(buffer,'(A,A,A,I3)') 'Unsupported CV type ',trim(geo%cvs(i)%cvtype),'! CV line = ',i
                                 call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
@@ -955,6 +959,7 @@ end subroutine ffdev_geometry_print_xyz
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_copy
+! geo1 <- geo2
 ! ==============================================================================
 
 subroutine ffdev_geometry_copy(geo1,geo2)
@@ -965,7 +970,7 @@ subroutine ffdev_geometry_copy(geo1,geo2)
     type(GEOMETRY)  :: geo1
     type(GEOMETRY)  :: geo2
     ! --------------------------------------------
-    integer         :: alloc_stat
+    integer         :: alloc_stat, i
     ! --------------------------------------------------------------------------
 
     geo1%natoms = geo2%natoms
@@ -978,6 +983,38 @@ subroutine ffdev_geometry_copy(geo1,geo2)
             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate crd array for geometry!')
         end if
         geo1%crd(:,:) = geo2%crd(:,:)
+    end if
+
+    geo1%ncvs = geo2%ncvs
+    if( geo1%natoms .gt. 0 ) then
+        allocate(geo1%cvs(geo1%ncvs), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs array for geometry!')
+        end if
+        do i=1,geo1%ncvs
+            geo1%cvs(i)%trg_value = geo2%cvs(i)%trg_value
+            geo1%cvs(i)%cvtype = geo2%cvs(i)%cvtype
+            select case(trim(geo1%cvs(i)%cvtype))
+                case('B')
+                    allocate(geo1%cvs(i)%ai(2), stat = alloc_stat)
+                    if( alloc_stat .ne. 0 ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                    end if
+                case('A')
+                    allocate(geo1%cvs(i)%ai(3), stat = alloc_stat)
+                    if( alloc_stat .ne. 0 ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                    end if
+                case('D')
+                    allocate(geo1%cvs(i)%ai(4), stat = alloc_stat)
+                    if( alloc_stat .ne. 0 ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                    end if
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_copy!')
+            end select
+            geo1%cvs(i)%ai(:) = geo2%cvs(i)%ai(:)
+        end do
     end if
 
 end subroutine ffdev_geometry_copy
@@ -1204,9 +1241,12 @@ end function ffdev_geometry_get_dihedral_deviation
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_get_cvs_penalty
+! including gardient
 ! ==============================================================================
 
 subroutine ffdev_geometry_get_cvs_penalty(geo)
+
+    use ffdev_utils
 
     implicit none
     type(GEOMETRY)  :: geo
@@ -1225,10 +1265,188 @@ subroutine ffdev_geometry_get_cvs_penalty(geo)
                 call ffdev_geometry_get_angle_penalty(geo,i)
             case('D')
                 call ffdev_geometry_get_torsion_penalty(geo,i)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_penalty!')
         end select
     end do
 
 end subroutine ffdev_geometry_get_cvs_penalty
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_cvs_penalty_only
+! without gradient
+! ==============================================================================
+
+subroutine ffdev_geometry_get_cvs_penalty_only(geo)
+
+    use ffdev_utils
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: actv,tv,dev
+    ! --------------------------------------------------------------------------
+
+    ! reset penalty
+    geo%cvs_energy = 0.0d0
+
+    call ffdev_geometry_get_cvs_values(geo)
+
+    do i=1,geo%ncvs
+        tv = geo%cvs(i)%trg_value
+        actv = geo%cvs(i)%value
+        select case(trim(geo%cvs(i)%cvtype))
+            case('B')
+                dev = actv - tv
+                geo%cvs_energy = geo%cvs_energy + 0.5d0*DIS_FC*dev**2
+            case('A')
+                dev = actv - tv
+                geo%cvs_energy = geo%cvs_energy + 0.5d0*ANG_FC*dev**2
+            case('D')
+                dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
+                geo%cvs_energy = geo%cvs_energy + 0.5d0*ANG_FC*dev**2
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_penalty_only!')
+        end select
+    end do
+
+end subroutine ffdev_geometry_get_cvs_penalty_only
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_cvs_penalty_num
+! ==============================================================================
+
+subroutine ffdev_geometry_get_cvs_penalty_num(geo)
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------------------------------------
+    type(GEOMETRY)  :: tmp_geo
+    real(DEVDP)     :: d,ene1,ene2
+    integer         :: i,j
+    ! --------------------------------------------------------------------------
+
+    d = 5.0d-4  ! differentiation parameter
+
+    ! calculate base penalty
+    call ffdev_geometry_get_cvs_penalty_only(geo)
+
+    ! init temporary geometry object
+    call ffdev_geometry_init(tmp_geo)
+    call ffdev_geometry_copy(tmp_geo,geo)
+
+    ! gradient by numerical differentiation
+    do i=1,geo%natoms
+        do j=1,3
+            ! left
+            tmp_geo%crd(j,i) = geo%crd(j,i) + d
+            call ffdev_geometry_get_cvs_penalty_only(tmp_geo)
+            ene1 = tmp_geo%cvs_energy
+
+            ! right
+            tmp_geo%crd(j,i) = geo%crd(j,i) - d
+            call ffdev_geometry_get_cvs_penalty_only(tmp_geo)
+            ene2 = tmp_geo%cvs_energy
+
+            ! gradient
+            geo%grd(j,i) = 0.5d0*(ene1-ene2)/d
+
+            ! move back
+            tmp_geo%crd(j,i) = geo%crd(j,i)
+        end do
+    end do
+
+    ! release temporary geometry object
+    call ffdev_geometry_destroy(tmp_geo)
+
+end subroutine ffdev_geometry_get_cvs_penalty_num
+
+! ==============================================================================
+! function ffdev_geometry_get_cvs_value
+! ==============================================================================
+
+subroutine ffdev_geometry_get_cvs_values(geo)
+
+    use ffdev_utils
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,geo%ncvs
+        select case(trim(geo%cvs(i)%cvtype))
+            case('B')
+                geo%cvs(i)%value = &
+                      ffdev_geometry_get_length(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2))
+            case('A')
+                geo%cvs(i)%value = &
+                      ffdev_geometry_get_angle(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2),geo%cvs(i)%ai(3))
+            case('D')
+                geo%cvs(i)%value = &
+                      ffdev_geometry_get_dihedral(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2), &
+                                                          geo%cvs(i)%ai(3),geo%cvs(i)%ai(4))
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_value!')
+        end select
+    end do
+
+end subroutine ffdev_geometry_get_cvs_values
+
+! ==============================================================================
+! subroutine ffdev_geometry_cvsum
+! ==============================================================================
+
+subroutine ffdev_geometry_cvsum(unid,geo)
+
+    use ffdev_utils
+
+    implicit none
+    integer         :: unid
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: actv,tv,dev
+    ! --------------------------------------------------------------------------
+
+    if( geo%ncvs .le. 0 ) then
+        return
+    end if
+
+    write(unid,10)
+    write(unid,20)
+    write(unid,30)
+
+    call ffdev_geometry_get_cvs_values(geo)
+
+    do i=1,geo%ncvs
+        select case(trim(geo%cvs(i)%cvtype))
+            case('B')
+                actv = geo%cvs(i)%value
+                tv = geo%cvs(i)%trg_value
+                dev = actv - tv
+            case('A')
+                actv = geo%cvs(i)%value * DEV_R2D
+                tv = geo%cvs(i)%trg_value * DEV_R2D
+                dev = actv - tv
+            case('D')
+                actv = geo%cvs(i)%value * DEV_R2D
+                tv = geo%cvs(i)%trg_value * DEV_R2D
+                dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_cvsum!')
+        end select
+        write(unid,40) i, geo%cvs(i)%cvtype, tv, actv, dev
+    end do
+
+ 10 format('# Geometry Restraint Summary')
+ 20 format('# ID  Type  Target value Curent value  Deviation  ')
+ 30 format('# --- ----- ------------ ------------ ------------')
+ 40 format(I5,1X,A5,1X,F12.6,1X,F12.6,1X,F12.6)
+
+end subroutine ffdev_geometry_cvsum
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_get_bond_penalty
@@ -1253,8 +1471,9 @@ subroutine ffdev_geometry_get_bond_penalty(geo,cvidx)
 
     ! calculate penalty
     b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
-    db = b - geo%cvs(cvidx)%value
-    geo%cvs_energy = geo%cvs_energy + 0.5d0*DIS_FC*db**2
+    db = b - geo%cvs(cvidx)%trg_value
+    geo%cvs(cvidx)%value = 0.5*DIS_FC*db**2
+    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
 
     ! calculate gradient
     dv = DIS_FC*db/b
@@ -1303,8 +1522,9 @@ subroutine ffdev_geometry_get_angle_penalty(geo,cvidx)
     angv = acos(scp)
 
     ! calculate energy
-    da = angv - geo%cvs(cvidx)%value
-    geo%cvs_energy = geo%cvs_energy + 0.5*ANG_FC*da**2
+    da = angv - geo%cvs(cvidx)%trg_value
+    geo%cvs(cvidx)%value = 0.5*ANG_FC*da**2
+    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
 
     ! calculate gradient
     dv = ANG_FC*da

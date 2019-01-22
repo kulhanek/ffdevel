@@ -33,11 +33,10 @@ program ffdev_gradient_program
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo,ngeo
     logical                 :: do_test, do_numerical
-    logical                 :: write_pts
     integer                 :: i
     ! --------------------------------------------------------------------------
 
-    call ffdev_utils_header('FF Gradient')
+    call ffdev_utils_header('CV Gradient')
 
     ! test number of input arguments
     if( command_argument_count() .lt. 2  ) then
@@ -50,7 +49,6 @@ program ffdev_gradient_program
 
     do_test = .false.
     do_numerical = .false.
-    write_pts = .false.
 
     do i=3,command_argument_count()
         call get_command_argument(i, arg)
@@ -59,8 +57,6 @@ program ffdev_gradient_program
                 do_test = .true.
             case('numerical')
                 do_numerical = .true.
-            case('write')
-                write_pts = .true.
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unrecognized argument ('//trim(arg)//')')
         end select
@@ -84,7 +80,7 @@ program ffdev_gradient_program
     call ffdev_utils_heading(DEV_OUT,'Input Coordinates','=')
 
     call ffdev_geometry_init(geo)
-    call ffdev_geometry_load_xyz(geo,crdname)
+    call ffdev_geometry_load_point(geo,crdname)
     call ffdev_geometry_info_input(geo)
 
     ! check coordinates and topology
@@ -98,40 +94,36 @@ program ffdev_gradient_program
     call ffdev_gradient_allocate(ngeo)
 
     ! calculate energy and gradient
+    ! include CV restarints if any
     write(DEV_OUT,*)
     if( do_numerical ) then
         write(DEV_OUT,'(A)') 'Numerical gradient ...'
-        call ffdev_gradient_num_all(top,geo)
+        call ffdev_geometry_get_cvs_penalty_num(geo)
     else
         write(DEV_OUT,'(A)') 'Analytical gradient ...'
-        call ffdev_gradient_all(top,geo)
+        call ffdev_geometry_get_cvs_penalty(geo)
     end if
 
-    if( write_pts ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'Writing final data','=')
-        geo%title = 'calculated by ffgradient from '//trim(topname)//' and '//trim(crdname)
-        call ffdev_geometry_info_input(geo)
-        call ffdev_geometry_save_point(geo,crdname)
-    end if
+    write(DEV_OUT,*)
+    call ffdev_geometry_cvsum(DEV_OUT,geo)
 
     if( do_test ) then
         write(DEV_OUT,*)
         write(DEV_OUT,'(A)') '>>> INFO: Testing gradient ...'
         write(DEV_OUT,*)
         write(DEV_OUT,'(A)') 'Numerical gradient ...'
-        call ffdev_gradient_num_all(top,ngeo)
+        call ffdev_geometry_get_cvs_penalty_num(ngeo)
 
         if( .not. ffdev_gradient_test(geo,ngeo,1.0d-3) ) then
             write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Analytical FF Gradient','=')
+            call ffdev_utils_heading(DEV_OUT,'Analytical gradient','=')
             call ffdev_gradient_print(DEV_OUT,top,geo)
                 write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Numerical FF Gradient','=')
+            call ffdev_utils_heading(DEV_OUT,'Numerical gradient','=')
             call ffdev_gradient_print(DEV_OUT,top,ngeo)
 
             write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Difference in Gradients','=')
+            call ffdev_utils_heading(DEV_OUT,'Difference in gradients','=')
             ngeo%grd = ngeo%grd - geo%grd
             call ffdev_gradient_print(DEV_OUT,top,ngeo)
 
@@ -139,23 +131,19 @@ program ffdev_gradient_program
         else
             write(DEV_OUT,'(A)') 'Analytical and numerical gradients match each other ...'
             write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Numerical FF Gradient','=')
+            call ffdev_utils_heading(DEV_OUT,'Numerical gradient','=')
             call ffdev_gradient_print(DEV_OUT,top,ngeo)
         end if
     end if
 
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'FF Energies','=')
-    call ffdev_geometry_info_ene(geo)
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'FF Gradient','=')
+    call ffdev_utils_heading(DEV_OUT,'Gradient','=')
     call ffdev_gradient_print(DEV_OUT,top,geo)
 
-    call ffdev_utils_footer('FF Gradient')
+    call ffdev_utils_footer('CV Gradient')
 
 100 format('Simplified topology : ',A)
-110 format('Input coordinates   : ',A)
+110 format('Input point         : ',A)
 
 contains
 
@@ -175,7 +163,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffgradient <stopology> <xyzcoordinates> [test] [write] [numerical]')
+10 format('    cvgradient <stopology> <pts> [test] [numerica]')
 
 end subroutine print_usage
 
