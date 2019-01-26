@@ -73,7 +73,7 @@ public:
                 NULL,                           /* default value */
                 true,                           /* is argument mandatory */
                 "ROTORS",                           /* parametr name */
-                "Output file name contaning freely rotatable bonds. If the name is '-' then the file is wriiten to the standard output.")   /* argument description */
+                "Output file name contaning freely rotatable bonds. If the name is '-' then the file is written to the standard output.")   /* argument description */
 
 // description of options -----------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */

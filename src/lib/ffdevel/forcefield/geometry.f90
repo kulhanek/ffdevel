@@ -546,7 +546,7 @@ subroutine ffdev_geometry_load_1point(geo)
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
                                 ! convert to rad
-                                geo%cvs(i)%value = geo%cvs(i)%value * DEV_D2R
+                                geo%cvs(i)%trg_value = geo%cvs(i)%trg_value * DEV_D2R
                             case('D')
                                 allocate( geo%cvs(i)%ai(4), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
@@ -560,7 +560,7 @@ subroutine ffdev_geometry_load_1point(geo)
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
                                 ! convert to rad
-                                geo%cvs(i)%value = geo%cvs(i)%value * DEV_D2R
+                                geo%cvs(i)%trg_value = geo%cvs(i)%trg_value * DEV_D2R
                             case default
                                 write(buffer,'(A,A,A,I3)') 'Unsupported CV type ',trim(geo%cvs(i)%cvtype),'! CV line = ',i
                                 call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
