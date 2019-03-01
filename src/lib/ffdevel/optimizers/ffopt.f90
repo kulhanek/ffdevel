@@ -139,9 +139,11 @@ subroutine ffdev_ffopt_run()
     use ffdev_utils
     use ffdev_targetset
     use ffdev_targetset_dat
+    use ffdev_errors
 
     implicit none
-    integer     :: alloc_stat, i
+    integer             :: alloc_stat, i
+    type(FFERROR_TYPE)  :: error
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -156,12 +158,15 @@ subroutine ffdev_ffopt_run()
     call ffdev_parameters_gather(FFParams)
 
     ! initial statistics
-    call ffdev_parameters_scatter(FFParams)
-    call ffdev_parameters_to_tops()
-    call ffdev_targetset_calc_all()
-    call ffdev_targetset_summary()
+    call ffdev_parameters_error_only(FFParams,error)
+    call ffdev_errors_summary(.false.)
 
-    call write_header()
+    write(DEV_OUT,*)
+    write(DEV_OUT,1)
+    call ffdev_utils_heading(DEV_OUT,'Optimization',':')
+    write(DEV_OUT,1)
+
+    call write_header(.true.)
 
     select case(OptimizationMethod)
         case(MINIMIZATION_STEEPEST_DESCENT)
@@ -176,9 +181,11 @@ subroutine ffdev_ffopt_run()
     call ffdev_parameters_scatter(FFParams)
     call ffdev_parameters_to_tops()
     call ffdev_targetset_calc_all()
-    call ffdev_targetset_summary()
+    call ffdev_errors_summary(.true.)
 
     deallocate(FFParams,FFParamsGrd)
+
+ 1 format('# ==============================================================================')
 
 end subroutine ffdev_ffopt_run
 
@@ -286,7 +293,7 @@ subroutine opt_steepest_descent()
         write(DEV_OUT,'(a,/)') ' >>> WARNING: Minimization was not completed!'
         call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
     end if
-    call write_header
+    call write_header(.false.)
     ! write final results
     call write_results(istep,FFError,rmsg,maxgrad,.true.) ! results to stdout
 
@@ -392,7 +399,7 @@ subroutine opt_lbfgs
         write(DEV_OUT,'(a,/)') ' >>> WARNING: Minimization was not completed!'
         call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
     end if
-    call write_header
+    call write_header(.false.)
     ! write final results
     call write_results(istep,FFError,rmsg,maxgrad,.true.) ! results to stdout
 
@@ -464,6 +471,8 @@ subroutine opt_nlopt
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
     rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
+    write(DEV_OUT,*)
+    call write_header(.false.)
     call write_results(istep,FFError,rmsg,maxgrad,.true.)
     
     write(DEV_OUT,*)
@@ -547,10 +556,10 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
 end subroutine opt_nlopt_fce
 
 !===============================================================================
-! subroutine ffdev_ffopt_header
+! subroutine write_header
 !===============================================================================
 
-subroutine write_header()
+subroutine write_header(printmethod)
 
     use ffdev_ffopt_dat
     use ffdev_topology
@@ -558,19 +567,24 @@ subroutine write_header()
     use ffdev_errors
 
     implicit none
+    logical     :: printmethod
     integer     :: major, minor, bugfix
     ! --------------------------------------------------------------------------
 
-    select case(OptimizationMethod)
-        case(MINIMIZATION_STEEPEST_DESCENT)
-            write(DEV_OUT,10)
-        case(MINIMIZATION_LBFGS)
-            write(DEV_OUT,15)
-        case(MINIMIZATION_NLOPT)
-            call nloptv(major, minor, bugfix)
-            write(DEV_OUT,17) major, minor, bugfix
-    end select
+    if( printmethod ) then
+        select case(OptimizationMethod)
+            case(MINIMIZATION_STEEPEST_DESCENT)
+                write(DEV_OUT,10)
+            case(MINIMIZATION_LBFGS)
+                write(DEV_OUT,15)
+            case(MINIMIZATION_NLOPT)
+                call nloptv(major, minor, bugfix)
+                write(DEV_OUT,17) major, minor, bugfix
+        end select
+    end if
 
+    write(DEV_OUT,*)
+    write(DEV_OUT,20,ADVANCE='NO')
     call ffdev_errors_ffopt_header_I
 
     select case(OptimizationMethod)
@@ -580,11 +594,12 @@ subroutine write_header()
             write(DEV_OUT,*) 
     end select
 
+    write(DEV_OUT,25,ADVANCE='NO')
     call ffdev_errors_ffopt_header_II
 
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
-            write(DEV_OUT,65)
+            write(DEV_OUT,65,ADVANCE='NO')
         case(MINIMIZATION_NLOPT)
             write(DEV_OUT,*) 
     end select    

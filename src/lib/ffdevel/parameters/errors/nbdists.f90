@@ -22,6 +22,26 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
+! subroutine ffdev_err_nbdists_init
+! ==============================================================================
+
+subroutine ffdev_err_nbdists_init
+
+    use ffdev_err_nbdists_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    EnableNBDistanceError        = .false.
+    PrintNBDistanceErrorSummary  = .false.
+    NBDistanceErrorWeight        = 1.0
+
+    NBDistanceSWPosition         = 4.0
+    NBDistanceSWAlpha            = 1.0
+
+end subroutine ffdev_err_nbdists_init
+
+! ==============================================================================
 ! subroutine ffdev_err_nbdists_error
 ! ==============================================================================
 

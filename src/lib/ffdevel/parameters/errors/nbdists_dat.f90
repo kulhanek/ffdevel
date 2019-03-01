@@ -21,11 +21,14 @@ use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-logical                 :: EnableNBDistanceError = .false.
-real(DEVDP)             :: NBDistanceErrorWeight = 1.0
+! initialization in ffdev_err_nbdists_init
+logical                 :: EnableNBDistanceError
+logical                 :: PrintNBDistanceErrorSummary
+real(DEVDP)             :: NBDistanceErrorWeight
 
-real(DEVDP)             :: NBDistanceSWPosition         = 4.0       ! switch function parameters
-real(DEVDP)             :: NBDistanceSWAlpha            = 1.0
+! switch function parameters
+real(DEVDP)             :: NBDistanceSWPosition
+real(DEVDP)             :: NBDistanceSWAlpha
 
 ! ------------------------------------------------------------------------------
 

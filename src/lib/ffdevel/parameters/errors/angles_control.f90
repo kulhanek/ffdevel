@@ -38,8 +38,9 @@ subroutine ffdev_err_angles_ctrl(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'angless') ) then
+    if( .not. prmfile_open_section(fin,'angles') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableAngleError)
+        write(DEV_OUT,135) prmfile_onoff(PrintAngleErrorSummary)
         write(DEV_OUT,125) AngleErrorWeight
         return
     end if
@@ -49,6 +50,11 @@ subroutine ffdev_err_angles_ctrl(fin)
     else
         write(DEV_OUT,115) prmfile_onoff(EnableAngleError)
     end if
+    if( prmfile_get_logical_by_key(fin,'summary', PrintAngleErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintAngleErrorSummary)
+    else
+        write(DEV_OUT,135) prmfile_onoff(PrintAngleErrorSummary)
+    end if
     if( prmfile_get_real8_by_key(fin,'weight', AngleErrorWeight)) then
         write(DEV_OUT,120) AngleErrorWeight
     else
@@ -57,10 +63,12 @@ subroutine ffdev_err_angles_ctrl(fin)
 
  10 format('=== [angles] ===================================================================')
 
-110  format ('Angles error (enabled)                 = ',a12)
-115  format ('Angles error (enabled)                 = ',a12,'                  (default)')
-120  format ('Angles error weight (weight)           = ',f21.8)
-125  format ('Angles error weight (weight)           = ',f21.8,'         (default)')
+110  format ('Angle error (enabled)                  = ',a12)
+115  format ('Angle error (enabled)                  = ',a12,'                  (default)')
+130  format ('Print angle error summary (summary)    = ',a12)
+135  format ('Print angle error summary (summary)    = ',a12,'                  (default)')
+120  format ('Angle error weight (weight)            = ',f21.8)
+125  format ('Angle error weight (weight)            = ',f21.8,'         (default)')
 
 end subroutine ffdev_err_angles_ctrl
 

@@ -229,7 +229,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffhessian <stopology> <xyzcoordinates> [test] [write]')
+10 format('    ffhessian <stopology> <xyzcoordinates> [test] [write] [numerical]')
 
 end subroutine print_usage
 

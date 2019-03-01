@@ -40,6 +40,7 @@ subroutine ffdev_err_bonds_ctrl(fin)
 
     if( .not. prmfile_open_section(fin,'bonds') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableBondError)
+        write(DEV_OUT,135) prmfile_onoff(PrintBondErrorSummary)
         write(DEV_OUT,125) BondErrorWeight
         return
     end if
@@ -49,6 +50,11 @@ subroutine ffdev_err_bonds_ctrl(fin)
     else
         write(DEV_OUT,115) prmfile_onoff(EnableBondError)
     end if
+    if( prmfile_get_logical_by_key(fin,'summary', PrintBondErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintBondErrorSummary)
+    else
+        write(DEV_OUT,135) prmfile_onoff(PrintBondErrorSummary)
+    end if
     if( prmfile_get_real8_by_key(fin,'weight', BondErrorWeight)) then
         write(DEV_OUT,120) BondErrorWeight
     else
@@ -57,10 +63,12 @@ subroutine ffdev_err_bonds_ctrl(fin)
 
  10 format('=== [bonds] ====================================================================')
 
-110  format ('Bond error (enabled)                   = ',a12)
-115  format ('Bond error (enabled)                   = ',a12,'                  (default)')
-120  format ('Bond error weight (weight)             = ',f21.8)
-125  format ('Bond error weight (weight)             = ',f21.8,'         (default)')
+110  format ('Bonds error (enabled)                  = ',a12)
+115  format ('Bonds error (enabled)                  = ',a12,'                  (default)')
+130  format ('Print bonds error summary (summary)    = ',a12)
+135  format ('Print bonds error summary (summary)    = ',a12,'                  (default)')
+120  format ('Bonds error weight (weight)            = ',f21.8)
+125  format ('Bonds error weight (weight)            = ',f21.8,'         (default)')
 
 end subroutine ffdev_err_bonds_ctrl
 

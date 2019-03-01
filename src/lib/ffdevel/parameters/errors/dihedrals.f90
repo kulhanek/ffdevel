@@ -15,17 +15,34 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_tors
+module ffdev_err_dihedrals
 
 use ffdev_constants
 
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_tors_error
+! subroutine ffdev_err_dihedrals_init
 ! ==============================================================================
 
-subroutine ffdev_err_tors_error(error)
+subroutine ffdev_err_dihedrals_init
+
+    use ffdev_err_dihedrals_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    EnableDihedralError           = .false.
+    PrintDihedralErrorSummary     = .false.
+    DihedralErrorWeight           = DEV_D2R
+
+end subroutine ffdev_err_dihedrals_init
+
+! ==============================================================================
+! subroutine ffdev_err_dihedrals_error
+! ==============================================================================
+
+subroutine ffdev_err_dihedrals_error(error)
 
     use ffdev_targetset_dat
     use ffdev_utils   
@@ -35,15 +52,15 @@ subroutine ffdev_err_tors_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,ntors,ai,aj,ak,al
-    real(DEVDP)         :: err,seterrtors
+    integer             :: i,j,q,ndihedrals,ai,aj,ak,al
+    real(DEVDP)         :: err,seterrdihedrals
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%tors = 0.0
+    error%dihedrals = 0.0
 
-    seterrtors = 0.0
-    ntors = 0
+    seterrdihedrals = 0.0
+    ndihedrals = 0
 
     if( sets(i)%geo(j)%trg_crd_optimized ) then
         do q=1,sets(i)%top%ndihedrals
@@ -53,18 +70,37 @@ subroutine ffdev_err_tors_error(error)
             al = sets(i)%top%dihedrals(q)%al
             d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D
             dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D
-            ntors = ntors + 1
+            ndihedrals = ndihedrals + 1
             err = ffdev_geometry_get_dihedral_deviation(d0,dt)
-            seterrtors = seterrtors + sets(i)%geo(j)%weight * err**2
+            seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
         end do
     end if
 
-    if( ntors .gt. 0 ) then
-        error%tors = sqrt(seterrtors/real(ntors))
+    if( ndihedrals .gt. 0 ) then
+        error%dihedrals = sqrt(seterrdihedrals/real(ndihedrals))
     end if 
 
-end subroutine ffdev_err_tors_error
+end subroutine ffdev_err_dihedrals_error
+
+! ==============================================================================
+! subroutine ffdev_err_dihedrals_summary
+! ==============================================================================
+
+subroutine ffdev_err_dihedrals_summary(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_geometry_utils
+
+    implicit none
+    type(TOPOLOGY)     :: top
+    type(GEOMETRY)     :: geo
+    ! --------------------------------------------------------------------------
+
+    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd)
+
+end subroutine ffdev_err_dihedrals_summary
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_tors
+end module ffdev_err_dihedrals

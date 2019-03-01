@@ -22,6 +22,23 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
+! subroutine ffdev_err_angles_init
+! ==============================================================================
+
+subroutine ffdev_err_angles_init
+
+    use ffdev_err_angles_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    EnableAngleError         = .false.
+    PrintAngleErrorSummary   = .false.
+    AngleErrorWeight         = DEV_D2R
+
+end subroutine ffdev_err_angles_init
+
+! ==============================================================================
 ! subroutine ffdev_err_angles_error
 ! ==============================================================================
 
@@ -68,6 +85,25 @@ subroutine ffdev_err_angles_error(error)
     end if 
 
 end subroutine ffdev_err_angles_error
+
+! ==============================================================================
+! subroutine ffdev_err_angles_summary
+! ==============================================================================
+
+subroutine ffdev_err_angles_summary(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_geometry_utils
+
+    implicit none
+    type(TOPOLOGY)     :: top
+    type(GEOMETRY)     :: geo
+    ! --------------------------------------------------------------------------
+
+    call ffdev_geometry_utils_comp_angles(.false.,top,geo%trg_crd,geo%crd)
+
+end subroutine ffdev_err_angles_summary
 
 ! ------------------------------------------------------------------------------
 

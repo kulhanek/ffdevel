@@ -27,11 +27,19 @@ type FFERROR_TYPE
     real(DEVDP)         :: energy
     real(DEVDP)         :: bonds
     real(DEVDP)         :: angles
-    real(DEVDP)         :: tors
+    real(DEVDP)         :: dihedrals
     real(DEVDP)         :: nbdists
+    real(DEVDP)         :: freqs
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError
+
+! ------------------------------------------------------------------------------
+! internal setup
+logical                 :: errors_calc_ene      = .false.
+logical                 :: errors_calc_grad     = .false.
+logical                 :: errors_calc_hess     = .false.
+logical                 :: errors_calc_freq     = .false.
 
 ! ------------------------------------------------------------------------------
 

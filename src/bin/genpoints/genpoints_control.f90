@@ -75,6 +75,13 @@ subroutine ffdev_genpoints_ctrl_files(fin)
         write (DEV_OUT,50) trim(GenFinName)
     end if
 
+    ! profile
+    if(.not. prmfile_get_string_by_key(fin,'profile', ProfileName)) then
+        write (DEV_OUT,65) trim(ProfileName)
+    else
+        write (DEV_OUT,60) trim(ProfileName)
+    end if
+
     return
 
 10 format('Topology file (topology)               = ',a)
@@ -84,6 +91,8 @@ subroutine ffdev_genpoints_ctrl_files(fin)
 45 format('Output points (output)                 = ',a12,'                  (default)')
 50 format('Global point (global)                  = ',a)
 55 format('Global point (global)                  = ',a12,'                  (default)')
+60 format('Energy profile (profile)               = ',a)
+65 format('Energy profile (profile)               = ',a12,'                  (default)')
 
 end subroutine ffdev_genpoints_ctrl_files
 
@@ -126,6 +135,7 @@ subroutine ffdev_genpoints_ctrl_points(fin)
         write(DEV_OUT,25) MaxPoints
         write(DEV_OUT,35) MaxEnergy
         write(DEV_OUT,45) OptimizePoints
+        write(DEV_OUT,55) HoldCV
 
         call read_genpoints_method(fin)
         return
@@ -200,6 +210,12 @@ subroutine ffdev_genpoints_ctrl_points(fin)
         write(DEV_OUT,45) prmfile_onoff(OptimizePoints)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'holdcv', HoldCV)) then
+        write(DEV_OUT,40) prmfile_onoff(HoldCV)
+    else
+        write(DEV_OUT,45) prmfile_onoff(HoldCV)
+    end if
+
     call read_genpoints_method(fin)
 
     return
@@ -212,6 +228,8 @@ subroutine ffdev_genpoints_ctrl_points(fin)
  35  format ('Maximum energy (max_energy)            = ',f16.3,'              (default)')
  40  format ('Optimize points (optimize)             = ',a)
  45  format ('Optimize points (optimize)             = ',a16,'              (default)')
+ 50  format ('Keep rotor CV constant (holdcv)        = ',a)
+ 55  format ('Keep rotor CV constant (holdcv)        = ',a16,'              (default)')
 
 end subroutine ffdev_genpoints_ctrl_points
 

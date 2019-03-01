@@ -40,6 +40,7 @@ subroutine ffdev_err_nbdists_ctrl(fin)
 
     if( .not. prmfile_open_section(fin,'nbdists') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableNBDistanceError)
+        write(DEV_OUT,135) prmfile_onoff(PrintNBDistanceErrorSummary)
         write(DEV_OUT,125) NBDistanceErrorWeight
         write(DEV_OUT,65) NBDistanceSWPosition
         write(DEV_OUT,75) NBDistanceSWAlpha
@@ -50,6 +51,11 @@ subroutine ffdev_err_nbdists_ctrl(fin)
         write(DEV_OUT,110) prmfile_onoff(EnableNBDistanceError)
     else
         write(DEV_OUT,115) prmfile_onoff(EnableNBDistanceError)
+    end if
+    if( prmfile_get_logical_by_key(fin,'summary', PrintNBDistanceErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintNBDistanceErrorSummary)
+    else
+        write(DEV_OUT,135) prmfile_onoff(PrintNBDistanceErrorSummary)
     end if
     if( prmfile_get_real8_by_key(fin,'weight', NBDistanceErrorWeight)) then
         write(DEV_OUT,120) NBDistanceErrorWeight
@@ -71,10 +77,13 @@ subroutine ffdev_err_nbdists_ctrl(fin)
 
  10 format('=== [nbdists] ==================================================================')
 
-110  format ('NB distances error (enabled)           = ',a12)
-115  format ('NB distances error (enabled)           = ',a12,'                  (default)')
-120  format ('NB distances error weight (weight)     = ',f21.8)
-125  format ('NB distances error weight (weight)     = ',f21.8,'         (default)')
+110  format ('NB distance error (enabled)            = ',a12)
+115  format ('NB distance error (enabled)            = ',a12,'                  (default)')
+130  format ('Print NB dist error summary (summary)  = ',a12)
+135  format ('Print NB dist error summary (summary)  = ',a12,'                  (default)')
+
+120  format ('NB distance error weight (weight)      = ',f21.8)
+125  format ('NB distance error weight (weight)      = ',f21.8,'         (default)')
 
  60  format ('NB distance switch r0 (swr0)           = ',f12.6)
  65  format ('NB distance switch r0 (swr0)           = ',f12.6,'                  (default)')

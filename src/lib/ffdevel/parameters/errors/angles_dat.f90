@@ -21,8 +21,10 @@ use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-logical                 :: EnableAngleError = .false.
-real(DEVDP)             :: AngleErrorWeight = DEV_D2R
+! initialization in ffdev_err_angles_init
+logical                 :: EnableAngleError
+logical                 :: PrintAngleErrorSummary
+real(DEVDP)             :: AngleErrorWeight
 
 ! ------------------------------------------------------------------------------
 

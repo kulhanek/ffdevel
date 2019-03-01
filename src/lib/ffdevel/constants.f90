@@ -125,6 +125,7 @@ integer,parameter       :: DEV_GEO      = 287
 integer,parameter       :: DEV_TOP      = 289
 integer,parameter       :: DEV_PRMS     = 298
 integer,parameter       :: DEV_NULL     = 456
+integer,parameter       :: DEV_PROFILE  = 371
 
 !===============================================================================
 

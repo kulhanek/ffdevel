@@ -76,7 +76,7 @@ subroutine ffdev_topology_load(top,name)
     ! load topology file
     call prmfile_init(fin)
     if( .not. prmfile_read(fin,name) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to read topology "'//name//'"!')
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to read topology "'//trim(name)//'"!')
     end if
 
     top%name = name
@@ -737,7 +737,7 @@ subroutine ffdev_topology_save(top,name)
     ! NB list --------------------------
     write(DEV_TOP,10) 'nb_types'
     do i=1,top%nnb_types
-        write(DEV_TOP,130)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
+        write(DEV_TOP,125)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
                                top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
     end do
 125 format(I7,1X,I5,1X,I5,1X,F13.7,1X,F13.7,1X,F13.7)

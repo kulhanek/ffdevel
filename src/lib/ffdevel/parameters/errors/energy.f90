@@ -22,6 +22,23 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
+! subroutine ffdev_err_energy_init
+! ==============================================================================
+
+subroutine ffdev_err_energy_init
+
+    use ffdev_err_energy_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    EnableEnergyError        = .false.
+    PrintEnergyErrorSummary  = .false.
+    EnergyErrorWeight        = 1.0
+
+end subroutine ffdev_err_energy_init
+
+! ==============================================================================
 ! subroutine ffdev_err_energy_error
 ! ==============================================================================
 
@@ -61,6 +78,49 @@ subroutine ffdev_err_energy_error(error)
     end if
 
 end subroutine ffdev_err_energy_error
+
+! ==============================================================================
+! subroutine ffdev_err_energy_summary
+! ==============================================================================
+
+subroutine ffdev_err_energy_summary(set)
+
+    use ffdev_targetset_dat
+
+    implicit none
+    type(TARGETSET)     :: set
+    ! --------------------------------------------
+    real(DEVDP)         :: err,serr
+    integer             :: j,num
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+    write(DEV_OUT,20)
+
+    do j=1,set%ngeos
+        if( set%geo(j)%trg_ene_loaded ) then
+            err = set%geo(j)%total_ene - set%offset - set%geo(j)%trg_energy
+            serr = serr + set%geo(j)%weight * err**2
+            num = num + 1
+            write(DEV_OUT,30) j, set%geo(j)%weight,set%offset, &
+                              set%geo(j)%trg_energy, set%geo(j)%total_ene, err
+        end if
+    end do
+
+    if( num .gt. 0 ) then
+        serr = sqrt(serr / real(num))
+    end if
+
+    write(DEV_OUT,20)
+    write(DEV_OUT,40)  serr
+
+10 format('# ID   Weight  E(offset)     E(TGR)      E(MM)     E(Err)')
+20 format('# ---- ------ ---------- ---------- ---------- ----------')
+30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3)
+40 format('# Final weighted error            = ',F10.3)
+
+end subroutine ffdev_err_energy_summary
 
 ! ------------------------------------------------------------------------------
 

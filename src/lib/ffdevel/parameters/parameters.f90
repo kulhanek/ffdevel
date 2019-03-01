@@ -1739,7 +1739,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
             case(REALM_EOFFSET)
                 tmpx(id) = -1000.0
             case(REALM_BOND_D0)
-                tmpx(id) = params(i)%value - params(i)%value*0.3
+                tmpx(id) = 1.0d0
             case(REALM_BOND_K)
                 tmpx(id) = 0
             case(REALM_ANGLE_A0)
@@ -1807,7 +1807,7 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_EOFFSET)
                 tmpx(id) = 1000.0d0
             case(REALM_BOND_D0)
-                tmpx(id) = params(i)%value + params(i)%value*0.3
+                tmpx(id) = 3.0d0
             case(REALM_BOND_K)
                 tmpx(id) = 1500.0
             case(REALM_ANGLE_A0)
@@ -1825,7 +1825,7 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_DIH_SCNB)
                 tmpx(id) = 3.0
             case(REALM_IMPR_V)
-                tmpx(id) = 20.0
+                tmpx(id) = 50.0
             case(REALM_IMPR_G)
                 tmpx(id) = 1.05*DEV_PI
             case(REALM_VDW_EPS)
@@ -2052,16 +2052,16 @@ subroutine ffdev_parameters_error_num(prms,error,grads)
     ! --------------------------------------------------------------------------
     real(DEVDP),allocatable :: tmp_prms(:)
     real(DEVDP)             :: d
-    type(FFERROR_TYPE)      :: ene1,ene2
+    type(FFERROR_TYPE)      :: err1,err2
     integer                 :: i
     ! --------------------------------------------------------------------------
 
-    d = 0.5d-6  ! differentiation parameter
+    d = 0.5d-5  ! differentiation parameter
 
     ! calculate base energy
     call ffdev_parameters_error_only(prms,error)
 
-    ! write(*,*) 'total= ',error%total
+    ! write(*,*) 'total= ',error%total,prms
 
     ! allocate temporary geometry object
     allocate( tmp_prms(nactparms) )
@@ -2072,20 +2072,26 @@ subroutine ffdev_parameters_error_num(prms,error,grads)
     do i=1,nactparms
         ! left
         tmp_prms(i) = prms(i) + d
-        call ffdev_parameters_error_only(tmp_prms,ene1)
+        call ffdev_parameters_error_only(tmp_prms,err1)
+
+        ! write(*,*) ene1%total,tmp_prms
 
         ! right
         tmp_prms(i) = prms(i) - d
-        call ffdev_parameters_error_only(tmp_prms,ene2)
+        call ffdev_parameters_error_only(tmp_prms,err2)
 
+        ! write(*,*) ene2%total,tmp_prms
         ! write(*,*) ene1%total,ene2%total
 
         ! gradient
-        grads(i) = 0.5d0*(ene1%total-ene2%total)/d
+        grads(i) = 0.5d0*(err1%total-err2%total)/d
 
         ! move back
         tmp_prms(i) = prms(i)
     end do
+
+    ! write(*,*) grads
+    ! stop
 
     ! release temporary geometry object
     deallocate(tmp_prms)

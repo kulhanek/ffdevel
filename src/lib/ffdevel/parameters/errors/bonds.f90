@@ -22,6 +22,23 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
+! subroutine ffdev_err_bonds_init
+! ==============================================================================
+
+subroutine ffdev_err_bonds_init
+
+    use ffdev_err_bonds_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    EnableBondError          = .false.
+    PrintBondErrorSummary    = .false.
+    BondErrorWeight          = 1.0
+
+end subroutine ffdev_err_bonds_init
+
+! ==============================================================================
 ! subroutine ffdev_err_bonds_error
 ! ==============================================================================
 
@@ -56,6 +73,7 @@ subroutine ffdev_err_bonds_error(error)
                     aj = sets(i)%top%bonds(q)%aj
                     d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
                     dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
+                    ! write(*,*) d0, dt
                     nbonds = nbonds + 1
                     err = d0 - dt
                     seterrbonds = seterrbonds + sets(i)%geo(j)%weight * err**2
@@ -70,6 +88,25 @@ subroutine ffdev_err_bonds_error(error)
     end if
 
 end subroutine ffdev_err_bonds_error
+
+! ==============================================================================
+! subroutine ffdev_err_bonds_summary
+! ==============================================================================
+
+subroutine ffdev_err_bonds_summary(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_geometry_utils
+
+    implicit none
+    type(TOPOLOGY)     :: top
+    type(GEOMETRY)     :: geo
+    ! --------------------------------------------------------------------------
+
+    call ffdev_geometry_utils_comp_bonds(.false.,top,geo%trg_crd,geo%crd)
+
+end subroutine ffdev_err_bonds_summary
 
 ! ------------------------------------------------------------------------------
 

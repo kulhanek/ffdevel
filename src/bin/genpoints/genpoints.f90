@@ -37,7 +37,8 @@ program ffdev_genpoints_program
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo
     type(XYZFILE_TYPE)      :: traj
-    integer                 :: alloc_stat, i
+    integer                 :: alloc_stat, i, j
+    real(DEVDP)             :: torang
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('Generate Points')
@@ -116,7 +117,7 @@ program ffdev_genpoints_program
     if( RotorListLoaded ) then
         write(DEV_OUT,*)
         call ffdev_utils_heading(DEV_OUT,'Rotors','=')
-        call read_rotors()
+        call read_rotors(top)
     end if
 
     ! --------------------------------------------------------------------------
@@ -203,6 +204,26 @@ program ffdev_genpoints_program
         call free_xyz(traj)
     end if
 
+    ! ---------------------------
+    ! profile
+    write(DEV_OUT,200) trim(ProfileName)
+    call ffdev_utils_open(DEV_PROFILE,ProfileName,'U')
+
+    do i=1,CurrPtsIndex
+        write(DEV_PROFILE,205,ADVANCE='NO') i
+
+        ! calculate rotor angle for given point
+        do j=1,NRotors
+            torang = ffdev_geometry_get_dihedral(Points(i)%crd,Rotors(j)%ait,Rotors(j)%ai,Rotors(j)%aj,Rotors(j)%ajt)
+            write(DEV_PROFILE,210,ADVANCE='NO') torang*DEV_R2D
+        end do
+
+        ! write energy
+        write(DEV_PROFILE,215) Points(i)%energy, Points(i)%energy-Points(MinEnergyPtsIndex)%energy
+    end do
+
+    close(DEV_PROFILE)
+
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_footer('Generate Points')
@@ -211,6 +232,11 @@ program ffdev_genpoints_program
 105 format('Number of generated points          = ',I6)
 110 format('File name with global minimum point = ',A)
 120 format('>>> INFO: Increasing maximum number of points to : ',I6)
+
+200 format('File name with energy profile       = ',A)
+205 format(I6)
+210 format(1X,F10.4)
+215 format(1X,F10.4,1X,F10.4)
 
 contains
 
@@ -235,14 +261,17 @@ subroutine print_usage()
 end subroutine print_usage
 
 !===============================================================================
-! subroutine read_rotors
+! subroutine read_rotors(top)
 !===============================================================================
 
-subroutine read_rotors
+subroutine read_rotors(top)
 
     implicit none
+    type(TOPOLOGY)      :: top
+    ! --------------------------------------------
     type(PRMFILE_TYPE)  :: rotfin
-    integer             :: i, ai, aj, alloc_stat
+    integer             :: i, ai, aj, alloc_stat, mb, j
+    logical             :: first
     ! --------------------------------------------------------------------------
 
     call prmfile_init(rotfin)
@@ -278,6 +307,12 @@ subroutine read_rotors
         if( i .gt. nrotors ) then
             call ffdev_utils_exit(DEV_OUT,1,'Mismatch in the rotor bond file parser!')
         end if
+        if( (ai .le. 0) .or. (ai .gt. top%natoms) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'ai out-of-limits!')
+        end if
+        if( (aj .le. 0) .or. (aj .gt. top%natoms) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'aj out-of-limits!')
+        end if
         rotors(i)%ai = ai
         rotors(i)%aj = aj
         i = i + 1
@@ -293,6 +328,38 @@ subroutine read_rotors
     ! release the file
     call prmfile_clear(rotfin)
 
+
+    ! generate terminals
+    do i=1,nrotors
+        first = .true.
+        mb = 0
+        do j = 1,top%atoms(rotors(i)%ai)%nbonds
+            if( top%atoms(rotors(i)%ai)%bonded(j) .eq. rotors(i)%aj ) cycle ! skip
+            if( first .eqv. .true. ) then
+                rotors(i)%ait = top%atoms(rotors(i)%ai)%bonded(j)
+                mb = top%atoms( top%atoms(rotors(i)%ai)%bonded(j) )%nbonds
+            end if
+            if( mb .le. top%atoms( top%atoms(rotors(i)%ai)%bonded(j) )%nbonds ) then
+                rotors(i)%ait = top%atoms(rotors(i)%ai)%bonded(j)
+                mb = top%atoms( top%atoms(rotors(i)%ai)%bonded(j) )%nbonds
+            end if
+        end do
+
+        first = .true.
+        mb = 0
+        do j = 1,top%atoms(rotors(i)%aj)%nbonds
+            if( top%atoms(rotors(i)%aj)%bonded(j) .eq. rotors(i)%ai ) cycle ! skip
+            if( first .eqv. .true. ) then
+                rotors(i)%ajt = top%atoms(rotors(i)%aj)%bonded(j)
+                mb = top%atoms( top%atoms(rotors(i)%aj)%bonded(j) )%nbonds
+            end if
+            if( mb .le. top%atoms( top%atoms(rotors(i)%aj)%bonded(j) )%nbonds ) then
+                rotors(i)%ajt = top%atoms(rotors(i)%aj)%bonded(j)
+                mb = top%atoms( top%atoms(rotors(i)%aj)%bonded(j) )%nbonds
+            end if
+        end do
+    end do
+
     write(DEV_OUT,100) nrotors
 
     write(DEV_OUT,*)
@@ -300,17 +367,21 @@ subroutine read_rotors
     write(DEV_OUT,120)
 
     do i=1,nrotors
-        write(DEV_OUT,130) rotors(i)%ai, top%atoms(rotors(i)%ai)%name, &
+        write(DEV_OUT,130) rotors(i)%ait, top%atoms(rotors(i)%ait)%name, &
+                           top%atoms(rotors(i)%ait)%residx,top%atoms(rotors(i)%ait)%resname, &
+                           rotors(i)%ai, top%atoms(rotors(i)%ai)%name, &
                            top%atoms(rotors(i)%ai)%residx,top%atoms(rotors(i)%ai)%resname, &
                            rotors(i)%aj, top%atoms(rotors(i)%aj)%name, &
-                           top%atoms(rotors(i)%aj)%residx,top%atoms(rotors(i)%aj)%resname
+                           top%atoms(rotors(i)%aj)%residx,top%atoms(rotors(i)%aj)%resname, &
+                           rotors(i)%ajt, top%atoms(rotors(i)%ajt)%name, &
+                           top%atoms(rotors(i)%ajt)%residx,top%atoms(rotors(i)%ajt)%resname
 
     end do
 
 100 format('Number of rotor bonds = ',I6)
-110 format('# Indx Name RIndx RNam    Indx  Name RIndx RNam')
-120 format('# ---- ---- ----- ---- | ------ ---- ----- ----')
-130 format(I6,1X,A4,1X,I5,1X,A4,3X,I6,1X,A4,1X,I5,1X,A4)
+110 format('# Indx Name RIndx RNam    Indx  Name RIndx RNam    Indx  Name RIndx RNam    Indx  Name RIndx RNam')
+120 format('# ---- ---- ----- ---- | ------ ---- ----- ---- ~ ------ ---- ----- ---- | ------ ---- ----- ----')
+130 format(I6,1X,A4,1X,I5,1X,A4,3X,I6,1X,A4,1X,I5,1X,A4,3X,I6,1X,A4,1X,I5,1X,A4,3X,I6,1X,A4,1X,I5,1X,A4)
 
 end subroutine read_rotors
 
@@ -381,9 +452,9 @@ subroutine genpoints_stepbystep
         end do
 
         lticks = mod(nruns,nticks)
-        if( lticks .gt. nticks/2 ) then
-            lticks = nticks/2 - lticks
-        end if
+!        if( lticks .gt. nticks/2 ) then
+!            lticks = nticks/2 - lticks
+!        end if
         rotor   = nruns / nticks + 1
         if( rotor .le. NRotors ) then
             Rotors(rotor)%angle = lticks * TickAngle
@@ -398,7 +469,7 @@ subroutine genpoints_stepbystep
         nruns = nruns + 1
 
         ! is energy acceptable
-        if( tmpgeo%total_ene - MinEnergy .gt. MaxEnergy ) then
+        if( (tmpgeo%total_ene - MinEnergy) .gt. MaxEnergy ) then
             RejectedPoints = RejectedPoints + 1
             cycle
         end if
@@ -511,9 +582,9 @@ subroutine genpoints_systematic
         do i=1,NRotors
             lticks = mod(itmp,nticks)
             itmp   = itmp / nticks
-            if( lticks .gt. nticks/2 ) then
-                lticks = nticks/2 - lticks
-            end if
+!            if( lticks .gt. nticks/2 ) then
+!                lticks = nticks/2 - lticks
+!            end if
             Rotors(i)%angle = lticks * TickAngle
         end do
 
@@ -1009,11 +1080,31 @@ subroutine genpoints_optimize_points
 
     implicit none
     type(GEOMETRY)  :: tmpgeo
+    integer         :: alloc_stat, i
     ! --------------------------------------------------------------------------
 
     call ffdev_geometry_init(tmpgeo)
     call ffdev_geometry_allocate(tmpgeo,top%natoms)
     call ffdev_gradient_allocate(tmpgeo)
+
+    if( HoldCV ) then
+        tmpgeo%ncvs = NRotors
+        allocate( tmpgeo%cvs(tmpgeo%ncvs), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs array!')
+        end if
+        do i=1,tmpgeo%ncvs
+            allocate( tmpgeo%cvs(i)%ai(4), stat = alloc_stat)
+            if( alloc_stat .ne. 0 ) then
+                 call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs%ai array!')
+            end if
+            tmpgeo%cvs(i)%ai(1) = Rotors(i)%ait
+            tmpgeo%cvs(i)%ai(2) = Rotors(i)%ai
+            tmpgeo%cvs(i)%ai(3) = Rotors(i)%aj
+            tmpgeo%cvs(i)%ai(4) = Rotors(i)%ajt
+            tmpgeo%cvs(i)%cvtype = 'D'
+         end do
+    end if
 
     do i=1,CurrPtsIndex
         write(DEV_OUT,*)
@@ -1022,6 +1113,15 @@ subroutine genpoints_optimize_points
         write(DEV_OUT,*)
 
         tmpgeo%crd(:,:) = Points(i)%crd(:,:)
+
+        if( HoldCV ) then
+            do j=1,tmpgeo%ncvs
+                tmpgeo%cvs(j)%trg_value = &
+                      ffdev_geometry_get_dihedral(tmpgeo%crd,Rotors(j)%ait,Rotors(j)%ai,Rotors(j)%aj,Rotors(j)%ajt)
+                tmpgeo%cvs(j)%value = tmpgeo%cvs(j)%trg_value
+            end do
+        end if
+
         call ffdev_geoopt_run(DEV_OUT,top,tmpgeo)
 
         if( i .eq. 1 ) then
@@ -1033,7 +1133,12 @@ subroutine genpoints_optimize_points
             MinOptEnergy = tmpgeo%total_ene
             MinOptEnergyPtsIndex = i
         end if
+
+        Points(i)%crd(:,:) = tmpgeo%crd(:,:)
+        Points(i)%energy = tmpgeo%total_ene
     end do
+
+    call ffdev_geometry_destroy(tmpgeo)
 
     write(DEV_OUT,*)
     write(DEV_OUT,60) MinEnergy, MinEnergyPtsIndex

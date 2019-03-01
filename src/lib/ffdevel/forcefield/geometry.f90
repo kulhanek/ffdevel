@@ -53,26 +53,31 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_loaded = .false.
     geo%trg_grd_loaded = .false.
     geo%trg_hess_loaded = .false.
+    geo%trg_freq_loaded = .false.
     geo%trg_esp_loaded = .false.
     geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
-    geo%ncvs = 0
-    geo%cvs_energy = 0.0
+    geo%ncvs        = 0
+    geo%cvs_energy  = 0.0
 
-    geo%z       => null()
-    geo%crd     => null()
+    geo%z           => null()
+    geo%crd         => null()
 
-    geo%grd     => null()
-    geo%hess    => null()
-    geo%freq    => null()
+    geo%grd         => null()
+    geo%hess        => null()
+    geo%nmodes      => null()
+    geo%freq        => null()
 
-    geo%trg_crd     => null()
-    geo%trg_grd     => null()
-    geo%trg_hess    => null()
-    geo%trg_esp     => null()
+    geo%trg_crd         => null()
+    geo%trg_grd         => null()
+    geo%trg_hess        => null()
+    geo%trg_nmodes      => null()
+    geo%trg_freq        => null()
+    geo%freq_t2s_map    => null()
+    geo%trg_esp         => null()
 
-    geo%cvs     => null()
+    geo%cvs         => null()
 
 end subroutine ffdev_geometry_init
 

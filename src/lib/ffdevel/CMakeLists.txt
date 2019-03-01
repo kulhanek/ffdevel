@@ -30,12 +30,16 @@ SET(FFDEVEL_SRC
         parameters/errors/angles_dat.f90
         parameters/errors/angles.f90
         parameters/errors/angles_control.f90
-        parameters/errors/tors_dat.f90
-        parameters/errors/tors.f90
-        parameters/errors/tors_control.f90
+        parameters/errors/dihedrals_dat.f90
+        parameters/errors/dihedrals.f90
+        parameters/errors/dihedrals_control.f90
         parameters/errors/nbdists_dat.f90
         parameters/errors/nbdists.f90
         parameters/errors/nbdists_control.f90
+        parameters/errors/freqs_dat.f90
+        parameters/errors/freqs.f90
+        parameters/errors/freqs_control.f90
+
         parameters/errors/energy_dat.f90
         parameters/errors/energy.f90
         parameters/errors/energy_control.f90

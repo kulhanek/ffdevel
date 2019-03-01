@@ -32,6 +32,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     use prmfile
     use ffdev_utils
     use ffdev_geometry
+    use ffdev_hessian_utils
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -308,6 +309,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             sets(i)%geo(j)%weight = weight
             sets(i)%geo(j)%trg_crd_loaded  = sets(i)%optgeo
             call ffdev_geometry_load_point(sets(i)%geo(j),geoname)
+
+            ! calculate traget freqs and normal mode if needed
+            if(  (.not. DoNotCalcFreqs) .and. sets(i)%geo(j)%trg_hess_loaded ) then
+                call ffdev_hessian_calc_trg_freqs(sets(i)%geo(j))
+                sets(i)%geo(j)%trg_freq_loaded =  .true.
+            end if
+
             if( shift2zero ) then
                 call ffdev_geometry_info_point(sets(i)%geo(j))
             else

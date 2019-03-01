@@ -15,17 +15,17 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_energy_dat
+module ffdev_err_dihedrals_dat
 
 use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-! initialization in ffdev_err_energy_init
-logical                 :: EnableEnergyError
-logical                 :: PrintEnergyErrorSummary
-real(DEVDP)             :: EnergyErrorWeight
+! initialization in ffdev_err_dihedrals_init
+logical                 :: EnableDihedralError
+logical                 :: PrintDihedralErrorSummary
+real(DEVDP)             :: DihedralErrorWeight
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_energy_dat
+end module ffdev_err_dihedrals_dat

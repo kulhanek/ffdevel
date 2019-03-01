@@ -1046,7 +1046,7 @@ void CTop2STop::WriteNBList(ostream& sout)
                 }
             }
             int didx = 0;
-            if( found == true ){
+            if( (found == true) && ( (p_dih->GetType() == 0) || (p_dih->GetType() == -1) ) ){
                 CDihedralType dtype;
                 int ip = p_dih->GetIP();
                 int jp = p_dih->GetJP();

@@ -21,8 +21,10 @@ use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-logical                 :: EnableBondError = .false.
-real(DEVDP)             :: BondErrorWeight = 1.0
+! initialization in ffdev_err_bonds_init
+logical                 :: EnableBondError
+logical                 :: PrintBondErrorSummary
+real(DEVDP)             :: BondErrorWeight
 
 ! ------------------------------------------------------------------------------
 

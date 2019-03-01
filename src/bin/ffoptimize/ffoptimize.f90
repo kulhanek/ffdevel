@@ -107,6 +107,10 @@ program ffdev_optimize_program
             i = i + 1
         end if
 
+        if( string .eq. 'FFERROR' ) then
+            call execute_fferror(fin,.true.)
+        end if
+
         if( string .eq. 'FFMANIP' ) then
             call execute_ffmanip(fin,.true.)
         end if

@@ -28,6 +28,7 @@ contains
 subroutine ffdev_err_energy_ctrl(fin)
 
     use ffdev_err_energy_dat
+    use ffdev_errors_dat
     use ffdev_utils
     use prmfile
 
@@ -41,6 +42,7 @@ subroutine ffdev_err_energy_ctrl(fin)
     if( .not. prmfile_open_section(fin,'energy') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableEnergyError)
         write(DEV_OUT,125) EnergyErrorWeight
+        errors_calc_ene = EnableEnergyError
         return
     end if
 
@@ -54,6 +56,8 @@ subroutine ffdev_err_energy_ctrl(fin)
     else
         write(DEV_OUT,125) EnergyErrorWeight
     end if
+
+    errors_calc_ene = EnableEnergyError
 
  10 format('=== [energy] ===================================================================')
 

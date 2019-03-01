@@ -15,15 +15,20 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_tors_dat
+module ffdev_err_freqs_dat
 
 use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-logical                 :: EnableTorsionError = .false.
-real(DEVDP)             :: TorsionErrorWeight = DEV_D2R
+! initialization in ffdev_err_freqs_init
+logical                 :: EnableFreqError
+logical                 :: DebugFreqError
+logical                 :: PrintFreqErrorSummary
+real(DEVDP)             :: FreqErrorWeight
+real(DEVDP)             :: FreqMaxNmodeAngle
+real(DEVDP)             :: FreqMaxRMSD
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_tors_dat
+end module ffdev_err_freqs_dat

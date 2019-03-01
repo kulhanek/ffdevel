@@ -48,23 +48,28 @@ type GEOMETRY
     real(DEVDP)             :: total_ene        ! total energy from MM
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer     :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
-    real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations
+    real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
+    real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
     real(DEVDP)             :: weight           ! contribution to all data
     logical                 :: trg_ene_loaded
     logical                 :: trg_crd_loaded
     logical                 :: trg_grd_loaded
     logical                 :: trg_hess_loaded
+    logical                 :: trg_freq_loaded
     logical                 :: trg_esp_loaded
     logical                 :: trg_crd_optimized
-    real(DEVDP)             :: trg_energy       ! target energy
-    real(DEVDP),pointer     :: trg_crd(:,:)     ! target geometry (3,natoms)
-    real(DEVDP),pointer     :: trg_grd(:,:)     ! target gradient (3,natoms)
-    real(DEVDP),pointer     :: trg_hess(:,:,:,:)! target hessian (3,natoms,3,natoms)
-    integer                 :: esp_npoints      ! number of ESP points
-    real(DEVDP),pointer     :: trg_esp(:,:)     ! target ESP (4,npoints)
-    integer                 :: ncvs             ! number of collective variables
+    real(DEVDP)             :: trg_energy           ! target energy
+    real(DEVDP),pointer     :: trg_crd(:,:)         ! target geometry (3,natoms)
+    real(DEVDP),pointer     :: trg_grd(:,:)         ! target gradient (3,natoms)
+    real(DEVDP),pointer     :: trg_hess(:,:,:,:)    ! target hessian (3,natoms,3,natoms)
+    real(DEVDP),pointer     :: trg_nmodes(:,:,:,:)  ! target normal modes (3,natoms,3,natoms)
+    real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
+    integer,pointer         :: freq_t2s_map(:)      ! trg_map(trg) = freq; map to freq by angle between normal vectors
+    integer                 :: esp_npoints          ! number of ESP points
+    real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
+    integer                 :: ncvs                 ! number of collective variables
     type(COLVAR),pointer    :: cvs(:)
-    real(DEVDP)             :: cvs_energy       ! colvar energy penalty
+    real(DEVDP)             :: cvs_energy           ! colvar energy penalty
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------
