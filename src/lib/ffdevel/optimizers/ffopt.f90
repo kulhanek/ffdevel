@@ -471,7 +471,7 @@ subroutine opt_nlopt
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
     rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
-    write(DEV_OUT,*)
+
     call write_header(.false.)
     call write_results(istep,FFError,rmsg,maxgrad,.true.)
     
@@ -608,10 +608,10 @@ subroutine write_header(printmethod)
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
 
- 20 format('# STEP    Error    ')
+ 20 format('# STEP        Error')
  25 format('#----- ------------')
   
- 60 format('    RMSG         maxG     ')
+ 60 format('         RMSG         maxG')
  65 format(' ------------ ------------')
 
 end subroutine write_header

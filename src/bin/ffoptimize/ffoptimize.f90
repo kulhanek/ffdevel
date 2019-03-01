@@ -186,6 +186,9 @@ program ffdev_optimize_program
     ! save topologies if requested
     call ffdev_targetset_save_final_stops()
 
+    ! save geometries if requested
+    call ffdev_targetset_save_final_pts()
+
     ! save optimized parameters
     if( len_trim(OutParamFileName) .ne. 0 ) then
         write(DEV_OUT,120) trim(OutParamFileName)

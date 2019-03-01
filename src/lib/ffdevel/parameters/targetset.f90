@@ -211,6 +211,39 @@ subroutine ffdev_targetset_save_final_stops
 
 end subroutine ffdev_targetset_save_final_stops
 
+! ==============================================================================
+! subroutine ffdev_targetset_save_final_pts
+! ==============================================================================
+
+subroutine ffdev_targetset_save_final_pts
+
+    use ffdev_targetset_dat
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    integer                 :: i,j
+    character(len=MAX_PATH) :: sname
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,10)
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            ! save geometry if requested
+            if( sets(i)%savegeo .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                write(sname,20) i,j
+                write(DEV_OUT,30) trim(sname)
+                call ffdev_geometry_save_point(sets(i)%geo(j),sname)
+            end if
+        end do
+    end do
+
+ 10 format('Saving final point geometries ...')
+ 20 format('S',I2.2,'P',I6.6,'.pst')
+ 30 format(7X,A)
+
+end subroutine ffdev_targetset_save_final_pts
+
 ! ------------------------------------------------------------------------------
 
 end module ffdev_targetset

@@ -653,29 +653,33 @@ subroutine ffdev_geometry_save_point(geo,name)
         call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with energy!')
     end if
 
-    write(DEV_GEO,'(A)',iostat = write_stat) 'GRADIENT'
-    do i=1,geo%natoms
-        write(DEV_GEO,'(F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
-                       geo%grd(1,i), geo%grd(2,i), geo%grd(3,i)
-        if( write_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with gradient!')
-        end if
-    end do
-
-    write(DEV_GEO,'(A)',iostat = write_stat) 'HESSIAN'
-    do i=1,geo%natoms
-        do j=1,3
-            do k=1,geo%natoms
-                do l=1,3
-                    write(DEV_GEO,'(F12.6,1X)',iostat = write_stat,advance='NO') geo%hess(j,i,l,k)
-                    if( write_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with hessian!')
-                    end if
-                end do
-            end do
-            write(DEV_GEO,*)
+    if( associated(geo%grd) ) then
+        write(DEV_GEO,'(A)',iostat = write_stat) 'GRADIENT'
+        do i=1,geo%natoms
+            write(DEV_GEO,'(F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
+                           geo%grd(1,i), geo%grd(2,i), geo%grd(3,i)
+            if( write_stat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with gradient!')
+            end if
         end do
-    end do
+    end if
+
+    if( associated(geo%hess) ) then
+        write(DEV_GEO,'(A)',iostat = write_stat) 'HESSIAN'
+        do i=1,geo%natoms
+            do j=1,3
+                do k=1,geo%natoms
+                    do l=1,3
+                        write(DEV_GEO,'(F12.6,1X)',iostat = write_stat,advance='NO') geo%hess(j,i,l,k)
+                        if( write_stat .ne. 0 ) then
+                            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with hessian!')
+                        end if
+                    end do
+                end do
+                write(DEV_GEO,*)
+            end do
+        end do
+    end if
 
     ! close file
     close(DEV_GEO)

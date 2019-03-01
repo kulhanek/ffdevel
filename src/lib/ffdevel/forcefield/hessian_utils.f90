@@ -701,6 +701,7 @@ subroutine ffdev_hessian_print_mapping(c12,natoms,freq1,nmodes1,freq2,nmodes2,ma
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
+    write(DEV_OUT,100)
     if( c12 ) then
         write(DEV_OUT,120)
     else
@@ -752,6 +753,7 @@ subroutine ffdev_hessian_print_mapping(c12,natoms,freq1,nmodes1,freq2,nmodes2,ma
     write(DEV_OUT,170) aerr
     write(DEV_OUT,180) rmse
 
+100 format('# Individual vibrations')
 120 format('# Indx#1  Freq#1  Indx#2  Freq#2    Angle   Diff')
 125 format('# Id#TRG Freq#TRG  Id#MM  Freq#MM   Angle   Diff')
 130 format('# ------ -------- ------ -------- ------- ------')

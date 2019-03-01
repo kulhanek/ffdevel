@@ -127,12 +127,12 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,37,ADVANCE='NO')
     end if
 
- 30 format(' E [kcal/mol]')
- 33 format('    Bonds [A]')
- 34 format(' Angles [deg]')
- 35 format('   Tors [deg]')
- 36 format('   d(NBs) [A]')
- 37 format('  Freq [1/cm]')
+ 30 format('       Energy')
+ 33 format('        Bonds')
+ 34 format('       Angles')
+ 35 format('    Dihedrals')
+ 36 format('       d(NBs)')
+ 37 format('  Frequencies')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -294,7 +294,7 @@ subroutine ffdev_errors_summary(final)
                     call ffdev_err_dihedrals_summary(sets(i)%top,sets(i)%geo(j))
                 end if
                 if( PrintNBDistanceErrorSummary ) then
-                  !  call ffdev_err_nbdists_summary(sets(i)%geo(j))
+                    call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j))
                 end if
                 if( PrintFreqErrorSummary ) then
                     call ffdev_err_freqs_summary(sets(i)%geo(j))

@@ -1807,7 +1807,7 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_EOFFSET)
                 tmpx(id) = 1000.0d0
             case(REALM_BOND_D0)
-                tmpx(id) = 3.0d0
+                tmpx(id) = 5.0d0
             case(REALM_BOND_K)
                 tmpx(id) = 1500.0
             case(REALM_ANGLE_A0)
