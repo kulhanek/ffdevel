@@ -32,9 +32,9 @@ subroutine ffdev_err_angles_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableAngleError         = .false.
-    PrintAngleErrorSummary   = .false.
-    AngleErrorWeight         = DEV_D2R
+    EnableAnglesError         = .false.
+    PrintAnglesErrorSummary   = .false.
+    AngleErrorsWeight         = DEV_D2R
 
 end subroutine ffdev_err_angles_init
 

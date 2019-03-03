@@ -32,9 +32,9 @@ subroutine ffdev_err_bonds_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableBondError          = .false.
-    PrintBondErrorSummary    = .false.
-    BondErrorWeight          = 1.0
+    EnableBondsError          = .false.
+    PrintBondsErrorSummary    = .false.
+    BondErrorsWeight          = 1.0
 
 end subroutine ffdev_err_bonds_init
 

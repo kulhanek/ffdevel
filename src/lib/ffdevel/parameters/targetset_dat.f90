@@ -49,5 +49,6 @@ logical                 :: KeepOptimizedGeometry        = .true.    ! keep geome
 logical                 :: SaveGeometry                 = .false.   
 logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded
+character(len=MAX_PATH) :: SavePointsPath               = 'points'  ! storage for saved points
 
 end module ffdev_targetset_dat

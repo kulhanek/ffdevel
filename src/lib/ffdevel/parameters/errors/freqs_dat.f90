@@ -22,10 +22,10 @@ use ffdev_constants
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_freqs_init
-logical                 :: EnableFreqError
+logical                 :: EnableFreqsError
 logical                 :: DebugFreqError
-logical                 :: PrintFreqErrorSummary
-real(DEVDP)             :: FreqErrorWeight
+logical                 :: PrintFreqsErrorSummary
+real(DEVDP)             :: FreqsErrorWeight
 real(DEVDP)             :: FreqMaxNmodeAngle
 real(DEVDP)             :: FreqMaxRMSD
 

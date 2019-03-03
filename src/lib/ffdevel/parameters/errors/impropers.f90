@@ -15,97 +15,105 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_dihedrals
+module ffdev_err_impropers
 
 use ffdev_constants
 
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_dihedrals_init
+! subroutine ffdev_err_impropers_init
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_init
+subroutine ffdev_err_impropers_init
 
-    use ffdev_err_dihedrals_dat
+    use ffdev_err_impropers_dat
 
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableDihedralsError           = .false.
-    PrintDihedralsErrorSummary     = .false.
-    DihedralsErrorWeight           = DEV_D2R
+    EnableImpropersError            = .false.
+    PrintImpropersErrorSummary      = .false.
+    ImpropersErrorWeight            = DEV_D2R
+    ImpropersErrorLockToPhase       = .true.
 
-end subroutine ffdev_err_dihedrals_init
+end subroutine ffdev_err_impropers_init
 
 ! ==============================================================================
-! subroutine ffdev_err_dihedrals_error
+! subroutine ffdev_err_impropers_error
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_error(error)
+subroutine ffdev_err_impropers_error(error)
 
     use ffdev_targetset_dat
     use ffdev_utils   
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_impropers_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,ndihedrals,ai,aj,ak,al
-    real(DEVDP)         :: err,seterrdihedrals
+    integer             :: i,j,q,nimpropers,ai,aj,ak,al,idt
+    real(DEVDP)         :: err,seterrimpropers
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%dihedrals = 0.0
+    error%impropers = 0.0
 
-    seterrdihedrals = 0.0
-    ndihedrals = 0
+    seterrimpropers = 0.0
+    nimpropers = 0
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
 
             if( sets(i)%geo(j)%trg_crd_optimized ) then
-                do q=1,sets(i)%top%ndihedrals
-                    ai = sets(i)%top%dihedrals(q)%ai
-                    aj = sets(i)%top%dihedrals(q)%aj
-                    ak = sets(i)%top%dihedrals(q)%ak
-                    al = sets(i)%top%dihedrals(q)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D
-                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D
-                    ndihedrals = ndihedrals + 1
+                do q=1,sets(i)%top%nimpropers
+                    ai = sets(i)%top%impropers(q)%ai
+                    aj = sets(i)%top%impropers(q)%aj
+                    ak = sets(i)%top%impropers(q)%ak
+                    al = sets(i)%top%impropers(q)%al
+                    d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D
+                    if( ImpropersErrorLockToPhase ) then
+                        idt = sets(i)%top%impropers(q)%dt
+                        dt = sets(i)%top%improper_types(idt)%g
+                    else
+                        dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D
+                    end if
+                    nimpropers = nimpropers + 1
                     err = ffdev_geometry_get_dihedral_deviation(d0,dt)
-                    seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
+                    seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
                 end do
             end if
         end do
     end do
 
-    if( ndihedrals .gt. 0 ) then
-        error%dihedrals = sqrt(seterrdihedrals/real(ndihedrals))
+    if( nimpropers .gt. 0 ) then
+        error%impropers = sqrt(seterrimpropers/real(nimpropers))
     end if 
 
-end subroutine ffdev_err_dihedrals_error
+end subroutine ffdev_err_impropers_error
 
 ! ==============================================================================
-! subroutine ffdev_err_dihedrals_summary
+! subroutine ffdev_err_impropers_summary
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_summary(top,geo)
+subroutine ffdev_err_impropers_summary(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
+    use ffdev_err_impropers_dat
 
     implicit none
     type(TOPOLOGY)     :: top
     type(GEOMETRY)     :: geo
     ! --------------------------------------------------------------------------
 
-    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd)
+    call ffdev_geometry_utils_comp_impropers(.false.,top,geo%trg_crd,geo%crd,ImpropersErrorLockToPhase)
 
-end subroutine ffdev_err_dihedrals_summary
+end subroutine ffdev_err_impropers_summary
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_dihedrals
+end module ffdev_err_impropers

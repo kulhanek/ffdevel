@@ -39,28 +39,28 @@ subroutine ffdev_err_nbdists_ctrl(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'nbdists') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableNBDistanceError)
-        write(DEV_OUT,135) prmfile_onoff(PrintNBDistanceErrorSummary)
-        write(DEV_OUT,125) NBDistanceErrorWeight
+        write(DEV_OUT,115) prmfile_onoff(EnableNBDistsError)
+        write(DEV_OUT,135) prmfile_onoff(PrintNBDistsErrorSummary)
+        write(DEV_OUT,125) NBDistsErrorWeight
         write(DEV_OUT,65) NBDistanceSWPosition
         write(DEV_OUT,75) NBDistanceSWAlpha
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableNBDistanceError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableNBDistanceError)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableNBDistsError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableNBDistsError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableNBDistanceError)
+        write(DEV_OUT,115) prmfile_onoff(EnableNBDistsError)
     end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintNBDistanceErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintNBDistanceErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintNBDistsErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintNBDistsErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintNBDistanceErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintNBDistsErrorSummary)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', NBDistanceErrorWeight)) then
-        write(DEV_OUT,120) NBDistanceErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', NBDistsErrorWeight)) then
+        write(DEV_OUT,120) NBDistsErrorWeight
     else
-        write(DEV_OUT,125) NBDistanceErrorWeight
+        write(DEV_OUT,125) NBDistsErrorWeight
     end if
 
     if( prmfile_get_real8_by_key(fin,'swr0', NBDistanceSWPosition)) then

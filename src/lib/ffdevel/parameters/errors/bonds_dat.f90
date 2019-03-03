@@ -22,9 +22,9 @@ use ffdev_constants
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_bonds_init
-logical                 :: EnableBondError
-logical                 :: PrintBondErrorSummary
-real(DEVDP)             :: BondErrorWeight
+logical                 :: EnableBondsError
+logical                 :: PrintBondsErrorSummary
+real(DEVDP)             :: BondErrorsWeight
 
 ! ------------------------------------------------------------------------------
 

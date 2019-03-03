@@ -232,6 +232,7 @@ subroutine ffdev_targetset_save_final_pts
             ! save geometry if requested
             if( sets(i)%savegeo .and. sets(i)%geo(j)%trg_crd_optimized ) then
                 write(sname,20) i,j
+                sname = trim(SavePointsPath)//'/'//trim(sname)
                 write(DEV_OUT,30) trim(sname)
                 call ffdev_geometry_save_point(sets(i)%geo(j),sname)
             end if

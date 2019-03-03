@@ -41,6 +41,7 @@ subroutine ffdev_err_energy_ctrl(fin)
 
     if( .not. prmfile_open_section(fin,'energy') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableEnergyError)
+        write(DEV_OUT,135) prmfile_onoff(PrintEnergyErrorSummary)
         write(DEV_OUT,125) EnergyErrorWeight
         errors_calc_ene = EnableEnergyError
         return
@@ -50,6 +51,11 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,110) prmfile_onoff(EnableEnergyError)
     else
         write(DEV_OUT,115) prmfile_onoff(EnableEnergyError)
+    end if
+    if( prmfile_get_logical_by_key(fin,'summary', PrintEnergyErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintEnergyErrorSummary)
+    else
+        write(DEV_OUT,135) prmfile_onoff(PrintEnergyErrorSummary)
     end if
     if( prmfile_get_real8_by_key(fin,'weight', EnergyErrorWeight)) then
         write(DEV_OUT,120) EnergyErrorWeight
@@ -63,6 +69,8 @@ subroutine ffdev_err_energy_ctrl(fin)
 
 110  format ('Energy error (enabled)                 = ',a12)
 115  format ('Energy error (enabled)                 = ',a12,'                  (default)')
+130  format ('Print bonds error summary (summary)    = ',a12)
+135  format ('Print bonds error summary (summary)    = ',a12,'                  (default)')
 120  format ('Energy error weight (weight)           = ',f21.8)
 125  format ('Energy error weight (weight)           = ',f21.8,'         (default)')
 

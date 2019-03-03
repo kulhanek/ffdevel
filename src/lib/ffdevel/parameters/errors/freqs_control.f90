@@ -40,35 +40,35 @@ subroutine ffdev_err_freqs_ctrl(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'freqs') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableFreqError)
-        write(DEV_OUT,135) prmfile_onoff(PrintFreqErrorSummary)
+        write(DEV_OUT,115) prmfile_onoff(EnableFreqsError)
+        write(DEV_OUT,135) prmfile_onoff(PrintFreqsErrorSummary)
         write(DEV_OUT,145) prmfile_onoff(DebugFreqError)
-        write(DEV_OUT,125) FreqErrorWeight
+        write(DEV_OUT,125) FreqsErrorWeight
         write(DEV_OUT,155) FreqMaxRMSD
         write(DEV_OUT,165) FreqMaxNmodeAngle
-        errors_calc_freq = EnableFreqError
+        errors_calc_freq = EnableFreqsError
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableFreqError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableFreqError)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableFreqsError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableFreqsError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableFreqError)
+        write(DEV_OUT,115) prmfile_onoff(EnableFreqsError)
     end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintFreqErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintFreqErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintFreqsErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintFreqsErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintFreqErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintFreqsErrorSummary)
     end if
     if( prmfile_get_logical_by_key(fin,'debug', DebugFreqError)) then
         write(DEV_OUT,140) prmfile_onoff(DebugFreqError)
     else
         write(DEV_OUT,145) prmfile_onoff(DebugFreqError)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', FreqErrorWeight)) then
-        write(DEV_OUT,120) FreqErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', FreqsErrorWeight)) then
+        write(DEV_OUT,120) FreqsErrorWeight
     else
-        write(DEV_OUT,125) FreqErrorWeight
+        write(DEV_OUT,125) FreqsErrorWeight
     end if
     if( prmfile_get_real8_by_key(fin,'maxrmsd', FreqMaxRMSD)) then
         write(DEV_OUT,150) FreqMaxRMSD
@@ -82,7 +82,7 @@ subroutine ffdev_err_freqs_ctrl(fin)
         write(DEV_OUT,165) FreqMaxNmodeAngle
     end if
 
-    errors_calc_freq = EnableFreqError
+    errors_calc_freq = EnableFreqsError
 
  10 format('=== [freqs] ====================================================================')
 

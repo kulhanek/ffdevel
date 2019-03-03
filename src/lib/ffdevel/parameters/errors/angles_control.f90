@@ -39,26 +39,26 @@ subroutine ffdev_err_angles_ctrl(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'angles') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableAngleError)
-        write(DEV_OUT,135) prmfile_onoff(PrintAngleErrorSummary)
-        write(DEV_OUT,125) AngleErrorWeight
+        write(DEV_OUT,115) prmfile_onoff(EnableAnglesError)
+        write(DEV_OUT,135) prmfile_onoff(PrintAnglesErrorSummary)
+        write(DEV_OUT,125) AngleErrorsWeight
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableAngleError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableAngleError)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableAnglesError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableAnglesError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableAngleError)
+        write(DEV_OUT,115) prmfile_onoff(EnableAnglesError)
     end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintAngleErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintAngleErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintAnglesErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintAnglesErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintAngleErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintAnglesErrorSummary)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', AngleErrorWeight)) then
-        write(DEV_OUT,120) AngleErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', AngleErrorsWeight)) then
+        write(DEV_OUT,120) AngleErrorsWeight
     else
-        write(DEV_OUT,125) AngleErrorWeight
+        write(DEV_OUT,125) AngleErrorsWeight
     end if
 
  10 format('=== [angles] ===================================================================')

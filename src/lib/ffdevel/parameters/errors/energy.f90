@@ -63,6 +63,7 @@ subroutine ffdev_err_energy_error(error)
     nene = 0
 
     do i=1,nsets
+        if( len(trim(sets(i)%name)) .gt. 0 ) cycle ! ignore reference sets
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( sets(i)%geo(j)%trg_ene_loaded ) then
@@ -94,6 +95,8 @@ subroutine ffdev_err_energy_summary(set)
     integer             :: j,num
     ! --------------------------------------------------------------------------
 
+    if( len(trim(set%name)) .gt. 0 ) return ! ignore reference sets
+
     write(DEV_OUT,*)
     write(DEV_OUT,10)
     write(DEV_OUT,20)
@@ -117,7 +120,7 @@ subroutine ffdev_err_energy_summary(set)
 
 10 format('# ID   Weight  E(offset)     E(TGR)      E(MM)     E(Err)')
 20 format('# ---- ------ ---------- ---------- ---------- ----------')
-30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3)
+30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 40 format('# Final weighted error            = ',F10.3)
 
 end subroutine ffdev_err_energy_summary

@@ -15,17 +15,18 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_angles_dat
+module ffdev_err_impropers_dat
 
 use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
-! initialization in ffdev_err_angles_init
-logical                 :: EnableAnglesError
-logical                 :: PrintAnglesErrorSummary
-real(DEVDP)             :: AngleErrorsWeight
+! initialization in ffdev_err_impropers_init
+logical                 :: EnableImpropersError
+logical                 :: PrintImpropersErrorSummary
+real(DEVDP)             :: ImpropersErrorWeight
+logical                 :: ImpropersErrorLockToPhase
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_angles_dat
+end module ffdev_err_impropers_dat

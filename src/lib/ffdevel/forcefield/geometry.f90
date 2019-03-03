@@ -313,7 +313,7 @@ subroutine ffdev_geometry_load_point(geo,name)
     call ffdev_utils_open(DEV_GEO,name,'O')
 
     ! read 1 point
-    call ffdev_geometry_load_1point(geo)
+    call ffdev_geometry_load_1point(geo,.false.)
 
     ! close file
     close(DEV_GEO)
@@ -345,9 +345,10 @@ integer function ffdev_geometry_num_of_points(name)
         ! init empty geo
         call ffdev_geometry_init(geo)
         ! read 1 point
-        call ffdev_geometry_load_1point(geo)
+        call ffdev_geometry_load_1point(geo,.true.)
         ! was it read?
         if( geo%natoms .eq. 0 ) then
+            call ffdev_geometry_destroy(geo)
             exit   ! no -> exit
         end if
         ffdev_geometry_num_of_points = ffdev_geometry_num_of_points + 1
@@ -364,7 +365,7 @@ end function ffdev_geometry_num_of_points
 ! subroutine ffdev_geometry_load_1point
 ! ==============================================================================
 
-subroutine ffdev_geometry_load_1point(geo)
+subroutine ffdev_geometry_load_1point(geo,stream)
 
     use smf_xyzfile
     use smf_xyzfile_type
@@ -373,6 +374,7 @@ subroutine ffdev_geometry_load_1point(geo)
 
     implicit none
     type(GEOMETRY)      :: geo
+    logical             :: stream
     ! --------------------------------------------
     integer             :: i,j,k,l,alloc_stat,read_stat
     character(len=255)  :: line,buffer
@@ -382,7 +384,12 @@ subroutine ffdev_geometry_load_1point(geo)
     ! load number of atoms - mandatory
     read(DEV_GEO,*,iostat = read_stat) geo%natoms
     if( read_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to load number of atoms from geometry point!')
+        if( stream ) then
+            geo%natoms = 0
+            return
+        else
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to load number of atoms from geometry point!')
+        end if
     end if
 
     ! load title - mandatory
@@ -1211,6 +1218,60 @@ real(DEVDP) function ffdev_geometry_get_dihedral(crd,ai,aj,ak,al)
     ffdev_geometry_get_dihedral = phi
 
 end function ffdev_geometry_get_dihedral
+
+! ==============================================================================
+! subroutine ffdev_geometry_get_improper
+! ==============================================================================
+
+real(DEVDP) function ffdev_geometry_get_improper(crd,ai,aj,ak,al)
+
+    use ffdev_utils
+    use ffdev_topology
+
+    implicit none
+    real(DEVDP)     :: crd(:,:)
+    integer         :: ai
+    integer         :: aj
+    integer         :: ak
+    integer         :: al
+    ! --------------------------------------------
+    real(DEVDP)     ::  scp,phi
+    real(DEVDP)     ::  bjinv, bkinv, bj2inv, bk2inv
+    real(DEVDP)     ::  rji(3),rjk(3),rkl(3),rnj(3),rnk(3)
+    ! --------------------------------------------------------------------------
+
+    rji(:) = crd(:,ai) - crd(:,aj)
+    rjk(:) = crd(:,ak) - crd(:,aj)
+    rkl(:) = crd(:,al) - crd(:,ak)
+
+    rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
+    rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
+    rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)
+    rnk(1) = -rjk(2)*rkl(3) + rjk(3)*rkl(2)
+    rnk(2) = -rjk(3)*rkl(1) + rjk(1)*rkl(3)
+    rnk(3) = -rjk(1)*rkl(2) + rjk(2)*rkl(1)
+
+    bj2inv  = 1.0d0/( rnj(1)**2 + rnj(2)**2 + rnj(3)**2)
+    bk2inv  = 1.0d0/( rnk(1)**2 + rnk(2)**2 + rnk(3)**2)
+    bjinv = sqrt(bj2inv)
+    bkinv = sqrt(bk2inv)
+
+    scp = (rnj(1)*rnk(1)+rnj(2)*rnk(2)+rnj(3)*rnk(3))*(bjinv*bkinv)
+    if ( scp .gt.  1.0d0 ) then
+        scp =  1.0d0
+    else if ( scp .lt. -1.0d0 ) then
+        scp = -1.0d0
+    end if
+    phi = acos ( scp )
+    if(rjk(1)*(rnj(2)*rnk(3)-rnj(3)*rnk(2)) &
+        +rjk(2)*(rnj(3)*rnk(1)-rnj(1)*rnk(3)) &
+        +rjk(3)*(rnj(1)*rnk(2)-rnj(2)*rnk(1)) &
+        .lt. 0) then
+              phi = -phi
+    end if
+    ffdev_geometry_get_improper = phi
+
+end function ffdev_geometry_get_improper
 
 !===============================================================================
 ! Function:  ffdev_geometry_get_dihedral_deviation

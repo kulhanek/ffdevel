@@ -30,14 +30,18 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_bonds_control
     use ffdev_err_angles_control
     use ffdev_err_dihedrals_control
+    use ffdev_err_impropers_control
     use ffdev_err_nbdists_control
     use ffdev_err_energy_control
+    use ffdev_err_rmsd_control
     use ffdev_err_freqs_control
     use ffdev_err_bonds
     use ffdev_err_angles
     use ffdev_err_dihedrals
+    use ffdev_err_impropers
     use ffdev_err_nbdists
     use ffdev_err_energy
+    use ffdev_err_rmsd
     use ffdev_err_freqs
     use ffdev_errors_dat
     use ffdev_utils
@@ -61,16 +65,20 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_bonds_init()
     call ffdev_err_angles_init()
     call ffdev_err_dihedrals_init()
+    call ffdev_err_impropers_init()
     call ffdev_err_nbdists_init()
     call ffdev_err_freqs_init()
+    call ffdev_err_rmsd_init()
 
     ! read setup
     call ffdev_err_energy_ctrl(fin)
     call ffdev_err_bonds_ctrl(fin)
     call ffdev_err_angles_ctrl(fin)
     call ffdev_err_dihedrals_ctrl(fin)
+    call ffdev_err_impropers_ctrl(fin)
     call ffdev_err_nbdists_ctrl(fin)
     call ffdev_err_freqs_ctrl(fin)
+    call ffdev_err_rmsd_ctrl(fin)
 
 end subroutine ffdev_errors_ctrl
 

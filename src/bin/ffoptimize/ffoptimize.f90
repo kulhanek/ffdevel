@@ -97,22 +97,26 @@ program ffdev_optimize_program
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
         end if
 
-        if( string .eq. 'PROGRAM' ) then
+        if( string .eq. 'FFERROR' ) then
+            call execute_fferror(fin,.false.)
+        end if
+
+        if( string .eq. 'FFMANIP' ) then
+            call execute_ffmanip(fin,.false.)
+        end if
+
+        if( string .eq. 'MMOPT' ) then
+            call execute_mmopt(fin,.false.)
+        end if
+
+        if( string .eq. 'FFOPT' ) then
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_program_fake(fin)
+            call execute_ffopt(fin,.false.)
 
             i = i + 1
-        end if
-
-        if( string .eq. 'FFERROR' ) then
-            call execute_fferror(fin,.true.)
-        end if
-
-        if( string .eq. 'FFMANIP' ) then
-            call execute_ffmanip(fin,.true.)
         end if
 
         rst = prmfile_next_group(fin)
@@ -143,21 +147,26 @@ program ffdev_optimize_program
 
     ! fferror -------------------------------------
         if( string .eq. 'FFERROR' ) then
-            call execute_fferror(fin,.false.)
+            call execute_fferror(fin,.true.)
         end if
 
-    ! manipff -------------------------------------
+    ! ffmanip -------------------------------------
         if( string .eq. 'FFMANIP' ) then
-            call execute_ffmanip(fin,.false.)
+            call execute_ffmanip(fin,.true.)
         end if
 
-    ! program -------------------------------------
-        if( string .eq. 'PROGRAM' ) then
+    ! mmopt ---------------------------------------
+        if( string .eq. 'MMOPT' ) then
+            call execute_mmopt(fin,.true.)
+        end if
+
+    ! ffopt ---------------------------------------
+        if( string .eq. 'FFOPT' ) then
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_program(fin)
+            call execute_ffopt(fin,.true.)
 
             i = i + 1
         end if
@@ -231,10 +240,10 @@ subroutine print_usage()
 end subroutine print_usage
 
 !===============================================================================
-! subroutine:  execute_program
+! subroutine:  execute_ffopt
 !===============================================================================
 
-subroutine execute_program(grpin)
+subroutine execute_ffopt(grpin,exec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
@@ -242,6 +251,7 @@ subroutine execute_program(grpin)
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
+    logical             :: exec
     ! --------------------------------------------------------------------------
 
     ! load setup
@@ -249,64 +259,67 @@ subroutine execute_program(grpin)
     call ffdev_parameters_ctrl_realms(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)
 
-    ! print final parameter list
-    call ffdev_parameters_print_parameters()
+    if( exec ) then
+        ! print final parameter list
+        call ffdev_parameters_print_parameters()
 
-    ! optimize
-    call ffdev_ffopt_run
+        ! optimize
+        call ffdev_ffopt_run
 
-    ! final results
-    call ffdev_parameters_print_parameters()
+        ! final results
+        call ffdev_parameters_print_parameters()
+    end if
 
     return
 
-end subroutine execute_program
+end subroutine execute_ffopt
 
 !===============================================================================
-! subroutine:  execute_program_fake
+! subroutine:  execute_mmopt
 !===============================================================================
 
-subroutine execute_program_fake(grpin)
+subroutine execute_mmopt(grpin,exec)
 
     use ffdev_parameters_control
-    use ffdev_ffopt_control
-    use ffdev_ffopt
+    use ffdev_geoopt_control
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
+    logical             :: exec
     ! --------------------------------------------------------------------------
 
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'MMOPT', ':')
+
     ! load setup
-    call ffdev_parameters_ctrl_identities(grpin)
-    call ffdev_parameters_ctrl_realms(grpin)
-    call ffdev_ffopt_ctrl_minimize(grpin)
+    call ffdev_geoopt_ctrl_minimize(grpin)
 
     return
 
-end subroutine execute_program_fake
+end subroutine execute_mmopt
 
 !===============================================================================
 ! subroutine:  execute_ffmanip
 !===============================================================================
 
-subroutine execute_ffmanip(grpin,noexec)
+subroutine execute_ffmanip(grpin,exec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------------------------------------
 
-    if( .not. noexec ) then
+    if( exec ) then
         call ffdev_parameters_print_parameters()
     end if
 
     ! load and execute setup
-    call ffdev_parameters_ctrl_ffmanip(grpin,noexec)
+    call ffdev_parameters_ctrl_ffmanip(grpin,exec)
 
-    if( .not. noexec ) then
+    if( exec ) then
         call ffdev_parameters_print_parameters()
     end if
 
@@ -318,13 +331,13 @@ end subroutine execute_ffmanip
 ! subroutine:  execute_fferror
 !===============================================================================
 
-subroutine execute_fferror(grpin,noexec)
+subroutine execute_fferror(grpin,exec)
 
     use ffdev_errors_control
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------------------------------------
 
     ! load and execute error setup

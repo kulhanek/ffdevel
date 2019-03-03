@@ -100,15 +100,15 @@ subroutine ffdev_ffopt_set_default()
     include 'nlopt.f'
     ! --------------------------------------------------------------------------
 
-! === [minimization] ===========================================================
+! === [minimize] ===============================================================
     OptimizationMethod  = MINIMIZATION_NLOPT
-    NOptSteps    = 10000      ! max number of steps
-    OutSamples   =    20      ! how often write results
+    NOptSteps           =  5000      ! max number of steps
+    OutSamples          =    20      ! how often write results
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.00001d0
     MaxG                = 0.00001d0
-    MinErrorChange      = 0.0000001d0        ! negative number - this test is switched off by default
+    MinErrorChange      = 0.00001d0        ! if negative number - this test is switched off
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================
@@ -123,7 +123,7 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
-    NLOpt_InitialStep   = 0.00001d0
+    NLOpt_InitialStep   = 0.01d0
 
 end subroutine ffdev_ffopt_set_default
 

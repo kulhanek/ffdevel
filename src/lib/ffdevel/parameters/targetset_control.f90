@@ -39,8 +39,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
-    integer                     :: i,j,k,l,alloc_status,minj,probesize,nb_mode,comb_rules
-    logical                     :: data_avail,rst,shift2zero
+    integer                     :: i,j,k,l,alloc_status,minj,probesize,nb_mode,comb_rules,npoints
+    logical                     :: data_avail,rst,shift2zero,stream
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
@@ -131,12 +131,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,25) probesize
         end if
 
-        unique_probe_types = .true.        
-        if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
-            write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
-        else
-            write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
-        end if        
+        unique_probe_types = .true.
+        if( probesize .gt. 0 ) then
+            if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
+                write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
+            else
+                write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
+            end if
+        end if
         
         ! load topology and print info
         write(DEV_OUT,*)
@@ -238,6 +240,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             select case(trim(key))
                 case('point')
                     sets(i)%ngeos = sets(i)%ngeos + 1
+                case('points')
+                    rst = prmfile_get_field_on_line(fin,geoname)
+                    if( .not. rst ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Points name not specified!')
+                    end if
+                    sets(i)%ngeos = sets(i)%ngeos +  ffdev_geometry_num_of_points(geoname)
                 case default
                     ! do nothing
             end select
@@ -282,7 +290,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             rst = prmfile_get_field_on_line(fin,key)
 
             ! process only points
-            if( trim(key) .ne. 'point' ) then
+            if( (trim(key) .ne. 'point') .and. (trim(key) .ne. 'points') ) then
                 rst = prmfile_next_line(fin)
                 cycle
             end if
@@ -299,53 +307,71 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 100             continue
             end if
 
-            if( j .gt. sets(i)%ngeos ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Mismatch in the number of data points!')
-            end if
-
-            ! load point and print its info
-            call ffdev_geometry_init(sets(i)%geo(j))
-            sets(i)%geo(j)%id = j
-            sets(i)%geo(j)%weight = weight
-            sets(i)%geo(j)%trg_crd_loaded  = sets(i)%optgeo
-            call ffdev_geometry_load_point(sets(i)%geo(j),geoname)
-
-            ! calculate traget freqs and normal mode if needed
-            if(  (.not. DoNotCalcFreqs) .and. sets(i)%geo(j)%trg_hess_loaded ) then
-                call ffdev_hessian_calc_trg_freqs(sets(i)%geo(j))
-                sets(i)%geo(j)%trg_freq_loaded =  .true.
-            end if
-
-            if( shift2zero ) then
-                call ffdev_geometry_info_point(sets(i)%geo(j))
-            else
-                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
-            end if
-            
-            ! overwrite weights
-            select case(trim(wmode))
-                case('auto')
-                    ! nothing to do
-                case('ire2')
-                    if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
-                        sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
-                    end if
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+            select case(trim(key))
+                case('point')
+                    npoints = 1
+                    call ffdev_utils_open(DEV_GEO,geoname,'O')
+                    stream = .false.
+                case('points')
+                    npoints = ffdev_geometry_num_of_points(geoname)
+                    call ffdev_utils_open(DEV_GEO,geoname,'O')
+                    stream = .true.
             end select
 
-            call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
+            do k=1,npoints
 
-            ! do we have data for point
-            data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
-                         sets(i)%geo(j)%trg_grd_loaded .or. &
-                         sets(i)%geo(j)%trg_hess_loaded .or. &
-                         sets(i)%optgeo .or. ( len(sets(i)%name) .gt. 0)
+                if( j .gt. sets(i)%ngeos ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Mismatch in the number of data points!')
+                end if
 
-            if( .not. data_avail ) then
-                call ffdev_utils_exit(DEV_OUT,1,'No training data are available in the point!')
-            end if
-            j = j + 1
+                ! load point and print its info
+                call ffdev_geometry_init(sets(i)%geo(j))
+                sets(i)%geo(j)%id = j
+                sets(i)%geo(j)%weight = weight
+                sets(i)%geo(j)%trg_crd_loaded  = sets(i)%optgeo
+                sets(i)%geo(j)%name = geoname
+                call ffdev_geometry_load_1point(sets(i)%geo(j),stream)
+
+                ! calculate traget freqs and normal mode if needed
+                if(  (.not. DoNotCalcFreqs) .and. sets(i)%geo(j)%trg_hess_loaded ) then
+                    call ffdev_hessian_calc_trg_freqs(sets(i)%geo(j))
+                    sets(i)%geo(j)%trg_freq_loaded =  .true.
+                end if
+
+                if( shift2zero ) then
+                    call ffdev_geometry_info_point(sets(i)%geo(j))
+                else
+                    call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                end if
+
+                ! overwrite weights
+                select case(trim(wmode))
+                    case('auto')
+                        ! nothing to do
+                    case('ire2')
+                        if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
+                            sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
+                        end if
+                    case default
+                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+                end select
+
+                call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
+
+                ! do we have data for point
+                data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
+                             sets(i)%geo(j)%trg_grd_loaded .or. &
+                             sets(i)%geo(j)%trg_hess_loaded .or. &
+                             sets(i)%optgeo .or. (len(sets(i)%name) .gt. 0)
+
+                if( .not. data_avail ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'No training data are available in the point!')
+                end if
+                j = j + 1
+            end do
+
+            ! close the file
+            close(DEV_GEO)
 
             rst = prmfile_next_line(fin)
         end do
@@ -367,7 +393,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end if
         end do
         sets(i)%mineneid = minj
-        if( sets(i)%mineneid .gt. 0 ) then
+        if( (sets(i)%mineneid .gt. 0) .and. (sets(i)%nrefs .eq. 0) ) then
             write(DEV_OUT,*)
             write(DEV_OUT,300) sets(i)%mineneid,minenergy
             if( shift2zero ) then
@@ -375,13 +401,24 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
-                    write(DEV_OUT,*)
                     call ffdev_geometry_info_point_ext(sets(i)%geo(j))
                 end do
             end if
         end if
+        if( sets(i)%nrefs .gt. 0 ) then
+            write(DEV_OUT,*)
+            call ffdev_geometry_info_point_header_ext()
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
+                do k=1,sets(i)%nrefs
+                    sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
+                end do
+                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+            end do
+        end if
 
         i = i + 1
+
         rst = prmfile_next_section(fin)
 
     end do
@@ -443,8 +480,12 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
         write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
+        write(DEV_OUT,95) SavePointsPath
+        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
+        write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
 
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)        
+        ! create directory
+        call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
         return
     end if
     
@@ -468,14 +509,25 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,80) prmfile_onoff(SaveGeometry)
     else
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
-    end if   
-    
+    end if
+    if( prmfile_get_string_by_key(fin,'savepath', SavePointsPath)) then
+        write(DEV_OUT,90) SavePointsPath
+    else
+        write(DEV_OUT,95) SavePointsPath
+    end if
+    if( prmfile_get_logical_by_key(fin,'nofreqs', DoNotCalcFreqs)) then
+        write(DEV_OUT,100) prmfile_onoff(DoNotCalcFreqs)
+    else
+        write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
+    end if
     if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
         write(DEV_OUT,20) prmfile_onoff(ApplyCombinationRules)
     else
         write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
     end if    
 
+    ! create directory
+    call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
       
  10 format('=== [setup] ====================================================================')
 
@@ -492,7 +544,13 @@ subroutine ffdev_targetset_ctrl_setup(fin)
  55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)') 
  
  80  format ('Save geometry (savegeo)                = ',a12)
- 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')  
+ 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')
+
+ 90  format ('Save geometry path (savepath)          = ',a25)
+ 95  format ('Save geometry path (savepath)          = ',a25,'     (default)')
+
+100  format ('Do not calculate frequencies (nofreqs) = ',a12)
+105  format ('Do not calculate frequencies (nofreqs) = ',a12,'                  (default)')
   
 end subroutine ffdev_targetset_ctrl_setup
 

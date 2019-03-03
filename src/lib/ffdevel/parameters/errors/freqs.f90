@@ -32,10 +32,10 @@ subroutine ffdev_err_freqs_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableFreqError      = .false.
+    EnableFreqsError      = .false.
     DebugFreqError       = .false.
-    PrintFreqErrorSummary= .false.
-    FreqErrorWeight      = 1.0d0
+    PrintFreqsErrorSummary= .false.
+    FreqsErrorWeight      = 1.0d0
     FreqMaxNmodeAngle    = 50.0d0
     FreqMaxRMSD          = 5.0d0
 

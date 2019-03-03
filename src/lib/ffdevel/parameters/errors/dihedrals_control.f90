@@ -39,29 +39,29 @@ subroutine ffdev_err_dihedrals_ctrl(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'dihedrals') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableDihedralError)
-        write(DEV_OUT,135) prmfile_onoff(PrintDihedralErrorSummary)
-        write(DEV_OUT,125) DihedralErrorWeight
+        write(DEV_OUT,115) prmfile_onoff(EnableDihedralsError)
+        write(DEV_OUT,135) prmfile_onoff(PrintDihedralsErrorSummary)
+        write(DEV_OUT,125) DihedralsErrorWeight
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableDihedralError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableDihedralError)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableDihedralsError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableDihedralsError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableDihedralError)
+        write(DEV_OUT,115) prmfile_onoff(EnableDihedralsError)
     end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintDihedralErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintDihedralErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintDihedralsErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintDihedralsErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintDihedralErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintDihedralsErrorSummary)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', DihedralErrorWeight)) then
-        write(DEV_OUT,120) DihedralErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', DihedralsErrorWeight)) then
+        write(DEV_OUT,120) DihedralsErrorWeight
     else
-        write(DEV_OUT,125) DihedralErrorWeight
+        write(DEV_OUT,125) DihedralsErrorWeight
     end if
 
- 10 format('=== [dihedralsions] =================================================================')
+ 10 format('=== [dihedrals] ================================================================')
 
 110  format ('Dihedrals error (enabled)              = ',a12)
 115  format ('Dihedrals error (enabled)              = ',a12,'                  (default)')

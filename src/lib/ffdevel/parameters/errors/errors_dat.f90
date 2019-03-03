@@ -28,6 +28,8 @@ type FFERROR_TYPE
     real(DEVDP)         :: bonds
     real(DEVDP)         :: angles
     real(DEVDP)         :: dihedrals
+    real(DEVDP)         :: impropers
+    real(DEVDP)         :: rmsd
     real(DEVDP)         :: nbdists
     real(DEVDP)         :: freqs
 end type FFERROR_TYPE

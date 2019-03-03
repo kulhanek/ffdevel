@@ -22,9 +22,9 @@ use ffdev_constants
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_dihedrals_init
-logical                 :: EnableDihedralError
-logical                 :: PrintDihedralErrorSummary
-real(DEVDP)             :: DihedralErrorWeight
+logical                 :: EnableDihedralsError
+logical                 :: PrintDihedralsErrorSummary
+real(DEVDP)             :: DihedralsErrorWeight
 
 ! ------------------------------------------------------------------------------
 

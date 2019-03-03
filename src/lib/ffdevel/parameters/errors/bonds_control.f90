@@ -39,26 +39,26 @@ subroutine ffdev_err_bonds_ctrl(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'bonds') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableBondError)
-        write(DEV_OUT,135) prmfile_onoff(PrintBondErrorSummary)
-        write(DEV_OUT,125) BondErrorWeight
+        write(DEV_OUT,115) prmfile_onoff(EnableBondsError)
+        write(DEV_OUT,135) prmfile_onoff(PrintBondsErrorSummary)
+        write(DEV_OUT,125) BondErrorsWeight
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableBondError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableBondError)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableBondsError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableBondsError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableBondError)
+        write(DEV_OUT,115) prmfile_onoff(EnableBondsError)
     end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintBondErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintBondErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintBondsErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintBondsErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintBondErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintBondsErrorSummary)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', BondErrorWeight)) then
-        write(DEV_OUT,120) BondErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', BondErrorsWeight)) then
+        write(DEV_OUT,120) BondErrorsWeight
     else
-        write(DEV_OUT,125) BondErrorWeight
+        write(DEV_OUT,125) BondErrorsWeight
     end if
 
  10 format('=== [bonds] ====================================================================')

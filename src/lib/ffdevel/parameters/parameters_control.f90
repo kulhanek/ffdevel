@@ -832,7 +832,7 @@ end subroutine ffdev_parameters_ctrl_files
 ! subroutine ffdev_parameters_ctrl_ffmanip
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
+subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -841,7 +841,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
@@ -860,13 +860,13 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,noexec)
 
         select case(string)
             case('bond_r0')
-                call ffdev_parameters_ctrl_bond_r0(fin,noexec)
+                call ffdev_parameters_ctrl_bond_r0(fin,exec)
             case('angle_a0')
-                call ffdev_parameters_ctrl_angle_a0(fin,noexec)
+                call ffdev_parameters_ctrl_angle_a0(fin,exec)
             case('nbmanip')
-                call ffdev_parameters_ctrl_nbmanip(fin,noexec)
+                call ffdev_parameters_ctrl_nbmanip(fin,exec)
             case('nbload')
-                call ffdev_parameters_ctrl_nbload(fin,noexec)
+                call ffdev_parameters_ctrl_nbload(fin,exec)
         end select
 
         rst = prmfile_next_section(fin)
@@ -879,7 +879,7 @@ end subroutine ffdev_parameters_ctrl_ffmanip
 ! subroutine ffdev_parameters_ctrl_bond_r0
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_bond_r0(fin,noexec)
+subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -888,7 +888,7 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,noexec)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------
     logical                     :: rst
     integer                     :: mode, typeid, i
@@ -931,13 +931,13 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,noexec)
             if( params(typeid)%realm .ne. REALM_BOND_D0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'type is not bond_r0!')
             end if
-            if( noexec .eqv. .false. ) call ffdev_parameters_bond_r0_init(typeid,mode)
+            if( exec ) call ffdev_parameters_bond_r0_init(typeid,mode)
             rst = prmfile_next_line(fin)
         end do
     else
         do i=1,nparams
             if( params(i)%realm .eq. REALM_BOND_D0 ) then
-                if( noexec .eqv. .false. ) call ffdev_parameters_bond_r0_init(i,mode)
+                if( exec ) call ffdev_parameters_bond_r0_init(i,mode)
             end if
         end do
     end if
@@ -952,7 +952,7 @@ end subroutine ffdev_parameters_ctrl_bond_r0
 ! subroutine ffdev_parameters_ctrl_angle_a0
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_angle_a0(fin,noexec)
+subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -961,7 +961,7 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,noexec)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------
     logical                     :: rst
     integer                     :: mode, typeid, i
@@ -1009,7 +1009,7 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,noexec)
     else
         do i=1,nparams
             if( params(i)%realm .eq. REALM_ANGLE_A0 ) then
-                if( noexec .eqv. .false. ) call ffdev_parameters_angle_a0_init(i,mode)
+                if( exec ) call ffdev_parameters_angle_a0_init(i,mode)
             end if
         end do
     end if
@@ -1024,7 +1024,7 @@ end subroutine ffdev_parameters_ctrl_angle_a0
 ! subroutine ffdev_parameters_ctrl_nbmanip
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
+subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1034,7 +1034,7 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
-    logical             :: noexec
+    logical             :: exec
     ! --------------------------------------------
     logical                     :: rst
     character(50)               :: key
@@ -1052,11 +1052,11 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,noexec)
         select case(trim(key))
             case('comb_rules')
                 if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
+                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
                 end if
             case('nb_mode')
                 if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
+                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
                 end if
             case default
                 ! do nothing
@@ -1072,7 +1072,7 @@ end subroutine ffdev_parameters_ctrl_nbmanip
 ! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
+subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1083,7 +1083,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
 
     implicit none
     character(PRMFILE_MAX_PATH) :: string
-    logical                     :: noexec
+    logical                     :: exec
     ! --------------------------------------------
     integer                     :: i,comb_rules
     ! --------------------------------------------------------------------------
@@ -1094,7 +1094,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,noexec)
     call ffdev_utils_heading(DEV_OUT,'NB combination rules', '%')
     write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
 
-    if( noexec ) return ! do not execute
+    if( .not. exec ) return ! do not execute
 
     do i=1,nsets
         write(DEV_OUT,*)
@@ -1121,7 +1121,7 @@ end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
 ! subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
+subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1134,7 +1134,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
 
     implicit none
     character(PRMFILE_MAX_PATH) :: string
-    logical                     :: noexec
+    logical                     :: exec
     ! --------------------------------------------
     integer                     :: i,nb_mode
     ! --------------------------------------------------------------------------
@@ -1149,7 +1149,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,noexec)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
     write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(nb_mode)
 
-    if( noexec ) then
+    if( .not. exec ) then
         ! do not execute but minic that we changed the mode
         if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
             nb_mode = NB_MODE_MMD3
@@ -1196,7 +1196,7 @@ end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
 ! subroutine ffdev_parameters_ctrl_nbload
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
+subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1209,7 +1209,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
-    logical                     :: noexec
+    logical                     :: exec
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
     real(DEVDP)                 :: a, b, c, d
@@ -1252,7 +1252,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
 
         write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
 
-        if( .not. noexec ) then
+        if( exec ) then
             ! for each topology update given parameters
             do j=1,nsets
                 if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
@@ -1284,7 +1284,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,noexec)
 
     end do
 
-    if( noexec ) return
+    if( .not. exec ) return
 
 ! print updated parameters
     do i=1,nsets

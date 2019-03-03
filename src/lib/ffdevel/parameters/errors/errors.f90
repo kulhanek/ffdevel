@@ -46,6 +46,12 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_freqs_dat
     use ffdev_err_freqs
 
+    use ffdev_err_impropers_dat
+    use ffdev_err_impropers
+
+    use ffdev_err_rmsd_dat
+    use ffdev_err_rmsd
+
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------------------------------------
@@ -55,7 +61,9 @@ subroutine ffdev_errors_error_only(error)
     error%bonds = 0.0d0
     error%angles = 0.0d0
     error%dihedrals = 0.0d0
+    error%impropers = 0.0d0
     error%nbdists = 0.0d0
+    error%rmsd = 0.0d0
     error%freqs = 0.0d0
 
 ! energy based errors
@@ -65,29 +73,39 @@ subroutine ffdev_errors_error_only(error)
     end if
 
 ! geometry based errors
-    if( EnableBondError ) then
+    if( EnableBondsError ) then
         call ffdev_err_bonds_error(error)
-        error%total = error%total + error%bonds*BondErrorWeight
+        error%total = error%total + error%bonds*BondErrorsWeight
     end if
 
-    if( EnableAngleError ) then
+    if( EnableAnglesError ) then
         call ffdev_err_angles_error(error)
-        error%total = error%total + error%angles*AngleErrorWeight
+        error%total = error%total + error%angles*AngleErrorsWeight
     end if
 
-    if( EnableDihedralError ) then
+    if( EnableDihedralsError ) then
         call ffdev_err_dihedrals_error(error)
-        error%total = error%total + error%dihedrals*DihedralErrorWeight
+        error%total = error%total + error%dihedrals*DihedralsErrorWeight
     end if
 
-    if( EnableNBDistanceError ) then
+    if( EnableImpropersError ) then
+        call ffdev_err_impropers_error(error)
+        error%total = error%total + error%impropers*ImpropersErrorWeight
+    end if
+
+    if( EnableNBDistsError ) then
         call ffdev_err_nbdists_error(error)
-        error%total = error%total + error%nbdists*NBDistanceErrorWeight
+        error%total = error%total + error%nbdists*NBDistsErrorWeight
     end if
 
-    if( EnableFreqError ) then
+    if( EnableRMSDError ) then
+        call ffdev_err_rmsd_error(error)
+        error%total = error%total + error%rmsd*RMSDErrorWeight
+    end if
+
+    if( EnableFreqsError ) then
         call ffdev_err_freqs_error(error)
-        error%total = error%total + error%freqs*FreqErrorWeight
+        error%total = error%total + error%freqs*FreqsErrorWeight
     end if
 
 end subroutine ffdev_errors_error_only
@@ -104,6 +122,8 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
     use ffdev_err_freqs_dat
+    use ffdev_err_impropers_dat
+    use ffdev_err_rmsd_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -111,19 +131,25 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableEnergyError ) then
         write(DEV_OUT,30,ADVANCE='NO')
     end if
-    if( EnableBondError ) then
+    if( EnableBondsError ) then
         write(DEV_OUT,33,ADVANCE='NO')
     end if
-    if( EnableAngleError ) then
+    if( EnableAnglesError ) then
         write(DEV_OUT,34,ADVANCE='NO')
     end if
-    if( EnableDihedralError ) then
+    if( EnableDihedralsError ) then
         write(DEV_OUT,35,ADVANCE='NO')
     end if
-    if( EnableNBDistanceError ) then
+    if( EnableImpropersError ) then
+        write(DEV_OUT,38,ADVANCE='NO')
+    end if
+    if( EnableNBDistsError ) then
         write(DEV_OUT,36,ADVANCE='NO')
     end if
-    if( EnableFreqError ) then
+    if( EnableRMSDError ) then
+        write(DEV_OUT,39,ADVANCE='NO')
+    end if
+    if( EnableFreqsError ) then
         write(DEV_OUT,37,ADVANCE='NO')
     end if
 
@@ -133,6 +159,8 @@ subroutine ffdev_errors_ffopt_header_I()
  35 format('    Dihedrals')
  36 format('       d(NBs)')
  37 format('  Frequencies')
+ 38 format('    Impropers')
+ 39 format('         RMSD')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -148,6 +176,8 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
     use ffdev_err_freqs_dat
+    use ffdev_err_impropers_dat
+    use ffdev_err_rmsd_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -155,19 +185,25 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableEnergyError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableBondError ) then
+    if( EnableBondsError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableAngleError ) then
+    if( EnableAnglesError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableDihedralError ) then
+    if( EnableDihedralsError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableNBDistanceError ) then
+    if( EnableImpropersError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableFreqError ) then
+    if( EnableNBDistsError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableRMSDError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableFreqsError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
 
@@ -187,6 +223,8 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
     use ffdev_err_freqs_dat
+    use ffdev_err_impropers_dat
+    use ffdev_err_rmsd_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -195,19 +233,25 @@ subroutine ffdev_errors_ffopt_results(error)
     if( EnableEnergyError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%energy
     end if
-    if( EnableBondError ) then
+    if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%bonds
     end if
-    if( EnableAngleError ) then
+    if( EnableAnglesError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%angles
     end if
-    if( EnableDihedralError ) then
+    if( EnableDihedralsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%dihedrals
     end if
-    if( EnableNBDistanceError ) then
+    if( EnableImpropersError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%impropers
+    end if
+    if( EnableNBDistsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%nbdists
     end if
-    if( EnableFreqError ) then
+    if( EnableRMSDError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%rmsd
+    end if
+    if( EnableFreqsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%freqs
     end if
 
@@ -231,6 +275,8 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
     use ffdev_err_freqs_dat
+    use ffdev_err_impropers_dat
+    use ffdev_err_rmsd_dat
 
     use ffdev_err_bonds
     use ffdev_err_angles
@@ -238,15 +284,17 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_nbdists
     use ffdev_err_energy
     use ffdev_err_freqs
+    use ffdev_err_impropers
+    use ffdev_err_rmsd
 
     implicit none
-    logical     :: final
+    logical     :: final, anyrep
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
-    if( .not. (EnableEnergyError .or. &
-        EnableBondError .or. EnableAngleError .or. EnableDihedralError .or. &
-        PrintNBDistanceErrorSummary .or. EnableFreqError) ) then
+    if( .not. (PrintEnergyErrorSummary .or. &
+            PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. EnableImpropersError .or. &
+            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintFreqsErrorSummary) ) then
         ! no error to report
         return
     end if
@@ -260,7 +308,7 @@ subroutine ffdev_errors_summary(final)
     end if
     write(DEV_OUT,1)
 
-    ! energy based errors
+    ! summary pers sets
     if( PrintEnergyErrorSummary ) then
         write(DEV_OUT,*)
         write(DEV_OUT,10)
@@ -274,8 +322,9 @@ subroutine ffdev_errors_summary(final)
         end do
     end if
 
-    if( PrintBondErrorSummary .or. PrintAngleErrorSummary .or. PrintDihedralErrorSummary .or. &
-        PrintNBDistanceErrorSummary .or. PrintFreqErrorSummary ) then
+    ! summary per points
+    if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. EnableImpropersError .or. &
+        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintFreqsErrorSummary ) then
 
         write(DEV_OUT,*)
         write(DEV_OUT,20)
@@ -284,19 +333,25 @@ subroutine ffdev_errors_summary(final)
             do j=1,sets(i)%ngeos
                 write(DEV_OUT,*)
                 write(DEV_OUT,6) i,j
-                if( PrintBondErrorSummary ) then
+                if( PrintBondsErrorSummary ) then
                     call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j))
                 end if
-                if( PrintAngleErrorSummary ) then
+                if( PrintAnglesErrorSummary ) then
                     call ffdev_err_angles_summary(sets(i)%top,sets(i)%geo(j))
                 end if
-                if( PrintDihedralErrorSummary ) then
+                if( PrintDihedralsErrorSummary ) then
                     call ffdev_err_dihedrals_summary(sets(i)%top,sets(i)%geo(j))
                 end if
-                if( PrintNBDistanceErrorSummary ) then
+                if( PrintImpropersErrorSummary ) then
+                    call ffdev_err_impropers_summary(sets(i)%top,sets(i)%geo(j))
+                end if
+                if( PrintNBDistsErrorSummary ) then
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j))
                 end if
-                if( PrintFreqErrorSummary ) then
+                if( PrintRMSDErrorSummary ) then
+                    call ffdev_err_rmsd_summary(sets(i)%top,sets(i)%geo(j))
+                end if
+                if( PrintFreqsErrorSummary ) then
                     call ffdev_err_freqs_summary(sets(i)%geo(j))
                 end if
             end do
@@ -306,8 +361,8 @@ subroutine ffdev_errors_summary(final)
  1 format('# ==============================================================================')
  5 format('== [SET] #',I2.2,' ===================================================================')
  6 format('== [SET] #',I2.2,' / PTS',I6.6' =======================================================')
-10 format('== # ENERGY BASED ERRORS #')
-20 format('== # GEOMETRY/ENERGY BASED ERRORS #')
+10 format('== # SUMMARY PER SETS #')
+20 format('== # SUMMARY PER POINTS #')
 
 end subroutine ffdev_errors_summary
 

@@ -125,9 +125,15 @@ src/lib/ffdevel/parameters/errors/errors_dat.f90
 src/lib/ffdevel/parameters/errors/freqs.f90
 src/lib/ffdevel/parameters/errors/freqs_control.f90
 src/lib/ffdevel/parameters/errors/freqs_dat.f90
+src/lib/ffdevel/parameters/errors/impropers.f90
+src/lib/ffdevel/parameters/errors/impropers_control.f90
+src/lib/ffdevel/parameters/errors/impropers_dat.f90
 src/lib/ffdevel/parameters/errors/nbdists.f90
 src/lib/ffdevel/parameters/errors/nbdists_control.f90
 src/lib/ffdevel/parameters/errors/nbdists_dat.f90
+src/lib/ffdevel/parameters/errors/rmsd.f90
+src/lib/ffdevel/parameters/errors/rmsd_control.f90
+src/lib/ffdevel/parameters/errors/rmsd_dat.f90
 src/lib/ffdevel/parameters/parameters.f90
 src/lib/ffdevel/parameters/parameters_control.f90
 src/lib/ffdevel/parameters/parameters_dat.f90

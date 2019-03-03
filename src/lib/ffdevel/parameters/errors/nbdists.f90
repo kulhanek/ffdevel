@@ -32,9 +32,9 @@ subroutine ffdev_err_nbdists_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableNBDistanceError        = .false.
-    PrintNBDistanceErrorSummary  = .false.
-    NBDistanceErrorWeight        = 1.0
+    EnableNBDistsError        = .false.
+    PrintNBDistsErrorSummary  = .false.
+    NBDistsErrorWeight        = 1.0
 
     NBDistanceSWPosition         = 4.0
     NBDistanceSWAlpha            = 1.0

@@ -262,7 +262,7 @@ subroutine ffdev_hessian_print_freqs_lin(fout,geo)
     integer         :: i
     ! --------------------------------------------------------------------------
 
-    write(fout,10) geo%natoms
+    write(fout,10) 3*geo%natoms
     write(fout,20)
     write(fout,30)
 

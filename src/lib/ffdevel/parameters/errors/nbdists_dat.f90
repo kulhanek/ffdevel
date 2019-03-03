@@ -22,9 +22,9 @@ use ffdev_constants
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_nbdists_init
-logical                 :: EnableNBDistanceError
-logical                 :: PrintNBDistanceErrorSummary
-real(DEVDP)             :: NBDistanceErrorWeight
+logical                 :: EnableNBDistsError
+logical                 :: PrintNBDistsErrorSummary
+real(DEVDP)             :: NBDistsErrorWeight
 
 ! switch function parameters
 real(DEVDP)             :: NBDistanceSWPosition

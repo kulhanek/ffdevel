@@ -33,9 +33,15 @@ SET(FFDEVEL_SRC
         parameters/errors/dihedrals_dat.f90
         parameters/errors/dihedrals.f90
         parameters/errors/dihedrals_control.f90
+        parameters/errors/impropers_dat.f90
+        parameters/errors/impropers.f90
+        parameters/errors/impropers_control.f90
         parameters/errors/nbdists_dat.f90
         parameters/errors/nbdists.f90
         parameters/errors/nbdists_control.f90
+        parameters/errors/rmsd_dat.f90
+        parameters/errors/rmsd.f90
+        parameters/errors/rmsd_control.f90
         parameters/errors/freqs_dat.f90
         parameters/errors/freqs.f90
         parameters/errors/freqs_control.f90
