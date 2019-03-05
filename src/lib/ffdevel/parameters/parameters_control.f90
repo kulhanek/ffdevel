@@ -445,10 +445,8 @@ subroutine change_realms(realm,enable,options,nchanged)
             realmid = REALM_VDW_A
         case('vdw_B')
             realmid = REALM_VDW_B
-        case('vdw_C6')
-            realmid = REALM_VDW_C6
-        case('vdw_C8')
-            realmid = REALM_VDW_C8
+        case('vdw_C')
+            realmid = REALM_VDW_C
         case('all')
             realmid = -1
         case default
@@ -523,56 +521,20 @@ subroutine change_realms(realm,enable,options,nchanged)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
                     case(NB_MODE_EXP6)
                         if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
                     case(NB_MODE_BP)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.                        
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.                        
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                        
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                    
                     case(NB_MODE_EXPONLY)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_G ) lenable = .false.                        
-                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                         
-                    case(NB_MODE_REXPR)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                      
-                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.
-                    case(NB_MODE_EXPR2)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                      
-                        if( params(i)%realm .eq. REALM_VDW_C6 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C8 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C10 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_RC ) lenable = .false.                       
-                    case(NB_MODE_MMD3)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
                 end select
                 params(i)%enabled = lenable
                 nchanged = nchanged + 1
@@ -1139,11 +1101,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     integer                     :: i,nb_mode
     ! --------------------------------------------------------------------------
 
-    if( trim(string) .eq. 'ADDMMD3' ) then
-        nb_mode = NB_MODE_ADDMMD3
-    else
-        nb_mode = ffdev_topology_nb_mode_from_string(string)
-    end if
+    nb_mode = ffdev_topology_nb_mode_from_string(string)
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
@@ -1151,9 +1109,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
 
     if( .not. exec ) then
         ! do not execute but minic that we changed the mode
-        if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
-            nb_mode = NB_MODE_MMD3
-        end if
         LastNBMode = nb_mode
         return
     end if
@@ -1161,10 +1116,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     do i=1,nsets
         write(DEV_OUT,*)
         write(DEV_OUT,20) i
-
-        if( (nb_mode .eq. NB_MODE_MMD3) .or. (nb_mode .eq. NB_MODE_ADDMMD3) ) then
-            call ffdev_mmd3_print_params(sets(i)%top)
-        end if
 
         write(DEV_OUT,*)
         call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
@@ -1179,9 +1130,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
         call ffdev_topology_info_types(sets(i)%top,2)
     end do
 
-    if( nb_mode .eq. NB_MODE_ADDMMD3 ) then
-        nb_mode = NB_MODE_MMD3
-    end if
     LastNBMode = nb_mode
 
     ! update nb parameters
@@ -1269,7 +1217,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
                         case(NB_MODE_BP)
                             sets(j)%top%nb_types(nbt)%a = a
                             sets(j)%top%nb_types(nbt)%b = b
-                            sets(j)%top%nb_types(nbt)%c6 = c
+                            sets(j)%top%nb_types(nbt)%c = c
                         case(NB_MODE_EXPONLY)
                             sets(j)%top%nb_types(nbt)%a = a
                             sets(j)%top%nb_types(nbt)%b = b

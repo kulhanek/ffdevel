@@ -27,6 +27,8 @@ use ffdev_topology
 type TARGETSET
     type(TOPOLOGY)              :: top          ! set topology
     character(len=MAX_PATH)     :: final_stop   ! final name of topology
+    character(len=MAX_PATH)     :: final_drvene ! driving profiles
+    character(len=MAX_PATH)     :: final_drvxyz ! driving geometries
     integer                     :: ngeos        ! number of training points in the set
     type(GEOMETRY),pointer      :: geo(:)       ! training data
     real(DEVDP)                 :: offset       ! energy offset
@@ -34,7 +36,9 @@ type TARGETSET
     logical                     :: optgeo       ! optimize geometry
     logical                     :: keepoptgeo   ! keep optimized geometry
     logical                     :: savegeo      ! save optimized geometry
+    logical                     :: nofreq       ! do not calculate frequencies when hessian is loaded
     character(len=MAX_PATH)     :: name         ! target name
+    logical                     :: isref        ! is reference structure
     integer                     :: nrefs        ! number of references
     integer,pointer             :: refs(:)      ! references
 end type TARGETSET
@@ -47,7 +51,6 @@ logical                 :: OptimizeGeometry             = .false.   ! optimize g
 logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress 
 logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
 logical                 :: SaveGeometry                 = .false.   
-logical                 :: ApplyCombinationRules        = .false.   ! apply combination rules in every error evaluation
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded
 character(len=MAX_PATH) :: SavePointsPath               = 'points'  ! storage for saved points
 

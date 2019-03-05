@@ -61,8 +61,8 @@ program ffdev_optimize_program
         call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
     end if
 
-    ! read files
-    if( prmfile_open_group(fin,'MAIN') ) then
+    ! read configuration
+    if( prmfile_open_group(fin,'FFPARAMS') ) then
         call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
     end if

@@ -40,14 +40,10 @@ integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
 integer,parameter       :: REALM_VDW_A      = 16
 integer,parameter       :: REALM_VDW_B      = 17
-integer,parameter       :: REALM_VDW_G      = 18
-integer,parameter       :: REALM_VDW_C6     = 19
-integer,parameter       :: REALM_VDW_C8     = 20
-integer,parameter       :: REALM_VDW_C10    = 21
-integer,parameter       :: REALM_VDW_RC     = 22
+integer,parameter       :: REALM_VDW_C      = 18
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_VDW_RC
+integer,parameter       :: REALM_LAST    = REALM_VDW_C
 
 ! ------------------------------------------------------------------------------
 
@@ -90,14 +86,19 @@ type(PARM_TYPE),allocatable :: types(:)  ! types
 ! experimental/unfinished setup
 integer                 :: LastNBMode                   = NB_MODE_LJ        ! determine which realms will be activated for NB
 
-integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup
+! derived setup
+logical                 :: ApplyCombinationRules        = .false.           ! apply combination rules in every error evaluation
+
+
+integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup depending on a probe mode of target sets
+                                                            ! either all nb_types or probe/probed structure
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1 ! only like nb_types except of probes
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2 ! only_like nb_types including probes
 integer,parameter       :: NB_PARAMS_MODE_ALL           = 3 ! all nb types
 
 ! === [control] ================================================================
-integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL      ! mode for determination of NB parameters
-logical                 :: NBERAOnly                    = .false.                    ! consider only ERA realms
+integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
+logical                 :: NBERAOnly                    = .false.                   ! consider only ERA realms
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

@@ -63,7 +63,7 @@ subroutine ffdev_err_energy_error(error)
     nene = 0
 
     do i=1,nsets
-        if( len(trim(sets(i)%name)) .gt. 0 ) cycle ! ignore reference sets
+        if( sets(i)%isref ) cycle ! ignore reference sets
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( sets(i)%geo(j)%trg_ene_loaded ) then
@@ -95,7 +95,7 @@ subroutine ffdev_err_energy_summary(set)
     integer             :: j,num
     ! --------------------------------------------------------------------------
 
-    if( len(trim(set%name)) .gt. 0 ) return ! ignore reference sets
+    if( set%isref ) return ! ignore reference sets
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)

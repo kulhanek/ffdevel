@@ -81,6 +81,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for target sets!')
     end if
 
+    ! pre-init
+    sets(:)%isref = .false.
+    sets(:)%name  = ''
+
     rst = prmfile_first_section(fin)
 
     ! load sets ----------------------------------
@@ -115,14 +119,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get topology name (topology) for [SET]!')
         end if
         write(DEV_OUT,12) trim(topin)
-
-        ! get name of resulting topology
-        if( .not. prmfile_get_string_by_key(fin,'final',sets(i)%final_stop) ) then
-            sets(i)%final_stop = ''
-            write(DEV_OUT,15) trim('-none-')
-        else
-            write(DEV_OUT,15) trim(sets(i)%final_stop)
-        end if
         
         probesize = 0        
         if( prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
@@ -132,54 +128,41 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
 
         unique_probe_types = .true.
-        if( probesize .gt. 0 ) then
-            if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
-                write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
-            else
-                write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
-            end if
+        if( prmfile_get_logical_by_key(fin,'unique_probe_types', unique_probe_types)) then
+            write(DEV_OUT,30) prmfile_onoff(unique_probe_types)
+        else
+            write(DEV_OUT,35) prmfile_onoff(unique_probe_types)
         end if
-        
+
         ! load topology and print info
         write(DEV_OUT,*)
         call ffdev_topology_init(sets(i)%top)
-        call ffdev_topology_load(sets(i)%top,topin)        
+        call ffdev_topology_load(sets(i)%top,topin)
         call ffdev_topology_switch_to_probe_mode(sets(i)%top,probesize,unique_probe_types)
-        call ffdev_topology_info(sets(i)%top)        
+        call ffdev_topology_info(sets(i)%top)
 
         write(DEV_OUT,*)
-        sets(i)%optgeo = OptimizeGeometry
-        if( prmfile_get_logical_by_key(fin,'optgeo', sets(i)%optgeo)) then
-            write(DEV_OUT,40) prmfile_onoff(sets(i)%optgeo)
+        sets(i)%isref = .false.
+        if( prmfile_get_logical_by_key(fin,'isreference', sets(i)%isref)) then
+            write(DEV_OUT,71) prmfile_onoff(sets(i)%isref)
         else
-            write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
-        end if 
-        
-        sets(i)%keepoptgeo = KeepOptimizedGeometry
-        if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
-            write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
-        else
-            write(DEV_OUT,55) prmfile_onoff(sets(i)%keepoptgeo)
-        end if  
-        
-        sets(i)%savegeo = SaveGeometry
-        if( prmfile_get_logical_by_key(fin,'savegeo', sets(i)%savegeo)) then
-            write(DEV_OUT,80) prmfile_onoff(sets(i)%savegeo)
-        else
-            write(DEV_OUT,85) prmfile_onoff(sets(i)%savegeo)
-        end if  
-        
-        wmode = 'auto'
-        if( prmfile_get_string_by_key(fin,'wmode', wmode)) then
-            write(DEV_OUT,90) trim(wmode)
-        else
-            write(DEV_OUT,95) trim(wmode)
-        end if         
-        
-        sets(i)%nrefs = 0 
+            write(DEV_OUT,75) prmfile_onoff(sets(i)%isref)
+        end if
+
+        if( sets(i)%isref ) then
+            if( len(trim(sets(i)%name)) .eq. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Name is not specified for a reference set!')
+            end if
+        end if
+
+        sets(i)%nrefs = 0
         nullify(sets(i)%refs)
-        
+
         if( prmfile_init_field_by_key(fin,'references') ) then
+            if( sets(i)%isref ) then
+                call ffdev_utils_exit(DEV_OUT,1,'References cannot be defined for a reference set!')
+            end if
+
             do while ( prmfile_get_field_by_key(fin,field) )
                 sets(i)%nrefs = sets(i)%nrefs + 1
             end do
@@ -193,7 +176,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 ! find set
                 sets(i)%refs(k) = 0
                 do l=1,nsets
-                    if( trim(sets(l)%name) .eq. trim(field) ) then
+                    if( sets(l)%isref .and. (trim(sets(l)%name) .eq. trim(field)) ) then
                         sets(i)%refs(k) = l
                         exit
                     end if
@@ -214,7 +197,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 call ffdev_utils_exit(DEV_OUT,1,'Size (natoms) inconsistency between reference systems and the set detected!')
             end if
         end if
-        
+
         sets(i)%offset = 0.0d0
         shift2zero = .false.
         if( sets(i)%nrefs .eq. 0 ) then
@@ -222,10 +205,69 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 write(DEV_OUT,65) prmfile_onoff(shift2zero)
             else
                 write(DEV_OUT,60) prmfile_onoff(shift2zero)
-            end if 
+            end if
         else
             ! we cannot manipulate with energy in reference mode
             write(DEV_OUT,65) prmfile_onoff(shift2zero)
+        end if
+              
+        sets(i)%optgeo = OptimizeGeometry
+        if( prmfile_get_logical_by_key(fin,'optgeo', sets(i)%optgeo)) then
+            write(DEV_OUT,40) prmfile_onoff(sets(i)%optgeo)
+        else
+            write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
+        end if 
+        
+        sets(i)%keepoptgeo = KeepOptimizedGeometry
+        if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
+            write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
+        else
+            write(DEV_OUT,55) prmfile_onoff(sets(i)%keepoptgeo)
+        end if
+
+        sets(i)%nofreq = DoNotCalcFreqs
+        if( prmfile_get_logical_by_key(fin,'nofreq', sets(i)%nofreq)) then
+            write(DEV_OUT,110) prmfile_onoff(sets(i)%nofreq)
+        else
+            write(DEV_OUT,115) prmfile_onoff(sets(i)%nofreq)
+        end if
+        
+        sets(i)%savegeo = SaveGeometry
+        if( prmfile_get_logical_by_key(fin,'savegeo', sets(i)%savegeo)) then
+            write(DEV_OUT,80) prmfile_onoff(sets(i)%savegeo)
+        else
+            write(DEV_OUT,85) prmfile_onoff(sets(i)%savegeo)
+        end if  
+        
+        wmode = 'auto'
+        if( prmfile_get_string_by_key(fin,'wmode', wmode)) then
+            write(DEV_OUT,90) trim(wmode)
+        else
+            write(DEV_OUT,95) trim(wmode)
+        end if
+
+        ! get name of resulting topology
+        if( .not. prmfile_get_string_by_key(fin,'final_topology',sets(i)%final_stop) ) then
+            sets(i)%final_stop = ''
+            write(DEV_OUT,15) trim('-none-')
+        else
+            write(DEV_OUT,15) trim(sets(i)%final_stop)
+        end if
+
+        ! get name of resulting driving profile
+        if( .not. prmfile_get_string_by_key(fin,'final_drvene',sets(i)%final_drvene) ) then
+            sets(i)%final_drvene = ''
+            write(DEV_OUT,16) trim('-none-')
+        else
+            write(DEV_OUT,16) trim(sets(i)%final_drvene)
+        end if
+
+        ! get name of resulting driving structures
+        if( .not. prmfile_get_string_by_key(fin,'final_drvxyz',sets(i)%final_drvxyz) ) then
+            sets(i)%final_drvxyz = ''
+            write(DEV_OUT,17) trim('-none-')
+        else
+            write(DEV_OUT,17) trim(sets(i)%final_drvxyz)
         end if
         
 !----------------------
@@ -243,7 +285,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 case('points')
                     rst = prmfile_get_field_on_line(fin,geoname)
                     if( .not. rst ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Points name not specified!')
+                        call ffdev_utils_exit(DEV_OUT,1,'Name of file with stream of points is not specified!')
                     end if
                     sets(i)%ngeos = sets(i)%ngeos +  ffdev_geometry_num_of_points(geoname)
                 case default
@@ -258,8 +300,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end if
         end if
         
-        if( (len(trim(sets(i)%name)) .gt. 0) .and. (sets(i)%ngeos .ne. 1) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Named set can contain only one point!')
+        if( sets(i)%isref .and. (sets(i)%ngeos .ne. 1) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Reference set can contain only one point!')
         end if
 
         if( sets(i)%ngeos .gt. 0 ) then
@@ -333,7 +375,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 call ffdev_geometry_load_1point(sets(i)%geo(j),stream)
 
                 ! calculate traget freqs and normal mode if needed
-                if(  (.not. DoNotCalcFreqs) .and. sets(i)%geo(j)%trg_hess_loaded ) then
+                if(  (.not. sets(i)%nofreq) .and. sets(i)%geo(j)%trg_hess_loaded ) then
                     call ffdev_hessian_calc_trg_freqs(sets(i)%geo(j))
                     sets(i)%geo(j)%trg_freq_loaded =  .true.
                 end if
@@ -362,7 +404,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
                              sets(i)%geo(j)%trg_grd_loaded .or. &
                              sets(i)%geo(j)%trg_hess_loaded .or. &
-                             sets(i)%optgeo .or. (len(sets(i)%name) .gt. 0)
+                             sets(i)%optgeo .or. sets(i)%isref
 
                 if( .not. data_avail ) then
                     call ffdev_utils_exit(DEV_OUT,1,'No training data are available in the point!')
@@ -407,6 +449,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
         if( sets(i)%nrefs .gt. 0 ) then
             write(DEV_OUT,*)
+            write(DEV_OUT,305)
             call ffdev_geometry_info_point_header_ext()
             do j=1,sets(i)%ngeos
                 if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
@@ -426,7 +469,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
   1 format('=== [SET] #',I2.2,' ==================================================================')
   5 format('Set name (name)                         = ',A) 
  12 format('Input topology name (topology)          = ',A)
- 15 format('Final topology name (final)             = ',A)
+ 15 format('Final topology name (final_topology)    = ',A)
+ 16 format('Final driving profile (final_drvene)    = ',A)
+ 17 format('Final driving structures (final_drvxyz) = ',A)
  
  20 format('Probe size (probesize)                  = ',I12)
  25 format('Probe size (probesize)                  = ',I12,'                  (default)')
@@ -443,6 +488,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  60 format('Shift minimum to zero (shift2zero)      = ',A12) 
  65 format('Shift minimum to zero (shift2zero)      = ',A12,'                  (default)')
   
+ 71 format('Set as reference set (isreference)      = ',A12)
+ 75 format('Set as reference set (isreference)      = ',A12,'                  (default)')
+
  70 format('Reference sets (references)             = ',A)
  
  80 format('Save geometry (savegeo)                 = ',a12)
@@ -450,9 +498,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  
  90 format('Point weights mode (wmode)              = ',a12)
  95 format('Point weights mode (wmode)              = ',a12,'                  (default)') 
+
+110 format('Do not calculate frequencies (nofreq)   = ',a12)
+115 format('Do not calculate frequencies (nofreq)   = ',a12,'                  (default)')
  
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
+305 format('Substracting energy of reference states ...')
 
 end subroutine ffdev_targetset_ctrl
 
@@ -481,7 +533,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
         write(DEV_OUT,95) SavePointsPath
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
         write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
 
         ! create directory
@@ -520,19 +571,11 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     else
         write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
     end if
-    if( prmfile_get_logical_by_key(fin,'comb_rules', ApplyCombinationRules)) then
-        write(DEV_OUT,20) prmfile_onoff(ApplyCombinationRules)
-    else
-        write(DEV_OUT,25) prmfile_onoff(ApplyCombinationRules)
-    end if    
 
     ! create directory
     call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
       
  10 format('=== [setup] ====================================================================')
-
- 20  format ('Apply combination rules (comb_rules)   = ',a12)
- 25  format ('Apply combination rules (comb_rules)   = ',a12,'                  (default)')
 
  30  format ('Optimize geometry (optgeo)             = ',a12)
  35  format ('Optimize geometry (optgeo)             = ',a12,'                  (default)')
