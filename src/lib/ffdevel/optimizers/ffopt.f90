@@ -102,13 +102,13 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [minimize] ===============================================================
     OptimizationMethod  = MINIMIZATION_NLOPT
-    NOptSteps           =  5000      ! max number of steps
+    NOptSteps           =  10000      ! max number of steps
     OutSamples          =    20      ! how often write results
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.00001d0
     MaxG                = 0.00001d0
-    MinErrorChange      = 0.00001d0        ! if negative number - this test is switched off
+    MinErrorChange      = -1        ! if negative number - this test is switched off
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================

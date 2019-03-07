@@ -1604,9 +1604,9 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
             case(REALM_ANGLE_K)
                 tmpx(id) = 0
             case(REALM_DIH_V)
-                tmpx(id) = -100.0
+                tmpx(id) = 0.0
             case(REALM_DIH_C)
-                tmpx(id) = -100.0
+                tmpx(id) = -50.0
             case(REALM_DIH_G)
                 tmpx(id) = 0.0
             case(REALM_DIH_SCEE)
@@ -1670,9 +1670,9 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
             case(REALM_ANGLE_K)
                 tmpx(id) = 1000.0
             case(REALM_DIH_V)
-                tmpx(id) = 100.0
+                tmpx(id) = 50.0
             case(REALM_DIH_C)
-                tmpx(id) = 100.0
+                tmpx(id) = 50.0
             case(REALM_DIH_G)
                 tmpx(id) = 2.0*DEV_PI
             case(REALM_DIH_SCEE)

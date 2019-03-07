@@ -10,6 +10,11 @@ src/bin/compfreq/CMakeLists.txt
 src/bin/compfreq/compfreq.f90
 src/bin/compgeo/CMakeLists.txt
 src/bin/compgeo/compgeo.f90
+src/bin/cos2grbf/CMakeLists.txt
+src/bin/cos2grbf/Cos2GRBF.cpp
+src/bin/cos2grbf/Cos2GRBF.hpp
+src/bin/cos2grbf/Cos2GRBFOptions.cpp
+src/bin/cos2grbf/Cos2GRBFOptions.hpp
 src/bin/espfit/CMakeLists.txt
 src/bin/espfit/espfit.f90
 src/bin/ffenergy/CMakeLists.txt

@@ -101,6 +101,9 @@ subroutine ffdev_err_energy_summary(set)
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
+    serr = 0.0d0
+    num = 0
+
     do j=1,set%ngeos
         if( set%geo(j)%trg_ene_loaded ) then
             err = set%geo(j)%total_ene - set%offset - set%geo(j)%trg_energy
@@ -121,7 +124,7 @@ subroutine ffdev_err_energy_summary(set)
 10 format('# ID   Weight  E(offset)     E(TGR)      E(MM)     E(Err)')
 20 format('# ---- ------ ---------- ---------- ---------- ----------')
 30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
-40 format('# Final weighted error            = ',F10.3)
+40 format('# Final weighted error                       = ',F10.3)
 
 end subroutine ffdev_err_energy_summary
 

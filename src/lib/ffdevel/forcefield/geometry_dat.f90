@@ -75,8 +75,8 @@ end type GEOMETRY
 ! ------------------------------------------------------------------------------
 ! force constants for collective variables
 
-real(DEVDP)     :: DIS_FC   = 100.0     ! kcal/mol/A^2
-real(DEVDP)     :: ANG_FC   = 100.0     ! kcal/mol/rad^2
+real(DEVDP)     :: DIS_FC   = 500.0     ! kcal/mol/A^2
+real(DEVDP)     :: ANG_FC   = 500.0     ! kcal/mol/rad^2
 
 ! ------------------------------------------------------------------------------
 

@@ -293,7 +293,8 @@ subroutine ffdev_errors_summary(final)
     ! --------------------------------------------------------------------------
 
     if( .not. (PrintEnergyErrorSummary .or. &
-            PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. EnableImpropersError .or. &
+            PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
+            PrintImpropersErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintFreqsErrorSummary) ) then
         ! no error to report
         return
@@ -323,7 +324,8 @@ subroutine ffdev_errors_summary(final)
     end if
 
     ! summary per points
-    if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. EnableImpropersError .or. &
+    if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
+        PrintImpropersErrorSummary .or. &
         PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintFreqsErrorSummary ) then
 
         write(DEV_OUT,*)
