@@ -27,6 +27,8 @@ use ffdev_topology
 type TARGETSET
     type(TOPOLOGY)              :: top          ! set topology
     character(len=MAX_PATH)     :: final_stop   ! final name of topology
+    character(len=MAX_PATH)     :: initial_drvene ! driving profiles
+    character(len=MAX_PATH)     :: initial_drvxyz ! driving geometries
     character(len=MAX_PATH)     :: final_drvene ! driving profiles
     character(len=MAX_PATH)     :: final_drvxyz ! driving geometries
     integer                     :: ngeos        ! number of training points in the set

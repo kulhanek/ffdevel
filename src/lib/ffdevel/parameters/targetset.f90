@@ -76,7 +76,11 @@ subroutine ffdev_targetset_calc_all
     ! apply combination rules
     if( ApplyCombinationRules ) then
         do i=1,nsets
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
+            if( sets(i)%top%assumed_comb_rules .eq. COMB_RULE_IN ) then
+                call ffdev_topology_apply_NB_comb_rules(sets(i)%top,NBCombRules)
+            else
+                call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
+            end if
         end do
         call ffdev_parameters_reinit_nbparams()
     end if    
@@ -236,6 +240,174 @@ subroutine ffdev_targetset_save_final_pts
  30 format(7X,A)
 
 end subroutine ffdev_targetset_save_final_pts
+
+! ==============================================================================
+! subroutine ffdev_targetset_save_initial_drvs
+! ==============================================================================
+
+subroutine ffdev_targetset_save_initial_drvs
+
+    use ffdev_targetset_dat
+    use ffdev_topology
+
+    implicit none
+    integer     :: i
+    ! --------------------------------------------------------------------------
+
+    ! write files
+    do i=1,nsets
+        if( len_trim(sets(i)%initial_drvene) .ne. 0 ) then
+            write(DEV_OUT,10) i,trim(sets(i)%initial_drvene)
+            call ffdev_targetset_save_drvene(sets(i),sets(i)%initial_drvene)
+        end if
+        if( len_trim(sets(i)%initial_drvxyz) .ne. 0 ) then
+            write(DEV_OUT,20) i,trim(sets(i)%initial_drvxyz)
+            call ffdev_targetset_save_drvxyz(sets(i),sets(i)%initial_drvxyz)
+        end if
+    end do
+
+ 10 format('Saving initial driving data (drvene) for set #',I2.2,' = ',A)
+ 20 format('Saving initial driving data (drvxyz) for set #',I2.2,' = ',A)
+
+end subroutine ffdev_targetset_save_initial_drvs
+
+! ==============================================================================
+! subroutine ffdev_targetset_save_final_drvs
+! ==============================================================================
+
+subroutine ffdev_targetset_save_final_drvs
+
+    use ffdev_targetset_dat
+    use ffdev_topology
+
+    implicit none
+    integer     :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,nsets
+        if( len_trim(sets(i)%final_drvene) .ne. 0 ) then
+            write(DEV_OUT,10) i,trim(sets(i)%final_drvene)
+            call ffdev_targetset_save_drvene(sets(i),sets(i)%final_drvene)
+        end if
+        if( len_trim(sets(i)%final_drvxyz) .ne. 0 ) then
+            write(DEV_OUT,20) i,trim(sets(i)%final_drvxyz)
+            call ffdev_targetset_save_drvxyz(sets(i),sets(i)%final_drvxyz)
+        end if
+    end do
+
+    10 format('Saving final driving data (drvene) for set #',I2.2,' = ',A)
+    20 format('Saving final driving data (drvxyz) for set #',I2.2,' = ',A)
+
+end subroutine ffdev_targetset_save_final_drvs
+
+! ==============================================================================
+! subroutine ffdev_targetset_save_drvene
+! ==============================================================================
+
+subroutine ffdev_targetset_save_drvene(set,name)
+
+    use ffdev_targetset_dat
+    use ffdev_geometry
+    use ffdev_utils
+
+    implicit none
+    type(TARGETSET)         :: set
+    character(len=MAX_PATH) :: name
+    ! --------------------------------------------
+    integer                 :: i,j,ncvs
+    real(DEVDP)             :: err
+    ! --------------------------------------------------------------------------
+
+    if( set%ngeos .eq. 0 ) return ! no geometries
+
+    ncvs = set%geo(1)%ncvs
+
+    call ffdev_utils_open(DEV_PROFILE,name,'U')
+
+    ! write header
+    write(DEV_PROFILE,10,ADVANCE='NO')
+    do i=1,set%geo(1)%ncvs
+        write(DEV_PROFILE,11,ADVANCE='NO') i
+    end do
+    write(DEV_PROFILE,12)
+
+    write(DEV_PROFILE,20,ADVANCE='NO')
+    do i=1,set%geo(1)%ncvs
+        write(DEV_PROFILE,21,ADVANCE='NO')
+    end do
+    write(DEV_PROFILE,22)
+
+    do i=1,set%ngeos
+        write(DEV_PROFILE,30,ADVANCE='NO') i
+        if( ncvs .eq. set%geo(i)%ncvs ) then
+            call ffdev_geometry_get_cvs_values(set%geo(i))
+            do j=1,set%geo(i)%ncvs
+                select case(trim(set%geo(i)%cvs(j)%cvtype))
+                    case('B')
+                        write(DEV_PROFILE,31,ADVANCE='NO') set%geo(i)%cvs(j)%value
+                    case('A','D')
+                        write(DEV_PROFILE,32,ADVANCE='NO') set%geo(i)%cvs(j)%value*DEV_R2D
+                    case default
+                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_copy!')
+                end select
+            end do
+        else
+            do j=1,ncvs
+                write(DEV_PROFILE,21,ADVANCE='NO')
+            end do
+        end if
+        err = set%geo(i)%total_ene - set%offset - set%geo(i)%trg_energy
+        write(DEV_PROFILE,33) set%geo(i)%trg_energy, set%geo(i)%total_ene - set%offset, err
+    end do
+
+    close(DEV_PROFILE)
+
+ 10 format('# IDX')
+ 11 format('       CV',I2.2)
+ 12 format('   E(TRG,1)    E(MM,2)     E(2-1)')
+ 20 format('# ---')
+ 21 format(' ----------')
+ 22 format(' ---------- ---------- ----------')
+ 30 format(I5)
+ 31 format(1X,F10.4)
+ 32 format(1X,F10.1)
+ 33 format(1X,F10.2,1X,F10.2,1X,F10.2)
+
+end subroutine ffdev_targetset_save_drvene
+
+! ==============================================================================
+! subroutine ffdev_targetset_save_drvxyz
+! ==============================================================================
+
+subroutine ffdev_targetset_save_drvxyz(set,name)
+
+    use ffdev_targetset_dat
+    use ffdev_geometry
+    use smf_xyzfile
+    use smf_xyzfile_type
+
+    implicit none
+    type(TARGETSET)         :: set
+    character(len=MAX_PATH) :: name
+    ! --------------------------------------------
+    integer                 :: i
+    type(XYZFILE_TYPE)      :: xyz
+    ! --------------------------------------------------------------------------
+
+    if( set%ngeos .eq. 0 ) return ! no geometries
+
+    call init_xyz(xyz)
+    call allocate_xyz(xyz,set%top%natoms)
+    call open_xyz(DEV_XYZ,name,xyz,'UNKNOWN')
+
+    do i=1,set%ngeos
+        call ffdev_geometry_save_xyz_snapshot(set%geo(i),xyz)
+        call write_xyz(DEV_XYZ,xyz)
+    end do
+
+    call close_xyz(DEV_XYZ,xyz)
+
+end subroutine ffdev_targetset_save_drvxyz
 
 ! ------------------------------------------------------------------------------
 

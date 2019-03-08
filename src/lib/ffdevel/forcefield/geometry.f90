@@ -587,25 +587,6 @@ subroutine ffdev_geometry_load_1point(geo,stream)
 end subroutine ffdev_geometry_load_1point
 
 ! ==============================================================================
-! subroutine ffdev_geometry_load_cvs
-! ==============================================================================
-
-subroutine ffdev_geometry_load_cvs(geo,name)
-
-    use smf_xyzfile
-    use smf_xyzfile_type
-    use ffdev_utils
-    use smf_periodic_table
-
-    implicit none
-    type(GEOMETRY)      :: geo
-    character(*)        :: name
-    ! --------------------------------------------
-
-
-end subroutine ffdev_geometry_load_cvs
-
-! ==============================================================================
 ! subroutine ffdev_geometry_save_point
 ! ==============================================================================
 

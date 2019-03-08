@@ -1438,13 +1438,23 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 
     if( top%nb_mode .eq. nb_mode ) return ! nothing to change
 
-    if( NBERAOnly ) then
+    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ERA ) then
         select case(nb_mode)
             case(NB_MODE_LJ,NB_MODE_EXP6)
                 ! OK
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with NBERAOnly mode!')
+                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
+        end select
+    end if
+
+    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ER ) then
+        select case(nb_mode)
+            case(NB_MODE_LJ)
+                ! OK
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
+                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
         end select
     end if
 

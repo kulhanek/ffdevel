@@ -418,31 +418,33 @@ subroutine ffdev_parameters_init()
         end do
     end do
 
-    ! vdw alpha realm =====================
-    do i=1,nsets
-        do j=1,sets(i)%top%nnb_types
-            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_ALPHA)
-            if( parmid .eq. 0 ) then    ! new parameter
-                nparams = nparams + 1
-                params(nparams)%value = sets(i)%top%nb_types(j)%alpha
-                params(nparams)%realm = REALM_VDW_ALPHA
-                params(nparams)%enabled = .false.
-                params(nparams)%identity = 0
-                params(nparams)%pn    = 0
-                params(nparams)%ids(:) = 0
-                params(nparams)%ids(i) = j
-                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                params(nparams)%tk   = 0
-                params(nparams)%tl   = 0
-            else
-                params(parmid)%ids(i) = j ! parameter already exists, update link
-            end if
+    if( (NBParamsRealms .eq. NB_PARAMS_REALMS_ALL) .or. (NBParamsRealms .eq. NB_PARAMS_REALMS_ERA) ) then
+        ! vdw alpha realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_ALPHA)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%alpha
+                    params(nparams)%realm = REALM_VDW_ALPHA
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
         end do
-    end do
+    end if
 
-    if( NBERAOnly .eqv. .false. ) then
+    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ALL ) then
 
         ! vdw A realm =====================
         do i=1,nsets

@@ -89,16 +89,22 @@ integer                 :: LastNBMode                   = NB_MODE_LJ        ! de
 ! derived setup
 logical                 :: ApplyCombinationRules        = .false.           ! apply combination rules in every error evaluation
 
+! NBParamsMode
+integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0     ! normal setup depending on a probe mode of target sets
+                                                                ! either all nb_types or probe/probed structure
+integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1     ! only like nb_types except of probes
+integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2     ! only_like nb_types including probes
+integer,parameter       :: NB_PARAMS_MODE_ALL           = 3     ! all nb types
 
-integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0 ! normal setup depending on a probe mode of target sets
-                                                            ! either all nb_types or probe/probed structure
-integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1 ! only like nb_types except of probes
-integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2 ! only_like nb_types including probes
-integer,parameter       :: NB_PARAMS_MODE_ALL           = 3 ! all nb types
+! NBParamsRealms
+integer,parameter       :: NB_PARAMS_REALMS_ALL         = 1     ! all realms
+integer,parameter       :: NB_PARAMS_REALMS_ERA         = 2     ! ERA realms
+integer,parameter       :: NB_PARAMS_REALMS_ER          = 3     ! ER realms
 
 ! === [control] ================================================================
 integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
-logical                 :: NBERAOnly                    = .false.                   ! consider only ERA realms
+integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
+integer                 :: NBCombRules                  = COMB_RULE_LB
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

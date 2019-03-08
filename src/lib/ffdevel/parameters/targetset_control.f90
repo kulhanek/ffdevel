@@ -246,6 +246,22 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,95) trim(wmode)
         end if
 
+        ! get name of initial driving profile
+        if( .not. prmfile_get_string_by_key(fin,'initial_drvene',sets(i)%initial_drvene) ) then
+            sets(i)%initial_drvene = ''
+            write(DEV_OUT,18) trim('-none-')
+        else
+            write(DEV_OUT,18) trim(sets(i)%initial_drvene)
+        end if
+
+        ! get name of initial driving structures
+        if( .not. prmfile_get_string_by_key(fin,'initial_drvxyz',sets(i)%initial_drvxyz) ) then
+            sets(i)%initial_drvxyz = ''
+            write(DEV_OUT,19) trim('-none-')
+        else
+            write(DEV_OUT,19) trim(sets(i)%initial_drvxyz)
+        end if
+
         ! get name of resulting topology
         if( .not. prmfile_get_string_by_key(fin,'final_topology',sets(i)%final_stop) ) then
             sets(i)%final_stop = ''
@@ -472,6 +488,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  15 format('Final topology name (final_topology)    = ',A)
  16 format('Final driving profile (final_drvene)    = ',A)
  17 format('Final driving structures (final_drvxyz) = ',A)
+ 18 format('Initial drv profile (initial_drvene)    = ',A)
+ 19 format('Initial drv structures (initial_drvxyz) = ',A)
  
  20 format('Probe size (probesize)                  = ',I12)
  25 format('Probe size (probesize)                  = ',I12,'                  (default)')

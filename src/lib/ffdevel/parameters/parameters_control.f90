@@ -659,11 +659,15 @@ subroutine ffdev_parameters_ctrl_control(fin)
     use prmfile
     use ffdev_utils
     use ffdev_topology_dat
+    use ffdev_topology
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
     character(PRMFILE_MAX_PATH) :: string
     ! --------------------------------------------------------------------------
+
+    ! this is for nb_params = normal
+    ApplyCombinationRules = .false.
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -679,7 +683,16 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case(NB_PARAMS_MODE_ALL)
                 write(DEV_OUT,25) 'all'
         end select
-        write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
+        select case(NBParamsRealms)
+            case(NB_PARAMS_REALMS_ALL)
+                write(DEV_OUT,35) 'all'
+            case(NB_PARAMS_REALMS_ERA)
+                write(DEV_OUT,35) 'era'
+            case(NB_PARAMS_REALMS_ER)
+                write(DEV_OUT,35) 'er'
+        end select
+        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
+        write(DEV_OUT,45) lj2exp6_alpha
         return
     end if
 
@@ -690,9 +703,11 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,20) trim(string)
             case('like-only')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
+                ApplyCombinationRules = .true.
                 write(DEV_OUT,20) trim(string)
             case('like-all')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
+                ApplyCombinationRules = .true.
                 write(DEV_OUT,20) trim(string)
             case('all')
                 NBParamsMode = NB_PARAMS_MODE_ALL
@@ -713,10 +728,36 @@ subroutine ffdev_parameters_ctrl_control(fin)
         end select
     end if
 
-    if( prmfile_get_logical_by_key(fin,'era_only', NBERAOnly)) then
-        write(DEV_OUT,30) prmfile_onoff(NBERAOnly)
+    if( prmfile_get_string_by_key(fin,'nb_realms', string)) then
+        select case(trim(string))
+            case('all')
+                NBParamsRealms = NB_PARAMS_REALMS_ALL
+                write(DEV_OUT,30) trim(string)
+            case('era')
+                NBParamsRealms = NB_PARAMS_REALMS_ERA
+                write(DEV_OUT,30) trim(string)
+            case('er')
+                NBParamsRealms = NB_PARAMS_REALMS_ER
+                write(DEV_OUT,30) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_realms ('//trim(string)//')')
+        end select
     else
-        write(DEV_OUT,35) prmfile_onoff(NBERAOnly)
+        select case(NBParamsRealms)
+            case(NB_PARAMS_REALMS_ALL)
+                write(DEV_OUT,35) 'all'
+            case(NB_PARAMS_REALMS_ERA)
+                write(DEV_OUT,35) 'era'
+            case(NB_PARAMS_REALMS_ER)
+                write(DEV_OUT,35) 'er'
+        end select
+    end if
+
+    if( prmfile_get_string_by_key(fin,'comb_rules', string)) then
+        NBCombRules = ffdev_topology_get_comb_rules_from_string(string)
+        write(DEV_OUT,50) ffdev_topology_comb_rules_to_string(NBCombRules)
+    else
+        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
     end if
 
     if( prmfile_get_real8_by_key(fin,'lj2exp6_alpha', lj2exp6_alpha)) then
@@ -731,8 +772,10 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
  20  format ('NB parameter assembly mode (nb_params) = ',a12)
  25  format ('NB parameter assembly mode (nb_params) = ',a12,'                  (default)')
- 30  format ('Consider only ERA realms (era_only)    = ',a12)
- 35  format ('Consider only ERA realms (era_only)    = ',a12,'                  (default)')
+ 30  format ('NB parameter realms (nb_realms)        = ',a12)
+ 35  format ('NB parameter realms (nb_realms)        = ',a12,'                  (default)')
+ 50  format ('NB combining rules (comb_rules)        = ',a12)
+ 55  format ('NB combining rules (comb_rules)        = ',a12,'                  (default)')
  40  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7)
  45  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7,'                  (default)')
 

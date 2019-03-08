@@ -135,6 +135,12 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'Starting real optimization', '!')
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
 
+    ! calculate initial data
+    call ffdev_targetset_calc_all()
+
+    ! save initial driving data if requested
+    call ffdev_targetset_save_initial_drvs()
+
     ! process optimization programs
     rst = prmfile_first_group(fin)
     i = 1
@@ -194,6 +200,9 @@ program ffdev_optimize_program
 
     ! save topologies if requested
     call ffdev_targetset_save_final_stops()
+
+    ! save drivings if requested
+    call ffdev_targetset_save_final_drvs()
 
     ! save geometries if requested
     call ffdev_targetset_save_final_pts()
