@@ -107,7 +107,8 @@ private:
     void WriteImpropers(std::ostream& sout);
 
     void WriteNBTypes(std::ostream& sout);
-    void WriteNBList(std::ostream& sout);
+    void WriteNBListRebuild(std::ostream& sout);
+    void WriteNBListKeep(std::ostream& sout);
 
     void WriteDimensions(std::ostream& sout);
 

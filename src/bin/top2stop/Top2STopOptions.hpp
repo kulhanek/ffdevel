@@ -49,6 +49,7 @@ public:
     CSO_OPT(CSmallString,DihedralMode)
     CSO_OPT(bool,ZeroDihPhase)
     CSO_OPT(CSmallString,Transform)
+    CSO_OPT(bool,RebuildNBList)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -102,6 +103,15 @@ public:
                 "transform",                      /* long option name */
                 "MODE",                           /* parametr name */
                 "transform atom type name. Allowed modes are: none, both.")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(bool,                           /* option type */
+                RebuildNBList,                        /* option name */
+                false,                          /* default value */
+                false,                          /* is option mandatory */
+                'r',                           /* short option name */
+                "rebuild",                      /* long option name */
+                NULL,                           /* parametr name */
+                "rebuild NB list from scratch")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

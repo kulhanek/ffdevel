@@ -190,7 +190,12 @@ void CTop2STop::WriteAll(ostream& sout)
     WriteImpropers(sout);
 
     WriteNBTypes(sout);
-    WriteNBList(sout);
+    if( Options.GetOptRebuildNBList() == true ){
+        WriteNBListRebuild(sout);
+    } else {
+        WriteNBListKeep(sout);
+    }
+
     WriteDimensions(sout);
 }
 
@@ -1000,7 +1005,72 @@ void CTop2STop::WriteNBTypes(ostream& sout)
 
 //------------------------------------------------------------------------------
 
-void CTop2STop::WriteNBList(ostream& sout)
+// keep existing exclusion list from AMBER topology
+
+void CTop2STop::WriteNBListKeep(ostream& sout)
+{
+    sout << "[nb_list]" << endl;
+    sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
+
+    nb_size = 0;
+    int idx = 1;
+    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
+        CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(i);
+        for(int j=i+1; j < Topology.AtomList.GetNumberOfAtoms(); j++) {
+            CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(j);
+
+            // is 1-4?
+            bool found = false;
+            CAmberDihedral* p_dih;
+            for(int k=0; k < Topology.DihedralList.GetNumberOfDihedrals(); k++) {
+                p_dih = Topology.DihedralList.GetDihedral(k);
+                if( ((p_dih->GetIP() == i)&&(p_dih->GetLP() == j)) ||
+                    ((p_dih->GetIP() == j)&&(p_dih->GetLP() == i)) ){
+                        found = true;
+                        break;
+                }
+            }
+
+            int didx = 0;
+            if( (found == true) && ( (p_dih->GetType() == 0) || (p_dih->GetType() == -1) ) ){
+                CDihedralType dtype;
+                int ip = p_dih->GetIP();
+                int jp = p_dih->GetJP();
+                int kp = p_dih->GetKP();
+                int lp = p_dih->GetLP();
+                dtype = FindDihedralByTypes(ip,jp,kp,lp);
+                if( dtype.idx == -1 ){
+                    RUNTIME_ERROR("1-4 nb interaction dihedral not found");
+                }
+                didx = dtype.idx;
+            } else {
+                // is exluded
+                if( Topology.IsNBPairExcluded(i,j) == true ) continue;
+            }
+
+            int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
+            int nbidx = NBTypes[ico];
+
+            sout << right << setw(7) << idx << " ";
+            sout << right << setw(5) << i+1 << " ";
+            sout << right << setw(5) << j+1 << " ";
+            sout << right << setw(5) << nbidx << " ";
+            sout << right << setw(5) << didx << " ! ";
+            sout << left << setw(5) << p_atom1->GetName() << " ";
+            sout << left << setw(5) << p_atom1->GetType() << " ";
+            sout << left << setw(5) << p_atom2->GetName() << " ";
+            sout << left << setw(5) << p_atom2->GetType() << endl;
+            nb_size++;
+            idx++;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+// rebuild exclusion list
+
+void CTop2STop::WriteNBListRebuild(ostream& sout)
 {
     sout << "[nb_list]" << endl;
     sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
@@ -1074,7 +1144,6 @@ void CTop2STop::WriteNBList(ostream& sout)
             nb_size++;
             idx++;
         }
-
     }
 }
 
