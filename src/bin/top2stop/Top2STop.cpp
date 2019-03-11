@@ -27,10 +27,12 @@
 #include <FortranMatrix.hpp>
 #include <Vector.hpp>
 #include <Lapack.hpp>
+#include <boost/algorithm/string.hpp>
 
 //------------------------------------------------------------------------------
 
 using namespace std;
+using namespace boost;
 
 MAIN_ENTRY(CTop2STop);
 
@@ -116,6 +118,11 @@ bool CTop2STop::Run(void)
     // load topology
     if( LoadTopology() == false ) return(false);
 
+    // load filters
+    if( Options.IsOptDihedralTypesSet() ){
+        if( LoadDihFilters()  == false ) return(false);
+    }
+
     // transform atom types
     TransformTypes();
 
@@ -172,6 +179,41 @@ bool CTop2STop::LoadTopology(void)
 
 //------------------------------------------------------------------------------
 
+bool CTop2STop::LoadDihFilters(void)
+{
+    vout << endl;
+    vout << "# Loading dihedral type filters from: " << Options.GetOptDihedralTypes() << endl;
+    ifstream ifs(Options.GetOptDihedralTypes());
+    if( !ifs ){
+        vout << "<red>>>> ERROR: Unable to open dihedral type filters: " << Options.GetOptDihedralTypes() << "</red>" << endl;
+        return(false);
+    }
+
+    vout << endl;
+    vout << "# TA   TB   TC   TD" << endl;
+    vout << "# -- ---- ---- ----" << endl;
+
+    string line;
+    while(getline(ifs,line)){
+        stringstream sfs(line);
+        CDihedralTypeFilter filter;
+        sfs >> filter.t1 >> filter.t2 >> filter.t3 >> filter.t4;
+        vout << setw(4) << right << filter.t1 << " " << setw(4) << right << filter.t2;
+        if( filter.t3.empty() &&  filter.t3.empty() ){
+            filter.full = false;
+        } else {
+            vout << " " << setw(4) << right << filter.t3 << " " << setw(4) << right << filter.t4;
+            filter.full = true;
+        }
+        vout << endl;
+        DihFilters.push_back(filter);
+    }
+
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
 void CTop2STop::WriteAll(ostream& sout)
 {
     WriteAtomTypes(sout);
@@ -220,6 +262,26 @@ void CTop2STop::TransformTypes(void)
                     type[0] = toupper(type[0]);
                 }
             }
+            if( type.size() > 1 ){
+                if( isupper(type[1]) == true ){
+                    type[1] = tolower(type[1]);
+                } else {
+                    type[1] = toupper(type[1]);
+                }
+            }
+        }
+
+        if( Options.GetOptTransform() == "first" ){
+            if( type.size() > 0 ){
+                if( isupper(type[0]) == true ){
+                    type[0] = tolower(type[0]);
+                } else {
+                    type[0] = toupper(type[0]);
+                }
+            }
+        }
+
+        if( Options.GetOptTransform() == "second" ){
             if( type.size() > 1 ){
                 if( isupper(type[1]) == true ){
                     type[1] = tolower(type[1]);
@@ -594,6 +656,10 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         RUNTIME_ERROR("unsupported dihedral mode - p1");
     }
 
+    if( dih_mode == 2 ){
+        TransformCosToGRBF();
+    }
+
     while( it != ie ){
         CDihedralType dtype = it->second;
         sout << right << setw(7) << dtype.idx << " ";
@@ -601,7 +667,11 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         sout << right << setw(5) << dtype.at2 << " ";
         sout << right << setw(5) << dtype.at3 << " ";
         sout << right << setw(5) << dtype.at4 << " ";
-        sout << right << setw(4) << dih_mode << " ";
+        if( dtype.grbf ){
+            sout << right << setw(4) << 2 << " ";
+        } else {
+            sout << right << setw(4) << 1 << " ";
+        }
         sout << right << fixed << setw(13) << setprecision(6) << dtype.scee << " ";
         sout << right << fixed << setw(13) << setprecision(6) << dtype.scnb << " ! ";
         sout << left << setw(5) << AtomTypes[dtype.at1].name << " ";
@@ -613,17 +683,23 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
 
     ndihedral_types = DihedralTypes.size();
 
-    switch(dih_mode){
-        case 1:
-            WriteDihedralSeqCosMode(sout);
-            break;
-        case 2:
-            TransformCosToGRBF();
-            WriteDihedralSeqGRBFMode(sout);
-            break;
-        default:
-            RUNTIME_ERROR("unsupported dihedral mode - p2");
+    int costypes = 0;
+    int grbftypes = 0;
+    std::map<int,CDihedralType>::iterator tit = DihedralTypes.begin();
+    std::map<int,CDihedralType>::iterator tie = DihedralTypes.end();
+
+    while( tit != tie ){
+        CDihedralType dtype = tit->second;
+        if( dtype.grbf ){
+            grbftypes++;
+        } else {
+            costypes++;
+        }
+        tit++;
     }
+
+    if( costypes > 0 ) WriteDihedralSeqCosMode(sout);
+    if( grbftypes > 0 ) WriteDihedralSeqGRBFMode(sout);
 }
 
 //------------------------------------------------------------------------------
@@ -631,28 +707,33 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
 void CTop2STop::WriteDihedralSeqCosMode(ostream& sout)
 {
     sout << "[dihedral_seq_cos]" << endl;
-    sout << "! Type pn            v0         phase" << endl;
+    sout << "! Type pn            v0         phase defined" << endl;
 
     std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
 
     while( it != ie ){
         CDihedralType dtype = it->second;
-        for(int i=0; i < dtype.GetSeriesSize(); i++ ){
-            sout << right << setw(6) << dtype.idx << " ";
-            sout << right << setw(2) << i+1 << " ";
-            if( Options.GetOptZeroDihPhase() ) {
-                if( fabs(dtype.phase[i] - M_PI) < 0.1 ) {
-                    dtype.v0[i] = - dtype.v0[i];
-                    dtype.phase[i] = dtype.phase[i] - M_PI;
+        if( dtype.grbf == false ){
+            for(int i=0; i < dtype.GetSeriesSize(); i++ ){
+                sout << right << setw(6) << dtype.idx << " ";
+                sout << right << setw(2) << i+1 << " ";
+                if( Options.GetOptZeroDihPhase() ) {
+                    if( fabs(dtype.phase[i] - M_PI) < 0.1 ) {
+                        dtype.v0[i] = - dtype.v0[i];
+                        dtype.phase[i] = dtype.phase[i] - M_PI;
+                    }
+
                 }
                 sout << right << fixed << setw(13) << setprecision(6) << dtype.v0[i] << " ";
                 sout << right << fixed << setw(13) << setprecision(6) << dtype.phase[i];
-            } else {
-                sout << right << fixed << setw(13) << setprecision(6) << dtype.v0[i] << " ";
-                sout << right << fixed << setw(13) << setprecision(6) << dtype.phase[i];
+                if( dtype.defined[i] ){
+                    sout << "       1";
+                } else {
+                    sout << "       0";
+                }
+                sout << endl;
             }
-            sout << endl;
         }
         it++;
     }
@@ -674,7 +755,40 @@ void CTop2STop::TransformCosToGRBF(void)
     vout << endl;
     while(it != ie){
         CDihedralType type =  it->second;
-        SolveTransformation(type.idx);
+
+        bool ok = false;
+        if( DihFilters.size() > 0 ){
+            for(size_t i=0; i < DihFilters.size(); i++ ){
+                if( DihFilters[i].full ){
+                    if( ((trim_copy(AtomTypes[DihedralTypes[type.idx].at1].name) == DihFilters[i].t1) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t3) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at4].name) == DihFilters[i].t4)) ||
+                        ((trim_copy(AtomTypes[DihedralTypes[type.idx].at1].name) == DihFilters[i].t4) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t3) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at4].name) == DihFilters[i].t1)) ){
+                        ok = true;
+                        break;
+                    }
+                } else {
+                    if( ((trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t1) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t2)) ||
+                        ((trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t1)) ){
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+        } else {
+            ok = true;
+        }
+
+        if( ok ){
+            SolveTransformation(type.idx);
+            DihedralTypes[type.idx].grbf = true;
+        }
         it++;
     }
 }
@@ -706,13 +820,15 @@ void CTop2STop::WriteDihedralSeqGRBFMode(ostream& sout)
 
     while( it != ie ){
         CDihedralType dtype = it->second;
-        for(int i=0; i < dtype.GetSeriesSize(); i++ ){
-            sout << right << setw(6) << dtype.idx << " ";
-            sout << right << setw(2) << i+1 << " ";
-            sout << right << fixed << setw(13) << setprecision(6) << dtype.c[i] << " ";
-            sout << right << fixed << setw(13) << setprecision(6) << dtype.p[i] << " ";
-            sout << right << fixed << setw(13) << setprecision(6) << dtype.w2[i];
-            sout << endl;
+        if( dtype.grbf == true ){
+            for(int i=0; i < dtype.GetSeriesSize(); i++ ){
+                sout << right << setw(6) << dtype.idx << " ";
+                sout << right << setw(2) << i+1 << " ";
+                sout << right << fixed << setw(13) << setprecision(6) << dtype.c[i] << " ";
+                sout << right << fixed << setw(13) << setprecision(6) << dtype.p[i] << " ";
+                sout << right << fixed << setw(13) << setprecision(6) << dtype.w2[i];
+                sout << endl;
+            }
         }
         it++;
     }

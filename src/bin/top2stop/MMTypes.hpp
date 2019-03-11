@@ -74,6 +74,7 @@ public:
     int                 at3;
     int                 at4;
     std::vector<bool>   defined;
+    bool                grbf;
     // cos series
     std::vector<double> v0;
     std::vector<double> phase;
@@ -103,6 +104,19 @@ public:
     int         at2;
     int         at3;
     int         at4;
+};
+
+//------------------------------------------------------------------------------
+
+class CDihedralTypeFilter {
+public:
+    std::string t1;
+    std::string t2;
+    std::string t3;
+    std::string t4;
+    bool        full;
+
+    CDihedralTypeFilter(void);
 };
 
 //------------------------------------------------------------------------------

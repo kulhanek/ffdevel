@@ -21,12 +21,12 @@ use ffdev_sizes
 
 ! ------------------------------------------------------------------------------
 
-type COLVAR
+type RESTRAINT
     real(DEVDP)                 :: trg_value
     real(DEVDP)                 :: value
     character(len=MAX_CVTYPE)   :: cvtype
     integer,pointer             :: ai(:)
-end type COLVAR
+end type RESTRAINT
 
 ! ------------------------------------------------------------------------------
 
@@ -67,9 +67,9 @@ type GEOMETRY
     integer,pointer         :: freq_t2s_map(:)      ! trg_map(trg) = freq; map to freq by angle between normal vectors
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
-    integer                 :: ncvs                 ! number of collective variables
-    type(COLVAR),pointer    :: cvs(:)
-    real(DEVDP)             :: cvs_energy           ! colvar energy penalty
+    integer                 :: nrst                 ! number of restraints
+    type(RESTRAINT),pointer :: rst(:)               ! restraints
+    real(DEVDP)             :: rst_energy           ! colvar energy penalty
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------

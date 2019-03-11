@@ -117,6 +117,7 @@ CDihedralType::CDihedralType(void)
     scee = 0.0;
     scnb = 0.0;
     nb_processed = false;
+    grbf = false;
 }
 
 //------------------------------------------------------------------------------
@@ -266,6 +267,13 @@ double CDihedralType::GetDihDeviation(double value1, double value2)
         //! return vector back
         return(vec - 0.5*(maxv+minv));
     }
+}
+
+//------------------------------------------------------------------------------
+
+CDihedralTypeFilter::CDihedralTypeFilter(void)
+{
+    full = false;
 }
 
 //==============================================================================

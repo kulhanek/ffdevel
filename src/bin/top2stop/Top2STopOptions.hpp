@@ -47,6 +47,7 @@ public:
     // options ------------------------------
     CSO_OPT(int,DihedralSeriesSize)
     CSO_OPT(CSmallString,DihedralMode)
+    CSO_OPT(CSmallString,DihedralTypes)
     CSO_OPT(bool,ZeroDihPhase)
     CSO_OPT(CSmallString,Transform)
     CSO_OPT(bool,RebuildNBList)
@@ -78,6 +79,7 @@ public:
                 "dihsize",                      /* long option name */
                 "SIZE",                           /* parametr name */
                 "dihedral series size")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 DihedralMode,                        /* option name */
                 "cos",                          /* default value */
@@ -86,6 +88,17 @@ public:
                 "dihmode",                      /* long option name */
                 NULL,                           /* parametr name */
                 "dihedral mode: cos - cosine series, grbf - gaussian radial basis functions")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(CSmallString,                           /* option type */
+                DihedralTypes,                        /* option name */
+                NULL,                          /* default value */
+                false,                          /* is option mandatory */
+                'f',                           /* short option name */
+                "filters",                      /* long option name */
+                NULL,                           /* parametr name */
+                "name of file with atoms types defining dihedrals for grbf transformation, "
+                "either two atom types for central bond or four atom types for exact dihedaral type")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 ZeroDihPhase,                        /* option name */
                 false,                          /* default value */
@@ -102,7 +115,7 @@ public:
                 't',                           /* short option name */
                 "transform",                      /* long option name */
                 "MODE",                           /* parametr name */
-                "transform atom type name. Allowed modes are: none, both.")   /* option description */
+                "transform atom type name. Allowed modes are: none, first, second, both.")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 RebuildNBList,                        /* option name */

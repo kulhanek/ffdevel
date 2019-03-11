@@ -36,7 +36,7 @@ program ffdev_gradient_program
     integer                 :: i
     ! --------------------------------------------------------------------------
 
-    call ffdev_utils_header('CV Gradient')
+    call ffdev_utils_header('RST Gradient')
 
     ! test number of input arguments
     if( command_argument_count() .lt. 2  ) then
@@ -94,25 +94,25 @@ program ffdev_gradient_program
     call ffdev_gradient_allocate(ngeo)
 
     ! calculate energy and gradient
-    ! only CV restraints if any
+    ! only restraints if any
     write(DEV_OUT,*)
     if( do_numerical ) then
         write(DEV_OUT,'(A)') 'Numerical gradient ...'
-        call ffdev_geometry_get_cvs_penalty_num(geo)
+        call ffdev_geometry_get_rst_penalty_num(geo)
     else
         write(DEV_OUT,'(A)') 'Analytical gradient ...'
-        call ffdev_geometry_get_cvs_penalty(geo)
+        call ffdev_geometry_get_rst_penalty(geo)
     end if
 
     write(DEV_OUT,*)
-    call ffdev_geometry_cvsum(DEV_OUT,geo)
+    call ffdev_geometry_rstsum(DEV_OUT,geo)
 
     if( do_test ) then
         write(DEV_OUT,*)
         write(DEV_OUT,'(A)') '>>> INFO: Testing gradient ...'
         write(DEV_OUT,*)
         write(DEV_OUT,'(A)') 'Numerical gradient ...'
-        call ffdev_geometry_get_cvs_penalty_num(ngeo)
+        call ffdev_geometry_get_rst_penalty_num(ngeo)
 
         if( .not. ffdev_gradient_test(geo,ngeo,1.0d-3) ) then
             write(DEV_OUT,*)
@@ -140,7 +140,7 @@ program ffdev_gradient_program
     call ffdev_utils_heading(DEV_OUT,'Gradient','=')
     call ffdev_gradient_print(DEV_OUT,top,geo)
 
-    call ffdev_utils_footer('CV Gradient')
+    call ffdev_utils_footer('RST Gradient')
 
 100 format('Simplified topology : ',A)
 110 format('Input point         : ',A)
@@ -163,7 +163,7 @@ subroutine print_usage()
 
     return
 
-10 format('    cvgradient <stopology> <pts> [test] [numerica]')
+10 format('    rstgradient <stopology> <pts> [test] [numerica]')
 
 end subroutine print_usage
 

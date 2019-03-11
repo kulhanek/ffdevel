@@ -58,8 +58,8 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
-    geo%ncvs        = 0
-    geo%cvs_energy  = 0.0
+    geo%nrst        = 0
+    geo%rst_energy  = 0.0
 
     geo%z           => null()
     geo%crd         => null()
@@ -77,7 +77,7 @@ subroutine ffdev_geometry_init(geo)
     geo%freq_t2s_map    => null()
     geo%trg_esp         => null()
 
-    geo%cvs         => null()
+    geo%rst         => null()
 
 end subroutine ffdev_geometry_init
 
@@ -123,11 +123,11 @@ subroutine ffdev_geometry_destroy(geo)
         deallocate(geo%trg_esp)
     end if
 
-    if( associated(geo%cvs) ) then
-        do i=1,geo%ncvs
-            deallocate(geo%cvs(i)%ai)
+    if( associated(geo%rst) ) then
+        do i=1,geo%nrst
+            deallocate(geo%rst(i)%ai)
         end do
-        deallocate(geo%cvs)
+        deallocate(geo%rst)
     end if
 
 end subroutine ffdev_geometry_destroy
@@ -509,72 +509,72 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     end if
                 end do
                 geo%trg_esp_loaded = .true.
-            case('CVS')
-                read(DEV_GEO,*,iostat = read_stat) geo%ncvs
+            case('RST')
+                read(DEV_GEO,*,iostat = read_stat) geo%nrst
                 if( read_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read ncvs entry!')
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read nrst entry!')
                 end if
-                if( geo%ncvs .gt. 0 ) then
-                    allocate( geo%cvs(geo%ncvs), stat = alloc_stat )
+                if( geo%nrst .gt. 0 ) then
+                    allocate( geo%rst(geo%nrst), stat = alloc_stat )
                     if( alloc_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate aray for cvs!')
+                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate aray for rst!')
                     end if
-                    do i=1,geo%ncvs
+                    do i=1,geo%nrst
                         read(DEV_GEO,'(A255)',iostat = read_stat) line
                         if( read_stat .ne. 0 ) then
-                            write(buffer,'(A,I3)') 'Unable to read CV entry! CV line = ',i
+                            write(buffer,'(A,I3)') 'Unable to read RST entry! RST line = ',i
                             call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                         end if
-                        geo%cvs(i)%cvtype = ''
+                        geo%rst(i)%cvtype = ''
                         j = 0
-                        read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype
+                        read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype
                         if( i .ne. j ) then
-                            write(buffer,'(A,I3)') 'Unable to read CV entry - order mismatch! CV line = ',i
+                            write(buffer,'(A,I3)') 'Unable to read RST entry - order mismatch! RST line = ',i
                             call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                         end if
-                        select case(trim(geo%cvs(i)%cvtype))
+                        select case(trim(geo%rst(i)%cvtype))
                             case('B')
-                                allocate( geo%cvs(i)%ai(2), stat = alloc_stat )
+                                allocate( geo%rst(i)%ai(2), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry B! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry B! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value, geo%cvs(i)%ai(1), &
-                                                                   geo%cvs(i)%ai(2)
+                                read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value, geo%rst(i)%ai(1), &
+                                                                   geo%rst(i)%ai(2)
                                 if( read_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to read CV entry B! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to read RST entry B! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
                             case('A')
-                                allocate( geo%cvs(i)%ai(3), stat = alloc_stat )
+                                allocate( geo%rst(i)%ai(3), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry A! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry A! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value,geo%cvs(i)%ai(1), &
-                                                                   geo%cvs(i)%ai(2),geo%cvs(i)%ai(3)
+                                read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value,geo%rst(i)%ai(1), &
+                                                                   geo%rst(i)%ai(2),geo%rst(i)%ai(3)
                                 if( read_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to read CV entry A! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to read RST entry A! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
                                 ! convert to rad
-                                geo%cvs(i)%trg_value = geo%cvs(i)%trg_value * DEV_D2R
+                                geo%rst(i)%trg_value = geo%rst(i)%trg_value * DEV_D2R
                             case('D')
-                                allocate( geo%cvs(i)%ai(4), stat = alloc_stat )
+                                allocate( geo%rst(i)%ai(4), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to allocate ai for CV entry D! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry D! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
-                                read(line,*,iostat = read_stat) j,geo%cvs(i)%cvtype,geo%cvs(i)%trg_value,geo%cvs(i)%ai(1), &
-                                                                   geo%cvs(i)%ai(2),geo%cvs(i)%ai(3),geo%cvs(i)%ai(4)
+                                read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value,geo%rst(i)%ai(1), &
+                                                                   geo%rst(i)%ai(2),geo%rst(i)%ai(3),geo%rst(i)%ai(4)
                                 if( read_stat .ne. 0 ) then
-                                    write(buffer,'(A,I3)') 'Unable to read CV entry D! CV line = ',i
+                                    write(buffer,'(A,I3)') 'Unable to read RST entry D! RST line = ',i
                                     call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                                 end if
                                 ! convert to rad
-                                geo%cvs(i)%trg_value = geo%cvs(i)%trg_value * DEV_D2R
+                                geo%rst(i)%trg_value = geo%rst(i)%trg_value * DEV_D2R
                             case default
-                                write(buffer,'(A,A,A,I3)') 'Unsupported CV type ',trim(geo%cvs(i)%cvtype),'! CV line = ',i
+                                write(buffer,'(A,A,A,I3)') 'Unsupported RST type ',trim(geo%rst(i)%cvtype),'! RST line = ',i
                                 call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                         end select
                     end do
@@ -807,7 +807,7 @@ subroutine ffdev_geometry_info_input(geo)
     write(DEV_OUT,90)  trim(geo%name)
     write(DEV_OUT,95)  trim(geo%title)
     write(DEV_OUT,100) geo%natoms
-    write(DEV_OUT,110) geo%ncvs
+    write(DEV_OUT,110) geo%nrst
 
  90 format('Geometry name          = ',A)
  95 format('Geometry comment       = ',A)
@@ -982,35 +982,35 @@ subroutine ffdev_geometry_copy(geo1,geo2)
         geo1%crd(:,:) = geo2%crd(:,:)
     end if
 
-    geo1%ncvs = geo2%ncvs
+    geo1%nrst = geo2%nrst
     if( geo1%natoms .gt. 0 ) then
-        allocate(geo1%cvs(geo1%ncvs), stat = alloc_stat)
+        allocate(geo1%rst(geo1%nrst), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs array for geometry!')
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst array for geometry!')
         end if
-        do i=1,geo1%ncvs
-            geo1%cvs(i)%trg_value = geo2%cvs(i)%trg_value
-            geo1%cvs(i)%cvtype = geo2%cvs(i)%cvtype
-            select case(trim(geo1%cvs(i)%cvtype))
+        do i=1,geo1%nrst
+            geo1%rst(i)%trg_value = geo2%rst(i)%trg_value
+            geo1%rst(i)%cvtype = geo2%rst(i)%cvtype
+            select case(trim(geo1%rst(i)%cvtype))
                 case('B')
-                    allocate(geo1%cvs(i)%ai(2), stat = alloc_stat)
+                    allocate(geo1%rst(i)%ai(2), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
                         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
                     end if
                 case('A')
-                    allocate(geo1%cvs(i)%ai(3), stat = alloc_stat)
+                    allocate(geo1%rst(i)%ai(3), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
                         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
                     end if
                 case('D')
-                    allocate(geo1%cvs(i)%ai(4), stat = alloc_stat)
+                    allocate(geo1%rst(i)%ai(4), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
                         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
                     end if
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_copy!')
             end select
-            geo1%cvs(i)%ai(:) = geo2%cvs(i)%ai(:)
+            geo1%rst(i)%ai(:) = geo2%rst(i)%ai(:)
         end do
     end if
 
@@ -1291,11 +1291,11 @@ real(DEVDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
 end function ffdev_geometry_get_dihedral_deviation
 
 ! ==============================================================================
-! subroutine ffdev_geometry_get_cvs_penalty
+! subroutine ffdev_geometry_get_rst_penalty
 ! including gardient
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_cvs_penalty(geo)
+subroutine ffdev_geometry_get_rst_penalty(geo)
 
     use ffdev_utils
 
@@ -1306,10 +1306,10 @@ subroutine ffdev_geometry_get_cvs_penalty(geo)
     ! --------------------------------------------------------------------------
 
     ! reset penalty
-    geo%cvs_energy = 0.0d0
+    geo%rst_energy = 0.0d0
 
-    do i=1,geo%ncvs
-        select case(trim(geo%cvs(i)%cvtype))
+    do i=1,geo%nrst
+        select case(trim(geo%rst(i)%cvtype))
             case('B')
                 call ffdev_geometry_get_bond_penalty(geo,i)
             case('A')
@@ -1317,18 +1317,18 @@ subroutine ffdev_geometry_get_cvs_penalty(geo)
             case('D')
                 call ffdev_geometry_get_torsion_penalty(geo,i)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_penalty!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_penalty!')
         end select
     end do
 
-end subroutine ffdev_geometry_get_cvs_penalty
+end subroutine ffdev_geometry_get_rst_penalty
 
 ! ==============================================================================
-! subroutine ffdev_geometry_get_cvs_penalty_only
+! subroutine ffdev_geometry_get_rst_penalty_only
 ! without gradient
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_cvs_penalty_only(geo)
+subroutine ffdev_geometry_get_rst_penalty_only(geo)
 
     use ffdev_utils
 
@@ -1340,35 +1340,35 @@ subroutine ffdev_geometry_get_cvs_penalty_only(geo)
     ! --------------------------------------------------------------------------
 
     ! reset penalty
-    geo%cvs_energy = 0.0d0
+    geo%rst_energy = 0.0d0
 
-    call ffdev_geometry_get_cvs_values(geo)
+    call ffdev_geometry_get_rst_values(geo)
 
-    do i=1,geo%ncvs
-        tv = geo%cvs(i)%trg_value
-        actv = geo%cvs(i)%value
-        select case(trim(geo%cvs(i)%cvtype))
+    do i=1,geo%nrst
+        tv = geo%rst(i)%trg_value
+        actv = geo%rst(i)%value
+        select case(trim(geo%rst(i)%cvtype))
             case('B')
                 dev = actv - tv
-                geo%cvs_energy = geo%cvs_energy + 0.5d0*DIS_FC*dev**2
+                geo%rst_energy = geo%rst_energy + 0.5d0*DIS_FC*dev**2
             case('A')
                 dev = actv - tv
-                geo%cvs_energy = geo%cvs_energy + 0.5d0*ANG_FC*dev**2
+                geo%rst_energy = geo%rst_energy + 0.5d0*ANG_FC*dev**2
             case('D')
                 dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
-                geo%cvs_energy = geo%cvs_energy + 0.5d0*ANG_FC*dev**2
+                geo%rst_energy = geo%rst_energy + 0.5d0*ANG_FC*dev**2
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_penalty_only!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_penalty_only!')
         end select
     end do
 
-end subroutine ffdev_geometry_get_cvs_penalty_only
+end subroutine ffdev_geometry_get_rst_penalty_only
 
 ! ==============================================================================
-! subroutine ffdev_geometry_get_cvs_penalty_num
+! subroutine ffdev_geometry_get_rst_penalty_num
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_cvs_penalty_num(geo)
+subroutine ffdev_geometry_get_rst_penalty_num(geo)
 
     implicit none
     type(GEOMETRY)  :: geo
@@ -1381,7 +1381,7 @@ subroutine ffdev_geometry_get_cvs_penalty_num(geo)
     d = 5.0d-4  ! differentiation parameter
 
     ! calculate base penalty
-    call ffdev_geometry_get_cvs_penalty_only(geo)
+    call ffdev_geometry_get_rst_penalty_only(geo)
 
     ! init temporary geometry object
     call ffdev_geometry_init(tmp_geo)
@@ -1392,13 +1392,13 @@ subroutine ffdev_geometry_get_cvs_penalty_num(geo)
         do j=1,3
             ! left
             tmp_geo%crd(j,i) = geo%crd(j,i) + d
-            call ffdev_geometry_get_cvs_penalty_only(tmp_geo)
-            ene1 = tmp_geo%cvs_energy
+            call ffdev_geometry_get_rst_penalty_only(tmp_geo)
+            ene1 = tmp_geo%rst_energy
 
             ! right
             tmp_geo%crd(j,i) = geo%crd(j,i) - d
-            call ffdev_geometry_get_cvs_penalty_only(tmp_geo)
-            ene2 = tmp_geo%cvs_energy
+            call ffdev_geometry_get_rst_penalty_only(tmp_geo)
+            ene2 = tmp_geo%rst_energy
 
             ! gradient
             geo%grd(j,i) = 0.5d0*(ene1-ene2)/d
@@ -1411,13 +1411,13 @@ subroutine ffdev_geometry_get_cvs_penalty_num(geo)
     ! release temporary geometry object
     call ffdev_geometry_destroy(tmp_geo)
 
-end subroutine ffdev_geometry_get_cvs_penalty_num
+end subroutine ffdev_geometry_get_rst_penalty_num
 
 ! ==============================================================================
-! function ffdev_geometry_get_cvs_value
+! function ffdev_geometry_get_rst_values
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_cvs_values(geo)
+subroutine ffdev_geometry_get_rst_values(geo)
 
     use ffdev_utils
 
@@ -1427,30 +1427,30 @@ subroutine ffdev_geometry_get_cvs_values(geo)
     integer         :: i
     ! --------------------------------------------------------------------------
 
-    do i=1,geo%ncvs
-        select case(trim(geo%cvs(i)%cvtype))
+    do i=1,geo%nrst
+        select case(trim(geo%rst(i)%cvtype))
             case('B')
-                geo%cvs(i)%value = &
-                      ffdev_geometry_get_length(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2))
+                geo%rst(i)%value = &
+                      ffdev_geometry_get_length(geo%crd,geo%rst(i)%ai(1),geo%rst(i)%ai(2))
             case('A')
-                geo%cvs(i)%value = &
-                      ffdev_geometry_get_angle(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2),geo%cvs(i)%ai(3))
+                geo%rst(i)%value = &
+                      ffdev_geometry_get_angle(geo%crd,geo%rst(i)%ai(1),geo%rst(i)%ai(2),geo%rst(i)%ai(3))
             case('D')
-                geo%cvs(i)%value = &
-                      ffdev_geometry_get_dihedral(geo%crd,geo%cvs(i)%ai(1),geo%cvs(i)%ai(2), &
-                                                          geo%cvs(i)%ai(3),geo%cvs(i)%ai(4))
+                geo%rst(i)%value = &
+                      ffdev_geometry_get_dihedral(geo%crd,geo%rst(i)%ai(1),geo%rst(i)%ai(2), &
+                                                          geo%rst(i)%ai(3),geo%rst(i)%ai(4))
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_cvs_value!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_values!')
         end select
     end do
 
-end subroutine ffdev_geometry_get_cvs_values
+end subroutine ffdev_geometry_get_rst_values
 
 ! ==============================================================================
-! subroutine ffdev_geometry_cvsum
+! subroutine ffdev_geometry_rstsum
 ! ==============================================================================
 
-subroutine ffdev_geometry_cvsum(unid,geo)
+subroutine ffdev_geometry_rstsum(unid,geo)
 
     use ffdev_utils
 
@@ -1462,7 +1462,7 @@ subroutine ffdev_geometry_cvsum(unid,geo)
     real(DEVDP)     :: actv,tv,dev
     ! --------------------------------------------------------------------------
 
-    if( geo%ncvs .le. 0 ) then
+    if( geo%nrst .le. 0 ) then
         return
     end if
 
@@ -1470,26 +1470,26 @@ subroutine ffdev_geometry_cvsum(unid,geo)
     write(unid,20)
     write(unid,30)
 
-    call ffdev_geometry_get_cvs_values(geo)
+    call ffdev_geometry_get_rst_values(geo)
 
-    do i=1,geo%ncvs
-        select case(trim(geo%cvs(i)%cvtype))
+    do i=1,geo%nrst
+        select case(trim(geo%rst(i)%cvtype))
             case('B')
-                actv = geo%cvs(i)%value
-                tv = geo%cvs(i)%trg_value
+                actv = geo%rst(i)%value
+                tv = geo%rst(i)%trg_value
                 dev = actv - tv
             case('A')
-                actv = geo%cvs(i)%value * DEV_R2D
-                tv = geo%cvs(i)%trg_value * DEV_R2D
+                actv = geo%rst(i)%value * DEV_R2D
+                tv = geo%rst(i)%trg_value * DEV_R2D
                 dev = actv - tv
             case('D')
-                actv = geo%cvs(i)%value * DEV_R2D
-                tv = geo%cvs(i)%trg_value * DEV_R2D
+                actv = geo%rst(i)%value * DEV_R2D
+                tv = geo%rst(i)%trg_value * DEV_R2D
                 dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_cvsum!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_rstsum!')
         end select
-        write(unid,40) i, geo%cvs(i)%cvtype, tv, actv, dev
+        write(unid,40) i, geo%rst(i)%cvtype, tv, actv, dev
     end do
 
  10 format('# Geometry Restraint Summary')
@@ -1497,7 +1497,7 @@ subroutine ffdev_geometry_cvsum(unid,geo)
  30 format('# --- ----- ------------ ------------ ------------')
  40 format(I5,1X,A5,1X,F12.6,1X,F12.6,1X,F12.6)
 
-end subroutine ffdev_geometry_cvsum
+end subroutine ffdev_geometry_rstsum
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_get_bond_penalty
@@ -1514,17 +1514,17 @@ subroutine ffdev_geometry_get_bond_penalty(geo,cvidx)
     ! --------------------------------------------------------------------------
 
     ! for each bond
-    i  = geo%cvs(cvidx)%ai(1)
-    j  = geo%cvs(cvidx)%ai(2)
+    i  = geo%rst(cvidx)%ai(1)
+    j  = geo%rst(cvidx)%ai(2)
 
     ! calculate rij
     rij(:) = geo%crd(:,j) - geo%crd(:,i)
 
     ! calculate penalty
     b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
-    db = b - geo%cvs(cvidx)%trg_value
-    geo%cvs(cvidx)%value = 0.5*DIS_FC*db**2
-    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
+    db = b - geo%rst(cvidx)%trg_value
+    geo%rst(cvidx)%value = 0.5*DIS_FC*db**2
+    geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! calculate gradient
     dv = DIS_FC*db/b
@@ -1548,9 +1548,9 @@ subroutine ffdev_geometry_get_angle_penalty(geo,cvidx)
     real(DEVDP)     :: rji(3),rjk(3),di(3),dk(3)
     ! --------------------------------------------------------------------------
 
-    i  = geo%cvs(cvidx)%ai(1)
-    j  = geo%cvs(cvidx)%ai(2)
-    k  = geo%cvs(cvidx)%ai(3)
+    i  = geo%rst(cvidx)%ai(1)
+    j  = geo%rst(cvidx)%ai(2)
+    k  = geo%rst(cvidx)%ai(3)
 
     ! calculate rji and rjk
     rji(:) = geo%crd(:,i) - geo%crd(:,j)
@@ -1573,9 +1573,9 @@ subroutine ffdev_geometry_get_angle_penalty(geo,cvidx)
     angv = acos(scp)
 
     ! calculate energy
-    da = angv - geo%cvs(cvidx)%trg_value
-    geo%cvs(cvidx)%value = 0.5*ANG_FC*da**2
-    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
+    da = angv - geo%rst(cvidx)%trg_value
+    geo%rst(cvidx)%value = 0.5*ANG_FC*da**2
+    geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! calculate gradient
     dv = ANG_FC*da
@@ -1615,10 +1615,10 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
 
     ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
 
-    i  = geo%cvs(cvidx)%ai(1)
-    j  = geo%cvs(cvidx)%ai(2)
-    k  = geo%cvs(cvidx)%ai(3)
-    l  = geo%cvs(cvidx)%ai(4)
+    i  = geo%rst(cvidx)%ai(1)
+    j  = geo%rst(cvidx)%ai(2)
+    k  = geo%rst(cvidx)%ai(3)
+    l  = geo%rst(cvidx)%ai(4)
 
     f(:) = geo%crd(:,i) - geo%crd(:,j)
     g(:) = geo%crd(:,j) - geo%crd(:,k)
@@ -1656,9 +1656,9 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
     end if
 
     ! deviation and value
-    da = ffdev_geometry_get_dihedral_deviation(phi,geo%cvs(cvidx)%trg_value)
-    geo%cvs(cvidx)%value = 0.5*ANG_FC*da**2
-    geo%cvs_energy = geo%cvs_energy + geo%cvs(cvidx)%value
+    da = ffdev_geometry_get_dihedral_deviation(phi,geo%rst(cvidx)%trg_value)
+    geo%rst(cvidx)%value = 0.5*ANG_FC*da**2
+    geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! contribution to grad
     dv = ANG_FC*da

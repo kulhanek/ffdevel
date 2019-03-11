@@ -314,45 +314,45 @@ subroutine ffdev_targetset_save_drvene(set,name)
     type(TARGETSET)         :: set
     character(len=MAX_PATH) :: name
     ! --------------------------------------------
-    integer                 :: i,j,ncvs
+    integer                 :: i,j,nrst
     real(DEVDP)             :: err
     ! --------------------------------------------------------------------------
 
     if( set%ngeos .eq. 0 ) return ! no geometries
 
-    ncvs = set%geo(1)%ncvs
+    nrst = set%geo(1)%nrst
 
     call ffdev_utils_open(DEV_PROFILE,name,'U')
 
     ! write header
     write(DEV_PROFILE,10,ADVANCE='NO')
-    do i=1,set%geo(1)%ncvs
+    do i=1,set%geo(1)%nrst
         write(DEV_PROFILE,11,ADVANCE='NO') i
     end do
     write(DEV_PROFILE,12)
 
     write(DEV_PROFILE,20,ADVANCE='NO')
-    do i=1,set%geo(1)%ncvs
+    do i=1,set%geo(1)%nrst
         write(DEV_PROFILE,21,ADVANCE='NO')
     end do
     write(DEV_PROFILE,22)
 
     do i=1,set%ngeos
         write(DEV_PROFILE,30,ADVANCE='NO') i
-        if( ncvs .eq. set%geo(i)%ncvs ) then
-            call ffdev_geometry_get_cvs_values(set%geo(i))
-            do j=1,set%geo(i)%ncvs
-                select case(trim(set%geo(i)%cvs(j)%cvtype))
+        if( nrst .eq. set%geo(i)%nrst ) then
+            call ffdev_geometry_get_rst_values(set%geo(i))
+            do j=1,set%geo(i)%nrst
+                select case(trim(set%geo(i)%rst(j)%cvtype))
                     case('B')
-                        write(DEV_PROFILE,31,ADVANCE='NO') set%geo(i)%cvs(j)%value
+                        write(DEV_PROFILE,31,ADVANCE='NO') set%geo(i)%rst(j)%value
                     case('A','D')
-                        write(DEV_PROFILE,32,ADVANCE='NO') set%geo(i)%cvs(j)%value*DEV_R2D
+                        write(DEV_PROFILE,32,ADVANCE='NO') set%geo(i)%rst(j)%value*DEV_R2D
                     case default
-                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_copy!')
+                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported RST in ffdev_geometry_copy!')
                 end select
             end do
         else
-            do j=1,ncvs
+            do j=1,nrst
                 write(DEV_PROFILE,21,ADVANCE='NO')
             end do
         end if

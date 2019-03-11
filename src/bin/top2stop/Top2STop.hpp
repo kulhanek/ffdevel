@@ -54,13 +54,14 @@ private:
     CVerboseStr         vout;
 
     // types -------------------------------------
-    std::map<int,CAtomType>     AtomTypes;
-    std::map<int,CBondType>     BondTypes;
-    std::map<int,CAngleType>    AngleTypes;
-    std::map<int,CDihedralType> DihedralTypes;
-    std::map<int,CDihedralType> ImproperTypes;
-    std::map<int,int>           NBTypes;
-    std::list<CDihedral>        UniqueDihedrals;
+    std::map<int,CAtomType>             AtomTypes;
+    std::map<int,CBondType>             BondTypes;
+    std::map<int,CAngleType>            AngleTypes;
+    std::map<int,CDihedralType>         DihedralTypes;
+    std::map<int,CDihedralType>         ImproperTypes;
+    std::map<int,int>                   NBTypes;
+    std::list<CDihedral>                UniqueDihedrals;
+    std::vector<CDihedralTypeFilter>    DihFilters;
 
     int dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
     int dih_samp_freq;  // dihedral sampling frequency
@@ -82,6 +83,7 @@ private:
 
     /// load topology
     bool LoadTopology(void);
+    bool LoadDihFilters(void);
 
     /// write all data
     void WriteAll(std::ostream& sout);

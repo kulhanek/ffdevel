@@ -1088,21 +1088,21 @@ subroutine genpoints_optimize_points
     call ffdev_gradient_allocate(tmpgeo)
 
     if( HoldCV ) then
-        tmpgeo%ncvs = NRotors
-        allocate( tmpgeo%cvs(tmpgeo%ncvs), stat = alloc_stat)
+        tmpgeo%nrst = NRotors
+        allocate( tmpgeo%rst(tmpgeo%nrst), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs array!')
+             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst array!')
         end if
-        do i=1,tmpgeo%ncvs
-            allocate( tmpgeo%cvs(i)%ai(4), stat = alloc_stat)
+        do i=1,tmpgeo%nrst
+            allocate( tmpgeo%rst(i)%ai(4), stat = alloc_stat)
             if( alloc_stat .ne. 0 ) then
-                 call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate cvs%ai array!')
+                 call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst%ai array!')
             end if
-            tmpgeo%cvs(i)%ai(1) = Rotors(i)%ait
-            tmpgeo%cvs(i)%ai(2) = Rotors(i)%ai
-            tmpgeo%cvs(i)%ai(3) = Rotors(i)%aj
-            tmpgeo%cvs(i)%ai(4) = Rotors(i)%ajt
-            tmpgeo%cvs(i)%cvtype = 'D'
+            tmpgeo%rst(i)%ai(1) = Rotors(i)%ait
+            tmpgeo%rst(i)%ai(2) = Rotors(i)%ai
+            tmpgeo%rst(i)%ai(3) = Rotors(i)%aj
+            tmpgeo%rst(i)%ai(4) = Rotors(i)%ajt
+            tmpgeo%rst(i)%cvtype = 'D'
          end do
     end if
 
@@ -1115,10 +1115,10 @@ subroutine genpoints_optimize_points
         tmpgeo%crd(:,:) = Points(i)%crd(:,:)
 
         if( HoldCV ) then
-            do j=1,tmpgeo%ncvs
-                tmpgeo%cvs(j)%trg_value = &
+            do j=1,tmpgeo%nrst
+                tmpgeo%rst(j)%trg_value = &
                       ffdev_geometry_get_dihedral(tmpgeo%crd,Rotors(j)%ait,Rotors(j)%ai,Rotors(j)%aj,Rotors(j)%ajt)
-                tmpgeo%cvs(j)%value = tmpgeo%cvs(j)%trg_value
+                tmpgeo%rst(j)%value = tmpgeo%rst(j)%trg_value
             end do
         end if
 

@@ -39,10 +39,10 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
 
-    if( PrintCVSummary ) then
-        ! print summary about CVs
+    if( PrintRSTSummary ) then
+        ! print summary about RSTs
         write(fout,*)
-        call ffdev_geometry_cvsum(fout,geo)
+        call ffdev_geometry_rstsum(fout,geo)
         write(fout,*)
     end if
 
@@ -149,10 +149,10 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
-        ! cvs penalty
-        call ffdev_geometry_get_cvs_penalty(geo)
+        ! rst penalty
+        call ffdev_geometry_get_rst_penalty(geo)
 
-        totene = geo%total_ene + geo%cvs_energy
+        totene = geo%total_ene + geo%rst_energy
 
         !===============================================================================
         ! check all criteria
@@ -227,10 +227,10 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! write final results
         call write_results(fout,istep,geo,rmsg,maxgrad,maxatom,.true.) ! results to stdout
 
-        if( PrintCVSummary ) then
-            ! print summary about CVs
+        if( PrintRSTSummary ) then
+            ! print summary about RSTs
             write(fout,*)
-            call ffdev_geometry_cvsum(fout,geo)
+            call ffdev_geometry_rstsum(fout,geo)
         end if
 
         if( PrintFinalGradient ) then
@@ -292,10 +292,10 @@ subroutine opt_lbfgs(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
-        ! cvs penalty
-        call ffdev_geometry_get_cvs_penalty(geo)
+        ! rst penalty
+        call ffdev_geometry_get_rst_penalty(geo)
 
-        totene = geo%total_ene + geo%cvs_energy
+        totene = geo%total_ene + geo%rst_energy
 
         !===============================================================================
         ! check all criteria
@@ -357,10 +357,10 @@ subroutine opt_lbfgs(fout,top,geo)
         ! write final results
         call write_results(fout,istep,geo,rmsg,maxgrad,maxatom,.true.) ! results to stdout
 
-        if( PrintCVSummary ) then
-            ! print summary about CVs
+        if( PrintRSTSummary ) then
+            ! print summary about RSTs
             write(fout,*)
-            call ffdev_geometry_cvsum(fout,geo)
+            call ffdev_geometry_rstsum(fout,geo)
         end if
 
         if( PrintFinalGradient ) then
@@ -430,8 +430,8 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
 
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
-        write(fout,10) istep, geo%total_ene+geo%cvs_energy, geo%bond_ene+geo%angle_ene+geo%dih_ene+geo%impropr_ene, &
-                       geo%ele14_ene+geo%nb14_ene+geo%ele_ene+geo%nb_ene,geo%cvs_energy,rmsg,maxgrad,maxatom
+        write(fout,10) istep, geo%total_ene+geo%rst_energy, geo%bond_ene+geo%angle_ene+geo%dih_ene+geo%impropr_ene, &
+                       geo%ele14_ene+geo%nb14_ene+geo%ele_ene+geo%nb_ene,geo%rst_energy,rmsg,maxgrad,maxatom
     end if
 
     ! write trajectory

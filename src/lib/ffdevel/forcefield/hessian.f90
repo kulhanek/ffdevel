@@ -47,7 +47,7 @@ subroutine ffdev_hessian_all(top,geo)
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
     geo%total_ene = 0.0d0
-    geo%cvs_energy = 0.0d0
+    geo%rst_energy = 0.0d0
 
     ! reset gradient
     geo%grd(:,:) = 0.0d0

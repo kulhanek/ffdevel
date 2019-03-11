@@ -45,7 +45,7 @@ real(DEVDP)     :: MaxRMSG             = 0.0001d0
 real(DEVDP)     :: MaxG                = 0.0001d0
 real(DEVDP)     :: MinEnergyChange     = -1        ! negative number - this test is switched off by default
 logical         :: PrintFinalGradient  = .false.
-logical         :: PrintCVSummary      = .true.
+logical         :: PrintRSTSummary     = .true.
 
 ! === [steepest-descent] =======================================================
 real(DEVDP)     :: InitialStepSize     = 0.001
