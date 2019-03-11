@@ -15,6 +15,7 @@ src/bin/cos2grbf/Cos2GRBF.cpp
 src/bin/cos2grbf/Cos2GRBF.hpp
 src/bin/cos2grbf/Cos2GRBFOptions.cpp
 src/bin/cos2grbf/Cos2GRBFOptions.hpp
+src/bin/rstgradient/rstgradient.f90
 src/bin/espfit/CMakeLists.txt
 src/bin/espfit/espfit.f90
 src/bin/ffenergy/CMakeLists.txt
@@ -46,8 +47,7 @@ src/bin/getrmsd/CMakeLists.txt
 src/bin/getrmsd/getrmsd.f90
 src/bin/mmoptimize/CMakeLists.txt
 src/bin/mmoptimize/mmoptimize.f90
-src/bin/cvgradient/CMakeLists.txt
-src/bin/cvgradient/cvgradient.f90
+src/bin/rstgradient/CMakeLists.txt
 src/bin/ptsfreq/CMakeLists.txt
 src/bin/ptsfreq/ptsfreq.f90
 src/bin/rmsdfit/CMakeLists.txt

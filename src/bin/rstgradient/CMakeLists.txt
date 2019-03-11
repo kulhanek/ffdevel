@@ -3,15 +3,15 @@
 # ==============================================================================
 
 # program objects --------------------------------------------------------------
-SET(CVGRADIENT_SRC
-        cvgradient.f90
+SET(RSTGRADIENT_SRC
+        rstgradient.f90
         )
 
 # final build ------------------------------------------------------------------
-ADD_EXECUTABLE(cvgradient ${CVGRADIENT_SRC})
-ADD_DEPENDENCIES(cvgradient ffdevel_shared)
+ADD_EXECUTABLE(rstgradient ${RSTGRADIENT_SRC})
+ADD_DEPENDENCIES(rstgradient ffdevel_shared)
 
-TARGET_LINK_LIBRARIES(cvgradient
+TARGET_LINK_LIBRARIES(rstgradient
         ffdevel
         ${PRMFILE_FLIB_NAME}
         ${SCIMAFIC_FLIB_NAME}
@@ -20,7 +20,7 @@ TARGET_LINK_LIBRARIES(cvgradient
         )
 
 INSTALL(TARGETS
-            cvgradient
+            rstgradient
         DESTINATION
             bin
         )
