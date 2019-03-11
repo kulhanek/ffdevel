@@ -53,7 +53,7 @@ type PARAMETER_TYPE
     integer             :: realm        ! parameter realm (bond_k,bond_r0,...)
     integer             :: pn           ! dihedral pn
     integer,pointer     :: ids(:)       ! type ids in topologies
-    logical             :: enabled      ! parameter is anbled
+    logical             :: enabled      ! parameter is enabled
     integer             :: identity     ! identity index
     integer             :: ti,tj,tk,tl  ! common atom types
     integer             :: pidx         ! helper index to prms() array
@@ -108,7 +108,7 @@ integer                 :: NBCombRules                  = COMB_RULE_LB
 logical                 :: OnlyDefinedDihItems          = .true.
 
 ! === [grbf2cos] ===============================================================
-real(DEVDP)             :: GRBF2COSDPts     = 128           ! level of discretization
+integer                 :: GRBF2COSDPts     = 360           ! level of discretization
 integer                 :: GRBF2COSMaxN     = 4             ! max length of cos series
 real(DEVDP)             :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
 

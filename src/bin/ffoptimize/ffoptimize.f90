@@ -63,8 +63,11 @@ program ffdev_optimize_program
 
     ! read configuration
     if( prmfile_open_group(fin,'FFPARAMS') ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'{FFPARAMS}',':')
         call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
+        call ffdev_parameters_ctrl_grbf2cos(fin)
     end if
 
     ! init mmd3

@@ -84,7 +84,7 @@ type DIHEDRAL_TYPE
     real(DEVDP),pointer :: c(:)             ! grbf - weights
     real(DEVDP),pointer :: p(:)             ! grbf - positions
     real(DEVDP),pointer :: w2(:)            ! grbf - widths
-    logical,pointer     :: enabled(:)       ! what is enabled, apllicable only to cos
+    logical,pointer     :: enabled(:)       ! what is enabled, apllicable both to cos and grbf
 end type DIHEDRAL_TYPE
 
 integer,parameter       :: DIH_COS      = 1

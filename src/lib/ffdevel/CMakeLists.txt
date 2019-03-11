@@ -92,6 +92,7 @@ IF(LIBS_SHARED)
                             CLEAN_DIRECT_OUTPUT 1
                             VERSION ${FFDEVEL_VERSION})
     TARGET_LINK_LIBRARIES(ffdevel_shared
+            ${FFTW_LIB_NAME}
             ${NLOPT_LIB_NAME}
             ${LBFGS_LIB_NAME}
             ${PRMFILE_FLIB_NAME}

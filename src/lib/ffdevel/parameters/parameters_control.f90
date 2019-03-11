@@ -843,6 +843,56 @@ subroutine ffdev_parameters_ctrl_files(fin)
 end subroutine ffdev_parameters_ctrl_files
 
 ! ==============================================================================
+! subroutine ffdev_parameters_ctrl_grbf2cos
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_grbf2cos(fin)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_topology
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'grbf2cos') ) then
+        write(DEV_OUT,25) GRBF2COSMaxN
+        write(DEV_OUT,35) GRBF2COSMinV
+        return
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'max_n', GRBF2COSMaxN)) then
+        write(DEV_OUT,20) GRBF2COSMaxN
+    else
+        write(DEV_OUT,25) GRBF2COSMaxN
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'min_v', GRBF2COSMinV)) then
+        write(DEV_OUT,30) GRBF2COSMinV
+    else
+        write(DEV_OUT,35) GRBF2COSMinV
+    end if
+
+    return
+
+ 10 format('=== [grbf2cos] =================================================================')
+
+ 20  format ('Maximum length of cos series (max_n)     = ',i12)
+ 25  format ('Maximum length of cos series (max_n)     = ',i12,'                (default)')
+ 30  format ('Minimum accepted amplitude (min_v)       = ',f12.7)
+ 35  format ('Minimum accepted amplitude (min_v)       = ',f12.7,'                (default)')
+
+end subroutine ffdev_parameters_ctrl_grbf2cos
+
+! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_ffmanip
 ! ==============================================================================
 

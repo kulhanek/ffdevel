@@ -839,6 +839,7 @@ end subroutine ffdev_parameters_save
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_save_amber
+! FIXME - better handle dih_v/dih_g/dih_c and dih_scee, dih_scnb
 ! ==============================================================================
 
 subroutine ffdev_parameters_save_amber(name)
@@ -851,9 +852,9 @@ subroutine ffdev_parameters_save_amber(name)
     character(*)    :: name
     ! --------------------------------------------
     integer         :: datum(8)
-    integer         :: i,j,it,ij,pn,max_pn,nbt
+    integer         :: i,j,it,ij,pn,max_pn,nbt,idx,si
     real(DEVDP)     :: v,g, scee, scnb
-    logical         :: enable_section,ok
+    logical         :: enable_section,ok,old_enable_section
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'U')
@@ -1022,6 +1023,69 @@ subroutine ffdev_parameters_save_amber(name)
                                types(params(i)%tk)%name, types(params(i)%tl)%name, &
                                v, g*DEV_R2D, pn, scee, scnb
         end do
+    end if
+
+    ! dih_c realm
+    old_enable_section = enable_section
+    enable_section = .false.
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_DIH_C) .or. &
+            (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
+            enable_section = .true.
+            if( .not. old_enable_section ) then
+                write(DEV_PRMS,20) 'DIHE'
+            end if
+            exit
+        end if
+    end do
+    if( old_enable_section .and. (.not. enable_section) ) then
+        write(DEV_PRMS,*)
+    end if
+
+    if( enable_section ) then
+        it = 0
+        do i=1,nparams
+            if( params(i)%realm .ne. REALM_DIH_C ) cycle
+            if( params(i)%pn .ne. 1 ) cycle
+
+            ! find topology for transformation
+            si  = 0
+            idx = 0
+            do j=1,nsets
+                if( params(i)%ids(j) .ne. 0 ) then
+                    idx = params(i)%ids(j)
+                    si = j
+                    exit
+                end if
+            end do
+            if( (idx .eq. 0) .or. (si .eq. 0) ) cycle
+
+            ! transform the dihedral
+            call ffdev_parameters_grbf2cos(sets(si)%top,idx)
+
+            ! find max pn
+            max_pn = 0
+            do j=1,sets(si)%top%dihedral_types(idx)%n
+                if( sets(si)%top%dihedral_types(idx)%enabled(j) ) then
+                    max_pn = j
+                end if
+            end do
+
+            ! write dihedral
+            scee = 1.0d0 / sets(si)%top%dihedral_types(idx)%inv_scee
+            scnb = 1.0d0 / sets(si)%top%dihedral_types(idx)%inv_scnb
+            do j=1,sets(si)%top%dihedral_types(idx)%n
+                if( .not. sets(si)%top%dihedral_types(idx)%enabled(j) ) cycle
+                pn = j
+                if( pn .lt. max_pn ) pn = -pn
+                write(DEV_PRMS,60) types(sets(si)%top%dihedral_types(idx)%ti)%name, &
+                                   types(sets(si)%top%dihedral_types(idx)%tj)%name, &
+                                   types(sets(si)%top%dihedral_types(idx)%tk)%name, &
+                                   types(sets(si)%top%dihedral_types(idx)%tl)%name, &
+                                   sets(si)%top%dihedral_types(idx)%v(j), &
+                                   sets(si)%top%dihedral_types(idx)%g(j)*DEV_R2D, pn, scee, scnb
+            end do
+        end do
         write(DEV_PRMS,*)
     end if
 
@@ -1115,6 +1179,125 @@ subroutine ffdev_parameters_save_amber(name)
  80 format(A4,10X,F16.6,1X,F16.6)
 
 end subroutine ffdev_parameters_save_amber
+
+! ==============================================================================
+! subroutine ffdev_parameters_grbf2cos
+! readings:
+! https://www.gaussianwaves.com/2015/11/interpreting-fft-results-obtaining-magnitude-and-phase-information/
+! ==============================================================================
+
+subroutine ffdev_parameters_grbf2cos(top,idx)
+
+    use ffdev_topology
+    use ffdev_parameters_dat
+    use ffdev_geometry
+    use ffdev_utils
+
+    implicit none
+    include 'fftw3.f'
+    type(TOPOLOGY)          :: top      ! input topology
+    integer                 :: idx      ! dihedral index
+    ! --------------------------------------------
+    real(DEVDP),allocatable     :: x(:)
+    complex(DEVDP),allocatable  :: y(:)
+    integer                     :: i, pn, alloc_stat
+    real(DEVDP)                 :: phi, ene, offset, rmse, arg
+    integer*8                   :: plan
+    ! --------------------------------------------------------------------------
+
+    if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Dihedral is not DIH_GRBF in ffdev_parameters_grbf2cos!')
+    end if
+
+    write(DEV_OUT,10,ADVANCE='NO')  top%atom_types(top%dihedral_types(idx)%ti)%name, &
+                                    top%atom_types(top%dihedral_types(idx)%tj)%name, &
+                                    top%atom_types(top%dihedral_types(idx)%tk)%name, &
+                                    top%atom_types(top%dihedral_types(idx)%tl)%name
+
+    allocate(x(GRBF2COSDPts),y(GRBF2COSDPts/2+1), stat = alloc_stat)
+    if(alloc_stat .ne. 0) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for FFTW in ffdev_parameters_grbf2cos!')
+    end if
+
+    ! calculate the dihedral potential
+    do i=1,GRBF2COSDPts
+        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSDPts))
+        ene = 0.0d0
+        do pn=1,top%dihedral_types(idx)%n
+            if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
+            ene = ene + top%dihedral_types(idx)%c(pn) &
+                          * exp(-(ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(idx)%p(pn))**2) &
+                          / top%dihedral_types(idx)%w2(pn))
+        end do
+        x(i) = ene
+    end do
+
+    ! run FFT
+    call dfftw_plan_dft_r2c_1d(plan,GRBF2COSDPts,x,y,FFTW_ESTIMATE)
+    call dfftw_execute_dft_r2c(plan, x, y)
+    call dfftw_destroy_plan(plan)
+
+    ! filter them and update dihedral_type
+    top%dihedral_types(idx)%mode = DIH_COS
+    top%dihedral_types(idx)%enabled(:) = .false.
+    do i=1,GRBF2COSMaxN
+        if( 2.0d0*abs(y(i+1))/real(GRBF2COSDPts) .gt. GRBF2COSMinV ) then
+            top%dihedral_types(idx)%enabled(i) = .true.
+            top%dihedral_types(idx)%g(i) = 2*DEV_PI - atan2(aimag(y(i+1)),real(y(i+1)))
+            ! wrap phase into <0;360>
+            top%dihedral_types(idx)%g(i) = top%dihedral_types(idx)%g(i) &
+                                         - 2.0d0*DEV_PI*floor(top%dihedral_types(idx)%g(i)/(2.0d0*DEV_PI))
+            top%dihedral_types(idx)%v(i) = 2.0d0*abs(y(i+1))/real(GRBF2COSDPts)
+        end if
+    end do
+
+    ! calculate offset
+    offset = 0.0d0
+    do i=1,GRBF2COSDPts
+        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSDPts))
+        ene = 0.0d0
+        do pn=1,top%dihedral_types(idx)%n
+            if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
+            arg = pn*phi - top%dihedral_types(idx)%g(pn)
+            if( dih_cos_only ) then
+                ene = ene + top%dihedral_types(idx)%v(pn)*cos(arg)
+            else
+                ene = ene + top%dihedral_types(idx)%v(pn)*(1.0d0+cos(arg))
+            end if
+        end do
+        offset = offset + ene - x(i)
+    end do
+    offset = offset / real(GRBF2COSDPts)
+
+    ! write(*,*) 'offset=',offset
+
+    ! calculate error
+    rmse = 0.0d0
+    do i=1,GRBF2COSDPts
+        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSDPts))
+        ene = 0.0d0
+        do pn=1,top%dihedral_types(idx)%n
+            if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
+            arg = pn*phi - top%dihedral_types(idx)%g(pn)
+            if( dih_cos_only ) then
+                ene = ene + top%dihedral_types(idx)%v(pn)*cos(arg)
+            else
+                ene = ene + top%dihedral_types(idx)%v(pn)*(1.0d0+cos(arg))
+            end if
+        end do
+        ! write(*,*) ene- offset, x(i)
+        rmse = rmse + (ene - x(i) - offset)**2
+    end do
+    rmse = sqrt(rmse / real(GRBF2COSDPts))
+
+    write(DEV_OUT,20) rmse
+
+    deallocate(x,y)
+
+ 10 format('# converting grbf2cos for: ',A2,'-',A2,'-',A2,'-',A2)
+ 20 format(', RMSE= ',F10.4)
+
+end subroutine ffdev_parameters_grbf2cos
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_print_types
