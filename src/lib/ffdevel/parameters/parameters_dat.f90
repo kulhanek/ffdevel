@@ -105,6 +105,12 @@ integer,parameter       :: NB_PARAMS_REALMS_ER          = 3     ! ER realms
 integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
 integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
 integer                 :: NBCombRules                  = COMB_RULE_LB
+logical                 :: OnlyDefinedDihItems          = .true.
+
+! === [grbf2cos] ===============================================================
+real(DEVDP)             :: GRBF2COSDPts     = 128           ! level of discretization
+integer                 :: GRBF2COSMaxN     = 4             ! max length of cos series
+real(DEVDP)             :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

@@ -70,7 +70,7 @@ subroutine ffdev_topology_load(top,name)
     logical                     :: my_result
     integer                     :: alloc_stat, io_stat, i, idx, nbuff, pn
     character(PRMFILE_MAX_LINE) :: buffer
-    real(DEVDP)                 :: v,g,c,p,w
+    real(DEVDP)                 :: v,g,c,p,w,e
     ! --------------------------------------------------------------------------
 
     ! load topology file
@@ -377,13 +377,19 @@ subroutine ffdev_topology_load(top,name)
                 call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
 
-            read(buffer,*,iostat=io_stat) idx, pn, v, g
+            e = 0
+            read(buffer,*,iostat=io_stat) idx, pn, v, g, e
             if( io_stat .ne. 0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
 
             top%dihedral_types(idx)%v(pn) = v
             top%dihedral_types(idx)%g(pn) = g
+            if( e .eq. 1 ) then
+                top%dihedral_types(idx)%enabled(pn) = .true.
+            else
+                top%dihedral_types(idx)%enabled(pn) = .false.
+            end if
         end do
     end if
 

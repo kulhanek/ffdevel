@@ -96,7 +96,7 @@ public:
                 'f',                           /* short option name */
                 "dihfilters",                      /* long option name */
                 NULL,                           /* parametr name */
-                "name of file with atoms types defining dihedrals for grbf transformation, "
+                "name of file with atoms types defining dihedrals for grbf transformation, multiple filters can be specified each on a line, "
                 "either two atom types for central bond or four atom types for exact dihedaral type")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
@@ -106,7 +106,7 @@ public:
                 'z',                           /* short option name */
                 "zerophase",                      /* long option name */
                 NULL,                           /* parametr name */
-                "transform all dihedral phases to zero")   /* option description */
+                "transform all dihedral phases to zero if applicable")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 Transform,                        /* option name */
@@ -115,7 +115,7 @@ public:
                 't',                           /* short option name */
                 "transform",                      /* long option name */
                 "MODE",                           /* parametr name */
-                "transform atom type name. Allowed modes are: none, first, second, both.")   /* option description */
+                "transform atom type names by letter capitalization. Allowed modes are: none, first, second, both.")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 RebuildNBList,                        /* option name */

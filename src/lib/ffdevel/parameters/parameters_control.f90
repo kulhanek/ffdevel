@@ -693,6 +693,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         end select
         write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
         write(DEV_OUT,45) lj2exp6_alpha
+        write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
         return
     end if
 
@@ -766,18 +767,26 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,45) lj2exp6_alpha
     end if
 
+    if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
+        write(DEV_OUT,60) prmfile_onoff(OnlyDefinedDihItems)
+    else
+        write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
+    end if
+
     return
 
  10 format('=== [control] ==================================================================')
 
- 20  format ('NB parameter assembly mode (nb_params) = ',a12)
- 25  format ('NB parameter assembly mode (nb_params) = ',a12,'                  (default)')
- 30  format ('NB parameter realms (nb_realms)        = ',a12)
- 35  format ('NB parameter realms (nb_realms)        = ',a12,'                  (default)')
- 50  format ('NB combining rules (comb_rules)        = ',a12)
- 55  format ('NB combining rules (comb_rules)        = ',a12,'                  (default)')
- 40  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7)
- 45  format ('Default value of alpha (lj2exp6_alpha) = ',f12.7,'                  (default)')
+ 20  format ('NB parameter assembly mode (nb_params)   = ',a12)
+ 25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
+ 30  format ('NB parameter realms (nb_realms)          = ',a12)
+ 35  format ('NB parameter realms (nb_realms)          = ',a12,'                (default)')
+ 50  format ('NB combining rules (comb_rules)          = ',a12)
+ 55  format ('NB combining rules (comb_rules)          = ',a12,'                (default)')
+ 40  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7)
+ 45  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7,'                (default)')
+ 60  format ('Use defined dih items (dih_only_defined) = ',a12)
+ 65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 

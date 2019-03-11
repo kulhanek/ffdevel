@@ -199,6 +199,9 @@ subroutine ffdev_parameters_init()
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_COS ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
+                if( OnlyDefinedDihItems ) then
+                    if( sets(i)%top%dihedral_types(j)%enabled(k) .eqv. .false. ) cycle
+                end if
                 parmid = find_parameter(sets(i)%top,j,k,REALM_DIH_V)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
@@ -226,6 +229,9 @@ subroutine ffdev_parameters_init()
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_GRBF ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
+                if( OnlyDefinedDihItems ) then
+                    if( sets(i)%top%dihedral_types(j)%enabled(k) .eqv. .false. ) cycle
+                end if
                 parmid = find_parameter(sets(i)%top,j,k,REALM_DIH_C)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
@@ -253,6 +259,9 @@ subroutine ffdev_parameters_init()
         do j=1,sets(i)%top%ndihedral_types
             if( sets(i)%top%dihedral_types(j)%mode .ne. DIH_COS ) cycle
             do k=1,sets(i)%top%dihedral_types(j)%n
+                if( OnlyDefinedDihItems ) then
+                    if( sets(i)%top%dihedral_types(j)%enabled(k) .eqv. .false. ) cycle
+                end if
                 parmid = find_parameter(sets(i)%top,j,k,REALM_DIH_G)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
