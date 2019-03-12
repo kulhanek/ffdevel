@@ -154,6 +154,8 @@ subroutine ffdev_err_freqs_summary(geo)
     type(GEOMETRY)     :: geo
     ! --------------------------------------------
 
+    if( .not. geo%trg_freq_loaded ) return
+
     call ffdev_hessian_print_mapping(.false.,geo%natoms,geo%trg_freq,geo%trg_nmodes,&
                                      geo%freq,geo%nmodes,geo%freq_t2s_map)
 

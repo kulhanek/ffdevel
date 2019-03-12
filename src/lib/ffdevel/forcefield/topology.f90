@@ -999,20 +999,18 @@ subroutine ffdev_topology_info_types(top,mode)
             write(DEV_OUT,320)
             write(DEV_OUT,330)
             do i=1,top%ndihedral_types
-                do j=1,top%dihedral_types(i)%n
-                    scee = 0.0
-                    if( top%dihedral_types(i)%inv_scee .ne. 0 ) then
-                        scee = 1.0/top%dihedral_types(i)%inv_scee
-                    end if
-                    if( top%dihedral_types(i)%inv_scnb .ne. 0 ) then
-                        scnb = 1.0/top%dihedral_types(i)%inv_scnb
-                    end if
-                    write(DEV_OUT,340)   i, adjustl(top%atom_types(top%dihedral_types(i)%ti)%name), &
-                                           adjustl(top%atom_types(top%dihedral_types(i)%tj)%name), &
-                                           adjustl(top%atom_types(top%dihedral_types(i)%tk)%name), &
-                                           adjustl(top%atom_types(top%dihedral_types(i)%tl)%name), &
-                                           top%dihedral_types(i)%mode, scee, scnb
-                end do
+                scee = 0.0
+                if( top%dihedral_types(i)%inv_scee .ne. 0 ) then
+                    scee = 1.0/top%dihedral_types(i)%inv_scee
+                end if
+                if( top%dihedral_types(i)%inv_scnb .ne. 0 ) then
+                    scnb = 1.0/top%dihedral_types(i)%inv_scnb
+                end if
+                write(DEV_OUT,340)   i, adjustl(top%atom_types(top%dihedral_types(i)%ti)%name), &
+                                       adjustl(top%atom_types(top%dihedral_types(i)%tj)%name), &
+                                       adjustl(top%atom_types(top%dihedral_types(i)%tk)%name), &
+                                       adjustl(top%atom_types(top%dihedral_types(i)%tl)%name), &
+                                       top%dihedral_types(i)%mode, scee, scnb
             end do
         end if
 
