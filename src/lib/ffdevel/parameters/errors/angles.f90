@@ -90,16 +90,22 @@ end subroutine ffdev_err_angles_error
 ! subroutine ffdev_err_angles_summary
 ! ==============================================================================
 
-subroutine ffdev_err_angles_summary(top,geo)
+subroutine ffdev_err_angles_summary(top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
 
     implicit none
-    type(TOPOLOGY)     :: top
-    type(GEOMETRY)     :: geo
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    logical         :: printsum
     ! --------------------------------------------------------------------------
+
+    if( printsum .eqv. .false. ) then
+        printsum = .true.
+        return
+    end if
 
     call ffdev_geometry_utils_comp_angles(.false.,top,geo%trg_crd,geo%crd)
 

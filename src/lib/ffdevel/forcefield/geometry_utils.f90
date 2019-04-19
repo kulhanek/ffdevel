@@ -26,15 +26,17 @@ contains
 ! subroutine ffdev_geometry_utils_get_rmsd
 ! ==============================================================================
 
-real(DEVDP) function ffdev_geometry_utils_get_rmsd(ref,src,mw)
+real(DEVDP) function ffdev_geometry_utils_get_rmsd(natoms,z,ref,src,mw)
 
     use smf_periodic_table_dat
     use ffdev_utils
 
     implicit none
-    type(GEOMETRY)  :: ref
-    type(GEOMETRY)  :: src
-    logical         :: mw       ! mass weighted
+    integer        :: natoms
+    integer        :: z(:)
+    real(DEVDP)    :: ref(:,:)
+    real(DEVDP)    :: src(:,:)
+    logical        :: mw       ! mass weighted
     ! --------------------------------------------
     integer        :: i,info,best
     real(DEVDP)    :: x1,x2,x3,xr1,xr2,xr3,amass,totmass,itotmass
@@ -44,10 +46,7 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(ref,src,mw)
     real(DEVDP)    :: x2sum,xr2sum
     ! --------------------------------------------------------------------------
 
-    if( src%natoms .ne. ref%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same number of atoms!')
-    end if
-    if( src%natoms .lt. 2 ) then
+    if( natoms .lt. 2 ) then
         call ffdev_utils_exit(DEV_OUT,1,'At least two atoms must be in both structures!')
     end if
 
@@ -60,24 +59,21 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(ref,src,mw)
     xr3 = 0.0d0
     totmass = 0.0d0
 
-    do  i = 1, src%natoms
-        if( src%z(i) .ne. ref%z(i) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have identical order of atoms!')
-        end if
+    do  i = 1, natoms
         if( mw ) then
-            amass = pt_masses(src%z(i))
+            amass = pt_masses(z(i))
         else
             amass = 1.0d0
         end if
         ! source
-        x1 = x1 + src%crd(1,i)*amass
-        x2 = x2 + src%crd(2,i)*amass
-        x3 = x3 + src%crd(3,i)*amass
+        x1 = x1 + src(1,i)*amass
+        x2 = x2 + src(2,i)*amass
+        x3 = x3 + src(3,i)*amass
 
         ! reference
-        xr1 = xr1 + ref%crd(1,i)*amass
-        xr2 = xr2 + ref%crd(2,i)*amass
-        xr3 = xr3 + ref%crd(3,i)*amass
+        xr1 = xr1 + ref(1,i)*amass
+        xr2 = xr2 + ref(2,i)*amass
+        xr3 = xr3 + ref(3,i)*amass
 
         totmass = totmass + amass
     end do
@@ -106,31 +102,31 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(ref,src,mw)
     x2sum = 0.0d0
     xr2sum = 0.0d0
 
-    do i = 1, src%natoms
+    do i = 1, natoms
         if( mw ) then
-            amass = pt_masses(src%z(i))
+            amass = pt_masses(z(i))
         else
             amass = 1.0d0
         end if
 
-        x2sum = x2sum + amass*((src%crd(1,i) - x1)**2 &
-                             + (src%crd(2,i) - x2)**2 &
-                             + (src%crd(3,i) - x3)**2)
-        xr2sum = xr2sum + amass*((ref%crd(1,i) - xr1)**2 &
-                               + (ref%crd(2,i) - xr2)**2 &
-                               + (ref%crd(3,i) - xr3)**2)
+        x2sum = x2sum + amass*((src(1,i) - x1)**2 &
+                             + (src(2,i) - x2)**2 &
+                             + (src(3,i) - x3)**2)
+        xr2sum = xr2sum + amass*((ref(1,i) - xr1)**2 &
+                               + (ref(2,i) - xr2)**2 &
+                               + (ref(3,i) - xr3)**2)
 
-        r11 = r11 + amass*(src%crd(1,i) - x1)*(ref%crd(1,i) - xr1)
-        r12 = r12 + amass*(src%crd(1,i) - x1)*(ref%crd(2,i) - xr2)
-        r13 = r13 + amass*(src%crd(1,i) - x1)*(ref%crd(3,i) - xr3)
+        r11 = r11 + amass*(src(1,i) - x1)*(ref(1,i) - xr1)
+        r12 = r12 + amass*(src(1,i) - x1)*(ref(2,i) - xr2)
+        r13 = r13 + amass*(src(1,i) - x1)*(ref(3,i) - xr3)
 
-        r21 = r21 + amass*(src%crd(2,i) - x2)*(ref%crd(1,i) - xr1)
-        r22 = r22 + amass*(src%crd(2,i) - x2)*(ref%crd(2,i) - xr2)
-        r23 = r23 + amass*(src%crd(2,i) - x2)*(ref%crd(3,i) - xr3)
+        r21 = r21 + amass*(src(2,i) - x2)*(ref(1,i) - xr1)
+        r22 = r22 + amass*(src(2,i) - x2)*(ref(2,i) - xr2)
+        r23 = r23 + amass*(src(2,i) - x2)*(ref(3,i) - xr3)
 
-        r31 = r31 + amass*(src%crd(3,i) - x3)*(ref%crd(1,i) - xr1)
-        r32 = r32 + amass*(src%crd(3,i) - x3)*(ref%crd(2,i) - xr2)
-        r33 = r33 + amass*(src%crd(3,i) - x3)*(ref%crd(3,i) - xr3)
+        r31 = r31 + amass*(src(3,i) - x3)*(ref(1,i) - xr1)
+        r32 = r32 + amass*(src(3,i) - x3)*(ref(2,i) - xr2)
+        r33 = r33 + amass*(src(3,i) - x3)*(ref(3,i) - xr3)
     end do
 
     ! construct matrix for quaterion fitting
@@ -175,41 +171,37 @@ end function ffdev_geometry_utils_get_rmsd
 ! subroutine ffdev_geometry_utils_get_rmsd_nofit
 ! ==============================================================================
 
-real(DEVDP) function ffdev_geometry_utils_get_rmsd_nofit(ref,src,mw)
+real(DEVDP) function ffdev_geometry_utils_get_rmsd_nofit(natoms,z,ref,src,mw)
 
     use smf_periodic_table_dat
     use ffdev_utils
 
     implicit none
-    type(GEOMETRY)  :: ref
-    type(GEOMETRY)  :: src
+    integer         :: natoms
+    integer         :: z(:)
+    real(DEVDP)     :: ref(:,:)
+    real(DEVDP)     :: src(:,:)
     logical         :: mw       ! mass weighted
     ! --------------------------------------------
-    integer        :: i
-    real(DEVDP)    :: totmass, value, dv, amass
+    integer         :: i
+    real(DEVDP)     :: totmass, value, dv, amass
     ! --------------------------------------------------------------------------
 
-    if( src%natoms .ne. ref%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same number of atoms!')
-    end if
-    if( src%natoms .lt. 1 ) then
+    if( natoms .lt. 1 ) then
         call ffdev_utils_exit(DEV_OUT,1,'At least one atom must be in both structures!')
     end if
 
     ! calculate geometrical centres (source and target) -------------------
     totmass = 0.0d0
     value = 0.0d0
-    do  i = 1, src%natoms
-        if( src%z(i) .ne. ref%z(i) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have identical order of atoms!')
-        end if
+    do  i = 1, natoms
         if( mw ) then
-            amass = pt_masses(src%z(i))
+            amass = pt_masses(z(i))
         else
             amass = 1.0d0
         end if
-        dv = ( src%crd(1,i) - ref%crd(1,i) )**2 + ( src%crd(2,i) - ref%crd(2,i) )**2 &
-           + ( src%crd(3,i) - ref%crd(3,i) )**2
+        dv = ( src(1,i) - ref(1,i) )**2 + ( src(2,i) - ref(2,i) )**2 &
+           + ( src(3,i) - ref(3,i) )**2
         value = value + amass*dv
         totmass = totmass + amass
     end do

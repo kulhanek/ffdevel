@@ -84,18 +84,29 @@ end subroutine ffdev_err_energy_error
 ! subroutine ffdev_err_energy_summary
 ! ==============================================================================
 
-subroutine ffdev_err_energy_summary(set)
+subroutine ffdev_err_energy_summary(set,printsum)
 
     use ffdev_targetset_dat
 
     implicit none
     type(TARGETSET)     :: set
+    logical             :: printsum
     ! --------------------------------------------
     real(DEVDP)         :: err,serr
     integer             :: j,num
     ! --------------------------------------------------------------------------
 
     if( set%isref ) return ! ignore reference sets
+
+    if( printsum .eqv. .false. ) then
+        do j=1,set%ngeos
+            if( set%geo(j)%trg_ene_loaded ) then
+                printsum = .true.
+                return
+            end if
+        end do
+        return
+    end if
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)

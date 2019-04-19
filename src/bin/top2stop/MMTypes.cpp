@@ -197,6 +197,7 @@ void CDihedralType::Cos2GRBF(int dih_samp_freq)
     for(int l=0; l < GetSeriesSize(); l++){
         c[l] = rhs[l];
     }
+
 }
     
 //------------------------------------------------------------------------------    

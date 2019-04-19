@@ -73,15 +73,16 @@ subroutine ffdev_err_impropers_error(error)
                     aj = sets(i)%top%impropers(q)%aj
                     ak = sets(i)%top%impropers(q)%ak
                     al = sets(i)%top%impropers(q)%al
-                    d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D
+                    d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al)
                     if( ImpropersErrorLockToPhase ) then
                         idt = sets(i)%top%impropers(q)%dt
                         dt = sets(i)%top%improper_types(idt)%g
                     else
-                        dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D
+                        dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
                     end if
                     nimpropers = nimpropers + 1
                     err = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    err = err * DEV_R2D
                     seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
                 end do
             end if
@@ -98,7 +99,7 @@ end subroutine ffdev_err_impropers_error
 ! subroutine ffdev_err_impropers_summary
 ! ==============================================================================
 
-subroutine ffdev_err_impropers_summary(top,geo)
+subroutine ffdev_err_impropers_summary(top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
@@ -106,9 +107,15 @@ subroutine ffdev_err_impropers_summary(top,geo)
     use ffdev_err_impropers_dat
 
     implicit none
-    type(TOPOLOGY)     :: top
-    type(GEOMETRY)     :: geo
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    logical         :: printsum
     ! --------------------------------------------------------------------------
+
+    if( printsum .eqv. .false. ) then
+        printsum = .true.
+        return
+    end if
 
     call ffdev_geometry_utils_comp_impropers(.false.,top,geo%trg_crd,geo%crd,ImpropersErrorLockToPhase)
 

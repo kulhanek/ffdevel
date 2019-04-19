@@ -34,6 +34,7 @@ subroutine ffdev_err_freqs_ctrl(fin)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
+    character(80)       :: string
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -44,8 +45,14 @@ subroutine ffdev_err_freqs_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintFreqsErrorSummary)
         write(DEV_OUT,145) prmfile_onoff(DebugFreqError)
         write(DEV_OUT,125) FreqsErrorWeight
-        write(DEV_OUT,155) FreqMaxRMSD
-        write(DEV_OUT,165) FreqMaxNmodeAngle
+        write(DEV_OUT,155) FreqsMaxRMSD
+        write(DEV_OUT,165) FreqsMaxAngle
+        select case(FreqsErrorMode)
+            case(FREQS_SUPERIMPOSE_GEO)
+                write(DEV_OUT,175) 'bygeo'
+            case(FREQS_SUPERIMPOSE_MODE)
+                write(DEV_OUT,175) 'bymodes'
+        end select
         errors_calc_freq = EnableFreqsError
         return
     end if
@@ -70,16 +77,36 @@ subroutine ffdev_err_freqs_ctrl(fin)
     else
         write(DEV_OUT,125) FreqsErrorWeight
     end if
-    if( prmfile_get_real8_by_key(fin,'maxrmsd', FreqMaxRMSD)) then
-        write(DEV_OUT,150) FreqMaxRMSD
+    if( prmfile_get_real8_by_key(fin,'maxrmsd', FreqsMaxRMSD)) then
+        write(DEV_OUT,150) FreqsMaxRMSD
     else
-        write(DEV_OUT,155) FreqMaxRMSD
+        write(DEV_OUT,155) FreqsMaxRMSD
     end if
 
-    if( prmfile_get_real8_by_key(fin,'maxangle', FreqMaxNmodeAngle)) then
-        write(DEV_OUT,160) FreqMaxNmodeAngle
+    if( prmfile_get_real8_by_key(fin,'maxangle', FreqsMaxAngle)) then
+        write(DEV_OUT,160) FreqsMaxAngle
     else
-        write(DEV_OUT,165) FreqMaxNmodeAngle
+        write(DEV_OUT,165) FreqsMaxAngle
+    end if
+
+    if( prmfile_get_string_by_key(fin,'mode', string)) then
+        select case(string)
+            case('bygeo')
+                FreqsErrorMode=FREQS_SUPERIMPOSE_GEO
+                write(DEV_OUT,170) 'bygeo'
+            case('bymodes')
+                FreqsErrorMode=FREQS_SUPERIMPOSE_MODE
+                write(DEV_OUT,170) 'bymodes'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unknown mode specification!')
+        end select
+    else
+        select case(FreqsErrorMode)
+            case(FREQS_SUPERIMPOSE_GEO)
+                write(DEV_OUT,175) 'bygeo'
+            case(FREQS_SUPERIMPOSE_MODE)
+                write(DEV_OUT,175) 'bymodes'
+        end select
     end if
 
     errors_calc_freq = EnableFreqsError
@@ -98,6 +125,8 @@ subroutine ffdev_err_freqs_ctrl(fin)
 155  format ('Max RMSD to trg structure (maxrmsd)    = ',f21.8,'         (default)')
 160  format ('Max angle between nmodes (maxangle)    = ',f21.8)
 165  format ('Max angle between nmodes (maxangle)    = ',f21.8,'         (default)')
+170  format ('Comparison mode (mode)                 = ',a12)
+175  format ('Comparison mode (mode)                 = ',a12,'                  (default)')
 
 end subroutine ffdev_err_freqs_ctrl
 

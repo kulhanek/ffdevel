@@ -75,6 +75,8 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_nmodes      => null()
     geo%trg_freq        => null()
     geo%freq_t2s_map    => null()
+    geo%freq_t2s_angles => null()
+    geo%freq_t2s_rmsd   => null()
     geo%trg_esp         => null()
 
     geo%rst         => null()
@@ -119,6 +121,20 @@ subroutine ffdev_geometry_destroy(geo)
     if( associated(geo%trg_hess) ) then
         deallocate(geo%trg_hess)
     end if
+    if( associated(geo%trg_freq) ) then
+        deallocate(geo%trg_freq)
+    end if
+
+    if( associated(geo%freq_t2s_map) ) then
+        deallocate(geo%freq_t2s_map)
+    end if
+    if( associated(geo%freq_t2s_angles) ) then
+        deallocate(geo%freq_t2s_angles)
+    end if
+    if( associated(geo%freq_t2s_rmsd) ) then
+        deallocate(geo%freq_t2s_rmsd)
+    end if
+
     if( associated(geo%trg_esp) ) then
         deallocate(geo%trg_esp)
     end if

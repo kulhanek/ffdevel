@@ -99,7 +99,7 @@ end subroutine ffdev_err_nbdists_error
 ! subroutine ffdev_err_nbdists_summary
 ! ==============================================================================
 
-subroutine ffdev_err_nbdists_summary(top,geo)
+subroutine ffdev_err_nbdists_summary(top,geo,printsum)
 
     use ffdev_topology_dat
     use ffdev_geometry_dat
@@ -109,11 +109,17 @@ subroutine ffdev_err_nbdists_summary(top,geo)
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
+    logical         :: printsum
     ! --------------------------------------------
     integer         :: q, ai, aj, nb
     real(DEVDP)     :: d1, d2, diff, sdiff, sw, swsum
     real(DEVDP)     :: serr, lerr,aerr,rmse
     ! --------------------------------------------------------------------------
+
+    if( printsum .eqv. .false. ) then
+        printsum = .true.
+        return
+    end if
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)

@@ -71,10 +71,12 @@ subroutine ffdev_err_dihedrals_error(error)
                     aj = sets(i)%top%dihedrals(q)%aj
                     ak = sets(i)%top%dihedrals(q)%ak
                     al = sets(i)%top%dihedrals(q)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al) * DEV_R2D
-                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al) * DEV_R2D
+                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
+                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
                     ndihedrals = ndihedrals + 1
                     err = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    err = err * DEV_R2D
+                    ! write(*,*) err
                     seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
                 end do
             end if
@@ -91,16 +93,22 @@ end subroutine ffdev_err_dihedrals_error
 ! subroutine ffdev_err_dihedrals_summary
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_summary(top,geo)
+subroutine ffdev_err_dihedrals_summary(top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
 
     implicit none
-    type(TOPOLOGY)     :: top
-    type(GEOMETRY)     :: geo
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    logical         :: printsum
     ! --------------------------------------------------------------------------
+
+    if( printsum .eqv. .false. ) then
+        printsum = .true.
+        return
+    end if
 
     call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd)
 

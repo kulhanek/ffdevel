@@ -19,15 +19,21 @@ module ffdev_err_freqs_dat
 
 use ffdev_constants
 
+
+integer,parameter       :: FREQS_SUPERIMPOSE_GEO    = 1
+integer,parameter       :: FREQS_SUPERIMPOSE_MODE   = 2
+
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_freqs_init
 logical                 :: EnableFreqsError
+integer                 :: FreqsErrorMode
 logical                 :: DebugFreqError
 logical                 :: PrintFreqsErrorSummary
 real(DEVDP)             :: FreqsErrorWeight
-real(DEVDP)             :: FreqMaxNmodeAngle
-real(DEVDP)             :: FreqMaxRMSD
+real(DEVDP)             :: FreqsMaxAngle
+real(DEVDP)             :: FreqsMaxRMSD
+
 
 ! ------------------------------------------------------------------------------
 

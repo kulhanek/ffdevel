@@ -74,13 +74,13 @@ program ffdev_rmsdfit_program
     write(DEV_OUT,*)
 
     ! original rmsd
-    write(DEV_OUT,130) ffdev_geometry_utils_get_rmsd_nofit(ref,src,.true.)
+    write(DEV_OUT,130) ffdev_geometry_utils_get_rmsd_nofit(ref%natoms,ref%z,ref%crd,src%crd,.true.)
 
     ! do fit
     call ffdev_geometry_utils_rmsdfit(ref,src,.true.,rmsd)
 
     write(DEV_OUT,140) rmsd
-    write(DEV_OUT,150) ffdev_geometry_utils_get_rmsd_nofit(ref,src,.true.)
+    write(DEV_OUT,150) ffdev_geometry_utils_get_rmsd_nofit(ref%natoms,ref%z,ref%crd,src%crd,.true.)
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Finalize', ':')

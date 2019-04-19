@@ -570,7 +570,7 @@ subroutine ffdev_topology_save(top,name)
     character(*)        :: name
     ! --------------------------------------------
     character(len=20)   :: key
-    integer             :: i,j
+    integer             :: i,j,dm
     ! --------------------------------------------------------------------------
 
     if( (top%nb_mode .ne. NB_MODE_LJ) .and. (top%nb_mode .ne. NB_MODE_EXP6) ) then
@@ -686,14 +686,17 @@ subroutine ffdev_topology_save(top,name)
     do i=1,top%ndihedral_types
         if( top%dihedral_types(i)%mode .eq. DIH_COS ) then
             do j=1,top%dihedral_types(i)%n
+                dm = 0
+                if( top%dihedral_types(i)%enabled(j) ) dm = 1
                 write(DEV_TOP,92)   i, j, &
                                        top%dihedral_types(i)%v(j), &
-                                       top%dihedral_types(i)%g(j)
+                                       top%dihedral_types(i)%g(j), &
+                                       dm
             end do
         end if
     end do
 
- 92 format(I6,1X,I2,1X,F13.6,1X,F13.6)
+ 92 format(I6,1X,I2,1X,F13.6,1X,F13.6,1X,I7)
 
     ! dihedrals -------------------------
     write(DEV_TOP,10) 'dihedral_seq_grbf'

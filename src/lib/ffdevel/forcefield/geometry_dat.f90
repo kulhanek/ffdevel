@@ -65,6 +65,8 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_nmodes(:,:,:,:)  ! target normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer,pointer         :: freq_t2s_map(:)      ! trg_map(trg) = freq; map to freq by angle between normal vectors
+    real(DEVDP),pointer     :: freq_t2s_angles(:)   ! trg_map(trg) = angle; corresponding angles
+    real(DEVDP),pointer     :: freq_t2s_rmsd(:)     ! trg_map(trg) = rmsd; corresponding rmsd
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
     integer                 :: nrst                 ! number of restraints

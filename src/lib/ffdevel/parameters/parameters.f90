@@ -936,7 +936,7 @@ subroutine ffdev_parameters_save_amber(name)
                 if( ij .eq. it ) exit
             end do
             write(DEV_PRMS,40) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                               params(j)%value,params(i)%value
+                               0.5d0*params(j)%value,params(i)%value
         end do
         write(DEV_PRMS,*)
     end if
@@ -962,7 +962,7 @@ subroutine ffdev_parameters_save_amber(name)
                 if( ij .eq. it ) exit
             end do
             write(DEV_PRMS,50) types(params(i)%ti)%name,types(params(i)%tj)%name,types(params(i)%tk)%name, &
-                               params(j)%value,params(i)%value*DEV_R2D
+                               0.5d0*params(j)%value,params(i)%value*DEV_R2D
         end do
         write(DEV_PRMS,*)
     end if
@@ -1078,10 +1078,10 @@ subroutine ffdev_parameters_save_amber(name)
                 if( .not. sets(si)%top%dihedral_types(idx)%enabled(j) ) cycle
                 pn = j
                 if( pn .lt. max_pn ) pn = -pn
-                write(DEV_PRMS,60) types(sets(si)%top%dihedral_types(idx)%ti)%name, &
-                                   types(sets(si)%top%dihedral_types(idx)%tj)%name, &
-                                   types(sets(si)%top%dihedral_types(idx)%tk)%name, &
-                                   types(sets(si)%top%dihedral_types(idx)%tl)%name, &
+                write(DEV_PRMS,60) sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%ti)%name, &
+                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tj)%name, &
+                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tk)%name, &
+                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tl)%name, &
                                    sets(si)%top%dihedral_types(idx)%v(j), &
                                    sets(si)%top%dihedral_types(idx)%g(j)*DEV_R2D, pn, scee, scnb
             end do
@@ -1808,7 +1808,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
             case(REALM_DIH_SCNB)
                 tmpx(id) = 0.5
             case(REALM_IMPR_V)
-                tmpx(id) = -20.0
+                tmpx(id) = 0.0
             case(REALM_IMPR_G)
                 tmpx(id) = -DEV_PI/180
             case(REALM_VDW_EPS)

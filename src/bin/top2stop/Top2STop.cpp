@@ -198,10 +198,12 @@ bool CTop2STop::LoadDihFilters(void)
         stringstream sfs(line);
         CDihedralTypeFilter filter;
         sfs >> filter.t1 >> filter.t2 >> filter.t3 >> filter.t4;
-        vout << setw(4) << right << filter.t1 << " " << setw(4) << right << filter.t2;
+        vout << setw(4) << right << "X" << " " << setw(4) << right << filter.t1 << " ";
+        vout << setw(4) << right << filter.t2 << " " << setw(4) << right << "X";
         if( filter.t3.empty() &&  filter.t3.empty() ){
             filter.full = false;
         } else {
+            vout        << setw(4) << right << filter.t1 << " " << setw(4) << right << filter.t2;
             vout << " " << setw(4) << right << filter.t3 << " " << setw(4) << right << filter.t4;
             filter.full = true;
         }
@@ -640,12 +642,6 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         DihedralTypes[dtype.idx] = dtype;
     }
 
-    sout << "[dihedral_types]" << endl;
-    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb   TypeA TypeB TypeC TypeD" << endl;
-
-    std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
-    std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
-
     dih_mode = 0;
     if( Options.GetOptDihedralMode() == "cos" ){
         dih_mode = 1;
@@ -656,9 +652,17 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         RUNTIME_ERROR("unsupported dihedral mode - p1");
     }
 
+    ndihedral_types = DihedralTypes.size();
+
     if( dih_mode == 2 ){
         TransformCosToGRBF();
     }
+
+    sout << "[dihedral_types]" << endl;
+    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb   TypeA TypeB TypeC TypeD" << endl;
+
+    std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
+    std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
 
     while( it != ie ){
         CDihedralType dtype = it->second;
@@ -680,8 +684,6 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         sout << left << setw(5) << AtomTypes[dtype.at4].name << endl;
         it++;
     }
-
-    ndihedral_types = DihedralTypes.size();
 
     int costypes = 0;
     int grbftypes = 0;

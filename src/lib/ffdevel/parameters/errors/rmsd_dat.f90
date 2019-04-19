@@ -25,6 +25,7 @@ use ffdev_constants
 logical                 :: EnableRMSDError
 logical                 :: PrintRMSDErrorSummary
 real(DEVDP)             :: RMSDErrorWeight
+logical                 :: RMSDErrorMassWeighted
 
 ! ------------------------------------------------------------------------------
 

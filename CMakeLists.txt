@@ -168,7 +168,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
     get_filename_component(FCOMP_NAME ${CMAKE_Fortran_COMPILER} NAME_WE)
 
     # default compiler setups - gfortran
-    SET(CMAKE_Fortran_FLAGS_RELEASE "-O0")
+    SET(CMAKE_Fortran_FLAGS_RELEASE "-O2 -march=native")
     SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all")
 
     # ifort
@@ -192,8 +192,8 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
         ENDIF(LIBS_SHARED)
     ENDIF(FCOMP_NAME STREQUAL xlf)
 
-    #SET(CMAKE_BUILD_TYPE Release)
-    SET(CMAKE_BUILD_TYPE Debug)
+    SET(CMAKE_BUILD_TYPE Release)
+    #SET(CMAKE_BUILD_TYPE Debug)
 ENDIF(NOT DEFINED COMPOSITE_PROJECT)
 
 # ==============================================================================

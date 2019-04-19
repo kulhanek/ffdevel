@@ -50,7 +50,7 @@ type(TARGETSET),allocatable :: sets(:)  ! all training sets
 
 ! [setup] ----------------------------------------------------------------------
 logical                 :: OptimizeGeometry             = .false.   ! optimize geometry in each error evaluation
-logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress 
+logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress
 logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
 logical                 :: SaveGeometry                 = .false.   
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded

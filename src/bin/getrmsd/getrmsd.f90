@@ -28,6 +28,7 @@ program ffdev_getrmsd_program
     character(len=MAX_PATH) :: srcname  ! reference coordinates
     type(GEOMETRY)          :: ref
     type(GEOMETRY)          :: src
+    integer                 :: i
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('Get RMSD')
@@ -65,14 +66,25 @@ program ffdev_getrmsd_program
     write(DEV_OUT,*)
     call ffdev_geometry_print_xyz(src)
 
+    ! check compability of two geometries
+    if( ref%natoms .ne. src%natoms ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same number of atoms!')
+    end if
+
+    do i=1,ref%natoms
+        if( ref%z(i) .ne. src%z(i) ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same order of atoms!')
+        end if
+    end do
+
     ! results ------------------------------------------------------------------
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Results', ':')
     write(DEV_OUT,*)
     if( command_argument_count() .eq. 2 ) then
-        write(DEV_OUT,120) ffdev_geometry_utils_get_rmsd(ref,src,.true.)
+        write(DEV_OUT,120) ffdev_geometry_utils_get_rmsd(ref%natoms,ref%z,ref%crd,src%crd,.true.)
     else
-        write(DEV_OUT,130) ffdev_geometry_utils_get_rmsd_nofit(ref,src,.true.)
+        write(DEV_OUT,130) ffdev_geometry_utils_get_rmsd_nofit(ref%natoms,ref%z,ref%crd,src%crd,.true.)
     end if
 
     ! end

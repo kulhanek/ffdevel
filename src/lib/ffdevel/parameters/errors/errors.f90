@@ -288,7 +288,7 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_rmsd
 
     implicit none
-    logical     :: final, anyrep
+    logical     :: final, anyrep, printme, printsum
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
@@ -315,10 +315,29 @@ subroutine ffdev_errors_summary(final)
         write(DEV_OUT,10)
 
         do i=1,nsets
+            printme = .false.
+            if( PrintEnergyErrorSummary ) then
+                printsum = .false.
+                call ffdev_err_energy_summary(sets(i),printsum)
+                printme = printme .or. printsum
+            end if
+            if( PrintRMSDErrorSummary ) then
+                printsum = .false.
+                call ffdev_err_rmsd_summary(sets(i),printsum)
+                printme = printme .or. printsum
+            end if
+
+            if( .not. printme ) cycle
+
+            printsum = .true.
+
             write(DEV_OUT,*)
             write(DEV_OUT,5) i
             if( PrintEnergyErrorSummary ) then
-                call ffdev_err_energy_summary(sets(i))
+                call ffdev_err_energy_summary(sets(i),printsum)
+            end if
+            if( PrintRMSDErrorSummary ) then
+                call ffdev_err_rmsd_summary(sets(i),printsum)
             end if
         end do
     end if
@@ -333,28 +352,60 @@ subroutine ffdev_errors_summary(final)
 
         do i=1,nsets
             do j=1,sets(i)%ngeos
-                write(DEV_OUT,*)
-                write(DEV_OUT,6) i,j
+                printme = .false.
                 if( PrintBondsErrorSummary ) then
-                    call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
                 end if
                 if( PrintAnglesErrorSummary ) then
-                    call ffdev_err_angles_summary(sets(i)%top,sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_angles_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
                 end if
                 if( PrintDihedralsErrorSummary ) then
-                    call ffdev_err_dihedrals_summary(sets(i)%top,sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_dihedrals_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
                 end if
                 if( PrintImpropersErrorSummary ) then
-                    call ffdev_err_impropers_summary(sets(i)%top,sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_impropers_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
                 end if
                 if( PrintNBDistsErrorSummary ) then
-                    call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j))
-                end if
-                if( PrintRMSDErrorSummary ) then
-                    call ffdev_err_rmsd_summary(sets(i)%top,sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
                 end if
                 if( PrintFreqsErrorSummary ) then
-                    call ffdev_err_freqs_summary(sets(i)%geo(j))
+                    printsum = .false.
+                    call ffdev_err_freqs_summary(sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
+                end if
+
+                if( .not. printme ) cycle
+
+                write(DEV_OUT,*)
+                write(DEV_OUT,6) i,j
+                printsum = .true.
+                if( PrintBondsErrorSummary ) then
+                    call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( PrintAnglesErrorSummary ) then
+                    call ffdev_err_angles_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( PrintDihedralsErrorSummary ) then
+                    call ffdev_err_dihedrals_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( PrintImpropersErrorSummary ) then
+                    call ffdev_err_impropers_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( PrintNBDistsErrorSummary ) then
+                    call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( PrintFreqsErrorSummary ) then
+                    call ffdev_err_freqs_summary(sets(i)%geo(j),printsum)
                 end if
             end do
         end do

@@ -32,12 +32,13 @@ subroutine ffdev_err_freqs_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableFreqsError      = .false.
-    DebugFreqError       = .false.
-    PrintFreqsErrorSummary= .false.
-    FreqsErrorWeight      = 1.0d0
-    FreqMaxNmodeAngle    = 50.0d0
-    FreqMaxRMSD          = 5.0d0
+    EnableFreqsError        = .false.
+    DebugFreqError          = .false.
+    PrintFreqsErrorSummary  = .false.
+    FreqsErrorWeight        = 1.0d0
+    FreqsMaxAngle           = 40.0d0
+    FreqsMaxRMSD            = 0.5d0
+    FreqsErrorMode          = FREQS_SUPERIMPOSE_GEO
 
 end subroutine ffdev_err_freqs_init
 
@@ -58,9 +59,9 @@ subroutine ffdev_err_freqs_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,nfreqs,k,l,i1,j1,i2,j2
-    real(DEVDP)         :: err,seterrfreqs,diff,nmangle
-    real(DEVDP)         :: f0,ft,rmsd
+    integer             :: i,j,q,nfreqs
+    real(DEVDP)         :: err,seterrfreqs,diff
+    real(DEVDP)         :: rmsd
     ! --------------------------------------------------------------------------
 
     error%freqs = 0.0d0
@@ -79,51 +80,41 @@ subroutine ffdev_err_freqs_error(error)
                     write(DEV_OUT,10) i,j
                 end if
 
-                ! superimpose and then find mapping
-                call ffdev_hessian_superimpose_freqs(sets(i)%geo(j)%natoms,sets(i)%geo(j)%z,sets(i)%geo(j)%trg_crd, &
-                                                     sets(i)%geo(j)%crd,sets(i)%geo(j)%nmodes,.false.,rmsd)
+                select case(FreqsErrorMode)
+                    case(FREQS_SUPERIMPOSE_GEO)
+                        ! superimpose and then find mapping
+                        call ffdev_hessian_superimpose_by_geo(sets(i)%geo(j))
 
-                if( DebugFreqError ) then
-                    write(DEV_OUT,20) rmsd
-                end if
+                    case(FREQS_SUPERIMPOSE_MODE)
+                        ! superimpose and then find mapping
+                        call ffdev_hessian_superimpose_by_modes(sets(i)%geo(j))
 
-                if( rmsd .gt. FreqMaxRMSD ) cycle ! rmsd is not OK
+                    case default
+                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported mode in ffdev_err_freqs_error!')
+                end select
 
-                call ffdev_hessian_find_mapping(sets(i)%geo(j)%natoms,sets(i)%geo(j)%trg_nmodes, &
-                                                sets(i)%geo(j)%nmodes,sets(i)%geo(j)%freq_t2s_map)
-
-                ! write(*,*) rmsd
-
+                ! calculate error
                 do q=7,3*sets(i)%geo(j)%natoms
+                    ! rmsd check
+                    if( sets(i)%geo(j)%freq_t2s_rmsd(q) .gt. FreqsMaxRMSD ) cycle
+
+                    ! angle check
+                    if( sets(i)%geo(j)%freq_t2s_angles(q)*DEV_R2D .gt. FreqsMaxAngle ) cycle
+
                     err = sets(i)%geo(j)%freq(sets(i)%geo(j)%freq_t2s_map(q))-sets(i)%geo(j)%trg_freq(q)
-
-                    i1 = (q-1) / 3 + 1
-                    j1 = mod(q-1,3) + 1
-
-                    i2 = (sets(i)%geo(j)%freq_t2s_map(q)-1) / 3 + 1
-                    j2 = mod(sets(i)%geo(j)%freq_t2s_map(q)-1,3) + 1
-
-                    nmangle = 0.0
-                    do k=1,sets(i)%geo(j)%natoms
-                        do l=1,3
-                            nmangle = nmangle + sets(i)%geo(j)%trg_nmodes(l,k,j1,i1)*sets(i)%geo(j)%nmodes(l,k,j2,i2)
-                        end do
-                    end do
-                    nmangle = acos(nmangle)*DEV_R2D
-
-                    ! write(*,*) nmangle,err,i1,j1,i2,j2
-
-                    if( (nmangle .lt. FreqMaxNmodeAngle) .or. ((180d0 - nmangle) .lt. FreqMaxNmodeAngle) ) then
-                        seterrfreqs = seterrfreqs + sets(i)%geo(j)%weight * err**2
-                        nfreqs = nfreqs + 1
-                    end if
+                    seterrfreqs = seterrfreqs + sets(i)%geo(j)%weight * err**2
+                    nfreqs = nfreqs + 1
                 end do
+
                 if( DebugFreqError ) then
                     call ffdev_hessian_print_mapping(.false.,sets(i)%geo(j)%natoms,sets(i)%geo(j)%trg_freq, &
                                                      sets(i)%geo(j)%trg_nmodes, &
                                                      sets(i)%geo(j)%freq,sets(i)%geo(j)%nmodes, &
-                                                     sets(i)%geo(j)%freq_t2s_map)
+                                                     sets(i)%geo(j)%freq_t2s_map,sets(i)%geo(j)%freq_t2s_angles, &
+                                                     sets(i)%geo(j)%freq_t2s_rmsd)
                 end if
+
+
             end if
         end do
     end do
@@ -145,19 +136,26 @@ end subroutine ffdev_err_freqs_error
 ! subroutine ffdev_err_freqs_summary
 ! ==============================================================================
 
-subroutine ffdev_err_freqs_summary(geo)
+subroutine ffdev_err_freqs_summary(geo,printsum)
 
     use ffdev_geometry_dat
     use ffdev_hessian_utils
 
     implicit none
-    type(GEOMETRY)     :: geo
+    type(GEOMETRY)  :: geo
+    logical         :: printsum
     ! --------------------------------------------
 
     if( .not. geo%trg_freq_loaded ) return
 
+    if( printsum .eqv. .false. ) then
+        printsum = .true.
+        return
+    end if
+
     call ffdev_hessian_print_mapping(.false.,geo%natoms,geo%trg_freq,geo%trg_nmodes,&
-                                     geo%freq,geo%nmodes,geo%freq_t2s_map)
+                                     geo%freq,geo%nmodes,geo%freq_t2s_map,geo%freq_t2s_angles,&
+                                     geo%freq_t2s_rmsd)
 
 end subroutine ffdev_err_freqs_summary
 
