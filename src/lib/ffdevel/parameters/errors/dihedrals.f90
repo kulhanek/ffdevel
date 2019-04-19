@@ -74,7 +74,7 @@ subroutine ffdev_err_dihedrals_error(error)
                     d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
                     dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
                     ndihedrals = ndihedrals + 1
-                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)  ! this needs values in RAD
                     err = err * DEV_R2D
                     ! write(*,*) err
                     seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2

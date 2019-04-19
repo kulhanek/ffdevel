@@ -81,7 +81,7 @@ subroutine ffdev_err_impropers_error(error)
                         dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
                     end if
                     nimpropers = nimpropers + 1
-                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)
+                    err = ffdev_geometry_get_dihedral_deviation(d0,dt) ! this needs values in RAD
                     err = err * DEV_R2D
                     seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
                 end do
