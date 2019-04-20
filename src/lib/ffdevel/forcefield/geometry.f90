@@ -874,15 +874,21 @@ end subroutine ffdev_geometry_info_point
 ! subroutine ffdev_geometry_info_point_header_ext
 ! ==============================================================================
 
-subroutine ffdev_geometry_info_point_header_ext()
+subroutine ffdev_geometry_info_point_header_ext(relative)
 
     implicit none
+    logical :: relative
     ! --------------------------------------------------------------------------
 
-    write(DEV_OUT,30)
+    if( relative ) then
+        write(DEV_OUT,30)
+    else
+        write(DEV_OUT,35)
+    end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight    Rel Energy    E G H P')
+30 format('# ID   File                                     Weight  Relative Energy E G H P')
+35 format('# ID   File                                     Weight           Energy E G H P')
 40 format('# ---- ---------------------------------------- ------ ---------------- - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext

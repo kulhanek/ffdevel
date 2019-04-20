@@ -123,7 +123,7 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
-    NLOpt_InitialStep   = 0.01d0
+    NLOpt_InitialStep   = 0.00001d0
 
 end subroutine ffdev_ffopt_set_default
 

@@ -333,10 +333,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,*)
-            if( shift2zero ) then
-                call ffdev_geometry_info_point_header()
+            if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref ) then
+                call ffdev_geometry_info_point_header_ext(.false.)
             else
-                call ffdev_geometry_info_point_header_ext()
+                call ffdev_geometry_info_point_header()
             end if
         end if
 
@@ -396,10 +396,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     sets(i)%geo(j)%trg_freq_loaded =  .true.
                 end if
 
-                if( shift2zero ) then
-                    call ffdev_geometry_info_point(sets(i)%geo(j))
-                else
+                if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) then
                     call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                else
+                    call ffdev_geometry_info_point(sets(i)%geo(j))
                 end if
 
                 ! overwrite weights
@@ -434,6 +434,21 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             rst = prmfile_next_line(fin)
         end do
 
+        ! update points with references
+        if( sets(i)%nrefs .gt. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,305)
+            write(DEV_OUT,*)
+            call ffdev_geometry_info_point_header_ext(.true.)
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
+                do k=1,sets(i)%nrefs
+                    sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
+                end do
+                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+            end do
+        end if
+
         ! do energy statistics
         minj = 0
         do j=1,sets(i)%ngeos
@@ -451,29 +466,21 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end if
         end do
         sets(i)%mineneid = minj
+        write(DEV_OUT,*)
+        write(DEV_OUT,300) sets(i)%mineneid,minenergy
+
         if( (sets(i)%mineneid .gt. 0) .and. (sets(i)%nrefs .eq. 0) ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,300) sets(i)%mineneid,minenergy
             if( shift2zero ) then
-                call ffdev_geometry_info_point_header_ext()
+                write(DEV_OUT,*)
+                write(DEV_OUT,308)
+                write(DEV_OUT,*)
+                call ffdev_geometry_info_point_header_ext(.true.)
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
                     call ffdev_geometry_info_point_ext(sets(i)%geo(j))
                 end do
             end if
-        end if
-        if( sets(i)%nrefs .gt. 0 ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,305)
-            call ffdev_geometry_info_point_header_ext()
-            do j=1,sets(i)%ngeos
-                if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
-                do k=1,sets(i)%nrefs
-                    sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
-                end do
-                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
-            end do
         end if
 
         i = i + 1
@@ -523,6 +530,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 305 format('Substracting energy of reference states ...')
+308 format('Shifting minimum to zero ...')
 
 end subroutine ffdev_targetset_ctrl
 
