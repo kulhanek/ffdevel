@@ -113,6 +113,7 @@ type ATOM_TYPE
     real(DEVDP)         :: mass
     integer             :: z
     logical             :: probe            ! probe
+    integer             :: glbtypeid        ! global type id
 end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------

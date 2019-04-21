@@ -67,7 +67,7 @@ subroutine ffdev_topology_load(top,name)
     character(*)                :: name
     ! --------------------------------------------
     type(PRMFILE_TYPE)          :: fin
-    logical                     :: my_result
+    logical                     :: my_result, lbuff
     integer                     :: alloc_stat, io_stat, i, idx, nbuff, pn
     character(PRMFILE_MAX_LINE) :: buffer
     real(DEVDP)                 :: v,g,c,p,w,e
@@ -101,6 +101,10 @@ subroutine ffdev_topology_load(top,name)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_size',top%nb_size)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_types',top%nnb_types)
     my_result = my_result .and. prmfile_get_integer_by_key(fin,'nb_mode',top%nb_mode)
+
+    ! optional items
+    lbuff = prmfile_get_integer_by_key(fin,'nb_sizeij',nbuff)
+    lbuff = prmfile_get_integer_by_key(fin,'nb_size14',nbuff)
 
     if( .not. my_result ) then
         call ffdev_utils_exit(DEV_OUT,1,'Missing data in [dimmensions] section!')

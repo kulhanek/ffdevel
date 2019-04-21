@@ -32,6 +32,7 @@ program ffdev_optimize_program
     implicit none
     character(len=MAX_PATH)     :: ctrlname      ! input control file name
     type(PRMFILE_TYPE)          :: fin
+    type(PRMFILE_TYPE)          :: tmpfin
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
@@ -49,6 +50,12 @@ program ffdev_optimize_program
     
     ! open dev null
     call ffdev_utils_open(DEV_NULL,'/dev/null','O')
+
+    ! default setup for subsystems ---------------------------------------------
+    call prmfile_init(tmpfin)
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
+    call execute_mmopt(tmpfin,.false.)
 
     ! process control file -----------------------------------------------------
     write(DEV_OUT,*)
@@ -137,6 +144,9 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
     call ffdev_utils_heading(DEV_OUT,'Starting real optimization', '!')
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
+
+    ! run XDM stat if data available
+    call ffdev_parameters_run_xdm_stat()
 
     ! calculate initial data
     call ffdev_targetset_calc_all()
@@ -269,6 +279,7 @@ subroutine execute_ffopt(grpin,exec)
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
     call ffdev_parameters_ctrl_realms(grpin)
+    call ffdev_targetset_ctrl_optgeo(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)
 
     if( exec ) then

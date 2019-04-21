@@ -118,6 +118,7 @@ CDihedralType::CDihedralType(void)
     scnb = 0.0;
     nb_processed = false;
     grbf = false;
+    DihCOffset = false;
 }
 
 //------------------------------------------------------------------------------
@@ -229,6 +230,7 @@ double  CDihedralType::GetCOSValue(double x)
         double arg = l*x - phase[l-1];
         value1 += v0[l-1]*(1.0+cos(arg));
     }
+    value1 = DihCOffset + value1;
     return(value1);
 }
 

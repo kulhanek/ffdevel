@@ -105,6 +105,8 @@ subroutine ffdev_err_bonds_summary(top,geo,printsum)
     logical         :: printsum
     ! --------------------------------------------------------------------------
 
+    if( .not. geo%trg_crd_optimized ) return
+
     if( printsum .eqv. .false. ) then
         printsum = .true.
         return

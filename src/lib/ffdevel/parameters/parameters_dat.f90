@@ -76,11 +76,27 @@ type PARM_TYPE
     ! derived LJ parameters
     logical             :: print_nb
     real(DEVDP)         :: eps
-    real(DEVDP)         :: r0
+    real(DEVDP)         :: r0  
 end type PARM_TYPE
 
 integer                     :: ntypes    ! number of types
 type(PARM_TYPE),allocatable :: types(:)  ! types
+
+! ------------------------------------------------------------------------------
+
+! XDM data
+type XDM_PAIR_TYPE
+    real(DEVDP)         :: c6ave
+    real(DEVDP)         :: c6sig
+    real(DEVDP)         :: c8ave
+    real(DEVDP)         :: c8sig
+    real(DEVDP)         :: c10ave
+    real(DEVDP)         :: c10sig
+    integer             :: num
+end type XDM_PAIR_TYPE
+
+logical                         :: xdm_data_loaded = .false.
+type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
 
 ! ------------------------------------------------------------------------------
 ! experimental/unfinished setup
@@ -106,11 +122,51 @@ integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL 
 integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
 integer                 :: NBCombRules                  = COMB_RULE_LB
 logical                 :: OnlyDefinedDihItems          = .true.
+logical                 :: LockDihC_PN1                 = .true.
 
 ! === [grbf2cos] ===============================================================
 integer                 :: GRBF2COSDPts     = 360           ! level of discretization
 integer                 :: GRBF2COSMaxN     = 4             ! max length of cos series
 real(DEVDP)             :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
+
+! === [ranges] =================================================================
+
+real(DEVDP)             :: MinOffset    =   -1000.0d0
+real(DEVDP)             :: MaxOffset    =    1000.0d0
+real(DEVDP)             :: MinBondD0    =       0.5d0
+real(DEVDP)             :: MaxBondD0    =       5.0d0
+real(DEVDP)             :: MinBondK     =       0.0
+real(DEVDP)             :: MaxBondK     =    1500.0d0
+real(DEVDP)             :: MinAngleA0   =       0.0
+real(DEVDP)             :: MaxAngleA0   =       DEV_PI
+real(DEVDP)             :: MinAngleK    =       0.0d0
+real(DEVDP)             :: MaxAngleK    =    1000.0d0
+real(DEVDP)             :: MinDihV      =       0.0d0
+real(DEVDP)             :: MaxDihV      =      50.0d0
+real(DEVDP)             :: MinDihG      =       0.0d0
+real(DEVDP)             :: MaxDihG      =     2*DEV_PI
+real(DEVDP)             :: MinDihSCEE   =       0.5d0
+real(DEVDP)             :: MaxDihSCEE   =       3.0d0
+real(DEVDP)             :: MinDihSCNB   =       0.5d0
+real(DEVDP)             :: MaxDihSCNB   =       3.0d0
+real(DEVDP)             :: MinImprV     =       0.0d0
+real(DEVDP)             :: MaxImprV     =      50.0d0
+real(DEVDP)             :: MinImprG     =      -DEV_PI
+real(DEVDP)             :: MaxImprG     =       DEV_PI
+real(DEVDP)             :: MinDihC      =     -50.0d0
+real(DEVDP)             :: MaxDihC      =      50.0d0
+real(DEVDP)             :: MinVdwEps    =       0.0d0
+real(DEVDP)             :: MaxVdwEps    =       0.5d0
+real(DEVDP)             :: MinVdwR0     =       0.5d0
+real(DEVDP)             :: MaxVdwR0     =       5.0d0
+real(DEVDP)             :: MinVdwAlpha  =      10.0
+real(DEVDP)             :: MaxVdwAlpha  =      25.0
+real(DEVDP)             :: MinVdwA      =       0.0d0
+real(DEVDP)             :: MaxVdwA      =       1.0d7
+real(DEVDP)             :: MinVdwB      =       0.0d0
+real(DEVDP)             :: MaxVdwB      =      10.0d0
+real(DEVDP)             :: MinVdwC      =       0.0d0
+real(DEVDP)             :: MaxVdwC      =      10.0d0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

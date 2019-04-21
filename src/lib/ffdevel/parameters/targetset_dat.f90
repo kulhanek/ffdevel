@@ -49,11 +49,13 @@ integer                     :: nsets    ! number of sets
 type(TARGETSET),allocatable :: sets(:)  ! all training sets
 
 ! [setup] ----------------------------------------------------------------------
-logical                 :: OptimizeGeometry             = .false.   ! optimize geometry in each error evaluation
-logical                 :: ShowOptimizationProgress     = .false.   ! print geometry optimization progress
-logical                 :: KeepOptimizedGeometry        = .true.    ! keep geometry from previous geometry optimization
 logical                 :: SaveGeometry                 = .false.   
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded
 character(len=MAX_PATH) :: SavePointsPath               = 'points'  ! storage for saved points
+
+! [optgeo] --------------------------------------------------------------------
+logical                 :: GlbOptGeometry       = .false.   ! optimize geometry in each error evaluation
+logical                 :: GlbShowOptProgress   = .false.   ! print geometry optimization progress
+logical                 :: GlbKeepOptGeometry   = .true.    ! keep geometry from previous geometry optimization
 
 end module ffdev_targetset_dat

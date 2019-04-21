@@ -54,6 +54,8 @@ CTop2STop::CTop2STop(void)
     nimpropers = 0;
     nimproper_types = 0;
     nb_size = 0;
+    nb_size14 = 0;
+    nb_sizeij = 0;
     nnb_types = 0;
     dih_mode = 0;
     dih_samp_freq = 5;
@@ -802,6 +804,7 @@ void CTop2STop::SolveTransformation(int type)
     vout << "   fitting dihedral type " << setw(4) << type << " ... final error = ";
 
     // transform
+    DihedralTypes[type].DihCOffset = Options.GetOptDihCOffset();
     DihedralTypes[type].Cos2GRBF(dih_samp_freq);
     
     // calculate rmse
@@ -989,7 +992,6 @@ void CTop2STop::WriteImproperTypes(ostream& sout)
 
 void CTop2STop::WriteImpropers(ostream& sout)
 {
-    std::list<CDihedral> UniqueDihedrals;
 
     // list unique dihedrals
     for(int i=0; i < Topology.DihedralList.GetNumberOfDihedrals(); i++) {
@@ -1002,8 +1004,8 @@ void CTop2STop::WriteImpropers(ostream& sout)
         // only improper and terminal improper dihedrals are processed
         if( (p_dihedral->GetType() != 1)&&(p_dihedral->GetType() != -2) ) continue;
 
-        std::list<CDihedral>::iterator  it = UniqueDihedrals.begin();
-        std::list<CDihedral>::iterator  ie = UniqueDihedrals.end();
+        std::list<CDihedral>::iterator  it = UniqueImpropers.begin();
+        std::list<CDihedral>::iterator  ie = UniqueImpropers.end();
 
         bool found = false;
         while( it != ie ){
@@ -1021,14 +1023,14 @@ void CTop2STop::WriteImpropers(ostream& sout)
         dih.at2 = jp;
         dih.at3 = kp;
         dih.at4 = lp;
-        UniqueDihedrals.push_back(dih);
+        UniqueImpropers.push_back(dih);
     }
 
     sout << "[impropers]" << endl;
     sout << "! Index AtomA AtomB AtomC AtomD Type   AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
 
-    std::list<CDihedral>::iterator  it = UniqueDihedrals.begin();
-    std::list<CDihedral>::iterator  ie = UniqueDihedrals.end();
+    std::list<CDihedral>::iterator  it = UniqueImpropers.begin();
+    std::list<CDihedral>::iterator  ie = UniqueImpropers.end();
 
     int idx = 1;
     while( it != ie ){
@@ -1065,7 +1067,7 @@ void CTop2STop::WriteImpropers(ostream& sout)
         idx++;
     }
 
-    nimpropers = UniqueDihedrals.size();
+    nimpropers = UniqueImpropers.size();
 }
 
 //------------------------------------------------------------------------------
@@ -1131,40 +1133,16 @@ void CTop2STop::WriteNBListKeep(ostream& sout)
     sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
 
     nb_size = 0;
+    nb_size14 = 0;
+    nb_sizeij = 0;
     int idx = 1;
     for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
         CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(i);
         for(int j=i+1; j < Topology.AtomList.GetNumberOfAtoms(); j++) {
             CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(j);
 
-            // is 1-4?
-            bool found = false;
-            CAmberDihedral* p_dih;
-            for(int k=0; k < Topology.DihedralList.GetNumberOfDihedrals(); k++) {
-                p_dih = Topology.DihedralList.GetDihedral(k);
-                if( ((p_dih->GetIP() == i)&&(p_dih->GetLP() == j)) ||
-                    ((p_dih->GetIP() == j)&&(p_dih->GetLP() == i)) ){
-                        found = true;
-                        break;
-                }
-            }
-
-            int didx = 0;
-            if( (found == true) && ( (p_dih->GetType() == 0) || (p_dih->GetType() == -1) ) ){
-                CDihedralType dtype;
-                int ip = p_dih->GetIP();
-                int jp = p_dih->GetJP();
-                int kp = p_dih->GetKP();
-                int lp = p_dih->GetLP();
-                dtype = FindDihedralByTypes(ip,jp,kp,lp);
-                if( dtype.idx == -1 ){
-                    RUNTIME_ERROR("1-4 nb interaction dihedral not found");
-                }
-                didx = dtype.idx;
-            } else {
-                // is exluded
-                if( Topology.IsNBPairExcluded(i,j) == true ) continue;
-            }
+            // is exluded
+            if( Topology.IsNBPairExcluded(i,j) == true ) continue;
 
             int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
             int nbidx = NBTypes[ico];
@@ -1173,14 +1151,104 @@ void CTop2STop::WriteNBListKeep(ostream& sout)
             sout << right << setw(5) << i+1 << " ";
             sout << right << setw(5) << j+1 << " ";
             sout << right << setw(5) << nbidx << " ";
-            sout << right << setw(5) << didx << " ! ";
+            sout << right << setw(5) << 0 << " ! ";
             sout << left << setw(5) << p_atom1->GetName() << " ";
             sout << left << setw(5) << p_atom1->GetType() << " ";
             sout << left << setw(5) << p_atom2->GetName() << " ";
             sout << left << setw(5) << p_atom2->GetType() << endl;
             nb_size++;
+            nb_sizeij++;
             idx++;
         }
+    }
+
+    // go through unique list of dihedrals to generate 1-4 NB interactions
+
+    std::list<CDihedral>::iterator  it = UniqueDihedrals.begin();
+    std::list<CDihedral>::iterator  ie = UniqueDihedrals.end();
+
+    list<CNBPair>   NBPairs14;
+
+    while( it != ie ){
+        CDihedral dih = *it;
+        it++;
+        int ip = dih.at1;
+        int jp = dih.at2;
+        int kp = dih.at3;
+        int lp = dih.at4;
+
+        bool found = false;
+
+        // is it already in the list (6-membered rings)
+        std::list<CNBPair>::iterator  nit = NBPairs14.begin();
+        std::list<CNBPair>::iterator  nie = NBPairs14.end();
+
+        while( nit != nie ){
+            CNBPair pair = *nit;
+            if( ( (pair.at1 == ip) && (pair.at2 == lp)) || ((pair.at1 == lp) && (pair.at2 == ip)) ) {
+                found = true;
+                break;
+            }
+            nit++;
+        }
+        if( found == true ) continue;
+
+        // exclude 1-2 and 1-3 bonded (in 4-and 5-membered rings)
+
+        // is bonded?
+        for(int k=0; k < Topology.BondList.GetNumberOfBonds(); k++) {
+            CAmberBond* p_bond = Topology.BondList.GetBond(k);
+            if( ((p_bond->GetIB() == ip)&&(p_bond->GetJB() == lp)) ||
+                ((p_bond->GetIB() == lp)&&(p_bond->GetJB() == ip)) ){
+                    found = true;
+                    break;
+            }
+        }
+        if( found == true ) continue;
+
+        // is 1-3?
+        for(int k=0; k < Topology.AngleList.GetNumberOfAngles(); k++) {
+            CAmberAngle* p_angle = Topology.AngleList.GetAngle(k);
+            if( ((p_angle->GetIT() == ip)&&(p_angle->GetKT() == lp)) ||
+                ((p_angle->GetIT() == lp)&&(p_angle->GetKT() == ip)) ){
+                    found = true;
+                    break;
+            }
+        }
+        if( found == true ) continue;
+
+        // get dihedral type
+        CDihedralType dtype;
+        dtype = FindDihedralByTypes(ip,jp,kp,lp);
+        if( dtype.idx == -1 ){
+            RUNTIME_ERROR("1-4 nb interaction dihedral not found");
+        }
+        int didx = dtype.idx;
+
+        CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(ip);
+        CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(lp);
+
+        int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
+        int nbidx = NBTypes[ico];
+
+        sout << right << setw(7) << idx << " ";
+        sout << right << setw(5) << ip+1 << " ";
+        sout << right << setw(5) << lp+1 << " ";
+        sout << right << setw(5) << nbidx << " ";
+        sout << right << setw(5) << didx << " ! ";
+        sout << left << setw(5) << p_atom1->GetName() << " ";
+        sout << left << setw(5) << p_atom1->GetType() << " ";
+        sout << left << setw(5) << p_atom2->GetName() << " ";
+        sout << left << setw(5) << p_atom2->GetType() << endl;
+
+        CNBPair pair;
+        pair.at1 = ip;
+        pair.at2 = lp;
+        NBPairs14.push_back(pair);
+
+        nb_size++;
+        nb_size14++;
+        idx++;
     }
 }
 
@@ -1194,6 +1262,8 @@ void CTop2STop::WriteNBListRebuild(ostream& sout)
     sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
 
     nb_size = 0;
+    nb_size14 = 0;
+    nb_sizeij = 0;
     int idx = 1;
     for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
         CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(i);
@@ -1245,6 +1315,9 @@ void CTop2STop::WriteNBListRebuild(ostream& sout)
                     RUNTIME_ERROR("1-4 nb interaction dihedral not found");
                 }
                 didx = dtype.idx;
+                nb_size14++;
+            } else {
+                nb_sizeij++;
             }
 
             int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
@@ -1282,6 +1355,8 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "dihedral_seq_size " << ndihedral_seq_size << endl;
     sout << "impropers         " << nimpropers << endl;
     sout << "improper_types    " << nimproper_types << endl;
+    sout << "nb_sizeij         " << nb_sizeij << endl;
+    sout << "nb_size14         " << nb_size14 << endl;
     sout << "nb_size           " << nb_size << endl;
     sout << "nb_types          " << nnb_types << endl;
 

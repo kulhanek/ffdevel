@@ -56,6 +56,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     ! load [setup] configuration
     call ffdev_targetset_ctrl_setup(fin)
 
+    ! load [optgeo] configuration
+    call ffdev_targetset_ctrl_optgeo(fin)
+
     ! get number of sets
     nsets = 0
     rst = prmfile_first_section(fin)
@@ -211,14 +214,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,65) prmfile_onoff(shift2zero)
         end if
               
-        sets(i)%optgeo = OptimizeGeometry
+        sets(i)%optgeo = .false.
         if( prmfile_get_logical_by_key(fin,'optgeo', sets(i)%optgeo)) then
             write(DEV_OUT,40) prmfile_onoff(sets(i)%optgeo)
         else
             write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
         end if 
         
-        sets(i)%keepoptgeo = KeepOptimizedGeometry
+        sets(i)%keepoptgeo = .false.
         if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
             write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
         else
@@ -386,7 +389,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 call ffdev_geometry_init(sets(i)%geo(j))
                 sets(i)%geo(j)%id = j
                 sets(i)%geo(j)%weight = weight
-                sets(i)%geo(j)%trg_crd_loaded  = sets(i)%optgeo
+                ! always load trg_crd as the geo optimization can be switched on any later
+                sets(i)%geo(j)%trg_crd_loaded  = .true.
                 sets(i)%geo(j)%name = geoname
                 call ffdev_geometry_load_1point(sets(i)%geo(j),stream)
 
@@ -415,6 +419,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 end select
 
                 call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
+
+                ! reference point needs energy
+                if( sets(i)%isref ) then
+                    if( sets(i)%geo(j)%trg_ene_loaded .eqv. .false. ) then
+                        call ffdev_utils_exit(DEV_OUT,1,'Reference point must contain ENERGY definition!')
+                    end if
+                end if
 
                 ! do we have data for point
                 data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
@@ -534,7 +545,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
 end subroutine ffdev_targetset_ctrl
 
-
 ! ==============================================================================
 ! subroutine ffdev_targetset_ctrl_setup
 ! ==============================================================================
@@ -553,10 +563,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'setup') ) then
-
-        write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
-        write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
-        write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
         write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
         write(DEV_OUT,95) SavePointsPath
         write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
@@ -566,22 +572,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         return
     end if
     
-
-    if( prmfile_get_logical_by_key(fin,'optgeo', OptimizeGeometry)) then
-        write(DEV_OUT,30) prmfile_onoff(OptimizeGeometry)
-    else
-        write(DEV_OUT,35) prmfile_onoff(OptimizeGeometry)
-    end if
-    if( prmfile_get_logical_by_key(fin,'optprogress', ShowOptimizationProgress)) then
-        write(DEV_OUT,40) prmfile_onoff(ShowOptimizationProgress)
-    else
-        write(DEV_OUT,45) prmfile_onoff(ShowOptimizationProgress)
-    end if 
-    if( prmfile_get_logical_by_key(fin,'keepoptgeo', KeepOptimizedGeometry)) then
-        write(DEV_OUT,50) prmfile_onoff(KeepOptimizedGeometry)
-    else
-        write(DEV_OUT,55) prmfile_onoff(KeepOptimizedGeometry)
-    end if
     if( prmfile_get_logical_by_key(fin,'savegeo', SaveGeometry)) then
         write(DEV_OUT,80) prmfile_onoff(SaveGeometry)
     else
@@ -602,15 +592,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
       
  10 format('=== [setup] ====================================================================')
-
- 30  format ('Optimize geometry (optgeo)             = ',a12)
- 35  format ('Optimize geometry (optgeo)             = ',a12,'                  (default)')
- 
- 40  format ('Show geo opt progress (optprogress)    = ',a12)
- 45  format ('Show geo opt progress (optprogress)    = ',a12,'                  (default)') 
-
- 50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
- 55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)') 
  
  80  format ('Save geometry (savegeo)                = ',a12)
  85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')
@@ -622,6 +603,60 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 105  format ('Do not calculate frequencies (nofreqs) = ',a12,'                  (default)')
   
 end subroutine ffdev_targetset_ctrl_setup
+
+! ==============================================================================
+! subroutine ffdev_targetset_ctrl_optgeo
+! ==============================================================================
+
+subroutine ffdev_targetset_ctrl_optgeo(fin)
+
+    use ffdev_targetset_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'optgeo') ) then
+        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometry)
+        write(DEV_OUT,45) prmfile_onoff(GlbShowOptProgress)
+        write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
+        return
+    end if
+
+
+    if( prmfile_get_logical_by_key(fin,'optgeo', GlbOptGeometry)) then
+        write(DEV_OUT,30) prmfile_onoff(GlbOptGeometry)
+    else
+        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometry)
+    end if
+    if( prmfile_get_logical_by_key(fin,'optprogress', GlbShowOptProgress)) then
+        write(DEV_OUT,40) prmfile_onoff(GlbShowOptProgress)
+    else
+        write(DEV_OUT,45) prmfile_onoff(GlbShowOptProgress)
+    end if
+    if( prmfile_get_logical_by_key(fin,'keepoptgeo', GlbKeepOptGeometry)) then
+        write(DEV_OUT,50) prmfile_onoff(GlbKeepOptGeometry)
+    else
+        write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
+    end if
+
+ 10 format('=== [optgeo] ===================================================================')
+
+ 30  format ('Optimize geometry (optgeo)             = ',a12)
+ 35  format ('Optimize geometry (optgeo)             = ',a12,'                  (default)')
+
+ 40  format ('Show geo opt progress (optprogress)    = ',a12)
+ 45  format ('Show geo opt progress (optprogress)    = ',a12,'                  (default)')
+
+ 50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
+ 55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)')
+
+end subroutine ffdev_targetset_ctrl_optgeo
 
 ! ------------------------------------------------------------------------------
 

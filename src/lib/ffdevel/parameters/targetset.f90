@@ -23,7 +23,7 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
-! subroutine ffdev_targetset_init_tops
+! subroutine ffdev_targetset_init_pts
 ! at this point parameters should be extracted from topologies
 ! ==============================================================================
 
@@ -42,11 +42,12 @@ subroutine ffdev_targetset_init_pts
     do i=1,nsets
         call ffdev_topology_finalize_setup(sets(i)%top)
         do j=1,sets(i)%ngeos
+            ! always allocate gradient as geo optimization can be switched any time
+            call ffdev_gradient_allocate(sets(i)%geo(j))
+            ! allocate hessian as needed
             if( sets(i)%geo(j)%trg_hess_loaded ) then
                 call ffdev_hessian_allocate(sets(i)%geo(j))
-                call ffdev_gradient_allocate(sets(i)%geo(j))
-            else if( sets(i)%geo(j)%trg_grd_loaded .or. sets(i)%optgeo ) then
-                call ffdev_gradient_allocate(sets(i)%geo(j))
+                call ffdev_gradient_allocate(sets(i)%geo(j))                
             end if
         end do
     end do
@@ -88,11 +89,11 @@ subroutine ffdev_targetset_calc_all
     ! optimize geometry
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%optgeo .and. sets(i)%geo(j)%trg_crd_loaded ) then
-                if( .not. sets(i)%keepoptgeo ) then
+            if( (sets(i)%optgeo .or. GlbOptGeometry) .and. sets(i)%geo(j)%trg_crd_loaded ) then
+                if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
                     sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
                 end if
-                if( ShowOptimizationProgress ) then
+                if( GlbShowOptProgress ) then
                     call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
                 else
                     call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))

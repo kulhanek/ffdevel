@@ -36,7 +36,7 @@ character(len=MAX_PATH) :: OptTrajName = 'traj.xyz'     ! trajectory name
 
 ! === [minimization] ===========================================================
 integer         :: OptimizationMethod  = MINIMIZATION_LBFGS
-integer         :: NOptSteps    = 1000      ! max number of steps
+integer         :: NOptSteps    = 5000      ! max number of steps
 integer         :: OutSamples   =   20      ! how often write results
 integer         :: TrajSamples  =  100      ! how often write trajectory
 

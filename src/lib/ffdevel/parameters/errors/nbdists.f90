@@ -56,7 +56,7 @@ subroutine ffdev_err_nbdists_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,ai,aj
+    integer             :: i,j,q,ai,aj,num
     real(DEVDP)         :: err,seterrnbdists
     real(DEVDP)         :: d0,dt,sw,swsum
     ! --------------------------------------------------------------------------
@@ -65,6 +65,7 @@ subroutine ffdev_err_nbdists_error(error)
 
     seterrnbdists = 0.0
     swsum = 0
+    num = 0
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
@@ -75,22 +76,25 @@ subroutine ffdev_err_nbdists_error(error)
 
                     if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
 
+
+
                     d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
                     dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
                     err = d0 - dt
 
                     ! calculate switch function
                     sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
+
+                    seterrnbdists = seterrnbdists + sets(i)%geo(j)%weight * sw * err**2
                     swsum = swsum + sw
-                    err = err * sw
-                    seterrnbdists = seterrnbdists + sets(i)%geo(j)%weight * err**2
+                    num = num + 1
                 end do
             end if
         end do
     end do
 
     if( swsum .gt. 0 ) then
-        error%nbdists = sqrt(seterrnbdists/real(swsum))
+        error%nbdists = sqrt(seterrnbdists/swsum)
     end if 
 
 end subroutine ffdev_err_nbdists_error
@@ -115,6 +119,8 @@ subroutine ffdev_err_nbdists_summary(top,geo,printsum)
     real(DEVDP)     :: d1, d2, diff, sdiff, sw, swsum
     real(DEVDP)     :: serr, lerr,aerr,rmse
     ! --------------------------------------------------------------------------
+
+    if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
         printsum = .true.

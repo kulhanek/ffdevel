@@ -58,6 +58,9 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
+    geo%trg_xdm_loaded = .false.
+    geo%trg_surf_loaded = .false.
+
     geo%nrst        = 0
     geo%rst_energy  = 0.0
 
@@ -78,6 +81,16 @@ subroutine ffdev_geometry_init(geo)
     geo%freq_t2s_angles => null()
     geo%freq_t2s_rmsd   => null()
     geo%trg_esp         => null()
+
+    geo%trg_xdm_c6      => null()
+    geo%trg_xdm_c8      => null()
+    geo%trg_xdm_c10     => null()
+    geo%trg_xdm_vol     => null()
+    geo%trg_xdm_vol0    => null()
+    geo%trg_xdm_pol0    => null()
+
+    geo%trg_surf_r0     => null()
+    geo%trg_surf_a0     => null()
 
     geo%rst         => null()
 
@@ -392,7 +405,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
     type(GEOMETRY)      :: geo
     logical             :: stream
     ! --------------------------------------------
-    integer             :: i,j,k,l,alloc_stat,read_stat
+    integer             :: i,j,k,l,alloc_stat,read_stat,ri,rj
     character(len=255)  :: line,buffer
     character(len=80)   :: key,sym
     ! --------------------------------------------------------------------------
@@ -514,7 +527,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 end if
                 allocate( geo%trg_esp(4,geo%esp_npoints), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for trg_esp!')
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for ESP!')
                 end if
                 do i=1,geo%esp_npoints
                     read(DEV_GEO,*,iostat = read_stat) geo%trg_esp(1,i), geo%trg_esp(2,i), &
@@ -525,6 +538,56 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     end if
                 end do
                 geo%trg_esp_loaded = .true.
+            case('XDM')
+                allocate( geo%trg_xdm_c6(geo%natoms,geo%natoms),  &
+                          geo%trg_xdm_c8(geo%natoms,geo%natoms),  &
+                          geo%trg_xdm_c10(geo%natoms,geo%natoms), &
+                          geo%trg_xdm_vol(geo%natoms), &
+                          geo%trg_xdm_vol0(geo%natoms), &
+                          geo%trg_xdm_pol0(geo%natoms), stat = alloc_stat )
+                if( alloc_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for XDM!')
+                end if
+                geo%trg_xdm_c6(:,:) = 0.0d0
+                geo%trg_xdm_c8(:,:) = 0.0d0
+                geo%trg_xdm_c10(:,:) = 0.0d0
+                geo%trg_xdm_vol(:) = 0.0d0
+                geo%trg_xdm_vol0(:) = 0.0d0
+                geo%trg_xdm_pol0(:) = 0.0d0
+                ! first volumes and polarizabilities
+                do i=1,geo%natoms
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%trg_xdm_vol(i), &
+                                                       geo%trg_xdm_vol0(i), geo%trg_xdm_pol0(i)
+                    if( read_stat .ne. 0 ) then
+                        write(buffer,'(A,I3,1X,I3)') 'Unable to read XDM pol entry! XDM line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                    if( ri .ne. i ) then
+                        write(buffer,'(A,I3,1X,I3)') 'Missaligned XDM pol entry! XDM line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                end do
+                ! then dispersion coefficients
+                do i=1,geo%natoms
+                    do j=i,geo%natoms
+                        read(DEV_GEO,*,iostat = read_stat) ri, rj, geo%trg_xdm_c6(i,j), &
+                                                           geo%trg_xdm_c8(i,j), geo%trg_xdm_c10(i,j)
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3,1X,I3)') 'Unable to read XDM Cx entry! XDM line = ',i,j
+                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        end if
+                        if( (ri .ne. i) .or. (rj .ne. j) ) then
+                            write(buffer,'(A,I3,1X,I3)') 'Missaligned XDM Cx entry! XDM line = ',i,j
+                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        end if
+                        if( i .ne. j ) then
+                            geo%trg_xdm_c6(j,i) = geo%trg_xdm_c6(i,j)
+                            geo%trg_xdm_c8(j,i) = geo%trg_xdm_c8(i,j)
+                            geo%trg_xdm_c10(j,i) = geo%trg_xdm_c10(i,j)
+                        end if
+                    end do
+                end do
+                geo%trg_xdm_loaded = .true.
             case('RST')
                 read(DEV_GEO,*,iostat = read_stat) geo%nrst
                 if( read_stat .ne. 0 ) then

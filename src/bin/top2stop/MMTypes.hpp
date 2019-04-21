@@ -75,6 +75,7 @@ public:
     int                 at4;
     std::vector<bool>   defined;
     bool                grbf;
+    double              DihCOffset;
     // cos series
     std::vector<double> v0;
     std::vector<double> phase;
@@ -104,6 +105,12 @@ public:
     int         at2;
     int         at3;
     int         at4;
+};
+
+class CNBPair{
+public:
+    int         at1;
+    int         at2;
 };
 
 //------------------------------------------------------------------------------

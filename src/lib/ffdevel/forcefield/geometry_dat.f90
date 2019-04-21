@@ -72,6 +72,17 @@ type GEOMETRY
     integer                 :: nrst                 ! number of restraints
     type(RESTRAINT),pointer :: rst(:)               ! restraints
     real(DEVDP)             :: rst_energy           ! colvar energy penalty
+    ! supplemental data
+    logical                 :: trg_xdm_loaded       ! all in a.u.
+    real(DEVDP),pointer     :: trg_xdm_c6(:,:)      ! XDM C6 dispersion coefficients
+    real(DEVDP),pointer     :: trg_xdm_c8(:,:)
+    real(DEVDP),pointer     :: trg_xdm_c10(:,:)
+    real(DEVDP),pointer     :: trg_xdm_vol(:)       ! atom volume
+    real(DEVDP),pointer     :: trg_xdm_vol0(:)      ! atom free volume
+    real(DEVDP),pointer     :: trg_xdm_pol0(:)      ! atom free polarizability
+    logical                 :: trg_surf_loaded
+    real(DEVDP),pointer     :: trg_surf_r0(:)       ! atomic radii for molecular surface
+    real(DEVDP),pointer     :: trg_surf_a0(:)       ! atomic surface contribution
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------

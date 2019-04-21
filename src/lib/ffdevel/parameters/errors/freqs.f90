@@ -147,6 +147,7 @@ subroutine ffdev_err_freqs_summary(geo,printsum)
     ! --------------------------------------------
 
     if( .not. geo%trg_freq_loaded ) return
+    if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
         printsum = .true.

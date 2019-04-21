@@ -536,8 +536,17 @@ subroutine change_realms(realm,enable,options,nchanged)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
                 end select
-                params(i)%enabled = lenable
-                nchanged = nchanged + 1
+                if( realmid .eq. REALM_DIH_C ) then
+                    if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
+                        ! do nothing
+                    else
+                        params(i)%enabled = lenable
+                        nchanged = nchanged + 1
+                    end if
+                else
+                    params(i)%enabled = lenable
+                    nchanged = nchanged + 1
+                end if
             end if
         end if
     end do
@@ -694,6 +703,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
         write(DEV_OUT,45) lj2exp6_alpha
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
+        write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
         return
     end if
 
@@ -773,6 +783,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'lock_dihc_pn1', LockDihC_PN1)) then
+        write(DEV_OUT,70) prmfile_onoff(LockDihC_PN1)
+    else
+        write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
+    end if
+
     return
 
  10 format('=== [control] ==================================================================')
@@ -787,6 +803,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
  45  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7,'                (default)')
  60  format ('Use defined dih items (dih_only_defined) = ',a12)
  65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
+ 70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
+ 75  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 

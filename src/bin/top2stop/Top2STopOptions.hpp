@@ -51,6 +51,7 @@ public:
     CSO_OPT(bool,ZeroDihPhase)
     CSO_OPT(CSmallString,Transform)
     CSO_OPT(bool,RebuildNBList)
+    CSO_OPT(double,DihCOffset)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -125,6 +126,15 @@ public:
                 "rebuild",                      /* long option name */
                 NULL,                           /* parametr name */
                 "rebuild NB list from scratch")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(double,                           /* option type */
+                DihCOffset,                        /* option name */
+                0.0,                          /* default value */
+                false,                          /* is option mandatory */
+                'o',                           /* short option name */
+                "offset",                      /* long option name */
+                "NUM",                           /* parametr name */
+                "dih_c offset")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

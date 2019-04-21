@@ -61,6 +61,7 @@ private:
     std::map<int,CDihedralType>         ImproperTypes;
     std::map<int,int>                   NBTypes;
     std::list<CDihedral>                UniqueDihedrals;
+    std::list<CDihedral>                UniqueImpropers;
     std::vector<CDihedralTypeFilter>    DihFilters;
 
     int dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
@@ -79,6 +80,8 @@ private:
     int nimpropers;
     int nimproper_types;
     int nb_size;
+    int nb_sizeij;
+    int nb_size14;
     int nnb_types;
 
     /// load topology
