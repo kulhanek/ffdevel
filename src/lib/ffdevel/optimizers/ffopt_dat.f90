@@ -31,6 +31,7 @@ implicit none
 integer, parameter      :: MINIMIZATION_STEEPEST_DESCENT    = 0
 integer, parameter      :: MINIMIZATION_LBFGS               = 1
 integer, parameter      :: MINIMIZATION_NLOPT               = 2
+integer, parameter      :: MINIMIZATION_SINGLE_POINT        = 3 ! single-point (only internal)
 
 real(DEVDP),allocatable :: FFParams(:)
 real(DEVDP),allocatable :: FFParamsGrd(:)

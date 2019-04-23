@@ -35,6 +35,7 @@ subroutine ffdev_err_dihedrals_init
     EnableDihedralsError           = .false.
     PrintDihedralsErrorSummary     = .false.
     DihedralsErrorWeight           = DEV_D2R
+    OnlyFFOptDihedrals             = .false.
 
 end subroutine ffdev_err_dihedrals_init
 
@@ -48,6 +49,7 @@ subroutine ffdev_err_dihedrals_error(error)
     use ffdev_utils   
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_dihedrals_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -63,23 +65,28 @@ subroutine ffdev_err_dihedrals_error(error)
     ndihedrals = 0
 
     do i=1,nsets
-        do j=1,sets(i)%ngeos
-
-            if( sets(i)%geo(j)%trg_crd_optimized ) then
-                do q=1,sets(i)%top%ndihedrals
-                    ai = sets(i)%top%dihedrals(q)%ai
-                    aj = sets(i)%top%dihedrals(q)%aj
-                    ak = sets(i)%top%dihedrals(q)%ak
-                    al = sets(i)%top%dihedrals(q)%al
-                    d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
-                    dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
-                    ndihedrals = ndihedrals + 1
-                    err = ffdev_geometry_get_dihedral_deviation(d0,dt)  ! this needs values in RAD
-                    err = err * DEV_R2D
-                    ! write(*,*) err
-                    seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
-                end do
+        do q=1,sets(i)%top%ndihedrals
+            if( OnlyFFOptDihedrals ) then
+                if( .not. sets(i)%top%dihedral_types(sets(i)%top%dihedrals(q)%dt)%ffoptactive ) cycle
             end if
+
+            ai = sets(i)%top%dihedrals(q)%ai
+            aj = sets(i)%top%dihedrals(q)%aj
+            ak = sets(i)%top%dihedrals(q)%ak
+            al = sets(i)%top%dihedrals(q)%al
+
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+
+                d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
+                dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
+
+                err = ffdev_geometry_get_dihedral_deviation(d0,dt)  ! this needs values in RAD
+                err = err * DEV_R2D
+
+                seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
+                ndihedrals = ndihedrals + 1
+            end do
         end do
     end do
 
@@ -98,6 +105,7 @@ subroutine ffdev_err_dihedrals_summary(top,geo,printsum)
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
+    use ffdev_err_dihedrals_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -112,7 +120,7 @@ subroutine ffdev_err_dihedrals_summary(top,geo,printsum)
         return
     end if
 
-    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd)
+    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd,OnlyFFOptDihedrals)
 
 end subroutine ffdev_err_dihedrals_summary
 

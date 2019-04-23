@@ -46,6 +46,7 @@ type BOND_TYPE
     integer     :: model    ! bond model type
     real(DEVDP) :: d0       ! equilibrium distance
     real(DEVDP) :: k        ! force constant
+    logical     :: ffoptactive      ! this type is subject of ffopt
 end type BOND_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -62,6 +63,7 @@ type ANGLE_TYPE
     integer     :: model        ! angle model type
     real(DEVDP) :: a0           ! equilibrium angle
     real(DEVDP) :: k            ! force constant
+    logical     :: ffoptactive      ! this type is subject of ffopt
 end type ANGLE_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -85,6 +87,7 @@ type DIHEDRAL_TYPE
     real(DEVDP),pointer :: p(:)             ! grbf - positions
     real(DEVDP),pointer :: w2(:)            ! grbf - widths
     logical,pointer     :: enabled(:)       ! what is enabled, apllicable both to cos and grbf
+    logical             :: ffoptactive      ! this type is subject of ffopt
 end type DIHEDRAL_TYPE
 
 integer,parameter       :: DIH_COS      = 1
@@ -96,6 +99,7 @@ type IMPROPER_TYPE
     integer     :: ti, tj, tk, tl   ! atom types
     real(DEVDP) :: v
     real(DEVDP) :: g
+    logical     :: ffoptactive      ! this type is subject of ffopt
 end type IMPROPER_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -122,6 +126,7 @@ type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! vdW parameters
     real(DEVDP)         :: A, B, C                  ! alternative/complementary data
+    logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------

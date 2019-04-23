@@ -42,6 +42,7 @@ subroutine ffdev_err_dihedrals_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableDihedralsError)
         write(DEV_OUT,135) prmfile_onoff(PrintDihedralsErrorSummary)
         write(DEV_OUT,125) DihedralsErrorWeight
+        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptDihedrals)
         return
     end if
 
@@ -60,6 +61,11 @@ subroutine ffdev_err_dihedrals_ctrl(fin)
     else
         write(DEV_OUT,125) DihedralsErrorWeight
     end if
+    if( prmfile_get_logical_by_key(fin,'onlyffopt', OnlyFFOptDihedrals)) then
+        write(DEV_OUT,140) prmfile_onoff(OnlyFFOptDihedrals)
+    else
+        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptDihedrals)
+    end if
 
  10 format('=== [dihedrals] ================================================================')
 
@@ -69,6 +75,8 @@ subroutine ffdev_err_dihedrals_ctrl(fin)
 135  format ('Print dihedrals error summary (summary)= ',a12,'                  (default)')
 120  format ('Dihedrals error weight (weight)        = ',f21.8)
 125  format ('Dihedrals error weight (weight)        = ',f21.8,'         (default)')
+140  format ('Only FFopt dihedrals (onlyffopt)       = ',a12)
+145  format ('Only FFopt dihedrals (onlyffopt)       = ',a12,'                  (default)')
 
 end subroutine ffdev_err_dihedrals_ctrl
 

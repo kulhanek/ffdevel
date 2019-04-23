@@ -56,9 +56,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     ! load [setup] configuration
     call ffdev_targetset_ctrl_setup(fin)
 
-    ! load [optgeo] configuration
-    call ffdev_targetset_ctrl_optgeo(fin)
-
     ! get number of sets
     nsets = 0
     rst = prmfile_first_section(fin)
@@ -608,6 +605,25 @@ end subroutine ffdev_targetset_ctrl_setup
 ! subroutine ffdev_targetset_ctrl_optgeo
 ! ==============================================================================
 
+subroutine ffdev_targetset_ctrl_optgeo_set_default
+
+    use ffdev_targetset_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    ! setup default parameters
+    GlbOptGeometryEnabled    = .false.   ! force all geometry optimization in each error evaluation
+    GlbOptGeometryDisabled   = .false.   ! disable all geometry optimization in each error evaluation
+    GlbShowOptProgress       = .false.   ! print geometry optimization progress
+    GlbKeepOptGeometry       = .false.   ! keep geometry from previous geometry optimization
+
+end subroutine ffdev_targetset_ctrl_optgeo_set_default
+
+! ==============================================================================
+! subroutine ffdev_targetset_ctrl_optgeo
+! ==============================================================================
+
 subroutine ffdev_targetset_ctrl_optgeo(fin)
 
     use ffdev_targetset_dat
@@ -622,17 +638,23 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'optgeo') ) then
-        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometry)
+        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometryEnabled)
+        write(DEV_OUT,37) prmfile_onoff(GlbOptGeometryDisabled)
         write(DEV_OUT,45) prmfile_onoff(GlbShowOptProgress)
         write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
         return
     end if
 
 
-    if( prmfile_get_logical_by_key(fin,'optgeo', GlbOptGeometry)) then
-        write(DEV_OUT,30) prmfile_onoff(GlbOptGeometry)
+    if( prmfile_get_logical_by_key(fin,'enabled', GlbOptGeometryEnabled)) then
+        write(DEV_OUT,30) prmfile_onoff(GlbOptGeometryEnabled)
     else
-        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometry)
+        write(DEV_OUT,35) prmfile_onoff(GlbOptGeometryEnabled)
+    end if
+    if( prmfile_get_logical_by_key(fin,'disabled', GlbOptGeometryDisabled)) then
+        write(DEV_OUT,36) prmfile_onoff(GlbOptGeometryDisabled)
+    else
+        write(DEV_OUT,37) prmfile_onoff(GlbOptGeometryDisabled)
     end if
     if( prmfile_get_logical_by_key(fin,'optprogress', GlbShowOptProgress)) then
         write(DEV_OUT,40) prmfile_onoff(GlbShowOptProgress)
@@ -647,8 +669,11 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
 
  10 format('=== [optgeo] ===================================================================')
 
- 30  format ('Optimize geometry (optgeo)             = ',a12)
- 35  format ('Optimize geometry (optgeo)             = ',a12,'                  (default)')
+ 30  format ('Force all geo optimization (enabled)   = ',a12)
+ 35  format ('Force all geo optimization (enabled)   = ',a12,'                  (default)')
+
+ 36  format ('Disable all geo optimization (disabled)= ',a12)
+ 37  format ('Disable all geo optimization (disabled)= ',a12,'                  (default)')
 
  40  format ('Show geo opt progress (optprogress)    = ',a12)
  45  format ('Show geo opt progress (optprogress)    = ',a12,'                  (default)')

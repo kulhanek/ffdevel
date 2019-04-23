@@ -54,8 +54,10 @@ logical                 :: DoNotCalcFreqs               = .false.   ! do not cal
 character(len=MAX_PATH) :: SavePointsPath               = 'points'  ! storage for saved points
 
 ! [optgeo] --------------------------------------------------------------------
-logical                 :: GlbOptGeometry       = .false.   ! optimize geometry in each error evaluation
-logical                 :: GlbShowOptProgress   = .false.   ! print geometry optimization progress
-logical                 :: GlbKeepOptGeometry   = .true.    ! keep geometry from previous geometry optimization
+! default values set in ffdev_targetset_ctrl_optgeo_set_default
+logical                 :: GlbOptGeometryEnabled  ! force all geometry optimization in each error evaluation
+logical                 :: GlbOptGeometryDisabled ! disable all geometry optimization in each error evaluation
+logical                 :: GlbShowOptProgress     ! print geometry optimization progress
+logical                 :: GlbKeepOptGeometry     ! keep geometry from previous geometry optimization
 
 end module ffdev_targetset_dat

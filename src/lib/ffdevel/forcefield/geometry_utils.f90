@@ -652,18 +652,21 @@ end subroutine ffdev_geometry_utils_comp_angles
 ! subroutine:  ffdev_geometry_utils_comp_dihedrals
 !===============================================================================
 
-subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2)
+subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
 
     use ffdev_topology
     use ffdev_geometry
+    use ffdev_parameters_dat
 
     implicit none
     logical         :: c12
     type(TOPOLOGY)  :: top
     real(DEVDP)     :: crd1(:,:)
     real(DEVDP)     :: crd2(:,:)
+    logical         :: onlytyped
     ! --------------------------------------------
     integer         :: i, j, ai, aj, ak, al, nb
+    logical         :: found
     real(DEVDP)     :: d1, d2, diff
     real(DEVDP)     :: serr, lerr,aerr,rmse
     ! --------------------------------------------------------------------------
@@ -684,12 +687,18 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2)
     lerr = 0.0d0
     aerr = 0.0d0
     rmse = 0.0d0
+    nb   = 0
 
     do i=1,top%ndihedrals
         ai = top%dihedrals(i)%ai
         aj = top%dihedrals(i)%aj
         ak = top%dihedrals(i)%ak
         al = top%dihedrals(i)%al
+
+        if( onlytyped ) then
+            if( .not. top%dihedral_types(top%dihedrals(i)%dt)%ffoptactive ) cycle
+        end if
+
         d1 = ffdev_geometry_get_dihedral(crd1,ai,aj,ak,al)
         d2 = ffdev_geometry_get_dihedral(crd2,ai,aj,ak,al)
         diff = ffdev_geometry_get_dihedral_deviation(d2,d1)
@@ -706,11 +715,12 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2)
         if( lerr .lt. abs(diff) ) lerr = abs(diff)
         aerr = aerr + abs(diff)
         rmse = rmse + diff**2
+        nb = nb + 1
     end do
 
-    if( top%ndihedrals .gt. 0 ) then
-        aerr = aerr / real(top%ndihedrals)
-        rmse = sqrt(rmse / real(top%ndihedrals))
+    if( nb .gt. 0 ) then
+        aerr = aerr / real(nb)
+        rmse = sqrt(rmse / real(nb))
     end if
 
     write(DEV_OUT,110)
@@ -744,6 +754,10 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2)
     write(DEV_OUT,230)
 
     do i=1,top%ndihedral_types
+
+        if( onlytyped ) then
+            if( .not. top%dihedral_types(i)%ffoptactive ) cycle
+        end if
 
         serr = 100d0
         lerr = 0.0d0

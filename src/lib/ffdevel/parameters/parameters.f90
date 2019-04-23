@@ -1663,6 +1663,25 @@ subroutine ffdev_parameters_to_tops
     integer         :: i,j
     ! --------------------------------------------------------------------------
 
+    ! disable all types in target topologies
+    do i=1,nsets
+        do j=1,sets(i)%top%nbond_types
+            sets(i)%top%bond_types(j)%ffoptactive = .false.
+        end do
+        do j=1,sets(i)%top%nangle_types
+            sets(i)%top%angle_types(j)%ffoptactive = .false.
+        end do
+        do j=1,sets(i)%top%ndihedral_types
+            sets(i)%top%dihedral_types(j)%ffoptactive = .false.
+        end do
+        do j=1,sets(i)%top%nimproper_types
+            sets(i)%top%improper_types(j)%ffoptactive = .false.
+        end do
+        do j=1,sets(i)%top%nnb_types
+            sets(i)%top%nb_types(j)%ffoptactive = .false.
+        end do
+    end do
+
     do i=1,nparams
         select case(params(i)%realm)
             case(REALM_EOFFSET)
@@ -1675,102 +1694,129 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%d0 = params(i)%value
+                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_BOND_K)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%k = params(i)%value
+                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_ANGLE_A0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%a0 = params(i)%value
+                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_ANGLE_K)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%k = params(i)%value
+                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_V)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%v(params(i)%pn) = params(i)%value
+                        ! this must be accumulatiove do to pn
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_C)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%c(params(i)%pn) = params(i)%value
+                        ! this must be accumulatiove do to pn
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_G)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%g(params(i)%pn) = params(i)%value
+                        ! this must be accumulatiove do to pn
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_SCEE)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scee = 1.0d0/params(i)%value
+                        ! this must be accumulatiove do to pn
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_SCNB)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scnb = 1.0d0/params(i)%value
+                        ! this must be accumulatiove do to pn
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_IMPR_V)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%v = params(i)%value
+                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_IMPR_G)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%g = params(i)%value
+                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_EPS)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%eps = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_R0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%r0 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_ALPHA)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%alpha = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_A)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%A = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_B)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%B = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_C)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%C = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do                               
         end select
@@ -2221,13 +2267,22 @@ subroutine ffdev_parameters_run_xdm_stat()
     end if
 
     ! allocate xdm pairs
-    allocate( xdm_pairs(ntypes,ntypes), stat = alloc_stat )
+    allocate( xdm_pairs(ntypes,ntypes), xdm_atoms(ntypes), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,trim('Unable to allocate xdm_pairs'))
+        call ffdev_utils_exit(DEV_OUT,1,trim('Unable to allocate xdm_pairs or xdm_atoms'))
     end if
 
     ! clear data
     do ti=1,ntypes
+        xdm_atoms(ti)%vave = 0.0d0
+        xdm_atoms(ti)%vsig = 0.0d0
+        xdm_atoms(ti)%v0ave = 0.0d0
+        xdm_atoms(ti)%v0sig = 0.0d0
+        xdm_atoms(ti)%p0ave = 0.0d0
+        xdm_atoms(ti)%p0sig = 0.0d0
+        xdm_atoms(ti)%Rvdw  = 0.0d0
+        xdm_atoms(ti)%pol = 0.0d0
+        xdm_atoms(ti)%num = 0
         do tj=1,ntypes
             xdm_pairs(ti,tj)%c6ave = 0.0d0
             xdm_pairs(ti,tj)%c6sig = 0.0d0
@@ -2246,10 +2301,21 @@ subroutine ffdev_parameters_run_xdm_stat()
             if( .not. sets(i)%geo(j)%trg_xdm_loaded ) cycle
 
             do ai=1,sets(i)%geo(j)%natoms
+                ! get types
+                ti = sets(i)%top%atom_types(sets(i)%top%atoms(ai)%typeid)%glbtypeid
+
+                ! accumulate data
+                xdm_atoms(ti)%vave  = xdm_atoms(ti)%vave + sets(i)%geo(j)%trg_xdm_vol(ai)
+                xdm_atoms(ti)%vsig  = xdm_atoms(ti)%vsig + sets(i)%geo(j)%trg_xdm_vol(ai)**2
+                xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave + sets(i)%geo(j)%trg_xdm_vol0(ai)
+                xdm_atoms(ti)%v0sig = xdm_atoms(ti)%v0sig + sets(i)%geo(j)%trg_xdm_vol0(ai)**2
+                xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave + sets(i)%geo(j)%trg_xdm_pol0(ai)
+                xdm_atoms(ti)%p0sig = xdm_atoms(ti)%p0sig + sets(i)%geo(j)%trg_xdm_pol0(ai)**2
+                xdm_atoms(ti)%num   = xdm_atoms(ti)%num + 1
+
                 do aj=ai,sets(i)%geo(j)%natoms
 
                     ! get types
-                    ti = sets(i)%top%atom_types(sets(i)%top%atoms(ai)%typeid)%glbtypeid
                     tj = sets(i)%top%atom_types(sets(i)%top%atoms(aj)%typeid)%glbtypeid
 
                     ! accumulate data
@@ -2276,10 +2342,47 @@ subroutine ffdev_parameters_run_xdm_stat()
         end do
     end do
 
-    ! finish statistics
+    ! finish statistics for dispersion cooeficients
     do ti=1,ntypes
+
+        if( xdm_atoms(ti)%num .gt. 0 ) then
+            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%vsig - xdm_atoms(ti)%vave**2;
+            if( rms .gt. 0.0d0 ) then
+                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
+            else
+                rms = 0.0d0
+            end if
+            xdm_atoms(ti)%vsig = rms
+            xdm_atoms(ti)%vave = xdm_atoms(ti)%vave / real(xdm_atoms(ti)%num)
+
+            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%v0sig - xdm_atoms(ti)%v0ave**2;
+            if( rms .gt. 0.0d0 ) then
+                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
+            else
+                rms = 0.0d0
+            end if
+            xdm_atoms(ti)%v0sig = rms
+            xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave / real(xdm_atoms(ti)%num)
+
+            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%p0sig - xdm_atoms(ti)%p0ave**2;
+            if( rms .gt. 0.0d0 ) then
+                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
+            else
+                rms = 0.0d0
+            end if
+            xdm_atoms(ti)%p0sig = rms
+            xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave / real(xdm_atoms(ti)%num)
+
+            ! final polarizability
+            xdm_atoms(ti)%pol = xdm_atoms(ti)%vave*xdm_atoms(ti)%p0ave / xdm_atoms(ti)%v0ave
+
+            ! rvdw
+            xdm_atoms(ti)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*xdm_atoms(ti)%pol**(1.0d0/7.0d0)
+        end if
+
         do tj=1,ntypes
             if( xdm_pairs(ti,tj)%num .gt. 0 ) then
+
                 rms = xdm_pairs(ti,tj)%num*xdm_pairs(ti,tj)%c6sig - xdm_pairs(ti,tj)%c6ave**2;
                 if( rms .gt. 0.0d0 ) then
                     rms = sqrt(rms) / real(xdm_pairs(ti,tj)%num)
@@ -2310,7 +2413,7 @@ subroutine ffdev_parameters_run_xdm_stat()
         end do
     end do
 
-    ! like atoms
+    ! dispersion data ----------------------------
     write(DEV_OUT,*)
     write(DEV_OUT,20)
     write(DEV_OUT,*)
@@ -2325,13 +2428,43 @@ subroutine ffdev_parameters_run_xdm_stat()
                           xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
                           xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
     end do
+    write(DEV_OUT,40)
+    do ti=1,ntypes
+        do tj=ti+1,ntypes
+            write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
+                              xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
+                              xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
+                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
+        end do
+    end do
+    write(DEV_OUT,40)
+
+    ! atomic data ----------------------------
+    write(DEV_OUT,*)
+    write(DEV_OUT,120)
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,130)
+    write(DEV_OUT,140)
+    do ti=1,ntypes
+        write(DEV_OUT,150) trim(types(ti)%name),xdm_atoms(ti)%num, &
+                          xdm_atoms(ti)%p0ave, xdm_atoms(ti)%p0sig, &
+                          xdm_atoms(ti)%v0ave, xdm_atoms(ti)%v0sig, &
+                          xdm_atoms(ti)%vave, xdm_atoms(ti)%vsig, &
+                          xdm_atoms(ti)%pol, xdm_atoms(ti)%Rvdw
+    end do
 
  10 format('>>> No XDM data available ....')
- 20 format('# Like atoms ...')
 
+ 20 format('# Dispersion coefficients ...')
  30 format('# TypA TypB Number         <C6>        s(C6)         <C8>        s(C8)        <C10>       s(C10)')
  40 format('# ---- ---- ------ ------------ ------------ ------------ ------------ ------------ ------------')
  50 format(2X,A4,1X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
+
+120 format('# Atomic data ...')
+130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol   Rvdw')
+140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------')
+150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,F6.3)
 
 end subroutine ffdev_parameters_run_xdm_stat
 

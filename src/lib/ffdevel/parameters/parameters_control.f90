@@ -243,15 +243,22 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     character(10)               :: key
     ! --------------------------------------------------------------------------
 
-    ! disable all parameter realms
-    call ffdev_parameters_disable_all_realms()
+    nactparms = 0
+    do i=1,nparams
+        if( params(i)%enabled ) nactparms = nactparms + 1
+    end do
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
-    write(DEV_OUT,30) nparams,'disable all (initial setup)'
+
+    write(DEV_OUT,35) nactparms,'(kept active from previous setup)'
 
     if( .not. prmfile_open_section(fin,'parameters') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'No parameters to optimize! No [parameters] section found!')
+        if( nactparms .eq. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,45)
+        end if
+        return
     end if
 
     rst = prmfile_first_line(fin)
@@ -278,13 +285,16 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,40) nactparms
 
-    if( nactparms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'No parameters to optimize!')
+    if( nactparms .eq. 0 ) then
+        write(DEV_OUT,*)
+        write(DEV_OUT,45)
     end if
 
 10 format('=== [parameters] ===============================================================')
 30 format('Altered parameters = ',I3,' | ', A)
+35 format('Active parameters  = ',I3,' | ', A)
 40 format('Number of active parameters = ',I6)
+45 format('>>> WARNING: No active parameters to optimize!')
 
 end subroutine ffdev_parameters_ctrl_realms
 

@@ -89,7 +89,8 @@ subroutine ffdev_targetset_calc_all
     ! optimize geometry
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( (sets(i)%optgeo .or. GlbOptGeometry) .and. sets(i)%geo(j)%trg_crd_loaded ) then
+            if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
+                .and. sets(i)%geo(j)%trg_crd_loaded ) then
                 if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
                     sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
                 end if

@@ -212,6 +212,7 @@ subroutine ffdev_topology_load(top,name)
         if( (top%bond_types(i)%tj .le. 0) .or. (top%bond_types(i)%tj .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [bond_types] section!')
         end if
+        top%bond_types(i)%ffoptactive = .false.
     end do
 
     ! read angles -------------------------------------
@@ -266,6 +267,7 @@ subroutine ffdev_topology_load(top,name)
         if( (top%angle_types(i)%tk .le. 0) .or. (top%angle_types(i)%tk .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [angle_types] section!')
         end if
+        top%angle_types(i)%ffoptactive = .false.
     end do
 
     ! read dihedrals -------------------------------------
@@ -322,6 +324,7 @@ subroutine ffdev_topology_load(top,name)
         top%dihedral_types(i)%p(:) = 0.0d0
         top%dihedral_types(i)%w2(:) = 0.0d0
         top%dihedral_types(i)%enabled(:) = .true.
+        top%dihedral_types(i)%ffoptactive = .false.
     end do
 
     do i=1,top%ndihedral_types
@@ -483,6 +486,8 @@ subroutine ffdev_topology_load(top,name)
         if( (top%improper_types(i)%tl .le. 0) .or. (top%improper_types(i)%tl .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [improper_types] section!')
         end if
+
+        top%improper_types(i)%ffoptactive = .false.
     end do
 
     ! read NB list -------------------------------------
@@ -537,6 +542,7 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_types(i)%tj .le. 0) .or. (top%nb_types(i)%tj .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
+        top%nb_types(i)%ffoptactive = .false.
     end do
 
     ! check if everything was read

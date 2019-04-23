@@ -25,6 +25,7 @@ use ffdev_constants
 logical                 :: EnableDihedralsError
 logical                 :: PrintDihedralsErrorSummary
 real(DEVDP)             :: DihedralsErrorWeight
+logical                 :: OnlyFFOptDihedrals
 
 ! ------------------------------------------------------------------------------
 

@@ -95,8 +95,24 @@ type XDM_PAIR_TYPE
     integer             :: num
 end type XDM_PAIR_TYPE
 
+type XDM_ATOM_TYPE
+    real(DEVDP)         :: vave     ! atom volume
+    real(DEVDP)         :: vsig
+    real(DEVDP)         :: v0ave    ! free atom volume
+    real(DEVDP)         :: v0sig
+    real(DEVDP)         :: p0ave    ! free atom polarizability
+    real(DEVDP)         :: p0sig
+    real(DEVDP)         :: pol      ! atomic polarizability
+    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
+    integer             :: num
+end type XDM_ATOM_TYPE
+
 logical                         :: xdm_data_loaded = .false.
+type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
 type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
+
+! === [xdm] ====================================================================
+real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0  ! FIXME
 
 ! ------------------------------------------------------------------------------
 ! experimental/unfinished setup

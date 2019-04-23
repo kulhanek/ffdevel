@@ -30,12 +30,12 @@ program ffdev_optimize_program
     use ffdev_mmd3_dontrol
 
     implicit none
-    character(len=MAX_PATH)     :: ctrlname      ! input control file name
+    character(len=MAX_PATH)     :: ctrlname     ! input control file name
     type(PRMFILE_TYPE)          :: fin
     type(PRMFILE_TYPE)          :: tmpfin
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
-    integer                     :: i
+    integer                     :: i    
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Optimize')
@@ -97,6 +97,10 @@ program ffdev_optimize_program
     ! finalize topologies in sets
     call ffdev_targetset_init_pts()
 
+    ! reset initial setup
+    call ffdev_targetset_ctrl_optgeo_set_default()
+    call ffdev_parameters_disable_all_realms()
+
     ! do fake input file processing
     rst = prmfile_first_group(fin)
     i = 1
@@ -129,6 +133,16 @@ program ffdev_optimize_program
             i = i + 1
         end if
 
+        if( string .eq. 'FFEVAL' ) then
+            write(DEV_OUT,*)
+            write(string,110) i
+            call ffdev_utils_heading(DEV_OUT,trim(string), ':')
+
+            call execute_ffeval(fin,.false.)
+
+            i = i + 1
+        end if
+
         rst = prmfile_next_group(fin)
     end do
 
@@ -145,6 +159,10 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'Starting real optimization', '!')
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
 
+    ! reset initial setup
+    call ffdev_targetset_ctrl_optgeo_set_default()
+    call ffdev_parameters_disable_all_realms()
+
     ! run XDM stat if data available
     call ffdev_parameters_run_xdm_stat()
 
@@ -152,6 +170,9 @@ program ffdev_optimize_program
     call ffdev_targetset_calc_all()
 
     ! save initial driving data if requested
+    ! FIXME - the geometry cannot be never optimized as default setup
+    ! set in ffdev_targetset_ctrl_optgeo_set_default, see above?
+    ! the only solution is to enable geometry optimization directly for given [set]
     call ffdev_targetset_save_initial_drvs()
 
     ! process optimization programs
@@ -186,6 +207,18 @@ program ffdev_optimize_program
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
             call execute_ffopt(fin,.true.)
+
+            i = i + 1
+        end if
+
+    ! ffevel - single point error evaluation
+
+        if( string .eq. 'FFEVAL' ) then
+            write(DEV_OUT,*)
+            write(string,110) i
+            call ffdev_utils_heading(DEV_OUT,trim(string), ':')
+
+            call execute_ffeval(fin,.true.)
 
             i = i + 1
         end if
@@ -296,6 +329,38 @@ subroutine execute_ffopt(grpin,exec)
     return
 
 end subroutine execute_ffopt
+
+!===============================================================================
+! subroutine:  execute_ffeval
+!===============================================================================
+
+subroutine execute_ffeval(grpin,exec)
+
+    use ffdev_parameters_control
+    use ffdev_ffopt_control
+    use ffdev_ffopt
+
+    implicit none
+    type(PRMFILE_TYPE)  :: grpin
+    logical             :: exec
+    ! --------------------------------------------------------------------------
+
+    ! load setup
+    call ffdev_parameters_ctrl_identities(grpin)
+    call ffdev_parameters_ctrl_realms(grpin)
+    call ffdev_targetset_ctrl_optgeo(grpin)
+
+    if( exec ) then
+        ! print final parameter list
+        call ffdev_parameters_print_parameters()
+
+        ! get single point error
+        call ffdev_ffopt_single_point
+    end if
+
+    return
+
+end subroutine execute_ffeval
 
 !===============================================================================
 ! subroutine:  execute_mmopt

@@ -128,6 +128,56 @@ subroutine ffdev_ffopt_set_default()
 end subroutine ffdev_ffopt_set_default
 
 !===============================================================================
+! subroutine ffdev_ffopt_single_point
+!===============================================================================
+
+subroutine ffdev_ffopt_single_point()
+
+    use ffdev_ffopt_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_utils
+    use ffdev_targetset
+    use ffdev_targetset_dat
+    use ffdev_errors
+
+    implicit none
+    integer             :: alloc_stat, bmethod
+    type(FFERROR_TYPE)  :: error
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'FF Single Point', ':')
+
+    allocate(FFParams(nactparms), FFParamsGrd(nactparms), stat=alloc_stat)
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for FF sp!')
+    end if
+
+    bmethod = OptimizationMethod
+    OptimizationMethod = MINIMIZATION_SINGLE_POINT
+
+    ! get initial parameters
+    call ffdev_parameters_gather(FFParams)
+
+    ! get error
+    call ffdev_parameters_error_only(FFParams,error)
+
+    ! print statistics
+    call ffdev_errors_summary(.true.)
+
+    ! write error
+    write(DEV_OUT,*)
+    call write_header(.true.)
+    call write_results(0,error,0.0d0,0.0d0,.true.)
+
+    deallocate(FFParams,FFParamsGrd)
+
+    OptimizationMethod = bmethod
+
+end subroutine ffdev_ffopt_single_point
+
+!===============================================================================
 ! subroutine ffdev_ffopt_run
 !===============================================================================
 
@@ -573,6 +623,8 @@ subroutine write_header(printmethod)
 
     if( printmethod ) then
         select case(OptimizationMethod)
+            case(MINIMIZATION_SINGLE_POINT)
+                write(DEV_OUT,5)
             case(MINIMIZATION_STEEPEST_DESCENT)
                 write(DEV_OUT,10)
             case(MINIMIZATION_LBFGS)
@@ -590,7 +642,7 @@ subroutine write_header(printmethod)
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,60)
-        case(MINIMIZATION_NLOPT)
+        case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
             write(DEV_OUT,*) 
     end select
 
@@ -600,10 +652,11 @@ subroutine write_header(printmethod)
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,65,ADVANCE='NO')
-        case(MINIMIZATION_NLOPT)
+        case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
             write(DEV_OUT,*) 
     end select    
    
+  5 format('# Mode = Single Point')
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
@@ -643,7 +696,7 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
         select case(OptimizationMethod)
             case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
                 write(DEV_OUT,20) rmsg,maxgrad
-            case(MINIMIZATION_NLOPT)
+            case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
                 write(DEV_OUT,*) 
         end select  
         flush(DEV_OUT)
