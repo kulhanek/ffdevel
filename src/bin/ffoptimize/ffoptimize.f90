@@ -28,6 +28,7 @@ program ffdev_optimize_program
     use ffdev_targetset
     use ffdev_mmd3
     use ffdev_mmd3_dontrol
+    use ffdev_errors
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -100,6 +101,7 @@ program ffdev_optimize_program
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
+    call ffdev_errors_init_all()
 
     ! do fake input file processing
     rst = prmfile_first_group(fin)
@@ -162,6 +164,7 @@ program ffdev_optimize_program
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
+    call ffdev_errors_init_all()
 
     ! run XDM stat if data available
     call ffdev_parameters_run_xdm_stat()
