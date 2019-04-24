@@ -172,7 +172,7 @@ program ffdev_optimize_program
     ! save initial driving data if requested
     ! FIXME - the geometry cannot be never optimized as default setup
     ! set in ffdev_targetset_ctrl_optgeo_set_default, see above?
-    ! the only solution is to enable geometry optimization directly for given [set]
+    ! the only solution is to enable geometry optimization directly for the given [set]
     call ffdev_targetset_save_initial_drvs()
 
     ! process optimization programs
@@ -212,7 +212,6 @@ program ffdev_optimize_program
         end if
 
     ! ffevel - single point error evaluation
-
         if( string .eq. 'FFEVAL' ) then
             write(DEV_OUT,*)
             write(string,110) i
