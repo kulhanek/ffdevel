@@ -139,6 +139,7 @@ integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
 integer                 :: NBCombRules                  = COMB_RULE_LB
 logical                 :: OnlyDefinedDihItems          = .true.
 logical                 :: LockDihC_PN1                 = .true.
+logical                 :: ResetAllSetup                = .false.
 
 ! === [grbf2cos] ===============================================================
 integer                 :: GRBF2COSDPts     = 360           ! level of discretization

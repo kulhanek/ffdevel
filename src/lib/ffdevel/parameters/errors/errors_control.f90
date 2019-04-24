@@ -46,6 +46,8 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_errors_dat
     use ffdev_utils
     use prmfile
+    use ffdev_parameters_dat
+    use ffdev_errors
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -61,16 +63,9 @@ subroutine ffdev_errors_ctrl(fin)
     errors_calc_ene  = .false.
 
     ! reset setup by external request
-    if( prmfile_open_section(fin,'setdefault') ) then
+    if( prmfile_open_section(fin,'setdefault') .or. ResetAllSetup ) then
         ! reset all setup
-        call ffdev_err_energy_init()
-        call ffdev_err_bonds_init()
-        call ffdev_err_angles_init()
-        call ffdev_err_dihedrals_init()
-        call ffdev_err_impropers_init()
-        call ffdev_err_nbdists_init()
-        call ffdev_err_freqs_init()
-        call ffdev_err_rmsd_init()
+        call ffdev_errors_init_all()
     end if
 
     ! read setup

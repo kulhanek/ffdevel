@@ -243,15 +243,20 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     character(10)               :: key
     ! --------------------------------------------------------------------------
 
-    nactparms = 0
-    do i=1,nparams
-        if( params(i)%enabled ) nactparms = nactparms + 1
-    end do
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    write(DEV_OUT,35) nactparms,'(kept active from previous setup)'
+    nactparms = 0
+    if( ResetAllSetup ) then
+        call ffdev_parameters_disable_all_realms()
+        write(DEV_OUT,35) nactparms,'all disabled by default'
+    else
+        do i=1,nparams
+            if( params(i)%enabled ) nactparms = nactparms + 1
+        end do
+        write(DEV_OUT,35) nactparms,'(kept active from the previous setup)'
+    end if
 
     if( .not. prmfile_open_section(fin,'parameters') ) then
         if( nactparms .eq. 0 ) then
@@ -714,6 +719,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,45) lj2exp6_alpha
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
+        write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
         return
     end if
 
@@ -799,6 +805,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'resetallsetup', ResetAllSetup)) then
+        write(DEV_OUT,80) prmfile_onoff(ResetAllSetup)
+    else
+        write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
+    end if
+
     return
 
  10 format('=== [control] ==================================================================')
@@ -815,6 +827,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
  65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
  70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
  75  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12,'                (default)')
+ 80  format ('Reset all setup (resetallsetup)          = ',a12)
+ 85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 

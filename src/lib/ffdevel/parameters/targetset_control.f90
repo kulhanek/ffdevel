@@ -629,6 +629,7 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
     use ffdev_targetset_dat
     use prmfile
     use ffdev_utils
+    use ffdev_parameters_dat
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -637,6 +638,10 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
+    if( ResetAllSetup ) then
+        call ffdev_targetset_ctrl_optgeo_set_default()
+    end if
+
     if( .not. prmfile_open_section(fin,'optgeo') ) then
         write(DEV_OUT,35) prmfile_onoff(GlbOptGeometryEnabled)
         write(DEV_OUT,37) prmfile_onoff(GlbOptGeometryDisabled)
@@ -644,7 +649,6 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
         write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
         return
     end if
-
 
     if( prmfile_get_logical_by_key(fin,'enabled', GlbOptGeometryEnabled)) then
         write(DEV_OUT,30) prmfile_onoff(GlbOptGeometryEnabled)
