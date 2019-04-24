@@ -60,15 +60,18 @@ subroutine ffdev_errors_ctrl(fin)
     errors_calc_grad = .false.
     errors_calc_ene  = .false.
 
-    ! reset all setup
-    call ffdev_err_energy_init()
-    call ffdev_err_bonds_init()
-    call ffdev_err_angles_init()
-    call ffdev_err_dihedrals_init()
-    call ffdev_err_impropers_init()
-    call ffdev_err_nbdists_init()
-    call ffdev_err_freqs_init()
-    call ffdev_err_rmsd_init()
+    ! reset setup by external request
+    if( prmfile_open_section(fin,'setdefault') ) then
+        ! reset all setup
+        call ffdev_err_energy_init()
+        call ffdev_err_bonds_init()
+        call ffdev_err_angles_init()
+        call ffdev_err_dihedrals_init()
+        call ffdev_err_impropers_init()
+        call ffdev_err_nbdists_init()
+        call ffdev_err_freqs_init()
+        call ffdev_err_rmsd_init()
+    end if
 
     ! read setup
     call ffdev_err_energy_ctrl(fin)
