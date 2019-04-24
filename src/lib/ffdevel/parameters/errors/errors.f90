@@ -124,7 +124,6 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_freqs_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
-    use ffdev_err_tdihedrals_dat
 
     implicit none
     ! --------------------------------------------------------------------------
