@@ -112,7 +112,7 @@ program ffdev_gradient_program
         call ffdev_utils_heading(DEV_OUT,'Writing final data','=')
         geo%title = 'calculated by ffgradient from '//trim(topname)//' and '//trim(crdname)
         call ffdev_geometry_info_input(geo)
-        call ffdev_geometry_save_point(geo,crdname)
+        call ffdev_geometry_save_point(geo,crdname,.false.)
     end if
 
     if( do_test ) then

@@ -52,7 +52,7 @@ real(DEVDP), parameter  :: DEV_DT2VDT   = 0.02045482828087295384d0 ! sqrt(pc_cal
 real(DEVDP), parameter  :: DEV_VDT2DT   = 1.0d0 / DEV_DT2VDT
 
 ! hartree -> kcal/mol
-real(DEVDP), parameter  :: DEV_HARTREE2KCL = 627.5059d0
+real(DEVDP), parameter  :: DEV_HARTREE2KCL = 627.50960803059d0
 real(DEVDP), parameter  :: DEV_KCL2HARTREE = 1.0d0 / DEV_HARTREE2KCL
 
 ! kJ/mol -> kcal/mol

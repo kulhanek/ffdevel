@@ -669,7 +669,7 @@ end subroutine ffdev_geometry_load_1point
 ! subroutine ffdev_geometry_save_point
 ! ==============================================================================
 
-subroutine ffdev_geometry_save_point(geo,name)
+subroutine ffdev_geometry_save_point(geo,name,trg)
 
     use ffdev_utils
     use smf_periodic_table_dat
@@ -677,6 +677,7 @@ subroutine ffdev_geometry_save_point(geo,name)
     implicit none
     type(GEOMETRY)      :: geo
     character(*)        :: name
+    logical             :: trg
     ! --------------------------------------------
     integer             :: i,j,k,l,write_stat
     ! --------------------------------------------------------------------------
@@ -696,6 +697,23 @@ subroutine ffdev_geometry_save_point(geo,name)
     write(DEV_GEO,'(A80)',iostat = write_stat) geo%title
     if( write_stat .ne. 0 ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to save title!')
+    end if
+
+    if( trg ) then
+        ! save geometry - mandatory - target coordinates
+        do i=1,geo%natoms
+            write(DEV_GEO,'(A2,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
+                           pt_symbols(geo%z(i)), geo%trg_crd(1,i), geo%trg_crd(2,i), geo%trg_crd(3,i)
+            if( write_stat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with coordinates!')
+            end if
+        end do
+
+        ! close file
+        close(DEV_GEO)
+
+        ! exit
+        return
     end if
 
     ! save geometry - mandatory
@@ -752,6 +770,60 @@ subroutine ffdev_geometry_save_point(geo,name)
     close(DEV_GEO)
 
 end subroutine ffdev_geometry_save_point
+
+! ==============================================================================
+! subroutine ffdev_geometry_save_xyzr
+! ==============================================================================
+
+subroutine ffdev_geometry_save_xyzr(top,geo,name,trg)
+
+    use ffdev_utils
+    use smf_periodic_table_dat
+    use ffdev_topology_dat
+
+    implicit none
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    character(*)        :: name
+    logical             :: trg
+    ! --------------------------------------------
+    integer             :: i,j,ti,write_stat
+    real(DEVDP)         :: rvdw
+    ! --------------------------------------------------------------------------
+
+    ! open file
+    call ffdev_utils_open(DEV_GEO,name,'U')
+
+    do i=1,geo%natoms
+        ! get Rvdw
+        rvdw = 0.0d0
+        ti = top%atoms(i)%typeid
+        do j=1,top%nnb_types
+            if( (top%nb_types(j)%ti .eq. ti) .and. (top%nb_types(j)%tj .eq. ti) ) then
+                rvdw = 0.5d0 * top%nb_types(j)%r0
+                exit
+            end if
+        end do
+
+        if( trg ) then
+            ! target coordinates
+            write(DEV_GEO,'(F12.6,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
+                           geo%trg_crd(1,i), geo%trg_crd(2,i), geo%trg_crd(3,i), rvdw
+        else
+            ! opt coordinates
+            write(DEV_GEO,'(F12.6,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
+                           geo%crd(1,i), geo%crd(2,i), geo%crd(3,i), rvdw
+        end if
+
+        if( write_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with coordinates!')
+        end if
+    end do
+
+    ! close file
+    close(DEV_GEO)
+
+end subroutine ffdev_geometry_save_xyzr
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_load_ginp

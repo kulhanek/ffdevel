@@ -169,6 +169,10 @@ program ffdev_optimize_program
     ! run XDM stat if data available
     call ffdev_parameters_run_xdm_stat()
 
+    ! initialize
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Initialize', ':')
+
     ! calculate initial data
     call ffdev_targetset_calc_all()
 
@@ -246,6 +250,9 @@ program ffdev_optimize_program
     ! (which is not case if numerical gradient of error function is employed)
     call ffdev_parameters_to_tops()
 
+    ! end recalculate sets
+    call ffdev_targetset_calc_all()
+
     ! save topologies if requested
     call ffdev_targetset_save_final_stops()
 
@@ -254,6 +261,7 @@ program ffdev_optimize_program
 
     ! save geometries if requested
     call ffdev_targetset_save_final_pts()
+    call ffdev_targetset_save_final_xyzr()
 
     ! save optimized parameters
     if( len_trim(OutParamFileName) .ne. 0 ) then

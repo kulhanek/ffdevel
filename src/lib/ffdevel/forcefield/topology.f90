@@ -1556,6 +1556,41 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 end subroutine ffdev_topology_switch_nbmode
 
 ! ==============================================================================
+! function ffdev_topology_apply_xdm_parameters
+! ==============================================================================
+
+subroutine ffdev_topology_apply_xdm_parameters(top,xdm_mode)
+
+    use ffdev_utils
+    use ffdev_mmd3
+    use ffdev_parameters_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: xdm_mode
+    ! --------------------------------------------
+    integer         :: i, glbti, glbtj
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nnb_types
+        glbti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
+        glbtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
+
+        select case(xdm_mode)
+            case(XDM_EPS)
+                top%nb_types(i)%eps = xdm_pairs(glbti,glbtj)%eps
+            case(XDM_R0)
+                top%nb_types(i)%r0  = xdm_pairs(glbti,glbtj)%Rvdw
+            case(XDM_C6)
+                top%nb_types(i)%c   = xdm_pairs(glbti,glbtj)%C6ave * DEV_HARTREE2KCL * DEV_AU2A**6
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported xdm_mode in ffdev_topology_apply_xdm_parameters!')
+        end select
+    end do
+
+end subroutine ffdev_topology_apply_xdm_parameters
+
+! ==============================================================================
 ! function ffdev_topology_find_r_for_lj
 ! ==============================================================================
 

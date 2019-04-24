@@ -93,6 +93,8 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c10ave
     real(DEVDP)         :: c10sig
     integer             :: num
+    real(DEVDP)         :: eps      ! LJ eps = C6/Rvdw**6
+    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
 end type XDM_PAIR_TYPE
 
 type XDM_ATOM_TYPE
@@ -103,13 +105,18 @@ type XDM_ATOM_TYPE
     real(DEVDP)         :: p0ave    ! free atom polarizability
     real(DEVDP)         :: p0sig
     real(DEVDP)         :: pol      ! atomic polarizability
-    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
     integer             :: num
+    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
 end type XDM_ATOM_TYPE
 
 logical                         :: xdm_data_loaded = .false.
 type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
 type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
+
+integer,parameter       :: XDM_NONE = 0
+integer,parameter       :: XDM_EPS  = 1
+integer,parameter       :: XDM_R0   = 2
+integer,parameter       :: XDM_C6   = 3
 
 ! === [xdm] ====================================================================
 real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0  ! FIXME
@@ -139,7 +146,7 @@ integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
 integer                 :: NBCombRules                  = COMB_RULE_LB
 logical                 :: OnlyDefinedDihItems          = .true.
 logical                 :: LockDihC_PN1                 = .true.
-logical                 :: ResetAllSetup                = .false.
+logical                 :: ResetAllSetup                = .true.
 
 ! === [grbf2cos] ===============================================================
 integer                 :: GRBF2COSDPts     = 360           ! level of discretization
@@ -173,7 +180,7 @@ real(DEVDP)             :: MaxImprG     =       DEV_PI
 real(DEVDP)             :: MinDihC      =     -50.0d0
 real(DEVDP)             :: MaxDihC      =      50.0d0
 real(DEVDP)             :: MinVdwEps    =       0.0d0
-real(DEVDP)             :: MaxVdwEps    =       0.5d0
+real(DEVDP)             :: MaxVdwEps    =       1.0d0
 real(DEVDP)             :: MinVdwR0     =       0.5d0
 real(DEVDP)             :: MaxVdwR0     =       5.0d0
 real(DEVDP)             :: MinVdwAlpha  =      10.0

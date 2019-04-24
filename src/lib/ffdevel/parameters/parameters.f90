@@ -2244,7 +2244,7 @@ subroutine ffdev_parameters_run_xdm_stat()
 
     implicit none
     integer     :: ti, tj, ai, aj, i, j, num, alloc_stat
-    real(DEVDP) :: c6sum, c8sum, c10sum, rms
+    real(DEVDP) :: c6sum, c8sum, c10sum, rms, pol
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -2380,6 +2380,9 @@ subroutine ffdev_parameters_run_xdm_stat()
             xdm_atoms(ti)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*xdm_atoms(ti)%pol**(1.0d0/7.0d0)
         end if
 
+    end do
+
+    do ti=1,ntypes
         do tj=1,ntypes
             if( xdm_pairs(ti,tj)%num .gt. 0 ) then
 
@@ -2409,6 +2412,17 @@ subroutine ffdev_parameters_run_xdm_stat()
                 end if
                 xdm_pairs(ti,tj)%c10sig = rms
                 xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave / real(xdm_pairs(ti,tj)%num)
+            end if
+
+            ! rvdw
+            pol = 0.5d0 * (xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)
+            xdm_pairs(ti,tj)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*pol**(1.0d0/7.0d0)
+
+            ! eps
+            if( xdm_pairs(ti,tj)%Rvdw .gt. 0 ) then
+                xdm_pairs(ti,tj)%eps = DEV_HARTREE2KCL * DEV_AU2A**6 * xdm_pairs(ti,tj)%c6ave / xdm_pairs(ti,tj)%Rvdw**6
+            else
+                xdm_pairs(ti,tj)%eps = 0.0d0
             end if
         end do
     end do
@@ -2454,6 +2468,28 @@ subroutine ffdev_parameters_run_xdm_stat()
                           xdm_atoms(ti)%pol, xdm_atoms(ti)%Rvdw
     end do
 
+
+    ! LJ data ----------------------------
+    write(DEV_OUT,*)
+    write(DEV_OUT,220)
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,230)
+    write(DEV_OUT,240)
+    do ti=1,ntypes
+        tj = ti
+        write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
+                           xdm_pairs(ti,tj)%Rvdw
+    end do
+    write(DEV_OUT,240)
+    do ti=1,ntypes
+        do tj=ti+1,ntypes
+            write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
+                               xdm_pairs(ti,tj)%Rvdw
+        end do
+    end do
+    write(DEV_OUT,240)
+
  10 format('>>> No XDM data available ....')
 
  20 format('# Dispersion coefficients ...')
@@ -2465,6 +2501,11 @@ subroutine ffdev_parameters_run_xdm_stat()
 130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol   Rvdw')
 140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------')
 150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,F6.3)
+
+220 format('# LJ parameters ...')
+230 format('# TypA TypB        eps         R0')
+240 format('# ---- ---- ---------- ----------')
+250 format(2X,A4,1X,A4,1X,F10.5,1X,F10.5)
 
 end subroutine ffdev_parameters_run_xdm_stat
 

@@ -30,11 +30,11 @@ interface
         integer(4)      :: nprms
     end subroutine nlo_create
 
-    subroutine nlo_set_initial_step(ret,id,v)
+    subroutine nlo_set_initial_step1(ret,id,v)
         integer(4)      :: ret
         integer(8)      :: id
         real(8)         :: v
-    end subroutine nlo_set_initial_step
+    end subroutine nlo_set_initial_step1
 
     subroutine nlo_set_maxeval(ret,id,v)
         integer(4)      :: ret
@@ -123,7 +123,7 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
-    NLOpt_InitialStep   = 0.00001d0
+    NLOpt_InitialStep   = 0.000001d0
 
 end subroutine ffdev_ffopt_set_default
 
@@ -486,7 +486,7 @@ subroutine opt_nlopt
 
     NLoptID = 0
     call nlo_create(NLoptID,NLOpt_Method, nactparms)
-    call nlo_set_initial_step(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
+    call nlo_set_initial_step1(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
     call nlo_set_maxeval(ires, NLoptID, NOptSteps)
     call nlo_set_stopval(ires,NLoptID,real(0.0,DEVDP))
     call nlo_set_ftol_abs(ires, NLoptID, real(MinErrorChange,DEVDP))
@@ -518,6 +518,7 @@ subroutine opt_nlopt
     end if
 
     tmp_xg(:) = FFParams(:)
+
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
     rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
@@ -586,6 +587,7 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     istep = istep + 1
 
     FFParams(:) = x(:)
+
     if( need_gradient .gt. 0 ) then
         call ffdev_parameters_error(FFParams,FFError,FFParamsGrd)
         value = FFError%Total

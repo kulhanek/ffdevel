@@ -37,7 +37,8 @@ type TARGETSET
     integer                     :: mineneid     ! geometry with minimum of energy
     logical                     :: optgeo       ! optimize geometry
     logical                     :: keepoptgeo   ! keep optimized geometry
-    logical                     :: savegeo      ! save optimized geometry
+    logical                     :: savepts      ! save final pst
+    logical                     :: savexyzr     ! save final xyzr
     logical                     :: nofreq       ! do not calculate frequencies when hessian is loaded
     character(len=MAX_PATH)     :: name         ! target name
     logical                     :: isref        ! is reference structure
@@ -49,9 +50,13 @@ integer                     :: nsets    ! number of sets
 type(TARGETSET),allocatable :: sets(:)  ! all training sets
 
 ! [setup] ----------------------------------------------------------------------
-logical                 :: SaveGeometry                 = .false.   
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded
-character(len=MAX_PATH) :: SavePointsPath               = 'points'  ! storage for saved points
+logical                 :: useOptGeometry               = .true.    ! save optimized geometry otherwise use target geometry
+logical                 :: KeepPtsNames                 = .false.
+logical                 :: SavePts                      = .false.
+character(len=MAX_PATH) :: SavePtsPath                  = 'points'  ! storage for saved points
+logical                 :: SaveXYZR                     = .false.
+character(len=MAX_PATH) :: SaveXYZRPath                 = 'xyzr'
 
 ! [optgeo] --------------------------------------------------------------------
 ! default values set in ffdev_targetset_ctrl_optgeo_set_default

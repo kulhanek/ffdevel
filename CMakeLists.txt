@@ -168,8 +168,8 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
     get_filename_component(FCOMP_NAME ${CMAKE_Fortran_COMPILER} NAME_WE)
 
     # default compiler setups - gfortran
-    SET(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native")
-    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all")
+    SET(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow")
 
     # ifort
     IF(FCOMP_NAME STREQUAL ifort)

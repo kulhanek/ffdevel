@@ -224,24 +224,109 @@ subroutine ffdev_targetset_save_final_pts
     character(len=MAX_PATH) :: sname
     ! --------------------------------------------------------------------------
 
-    write(DEV_OUT,10)
+    if( UseOptGeometry ) then
+        write(DEV_OUT,10)
+    else
+        write(DEV_OUT,15)
+    end if
+
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            ! save geometry if requested
-            if( sets(i)%savegeo .and. sets(i)%geo(j)%trg_crd_optimized ) then
-                write(sname,20) i,j
-                sname = trim(SavePointsPath)//'/'//trim(sname)
-                write(DEV_OUT,30) trim(sname)
-                call ffdev_geometry_save_point(sets(i)%geo(j),sname)
+            if( UseOptGeometry ) then
+                ! save geometry if requested - optimized geo
+                if( sets(i)%savepts .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                    if( KeepPtsNames ) then
+                        write(sname,25) trim(sets(i)%geo(j)%name)
+                    else
+                        write(sname,20) i,j
+                    end if
+                    sname = trim(SavePtsPath)//'/'//trim(sname)
+                    write(DEV_OUT,30) trim(sname)
+                    call ffdev_geometry_save_point(sets(i)%geo(j),sname,.false.)
+                end if
+            else
+                ! save geometry if requested - target geo
+                if( sets(i)%savepts .and. sets(i)%geo(j)%trg_crd_loaded ) then
+                    if( KeepPtsNames ) then
+                        write(sname,25) trim(sets(i)%geo(j)%name)
+                    else
+                        write(sname,20) i,j
+                    end if
+
+                    sname = trim(SavePtsPath)//'/'//trim(sname)
+                    write(DEV_OUT,30) trim(sname)
+                    call ffdev_geometry_save_point(sets(i)%geo(j),sname,.true.)
+                end if
             end if
         end do
     end do
 
- 10 format('Saving final point geometries ...')
+ 10 format('Saving final point geometries ... using MM optimized coordinates')
+ 15 format('Saving final point geometries ... using target coordinates')
  20 format('S',I2.2,'P',I6.6,'.pst')
+ 25 format(A)
  30 format(7X,A)
 
 end subroutine ffdev_targetset_save_final_pts
+
+! ==============================================================================
+! subroutine ffdev_targetset_save_final_xyzr
+! ==============================================================================
+
+subroutine ffdev_targetset_save_final_xyzr
+
+    use ffdev_targetset_dat
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    integer                 :: i,j
+    character(len=MAX_PATH) :: sname
+    ! --------------------------------------------------------------------------
+
+    if( UseOptGeometry ) then
+        write(DEV_OUT,10)
+    else
+        write(DEV_OUT,15)
+    end if
+
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( UseOptGeometry ) then
+                ! save geometry if requested - optimized geo
+                if( sets(i)%savexyzr .and. sets(i)%geo(j)%trg_crd_optimized ) then
+                    if( KeepPtsNames ) then
+                        write(sname,25) trim(sets(i)%geo(j)%name)
+                    else
+                        write(sname,20) i,j
+                    end if
+                    sname = trim(SaveXYZRPath)//'/'//trim(sname)
+                    write(DEV_OUT,30) trim(sname)
+                    call ffdev_geometry_save_xyzr(sets(i)%top,sets(i)%geo(j),sname,.false.)
+                end if
+            else
+                ! save geometry if requested - target geo
+                if( sets(i)%savexyzr .and. sets(i)%geo(j)%trg_crd_loaded ) then
+                    if( KeepPtsNames ) then
+                        write(sname,25) trim(sets(i)%geo(j)%name)
+                    else
+                        write(sname,20) i,j
+                    end if
+                    sname = trim(SaveXYZRPath)//'/'//trim(sname)
+                    write(DEV_OUT,30) trim(sname)
+                    call ffdev_geometry_save_xyzr(sets(i)%top,sets(i)%geo(j),sname,.true.)
+                end if
+            end if
+        end do
+    end do
+
+ 10 format('Saving final xyzr geometries ... using MM optimized coordinates')
+ 15 format('Saving final xyzr geometries ... using target coordinates')
+ 20 format('S',I2.2,'P',I6.6,'.xyzr')
+ 25 format(A,'.xyzr')
+ 30 format(7X,A)
+
+end subroutine ffdev_targetset_save_final_xyzr
 
 ! ==============================================================================
 ! subroutine ffdev_targetset_save_initial_drvs

@@ -480,6 +480,10 @@ subroutine change_realms(realm,enable,options,nchanged)
     ! this option is generic  - filter by types
     if( is_realm_option(options,'types') ) then
         ! read types
+        sti = ''
+        stj = ''
+        stk = ''
+        stl = ''
         read(options,*,end=555,err=555) k1, k2, k3, sti, stj, stk, stl
 555     do i=1,ntypes
             if( types(i)%name .eq. sti ) ti = i
@@ -1164,6 +1168,10 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
                 end if
+            case('xdm')
+                if( prmfile_get_field_on_line(fin,string) ) then
+                    call ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
+                end if
             case default
                 ! do nothing
         end select
@@ -1283,6 +1291,66 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip_xdm
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_targetset
+    use ffdev_topology_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    character(PRMFILE_MAX_PATH) :: string
+    logical                     :: exec
+    ! --------------------------------------------
+    integer                     :: i,mode
+    ! --------------------------------------------------------------------------
+
+    mode = XDM_NONE
+    if( trim(string) .eq. 'r0' )  mode = XDM_R0
+    if( trim(string) .eq. 'eps' ) mode = XDM_EPS
+    if( trim(string) .eq. 'c6' )  mode = XDM_C6
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'XDM parameters', '%')
+    write(DEV_OUT,10)  trim(string)
+
+    if( mode .eq. XDM_NONE ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unsupported XDM mode '//trim(string)//'!')
+    end if
+
+    if( .not. exec ) return ! do not execute
+
+    do i=1,nsets
+        write(DEV_OUT,*)
+        write(DEV_OUT,20) i
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,1)
+
+        ! remix parameters
+        call ffdev_topology_apply_xdm_parameters(sets(i)%top,mode)
+
+        ! new set of parameters
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+        call ffdev_topology_info_types(sets(i)%top,2)
+    end do
+
+    ! update nb parameters
+    call ffdev_parameters_reinit_nbparams
+
+10 format('Apply XDM parameters (xdm) = ',A)
+20 format('=== SET ',I2.2)
+
+end subroutine ffdev_parameters_ctrl_nbmanip_xdm
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload

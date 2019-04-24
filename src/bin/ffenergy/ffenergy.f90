@@ -90,7 +90,7 @@ program ffdev_energy_program
         call ffdev_utils_heading(DEV_OUT,'Writing final data','=')
         geo%title = 'calculated by ffenergy from '//trim(topname)//' and '//trim(crdname)
         call ffdev_geometry_info_input(geo)
-        call ffdev_geometry_save_point(geo,crdname)
+        call ffdev_geometry_save_point(geo,crdname,.false.)
     end if
 
     write(DEV_OUT,*)

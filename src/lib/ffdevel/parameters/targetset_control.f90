@@ -232,12 +232,18 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,115) prmfile_onoff(sets(i)%nofreq)
         end if
         
-        sets(i)%savegeo = SaveGeometry
-        if( prmfile_get_logical_by_key(fin,'savegeo', sets(i)%savegeo)) then
-            write(DEV_OUT,80) prmfile_onoff(sets(i)%savegeo)
+        sets(i)%savepts  = SavePts
+        sets(i)%savexyzr = SaveXYZR
+        if( prmfile_get_logical_by_key(fin,'savepts', sets(i)%savepts)) then
+            write(DEV_OUT,80) prmfile_onoff(sets(i)%savepts)
         else
-            write(DEV_OUT,85) prmfile_onoff(sets(i)%savegeo)
-        end if  
+            write(DEV_OUT,85) prmfile_onoff(sets(i)%savepts)
+        end if
+        if( prmfile_get_logical_by_key(fin,'savexyzr', sets(i)%savexyzr)) then
+            write(DEV_OUT,120) prmfile_onoff(sets(i)%savexyzr)
+        else
+            write(DEV_OUT,125) prmfile_onoff(sets(i)%savexyzr)
+        end if
         
         wmode = 'auto'
         if( prmfile_get_string_by_key(fin,'wmode', wmode)) then
@@ -526,8 +532,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
  70 format('Reference sets (references)             = ',A)
  
- 80 format('Save geometry (savegeo)                 = ',a12)
- 85 format('Save geometry (savegeo)                 = ',a12,'                  (default)')   
+ 80 format('Save final point geometry (savepst)     = ',a12)
+ 85 format('Save final point geometry (savepst)     = ',a12,'                  (default)')
+
+120 format('Save final xyzr geometry (savexyzr)     = ',a12)
+125 format('Save final xyzr geometry (savexyzr)     = ',a12,'                  (default)')
  
  90 format('Point weights mode (wmode)              = ',a12)
  95 format('Point weights mode (wmode)              = ',a12,'                  (default)') 
@@ -560,44 +569,92 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'setup') ) then
-        write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
-        write(DEV_OUT,95) SavePointsPath
         write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
+        write(DEV_OUT,135) prmfile_onoff(UseOptGeometry)
+        write(DEV_OUT,145) prmfile_onoff(KeepPtsNames)
+        write(DEV_OUT,85)  prmfile_onoff(SavePts)
+        write(DEV_OUT,95)  SavePtsPath
+        write(DEV_OUT,115) prmfile_onoff(SaveXYZR)
+        write(DEV_OUT,125) SaveXYZRPath
 
-        ! create directory
-        call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
+        ! create directories
+        if( SavePts ) then
+            call execute_command_line('mkdir -p ' // trim(SavePtsPath) )
+        end if
+        if( SaveXYZR ) then
+            call execute_command_line('mkdir -p ' // trim(SaveXYZRPath) )
+        end if
         return
     end if
-    
-    if( prmfile_get_logical_by_key(fin,'savegeo', SaveGeometry)) then
-        write(DEV_OUT,80) prmfile_onoff(SaveGeometry)
-    else
-        write(DEV_OUT,85) prmfile_onoff(SaveGeometry)
-    end if
-    if( prmfile_get_string_by_key(fin,'savepath', SavePointsPath)) then
-        write(DEV_OUT,90) SavePointsPath
-    else
-        write(DEV_OUT,95) SavePointsPath
-    end if
+
     if( prmfile_get_logical_by_key(fin,'nofreqs', DoNotCalcFreqs)) then
         write(DEV_OUT,100) prmfile_onoff(DoNotCalcFreqs)
     else
         write(DEV_OUT,105) prmfile_onoff(DoNotCalcFreqs)
     end if
+    if( prmfile_get_logical_by_key(fin,'useoptgeo', UseOptGeometry)) then
+        write(DEV_OUT,130) prmfile_onoff(UseOptGeometry)
+    else
+        write(DEV_OUT,135) prmfile_onoff(UseOptGeometry)
+    end if
+    if( prmfile_get_logical_by_key(fin,'keepptsnames', KeepPtsNames)) then
+        write(DEV_OUT,140) prmfile_onoff(KeepPtsNames)
+    else
+        write(DEV_OUT,145) prmfile_onoff(KeepPtsNames)
+    end if
+    
+    if( prmfile_get_logical_by_key(fin,'savepts', SavePts)) then
+        write(DEV_OUT,80) prmfile_onoff(SavePts)
+    else
+        write(DEV_OUT,85) prmfile_onoff(SavePts)
+    end if
+    if( prmfile_get_string_by_key(fin,'saveptspath', SavePtsPath)) then
+        write(DEV_OUT,90) SavePtsPath
+    else
+        write(DEV_OUT,95) SavePtsPath
+    end if
 
-    ! create directory
-    call execute_command_line('mkdir -p ' // trim(SavePointsPath) )
+    if( prmfile_get_logical_by_key(fin,'savexyzr', SaveXYZR)) then
+        write(DEV_OUT,80) prmfile_onoff(SaveXYZR)
+    else
+        write(DEV_OUT,85) prmfile_onoff(SaveXYZR)
+    end if
+    if( prmfile_get_string_by_key(fin,'savexyzpath', SaveXYZRPath)) then
+        write(DEV_OUT,90) SaveXYZRPath
+    else
+        write(DEV_OUT,95) SaveXYZRPath
+    end if
+
+    ! create directories
+    if( SavePts ) then
+        call execute_command_line('mkdir -p ' // trim(SavePtsPath) )
+    end if
+    if( SaveXYZR ) then
+        call execute_command_line('mkdir -p ' // trim(SaveXYZRPath) )
+    end if
       
  10 format('=== [setup] ====================================================================')
- 
- 80  format ('Save geometry (savegeo)                = ',a12)
- 85  format ('Save geometry (savegeo)                = ',a12,'                  (default)')
-
- 90  format ('Save geometry path (savepath)          = ',a25)
- 95  format ('Save geometry path (savepath)          = ',a25,'     (default)')
 
 100  format ('Do not calculate frequencies (nofreqs) = ',a12)
 105  format ('Do not calculate frequencies (nofreqs) = ',a12,'                  (default)')
+
+130  format ('Use optimized geometry (useoptgeo)     = ',a12)
+135  format ('Use optimized geometry (useoptgeo)     = ',a12,'                  (default)')
+
+140  format ('Keep point names (keepptsnames)        = ',a12)
+145  format ('Keep point names (keepptsnames)        = ',a12,'                  (default)')
+
+ 80  format ('Save geometry as points (savepts)      = ',a12)
+ 85  format ('Save geometry as points (savepts)      = ',a12,'                  (default)')
+
+ 90  format ('Save points path (saveptspath)         = ',a25)
+ 95  format ('Save points path (savepstpath)         = ',a25,'     (default)')
+
+110  format ('Save geometry as xyzr (savexyzr)       = ',a12)
+115  format ('Save geometry as xyzr (savexyzr)       = ',a12,'                  (default)')
+
+120  format ('Save xyzr path (savexyzrpath)          = ',a25)
+125  format ('Save xyzr path (savexyzrpath)          = ',a25,'     (default)')
   
 end subroutine ffdev_targetset_ctrl_setup
 
