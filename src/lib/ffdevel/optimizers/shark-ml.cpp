@@ -1,5 +1,6 @@
 #include <shark-ml.hpp>
 #include <memory>
+#include <chrono>
 #include <shark/Algorithms/DirectSearch/CMA.h>
 
 using namespace shark;
@@ -12,6 +13,7 @@ int                 NumOfParams;
 shared_ptr<CMA>     CMAOpt;
 COptSharkFce        OptSharkFce;
 shared_ptr<double>  tmp_x;
+std::mt19937        RnG;
 
 // -----------------------------------------------------------------------------
 
@@ -23,12 +25,19 @@ extern "C" void shark_create_(int* nactparms,int* method,double* initial_step,in
             params(i) = initial_params[i];
     }
     tmp_x = shared_ptr<double>(new double[NumOfParams]);
+    if( *rngseed == 0 ) {
+        unsigned seed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
+        RnG.seed(seed);
+    } else {
+        // setup RNG
+        RnG.seed(*rngseed);
+    }
 
     // currently only CMA is supported
     OptMethod = *method;
     switch(OptMethod){
         case SHARK_CMA_ES:
-            CMAOpt = shared_ptr<CMA>(new CMA());
+            CMAOpt = shared_ptr<CMA>(new CMA(RnG));
             CMAOpt->setInitialSigma(*initial_step);
             CMAOpt->init(OptSharkFce,params);
             break;

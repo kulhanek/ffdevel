@@ -84,6 +84,26 @@ interface
         integer(8)      :: id
     end subroutine nlo_destroy
 
+    ! shark interfaces
+    subroutine shark_create(nactparms,method,initial_step,rngseed,initial_params)
+        integer(4)      :: nactparms
+        integer(4)      :: method
+        real(8)         :: initial_step
+        integer(4)      :: rngseed
+        real(8)         :: initial_params(*)
+    end subroutine shark_create
+
+    subroutine shark_dostep(error)
+        real(8)         :: error
+    end subroutine shark_dostep
+
+    subroutine shark_getsol(params)
+        real(8)         :: params(*)
+    end subroutine shark_getsol
+
+    subroutine shark_destroy()
+    end subroutine shark_destroy
+
 end interface
 
 contains
@@ -128,7 +148,7 @@ subroutine ffdev_ffopt_set_default()
 ! === [Shark] ==================================================================
     Shark_Method        = SHARK_CMA_ES
     Shark_InitialStep   = 0.001d0
-    Shark_RngSeed       = 74857554
+    Shark_RngSeed       = 5489
     Shark_EnableBoxing  = .true.
 
 end subroutine ffdev_ffopt_set_default
@@ -663,7 +683,15 @@ subroutine opt_shark
 
     call shark_create(nactparms,Shark_Method,Shark_InitialStep,Shark_RngSeed,tmp_xg)
 
+    ! initial error
+    call ffdev_parameters_error_only(FFParams,FFError)
+
+    istep = 0
+
     write(DEV_OUT,10)
+    call write_header(.false.)
+    call write_results(istep,FFError,0.0d0,0.0d0,.true.)
+
     write(DEV_OUT,*)
     write(DEV_OUT,20)
     write(DEV_OUT,30)

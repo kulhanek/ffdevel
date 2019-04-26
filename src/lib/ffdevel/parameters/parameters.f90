@@ -1845,50 +1845,69 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        select case(params(i)%realm)
-            case(REALM_EOFFSET)
-                tmpx(id) = MinOffset
-            case(REALM_BOND_D0)
-                tmpx(id) = MinBondD0
-            case(REALM_BOND_K)
-                tmpx(id) = MinBondK
-            case(REALM_ANGLE_A0)
-                tmpx(id) = MinAngleA0
-            case(REALM_ANGLE_K)
-                tmpx(id) = MinAngleK
-            case(REALM_DIH_V)
-                tmpx(id) = MinDihV
-            case(REALM_DIH_C)
-                tmpx(id) = MinDihC
-            case(REALM_DIH_G)
-                tmpx(id) = MinDihG
-            case(REALM_DIH_SCEE)
-                tmpx(id) = MinDihSCEE
-            case(REALM_DIH_SCNB)
-                tmpx(id) = MinDihSCNB
-            case(REALM_IMPR_V)
-                tmpx(id) = MinImprV
-            case(REALM_IMPR_G)
-                tmpx(id) = MinImprG
-            case(REALM_VDW_EPS)
-                tmpx(id) = MinVdwEps
-            case(REALM_VDW_R0)
-                tmpx(id) = MinVdwR0
-            case(REALM_VDW_ALPHA)
-                tmpx(id) = MinVdwAlpha
-            case(REALM_VDW_A)
-                tmpx(id) = MinVdwA
-            case(REALM_VDW_B)
-                tmpx(id) = MinVdwB
-            case(REALM_VDW_C)
-                tmpx(id) = MinVdwC
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
-        end select
+        tmpx(id) = ffdev_params_get_lower_bound(params(i)%realm)
     end do
     if( id .ne. nactparms ) stop ! safety fuse
 
 end subroutine ffdev_params_get_lower_bounds
+
+! ==============================================================================
+! subroutine ffdev_params_get_lower_bound
+! ==============================================================================
+
+real(DEVDP) function ffdev_params_get_lower_bound(realm)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: realm
+    ! --------------------------------------------
+    integer     :: i, id
+    ! --------------------------------------------------------------------------
+
+    select case(realm)
+        case(REALM_EOFFSET)
+            ffdev_params_get_lower_bound = MinOffset
+        case(REALM_BOND_D0)
+            ffdev_params_get_lower_bound = MinBondD0
+        case(REALM_BOND_K)
+            ffdev_params_get_lower_bound = MinBondK
+        case(REALM_ANGLE_A0)
+            ffdev_params_get_lower_bound = MinAngleA0
+        case(REALM_ANGLE_K)
+            ffdev_params_get_lower_bound = MinAngleK
+        case(REALM_DIH_V)
+            ffdev_params_get_lower_bound = MinDihV
+        case(REALM_DIH_C)
+            ffdev_params_get_lower_bound = MinDihC
+        case(REALM_DIH_G)
+            ffdev_params_get_lower_bound = MinDihG
+        case(REALM_DIH_SCEE)
+            ffdev_params_get_lower_bound = MinDihSCEE
+        case(REALM_DIH_SCNB)
+            ffdev_params_get_lower_bound = MinDihSCNB
+        case(REALM_IMPR_V)
+            ffdev_params_get_lower_bound = MinImprV
+        case(REALM_IMPR_G)
+            ffdev_params_get_lower_bound = MinImprG
+        case(REALM_VDW_EPS)
+            ffdev_params_get_lower_bound = MinVdwEps
+        case(REALM_VDW_R0)
+            ffdev_params_get_lower_bound = MinVdwR0
+        case(REALM_VDW_ALPHA)
+            ffdev_params_get_lower_bound = MinVdwAlpha
+        case(REALM_VDW_A)
+            ffdev_params_get_lower_bound = MinVdwA
+        case(REALM_VDW_B)
+            ffdev_params_get_lower_bound = MinVdwB
+        case(REALM_VDW_C)
+            ffdev_params_get_lower_bound = MinVdwC
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
+    end select
+
+end function ffdev_params_get_lower_bound
 
 ! ==============================================================================
 ! subroutine ffdev_params_get_upper_bounds
@@ -1911,50 +1930,67 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        select case(params(i)%realm)
-            case(REALM_EOFFSET)
-                tmpx(id) = MaxOffset
-            case(REALM_BOND_D0)
-                tmpx(id) = MaxBondD0
-            case(REALM_BOND_K)
-                tmpx(id) = MaxBondK
-            case(REALM_ANGLE_A0)
-                tmpx(id) = MaxAngleA0
-            case(REALM_ANGLE_K)
-                tmpx(id) = MaxAngleK
-            case(REALM_DIH_V)
-                tmpx(id) = MaxDihV
-            case(REALM_DIH_C)
-                tmpx(id) = MaxDihC
-            case(REALM_DIH_G)
-                tmpx(id) = MaxDihG
-            case(REALM_DIH_SCEE)
-                tmpx(id) = MaxDihSCEE
-            case(REALM_DIH_SCNB)
-                tmpx(id) = MaxDihSCNB
-            case(REALM_IMPR_V)
-                tmpx(id) = MaxImprV
-            case(REALM_IMPR_G)
-                tmpx(id) = MaxImprG
-            case(REALM_VDW_EPS)
-                tmpx(id) = MaxVdwEps
-            case(REALM_VDW_R0)
-                tmpx(id) = MaxVdwR0
-            case(REALM_VDW_ALPHA)
-                tmpx(id) = MaxVdwAlpha
-            case(REALM_VDW_A)
-                tmpx(id) = MaxVdwA
-            case(REALM_VDW_B)
-                tmpx(id) = MaxVdwB
-            case(REALM_VDW_C)
-                tmpx(id) = MaxVdwC
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
-        end select
+        tmpx(id) = ffdev_params_get_upper_bound(params(i)%realm)
     end do
     if( id .ne. nactparms ) stop ! safety fuse
 
 end subroutine ffdev_params_get_upper_bounds
+
+! ==============================================================================
+! subroutine ffdev_params_get_upper_bound
+! ==============================================================================
+
+real(DEVDP) function ffdev_params_get_upper_bound(realm)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: realm
+    ! --------------------------------------------------------------------------
+
+    select case(realm)
+        case(REALM_EOFFSET)
+            ffdev_params_get_upper_bound = MaxOffset
+        case(REALM_BOND_D0)
+            ffdev_params_get_upper_bound = MaxBondD0
+        case(REALM_BOND_K)
+            ffdev_params_get_upper_bound = MaxBondK
+        case(REALM_ANGLE_A0)
+            ffdev_params_get_upper_bound = MaxAngleA0
+        case(REALM_ANGLE_K)
+            ffdev_params_get_upper_bound = MaxAngleK
+        case(REALM_DIH_V)
+            ffdev_params_get_upper_bound = MaxDihV
+        case(REALM_DIH_C)
+            ffdev_params_get_upper_bound = MaxDihC
+        case(REALM_DIH_G)
+            ffdev_params_get_upper_bound = MaxDihG
+        case(REALM_DIH_SCEE)
+            ffdev_params_get_upper_bound = MaxDihSCEE
+        case(REALM_DIH_SCNB)
+            ffdev_params_get_upper_bound = MaxDihSCNB
+        case(REALM_IMPR_V)
+            ffdev_params_get_upper_bound = MaxImprV
+        case(REALM_IMPR_G)
+            ffdev_params_get_upper_bound = MaxImprG
+        case(REALM_VDW_EPS)
+            ffdev_params_get_upper_bound = MaxVdwEps
+        case(REALM_VDW_R0)
+            ffdev_params_get_upper_bound = MaxVdwR0
+        case(REALM_VDW_ALPHA)
+            ffdev_params_get_upper_bound = MaxVdwAlpha
+        case(REALM_VDW_A)
+            ffdev_params_get_upper_bound = MaxVdwA
+        case(REALM_VDW_B)
+            ffdev_params_get_upper_bound = MaxVdwB
+        case(REALM_VDW_C)
+            ffdev_params_get_upper_bound = MaxVdwC
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
+    end select
+
+end function ffdev_params_get_upper_bound
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set

@@ -977,11 +977,15 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_nbmanip(fin,exec)
             case('nbload')
                 call ffdev_parameters_ctrl_nbload(fin,exec)
+            case('randomize')
+                call ffdev_parameters_ctrl_randomize(fin,exec)
         end select
 
         rst = prmfile_next_section(fin)
     end do
 
+    ! print final parameters
+    call ffdev_parameters_print_parameters()
 
 end subroutine ffdev_parameters_ctrl_ffmanip
 
@@ -1051,6 +1055,8 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
             end if
         end do
     end if
+
+    call ffdev_parameters_to_tops
 
  10 format(/,'> Init mode = lowest')
  20 format(/,'> Init mode = average')
@@ -1124,6 +1130,8 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
         end do
     end if
 
+    call ffdev_parameters_to_tops
+
  10 format(/,'> Init mode = lowest')
  20 format(/,'> Init mode = average')
  25 format(/,'> Init mode = average  [default]')
@@ -1191,6 +1199,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
     use ffdev_parameters
     use ffdev_parameters_dat
     use ffdev_targetset_dat
+    use ffdev_targetset
     use ffdev_topology_dat
     use prmfile
     use ffdev_utils
@@ -1211,20 +1220,27 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
     if( .not. exec ) return ! do not execute
 
     do i=1,nsets
-        write(DEV_OUT,*)
-        write(DEV_OUT,20) i
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,1)
+        if( DebugFFManip ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,1)
+        end if
 
         ! remix parameters
         call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
 
-        ! new set of parameters
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,2)
+        if( DebugFFManip ) then
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end if
     end do
+
+    ! update nb parameters
+    call ffdev_parameters_reinit_nbparams
 
 10 format('Combination rules (comb_rules)   = ',A)
 20 format('=== SET ',I2.2)
@@ -1266,20 +1282,24 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     end if
 
     do i=1,nsets
-        write(DEV_OUT,*)
-        write(DEV_OUT,20) i
+        if( DebugFFManip ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
 
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,1)
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,1)
+        end if
 
         ! remix parameters
         call ffdev_topology_switch_nbmode(sets(i)%top,nb_mode)
 
-        ! new set of parameters
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,2)
+        if( DebugFFManip ) then
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end if
     end do
 
     LastNBMode = nb_mode
@@ -1329,19 +1349,23 @@ subroutine ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
     if( .not. exec ) return ! do not execute
 
     do i=1,nsets
-        write(DEV_OUT,*)
-        write(DEV_OUT,20) i
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,1)
+        if( DebugFFManip ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,1)
+        end if
 
         ! remix parameters
         call ffdev_topology_apply_xdm_parameters(sets(i)%top,mode)
 
-        ! new set of parameters
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,2)
+        if( DebugFFManip ) then
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end if
     end do
 
     ! update nb parameters
@@ -1351,6 +1375,59 @@ subroutine ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_xdm
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_randomize
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_randomize(fin,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    logical             :: exec
+    ! --------------------------------------------
+    integer             :: seed, i
+    real(DEVDP)         :: rnd
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( prmfile_get_integer_by_key(fin,'seed', seed)) then
+        write(DEV_OUT,20) seed
+    else
+        write(DEV_OUT,25) seed
+    end if
+
+    if( .not. exec ) return
+
+    ! randomize active parameters
+    call random_seed(seed)
+
+    do i=1,nparams
+        if( .not. params(i)%enabled ) cycle
+        call random_number(rnd)
+        params(i)%value = ffdev_params_get_lower_bound(params(i)%realm) + &
+                          (ffdev_params_get_upper_bound(params(i)%realm) - ffdev_params_get_lower_bound(params(i)%realm))*rnd
+    end do
+
+    call ffdev_parameters_to_tops
+
+    if( DebugFFManip ) then
+        call ffdev_parameters_print_parameters()
+    end if
+
+10 format('=== [randomize] ================================================================')
+20  format ('Random number generator seed (seed)    = ',I12)
+25  format ('Random number generator seed (seed)    = ',I12,'                  (default)')
+
+end subroutine ffdev_parameters_ctrl_randomize
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload
@@ -1446,15 +1523,17 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 
     if( .not. exec ) return
 
-! print updated parameters
-    do i=1,nsets
-        write(DEV_OUT,*)
-        write(DEV_OUT,20) i
-        ! new set of parameters
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-        call ffdev_topology_info_types(sets(i)%top,2)
-    end do
+    if( DebugFFManip ) then
+    ! print updated parameters
+        do i=1,nsets
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end do
+    end if
 
 ! update nb parameters
     call ffdev_parameters_reinit_nbparams

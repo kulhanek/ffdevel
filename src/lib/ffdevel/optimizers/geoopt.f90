@@ -24,6 +24,42 @@ implicit none
 contains
 
 !===============================================================================
+! subroutine ffdev_geoopt_set_default
+!===============================================================================
+
+subroutine ffdev_geoopt_set_default()
+
+    use ffdev_geoopt_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+! === [minimize] ===============================================================
+    OptimizationMethod  = MINIMIZATION_LBFGS
+    NOptSteps           =  5000      ! max number of steps
+    OutSamples          =    20      ! how often write results
+    TrajSamples         =   100
+
+! maximum number of steps is nsteps - this is becuase of change of restraints etc
+    MaxRMSG             = 0.001d0
+    MaxG                = 0.001d0
+    MinEnergyChange     = -1        ! if negative number - this test is switched off
+    PrintFinalGradient  = .false.
+    PrintRSTSummary     = .true.
+
+! === [steepest-descent] =======================================================
+    InitialStepSize     = 0.001
+    MaximalStepSize     = 0.010
+    AcceptRatio         = 1.2000
+    RejectRatio         = 0.5000
+    AdaptiveStep        = .true.
+
+! === [L-BFGS] =================================================================
+    NumberOfCorrections = 50
+
+end subroutine ffdev_geoopt_set_default
+
+!===============================================================================
 ! subroutine ffdev_geoopt_run
 !===============================================================================
 

@@ -30,6 +30,7 @@ contains
 subroutine ffdev_geoopt_ctrl_minimize(fin)
 
     use ffdev_geoopt_dat
+    use ffdev_geoopt
     use prmfile
     use ffdev_utils
 
@@ -38,6 +39,8 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     ! --------------------------------------------
     character(80)       :: string
     ! --------------------------------------------------------------------------
+
+    call ffdev_geoopt_set_default
 
     write(DEV_OUT,'(/,a)') '=== [minimize] ================================================================='
 

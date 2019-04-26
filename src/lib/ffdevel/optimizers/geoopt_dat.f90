@@ -35,27 +35,27 @@ character(len=MAX_PATH) :: OptRstName  = 'final.xyz'    ! final coordinates name
 character(len=MAX_PATH) :: OptTrajName = 'traj.xyz'     ! trajectory name
 
 ! === [minimization] ===========================================================
-integer         :: OptimizationMethod  = MINIMIZATION_LBFGS
-integer         :: NOptSteps    = 5000      ! max number of steps
-integer         :: OutSamples   =   20      ! how often write results
-integer         :: TrajSamples  =  100      ! how often write trajectory
+integer         :: OptimizationMethod
+integer         :: NOptSteps                ! max number of steps
+integer         :: OutSamples               ! how often write results
+integer         :: TrajSamples              ! how often write trajectory
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc 
-real(DEVDP)     :: MaxRMSG             = 0.001d0
-real(DEVDP)     :: MaxG                = 0.001d0
-real(DEVDP)     :: MinEnergyChange     = -1        ! negative number - this test is switched off by default
-logical         :: PrintFinalGradient  = .false.
-logical         :: PrintRSTSummary     = .true.
+real(DEVDP)     :: MaxRMSG
+real(DEVDP)     :: MaxG
+real(DEVDP)     :: MinEnergyChange          ! negative number - this test is switched off by default
+logical         :: PrintFinalGradient
+logical         :: PrintRSTSummary
 
 ! === [steepest-descent] =======================================================
-real(DEVDP)     :: InitialStepSize     = 0.001
-real(DEVDP)     :: MaximalStepSize     = 0.010
-real(DEVDP)     :: AcceptRatio         = 1.2000
-real(DEVDP)     :: RejectRatio         = 0.5000
-logical         :: AdaptiveStep        = .true.
+real(DEVDP)     :: InitialStepSize
+real(DEVDP)     :: MaximalStepSize
+real(DEVDP)     :: AcceptRatio
+real(DEVDP)     :: RejectRatio
+logical         :: AdaptiveStep
 
 ! === [L-BFGS] =================================================================
-integer         :: NumberOfCorrections = 50
+integer         :: NumberOfCorrections
 
 !-------------------------------------------------------------------------------
 type(XYZFILE_TYPE)  :: OptTrajFile
