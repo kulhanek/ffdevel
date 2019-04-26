@@ -112,6 +112,8 @@ src/lib/ffdevel/optimizers/ffopt_dat.f90
 src/lib/ffdevel/optimizers/geoopt.f90
 src/lib/ffdevel/optimizers/geoopt_control.f90
 src/lib/ffdevel/optimizers/geoopt_dat.f90
+src/lib/ffdevel/optimizers/shark-ml.cpp
+src/lib/ffdevel/optimizers/shark-ml.hpp
 src/lib/ffdevel/parameters/errors/angles.f90
 src/lib/ffdevel/parameters/errors/angles_control.f90
 src/lib/ffdevel/parameters/errors/angles_dat.f90

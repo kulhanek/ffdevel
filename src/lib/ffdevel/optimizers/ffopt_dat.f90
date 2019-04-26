@@ -28,10 +28,11 @@ implicit none
 
 ! ------------------------------------------------------------------------------
 ! minimization methods
-integer, parameter      :: MINIMIZATION_STEEPEST_DESCENT    = 0
-integer, parameter      :: MINIMIZATION_LBFGS               = 1
-integer, parameter      :: MINIMIZATION_NLOPT               = 2
-integer, parameter      :: MINIMIZATION_SINGLE_POINT        = 3 ! single-point (only internal)
+integer, parameter      :: MINIMIZATION_SINGLE_POINT        = -1 ! single-point (only internal)
+integer, parameter      :: MINIMIZATION_STEEPEST_DESCENT    =  0
+integer, parameter      :: MINIMIZATION_LBFGS               =  1
+integer, parameter      :: MINIMIZATION_NLOPT               =  2
+integer, parameter      :: MINIMIZATION_SHARK               =  3
 
 real(DEVDP),allocatable :: FFParams(:)
 real(DEVDP),allocatable :: FFParamsGrd(:)
@@ -60,6 +61,20 @@ integer         :: NumberOfCorrections
 ! === [NLOPT] ==================================================================
 integer(8)      :: NLoptID
 integer         :: NLOpt_Method
-real(DEVDP)     :: NLOpt_InitialStep        ! nlo_set_initial_step
+real(DEVDP)     :: NLOpt_InitialStep
+
+! === [Shark] ==================================================================
+integer         :: Shark_Method
+real(DEVDP)     :: Shark_InitialStep
+integer         :: Shark_RngSeed
+logical         :: Shark_EnableBoxing
+
+! ------------------------------------------------------------------------------
+integer, parameter      :: SHARK_CMA_ES = 1     ! CMA-ES
+
+! ------------------------------------------------------------------------------
+! working directories
+integer                 :: FFOptFceEvals
+real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
 
 end module ffdev_ffopt_dat

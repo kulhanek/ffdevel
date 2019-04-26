@@ -106,9 +106,9 @@ subroutine ffdev_ffopt_set_default()
     OutSamples          =    20      ! how often write results
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
-    MaxRMSG             = 0.00001d0
-    MaxG                = 0.00001d0
-    MinErrorChange      = -1        ! if negative number - this test is switched off
+    MaxRMSG             = 0.001d0
+    MaxG                = 0.001d0
+    MinErrorChange      = 0.0000001d0   ! if negative number - this test is switched off
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================
@@ -123,7 +123,13 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
-    NLOpt_InitialStep   = 0.000001d0
+    NLOpt_InitialStep   = 0.001d0
+
+! === [Shark] ==================================================================
+    Shark_Method        = SHARK_CMA_ES
+    Shark_InitialStep   = 0.001d0
+    Shark_RngSeed       = 74857554
+    Shark_EnableBoxing  = .true.
 
 end subroutine ffdev_ffopt_set_default
 
@@ -216,15 +222,21 @@ subroutine ffdev_ffopt_run()
     call ffdev_utils_heading(DEV_OUT,'Optimization',':')
     write(DEV_OUT,1)
 
-    call write_header(.true.)
+    FFOptFceEvals = 0
 
     select case(OptimizationMethod)
         case(MINIMIZATION_STEEPEST_DESCENT)
+            call write_header(.true.)
             call opt_steepest_descent
         case(MINIMIZATION_LBFGS)
+            call write_header(.true.)
             call opt_lbfgs
         case(MINIMIZATION_NLOPT)
+            call write_header(.true.)
             call opt_nlopt
+        case(MINIMIZATION_SHARK)
+            ! it has own header
+            call opt_shark
     end select
 
     ! return finial statistics
@@ -280,7 +292,7 @@ subroutine opt_steepest_descent()
         rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
 
         if( istep .ne. 1 .and. abs(FFError%total - lasterror) .le. MinErrorChange ) then
-            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change      : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change     : ', abs(FFError%total - lasterror)
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change treshold : ', MinErrorChange
             write(DEV_OUT,'(a,/)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
             exit
@@ -350,6 +362,7 @@ subroutine opt_steepest_descent()
     if( PrintFinalGradient ) then
         write(DEV_OUT,*)
         call ffdev_utils_heading(DEV_OUT,'Final gradient', '-')
+        call ffdev_ffopt_print_prms_grad()
     end if
 
 end subroutine opt_steepest_descent
@@ -371,7 +384,6 @@ subroutine opt_lbfgs
     real(DEVDP)             :: rmsg, maxgrad, lasterror, eps, xtol
     integer                 :: iprint(2),iflag
     real(DEVDP),allocatable :: work(:)
-    real(DEVDP),allocatable :: tmp_xg(:)
     ! --------------------------------------------------------------------------
 
     ! init required variables ====================
@@ -403,7 +415,7 @@ subroutine opt_lbfgs
 
         if( istep .ne. 1 .and. abs(FFError%total - lasterror) .le. MinErrorChange ) then
             write(DEV_OUT,'(/,a,/)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
-            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change      : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change     : ', abs(FFError%total - lasterror)
             write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Error change treshold : ', MinErrorChange
             exit
         end if
@@ -456,6 +468,7 @@ subroutine opt_lbfgs
     if( PrintFinalGradient ) then
         write(DEV_OUT,*)
         call ffdev_utils_heading(DEV_OUT,'Final gradient', '-')
+        call ffdev_ffopt_print_prms_grad()
     end if
 
     deallocate(work,tmp_xg)
@@ -479,9 +492,8 @@ subroutine opt_nlopt
     include 'nlopt.f'
 
     integer                 :: istep,alloc_status
-    real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
     integer                 :: ires
-    real(DEVDP)             :: final,rmsg, maxgrad
+    real(DEVDP)             :: final
     ! --------------------------------------------------------------------------
 
     NLoptID = 0
@@ -521,10 +533,17 @@ subroutine opt_nlopt
 
     call nlo_optimize(ires, NLoptID, tmp_xg, final)
 
-    rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
+    if( istep .le. NOptSteps ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Final results', '-')
+    else
+        write(DEV_OUT,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
+        write(DEV_OUT,'(a,/)') ' >>> WARNING: Minimization was not completed!'
+        call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
+    end if
 
     call write_header(.false.)
-    call write_results(istep,FFError,rmsg,maxgrad,.true.)
+    call write_results(istep,FFError,0.0d0,0.0d0,.true.)
     
     write(DEV_OUT,*)
     select case(ires)
@@ -563,7 +582,7 @@ subroutine opt_nlopt
 end subroutine opt_nlopt
 
 !===============================================================================
-! subroutine ffdev_ffopt_header
+! subroutine opt_nlopt_fce
 !===============================================================================
 
 subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
@@ -585,6 +604,7 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     ! --------------------------------------------------------------------------
 
     istep = istep + 1
+    FFOptFceEvals = FFOptFceEvals + 1
 
     FFParams(:) = x(:)
 
@@ -606,6 +626,97 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     end if
 
 end subroutine opt_nlopt_fce
+
+!===============================================================================
+! subroutine opt_shark
+!===============================================================================
+
+subroutine opt_shark
+
+    use ffdev_ffopt_dat
+    use ffdev_utils
+    use ffdev_errors_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+
+    implicit none
+
+    integer     :: istep, alloc_status
+    real(DEVDP) :: error, lasterror
+    ! --------------------------------------------------------------------------
+
+    ! allocate working array
+    allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
+    if( alloc_status .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for SHARK optimization!')
+    end if
+
+    call ffdev_params_get_lower_bounds(tmp_lb)
+    call ffdev_params_get_upper_bounds(tmp_ub)
+
+    if( Shark_EnableBoxing ) then
+        call ffdev_ffopt_box_prms(FFParams,tmp_xg)
+        ! write(*,*) 'box->', FFParams, tmp_xg
+    else
+        tmp_xg(:) = FFParams(:)
+    end if
+
+    call shark_create(nactparms,Shark_Method,Shark_InitialStep,Shark_RngSeed,tmp_xg)
+
+    write(DEV_OUT,10)
+    write(DEV_OUT,*)
+    write(DEV_OUT,20)
+    write(DEV_OUT,30)
+
+    do istep = 1, NOptSteps
+        call shark_dostep(error)
+        write(DEV_OUT,40) istep,FFOptFceEvals,error
+
+        if( istep .ne. 1 .and. abs(error - lasterror) .le. MinErrorChange ) then
+            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change     : ', abs(error - lasterror)
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change treshold : ', MinErrorChange
+            write(DEV_OUT,'(a)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
+            exit
+        end if
+        lasterror = error
+    end do
+
+    if( istep .le. NOptSteps ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Final results', '-')
+    else
+        write(DEV_OUT,'(/,a)') ' >>> INFO: Maximum number of minimization steps was reached!'
+        write(DEV_OUT,'(a)') ' >>> WARNING: Minimization was not completed!'
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
+    end if
+
+    call shark_getsol(tmp_xg)
+    if( Shark_EnableBoxing ) then
+        call ffdev_ffopt_unbox_prms(tmp_xg,FFParams)
+        ! write(*,*) 'unbox->', tmp_xg, FFParams
+    else
+        FFParams(:) = tmp_xg(:)
+    end if
+
+    call ffdev_parameters_error_only(FFParams,FFError)
+
+    write(DEV_OUT,10)
+    call write_header(.false.)
+    call write_results(istep,FFError,0.0d0,0.0d0,.true.)
+
+    call shark_destroy()
+
+    deallocate(tmp_lb)
+    deallocate(tmp_ub)
+    deallocate(tmp_xg)
+
+10 format('# Mode = Shark-ML')
+20 format('#     Step FceEvals          Error')
+30 format('# -------- -------- --------------')
+40 format(I10,1X,I8,1X,E14.6)
+
+end subroutine opt_shark
 
 !===============================================================================
 ! subroutine write_header
@@ -634,6 +745,8 @@ subroutine write_header(printmethod)
             case(MINIMIZATION_NLOPT)
                 call nloptv(major, minor, bugfix)
                 write(DEV_OUT,17) major, minor, bugfix
+            case(MINIMIZATION_SHARK)
+                write(DEV_OUT,18)
         end select
     end if
 
@@ -644,7 +757,7 @@ subroutine write_header(printmethod)
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,60)
-        case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
+        case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
             write(DEV_OUT,*) 
     end select
 
@@ -653,8 +766,8 @@ subroutine write_header(printmethod)
 
     select case(OptimizationMethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
-            write(DEV_OUT,65,ADVANCE='NO')
-        case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
+            write(DEV_OUT,65)
+        case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
             write(DEV_OUT,*) 
     end select    
    
@@ -662,6 +775,7 @@ subroutine write_header(printmethod)
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
  17 format('# Mode = NLOPT v',I1,'.',I1,'.',I1)
+ 18 format('# Mode = Shark-ML')
 
  20 format('# STEP        Error')
  25 format('#----- ------------')
@@ -698,7 +812,7 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
         select case(OptimizationMethod)
             case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
                 write(DEV_OUT,20) rmsg,maxgrad
-            case(MINIMIZATION_NLOPT,MINIMIZATION_SINGLE_POINT)
+            case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
                 write(DEV_OUT,*) 
         end select  
         flush(DEV_OUT)
@@ -708,8 +822,6 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
  20 format(1X,E12.5,1X,E12.5)
 
 end subroutine write_results
-
-!-------------------------------------------------------------------------------
 
 ! ==============================================================================
 ! function ffdev_gradient_rmsg
@@ -746,12 +858,126 @@ real(DEVDP) function ffdev_fopt_rmsg(grd,maxgrad)
 
 end function ffdev_fopt_rmsg
 
+! ==============================================================================
+! subroutine ffdev_ffopt_print_prms_grad
+! ==============================================================================
+
+subroutine ffdev_ffopt_print_prms_grad()
+
+    use ffdev_parameters_dat
+    use ffdev_ffopt_dat
+
+    implicit none
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+    write(DEV_OUT,20)
+
+    do i=1,nactparms
+        write(DEV_OUT,30) i, FFParams(i), FFParamsGrd(i)
+    end do
+
+ 10 format('# Indx        Value       Grad')
+ 20 format('# ---- ------------ ------------')
+ 30 format(I6,1X,E12.6,1X,E12.6)
+
+end subroutine ffdev_ffopt_print_prms_grad
+
+! ==============================================================================
+! subroutine ffdev_ffopt_unbox_prms
+! ==============================================================================
+
+subroutine ffdev_ffopt_unbox_prms(boxed,prms)
+
+    use ffdev_parameters_dat
+    use ffdev_ffopt_dat
+
+    implicit none
+    real(DEVDP)     :: boxed(:)
+    real(DEVDP)     :: prms(:)
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,nactparms
+        prms(i) = tmp_lb(i) + 0.5d0*(tmp_ub(i)-tmp_lb(i))*(1.0d0-cos(boxed(i)))
+    end do
+
+end subroutine ffdev_ffopt_unbox_prms
+
+! ==============================================================================
+! subroutine ffdev_ffopt_box_prms
+! ==============================================================================
+
+subroutine ffdev_ffopt_box_prms(prms,boxed)
+
+    use ffdev_parameters_dat
+    use ffdev_ffopt_dat
+
+    implicit none
+    real(DEVDP)     :: prms(:)
+    real(DEVDP)     :: boxed(:)
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: sc
+    ! --------------------------------------------------------------------------
+
+    do i=1,nactparms
+        sc = 1.0d0 - 2.0d0*(prms(i)-tmp_lb(i))/(tmp_ub(i)-tmp_lb(i))
+        if( sc .gt.  1.0d0 ) sc =  1.0d0
+        if( sc .lt. -1.0d0 ) sc = -1.0d0
+        boxed(i) = acos(sc)
+    end do
+
+end subroutine ffdev_ffopt_box_prms
+
 !===============================================================================
 !-------------------------------------------------------------------------------
 !===============================================================================
 
 end module ffdev_ffopt
 
+!-------------------------------------------------------------------------------
+! this must be outside of fortran module because
+! the procedure is called from c++ interface
+!-------------------------------------------------------------------------------
+
+!===============================================================================
+! subroutine opt_shark_fce
+!===============================================================================
+
+subroutine opt_shark_fce(n, x, value)
+
+    use ffdev_ffopt_dat
+    use ffdev_errors_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_ffopt
+
+    implicit none
+    integer         :: n
+    real(DEVDP)     :: x(n)
+    real(DEVDP)     :: value
+    ! --------------------------------------------------------------------------
+
+    FFOptFceEvals = FFOptFceEvals + 1
+
+    if( Shark_EnableBoxing ) then
+        call ffdev_ffopt_unbox_prms(x,FFParams)
+    else
+        FFParams(:) = x(:)
+    end if
+    call ffdev_parameters_error_only(FFParams,FFError)
+
+    value = FFError%Total
+
+end subroutine opt_shark_fce
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
 
 
 

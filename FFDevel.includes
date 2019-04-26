@@ -8,3 +8,4 @@ src/bin/getd3
 src/lib/ffdevel/parameters/errors
 src/bin/optgradient
 src/bin/cos2grbf
+src/lib/ffdevel/optimizers

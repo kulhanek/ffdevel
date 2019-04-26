@@ -41,8 +41,8 @@ integer         :: OutSamples   =   20      ! how often write results
 integer         :: TrajSamples  =  100      ! how often write trajectory
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc 
-real(DEVDP)     :: MaxRMSG             = 0.0001d0
-real(DEVDP)     :: MaxG                = 0.0001d0
+real(DEVDP)     :: MaxRMSG             = 0.001d0
+real(DEVDP)     :: MaxG                = 0.001d0
 real(DEVDP)     :: MinEnergyChange     = -1        ! negative number - this test is switched off by default
 logical         :: PrintFinalGradient  = .false.
 logical         :: PrintRSTSummary     = .true.

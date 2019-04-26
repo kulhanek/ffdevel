@@ -53,13 +53,25 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
                 write(DEV_OUT,15) 'l-bfgs'
             case(MINIMIZATION_NLOPT)
                 write(DEV_OUT,15) 'nlopt'
+            case(MINIMIZATION_SHARK)
+                write(DEV_OUT,15) 'shark'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
         end select
         write(DEV_OUT,25) NOptSteps
-        write(DEV_OUT,35) MaxRMSG
-        write(DEV_OUT,45) MaxG
-        write(DEV_OUT,55) MinErrorChange
-        write(DEV_OUT,65) prmfile_onoff(PrintFinalGradient)
         write(DEV_OUT,75) OutSamples
+        write(DEV_OUT,55) MinErrorChange
+
+        select case(OptimizationMethod)
+            case(MINIMIZATION_STEEPEST_DESCENT,MINIMIZATION_LBFGS)
+                write(DEV_OUT,35) MaxRMSG
+                write(DEV_OUT,45) MaxG
+                write(DEV_OUT,65) prmfile_onoff(PrintFinalGradient)
+            case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK)
+                ! nothing to do
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+        end select
 
         call read_opt_method(fin)
         return
@@ -76,6 +88,9 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             case('nlopt')
                 OptimizationMethod=MINIMIZATION_NLOPT
                 write(DEV_OUT,10) 'nlopt'
+            case('shark')
+                OptimizationMethod=MINIMIZATION_SHARK
+                write(DEV_OUT,10) 'shark'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
         end select
@@ -87,6 +102,10 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
                 write(DEV_OUT,15) 'l-bfgs'
             case(MINIMIZATION_NLOPT)
                 write(DEV_OUT,15) 'nlopt'
+            case(MINIMIZATION_SHARK)
+                write(DEV_OUT,15) 'shark'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
         end select
     end if
 
@@ -99,37 +118,6 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
     else
         write(DEV_OUT,25) NOptSteps
     end if
-
-    if( prmfile_get_real8_by_key(fin,'maxrmsg', MaxRMSG)) then
-        write(DEV_OUT,30) MaxRMSG
-        if( MaxRMSG .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maxrmsg has to be grater than zero!')
-        end if
-    else
-        write(DEV_OUT,35) MaxRMSG
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'maxg', MaxG)) then
-        write(DEV_OUT,40) MaxG
-        if( MaxG .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maxg has to be grater than zero!')
-        end if
-    else
-        write(DEV_OUT,45) MaxG
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'minerrorchange', MinErrorChange)) then
-        write(DEV_OUT,50) MinErrorChange
-    else
-        write(DEV_OUT,55) MinErrorChange
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'printfinalgrad', PrintFinalGradient)) then
-        write(DEV_OUT,60) prmfile_onoff(PrintFinalGradient)
-    else
-        write(DEV_OUT,65) prmfile_onoff(PrintFinalGradient)
-    end if
-
     if( prmfile_get_integer_by_key(fin,'outsamples', OutSamples)) then
         write(DEV_OUT,70) OutSamples
         if( OutSamples .lt. 0 ) then
@@ -139,6 +127,42 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
         write(DEV_OUT,75) OutSamples
     end if
     if( OutSamples .eq. 0 ) OutSamples = -1
+
+    if( prmfile_get_real8_by_key(fin,'minerrorchange', MinErrorChange)) then
+        write(DEV_OUT,50) MinErrorChange
+    else
+        write(DEV_OUT,55) MinErrorChange
+    end if
+
+    select case(OptimizationMethod)
+        case(MINIMIZATION_STEEPEST_DESCENT,MINIMIZATION_LBFGS)
+            if( prmfile_get_real8_by_key(fin,'maxrmsg', MaxRMSG)) then
+                write(DEV_OUT,30) MaxRMSG
+                if( MaxRMSG .le. 0.0d0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'maxrmsg has to be grater than zero!')
+                end if
+            else
+                write(DEV_OUT,35) MaxRMSG
+            end if
+
+            if( prmfile_get_real8_by_key(fin,'maxg', MaxG)) then
+                write(DEV_OUT,40) MaxG
+                if( MaxG .le. 0.0d0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'maxg has to be grater than zero!')
+                end if
+            else
+                write(DEV_OUT,45) MaxG
+            end if
+            if( prmfile_get_logical_by_key(fin,'printfinalgrad', PrintFinalGradient)) then
+                write(DEV_OUT,60) prmfile_onoff(PrintFinalGradient)
+            else
+                write(DEV_OUT,65) prmfile_onoff(PrintFinalGradient)
+            end if
+        case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK)
+            ! nothing to do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+    end select
 
     call read_opt_method(fin)
 
@@ -181,6 +205,8 @@ subroutine read_opt_method(fin)
             call read_lbfgs_method(fin)
         case(MINIMIZATION_NLOPT)
             call read_nlopt_method(fin)
+        case(MINIMIZATION_SHARK)
+            call read_shark_method(fin)
     end select
 
 end subroutine read_opt_method
@@ -339,6 +365,8 @@ subroutine read_nlopt_method(fin)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT'
             case(NLOPT_GN_DIRECT_L)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
         end select
         write(DEV_OUT,35) NLOpt_InitialStep
         return
@@ -367,6 +395,8 @@ subroutine read_nlopt_method(fin)
             case('NLOPT_GN_DIRECT_L')
                 NLOpt_Method = NLOPT_GN_DIRECT_L
                 write(DEV_OUT,20) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
         end select
     else
         select case(NLOpt_Method)
@@ -384,6 +414,8 @@ subroutine read_nlopt_method(fin)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT'
             case(NLOPT_GN_DIRECT_L)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
         end select
     end if
 
@@ -400,6 +432,85 @@ subroutine read_nlopt_method(fin)
  35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
 
 end subroutine read_nlopt_method
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine read_shark_method(fin)
+
+    use prmfile
+    use ffdev_ffopt_dat
+    use ffdev_utils
+
+    implicit none
+    include 'nlopt.f'
+
+    type(PRMFILE_TYPE)          :: fin
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,'(/,a)') '=== [shark] ===================================================================='
+
+    if( .not. prmfile_open_section(fin,'shark') ) then
+        select case(Shark_Method)
+            case(SHARK_CMA_ES)
+                write(DEV_OUT,25) 'CMA-ES'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+        end select
+        write(DEV_OUT,35) Shark_InitialStep
+        write(DEV_OUT,45) Shark_RngSeed
+        return
+    end if
+
+    if( prmfile_get_string_by_key(fin,'algorithm', string)) then
+        select case(trim(string))
+            case('CMA-ES')
+                Shark_Method = SHARK_CMA_ES
+                write(DEV_OUT,20) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+        end select
+    else
+        select case(Shark_Method)
+            case(SHARK_CMA_ES)
+                write(DEV_OUT,25) 'CMA-ES'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+        end select
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'initialstep', Shark_InitialStep)) then
+        write(DEV_OUT,30) Shark_InitialStep
+    else
+        write(DEV_OUT,35) Shark_InitialStep
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'seed', Shark_RngSeed)) then
+        write(DEV_OUT,40) Shark_RngSeed
+    else
+        write(DEV_OUT,45) Shark_RngSeed
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'boxing', Shark_EnableBoxing)) then
+        write(DEV_OUT,50) prmfile_onoff(Shark_EnableBoxing)
+    else
+        write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
+    end if
+
+    return
+
+ 20  format ('Optmization algorithm (algorithm)      = ',A)
+ 25  format ('Optmization algorithm (algorithm)      = ',A20,'          (default)')
+ 30  format ('Initial step (initialstep)             = ',f12.7)
+ 35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
+ 40  format ('Random number generator seed (seed)    = ',I12)
+ 45  format ('Random number generator seed (seed)    = ',I12,'                  (default)')
+ 50  format ('Enable boxing (boxing)                 = ',a12)
+ 55  format ('Enable boxing (boxing)                 = ',a12,'                  (default)')
+
+end subroutine read_shark_method
 
 !===============================================================================
 !-------------------------------------------------------------------------------

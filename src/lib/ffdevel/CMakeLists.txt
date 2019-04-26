@@ -64,6 +64,7 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_dat.f90
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
+        optimizers/shark-ml.cpp
 
         dftd3/sizes.f90
         dftd3/api.f90
@@ -92,6 +93,7 @@ IF(LIBS_SHARED)
                             CLEAN_DIRECT_OUTPUT 1
                             VERSION ${FFDEVEL_VERSION})
     TARGET_LINK_LIBRARIES(ffdevel_shared
+            ${SHARK_LIB_NAME}
             ${FFTW_LIB_NAME}
             ${NLOPT_LIB_NAME}
             ${LBFGS_LIB_NAME}
