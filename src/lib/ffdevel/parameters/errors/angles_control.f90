@@ -42,6 +42,7 @@ subroutine ffdev_err_angles_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableAnglesError)
         write(DEV_OUT,135) prmfile_onoff(PrintAnglesErrorSummary)
         write(DEV_OUT,125) AngleErrorsWeight
+        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptAngles)
         return
     end if
 
@@ -60,6 +61,11 @@ subroutine ffdev_err_angles_ctrl(fin)
     else
         write(DEV_OUT,125) AngleErrorsWeight
     end if
+    if( prmfile_get_logical_by_key(fin,'onlyffopt', OnlyFFOptAngles)) then
+        write(DEV_OUT,140) prmfile_onoff(OnlyFFOptAngles)
+    else
+        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptAngles)
+    end if
 
  10 format('=== [angles] ===================================================================')
 
@@ -69,6 +75,8 @@ subroutine ffdev_err_angles_ctrl(fin)
 135  format ('Print angle error summary (summary)    = ',a12,'                  (default)')
 120  format ('Angle error weight (weight)            = ',f21.8)
 125  format ('Angle error weight (weight)            = ',f21.8,'         (default)')
+140  format ('Only FFopt angles (onlyffopt)          = ',a12)
+145  format ('Only FFopt angles (onlyffopt)          = ',a12,'                  (default)')
 
 end subroutine ffdev_err_angles_ctrl
 

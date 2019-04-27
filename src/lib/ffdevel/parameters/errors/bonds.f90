@@ -35,6 +35,7 @@ subroutine ffdev_err_bonds_init
     EnableBondsError          = .false.
     PrintBondsErrorSummary    = .false.
     BondErrorsWeight          = 1.0
+    OnlyFFOptBonds            = .false.
 
 end subroutine ffdev_err_bonds_init
 
@@ -49,6 +50,7 @@ subroutine ffdev_err_bonds_error(error)
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_bonds_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -65,20 +67,23 @@ subroutine ffdev_err_bonds_error(error)
     nbonds = 0
 
     do i=1,nsets
-        do j=1,sets(i)%ngeos
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized ) then
-                do q=1,sets(i)%top%nbonds
-                    ai = sets(i)%top%bonds(q)%ai
-                    aj = sets(i)%top%bonds(q)%aj
-                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
-                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    ! write(*,*) d0, dt
-                    nbonds = nbonds + 1
-                    err = d0 - dt
-                    seterrbonds = seterrbonds + sets(i)%geo(j)%weight * err**2
-                end do
+        do q=1,sets(i)%top%nbonds
+            if( OnlyFFOptBonds ) then
+                if( .not. sets(i)%top%bond_types(sets(i)%top%bonds(q)%bt)%ffoptactive ) cycle
             end if
+            ai = sets(i)%top%bonds(q)%ai
+            aj = sets(i)%top%bonds(q)%aj
+
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+
+                d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
+                dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
+                ! write(*,*) d0, dt
+                err = d0 - dt
+                seterrbonds = seterrbonds + sets(i)%geo(j)%weight * err**2
+                nbonds = nbonds + 1
+            end do
         end do
     end do
 

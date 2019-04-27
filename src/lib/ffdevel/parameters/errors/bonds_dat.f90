@@ -25,6 +25,7 @@ use ffdev_constants
 logical                 :: EnableBondsError
 logical                 :: PrintBondsErrorSummary
 real(DEVDP)             :: BondErrorsWeight
+logical                 :: OnlyFFOptBonds
 
 ! ------------------------------------------------------------------------------
 

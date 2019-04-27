@@ -25,6 +25,7 @@ use ffdev_constants
 logical                 :: EnableAnglesError
 logical                 :: PrintAnglesErrorSummary
 real(DEVDP)             :: AngleErrorsWeight
+logical                 :: OnlyFFOptAngles
 
 ! ------------------------------------------------------------------------------
 

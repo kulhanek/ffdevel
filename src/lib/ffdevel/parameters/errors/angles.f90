@@ -35,6 +35,7 @@ subroutine ffdev_err_angles_init
     EnableAnglesError         = .false.
     PrintAnglesErrorSummary   = .false.
     AngleErrorsWeight         = DEV_D2R
+    OnlyFFOptAngles           = .false.
 
 end subroutine ffdev_err_angles_init
 
@@ -48,6 +49,7 @@ subroutine ffdev_err_angles_error(error)
     use ffdev_utils   
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_angles_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -63,20 +65,23 @@ subroutine ffdev_err_angles_error(error)
     nangles = 0
 
     do i=1,nsets
-        do j=1,sets(i)%ngeos
-            ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_crd_optimized ) then
-                do q=1,sets(i)%top%nangles
-                    ai = sets(i)%top%angles(q)%ai
-                    aj = sets(i)%top%angles(q)%aj
-                    ak = sets(i)%top%angles(q)%ak
-                    d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D
-                    dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D
-                    nangles = nangles + 1
-                    err = d0 - dt
-                    seterrangles = seterrangles + sets(i)%geo(j)%weight * err**2
-                end do
-            end if          
+        do q=1,sets(i)%top%nangles
+            if( OnlyFFOptAngles ) then
+                if( .not. sets(i)%top%angle_types(sets(i)%top%angles(q)%at)%ffoptactive ) cycle
+            end if
+            ai = sets(i)%top%angles(q)%ai
+            aj = sets(i)%top%angles(q)%aj
+            ak = sets(i)%top%angles(q)%ak
+
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+
+                d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D
+                dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D
+                err = d0 - dt
+                seterrangles = seterrangles + sets(i)%geo(j)%weight * err**2
+                nangles = nangles + 1
+            end do
         end do
     end do
 

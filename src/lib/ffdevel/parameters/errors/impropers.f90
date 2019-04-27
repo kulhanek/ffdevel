@@ -36,6 +36,7 @@ subroutine ffdev_err_impropers_init
     PrintImpropersErrorSummary      = .false.
     ImpropersErrorWeight            = DEV_D2R
     ImpropersErrorLockToPhase       = .true.
+    OnlyFFOptImpropers              = .false.
 
 end subroutine ffdev_err_impropers_init
 
@@ -49,6 +50,7 @@ subroutine ffdev_err_impropers_error(error)
     use ffdev_utils   
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_impropers_dat
     use ffdev_err_impropers_dat
 
     implicit none
@@ -65,27 +67,30 @@ subroutine ffdev_err_impropers_error(error)
     nimpropers = 0
 
     do i=1,nsets
-        do j=1,sets(i)%ngeos
-
-            if( sets(i)%geo(j)%trg_crd_optimized ) then
-                do q=1,sets(i)%top%nimpropers
-                    ai = sets(i)%top%impropers(q)%ai
-                    aj = sets(i)%top%impropers(q)%aj
-                    ak = sets(i)%top%impropers(q)%ak
-                    al = sets(i)%top%impropers(q)%al
-                    d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al)
-                    if( ImpropersErrorLockToPhase ) then
-                        idt = sets(i)%top%impropers(q)%dt
-                        dt = sets(i)%top%improper_types(idt)%g
-                    else
-                        dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
-                    end if
-                    nimpropers = nimpropers + 1
-                    err = ffdev_geometry_get_dihedral_deviation(d0,dt) ! this needs values in RAD
-                    err = err * DEV_R2D
-                    seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
-                end do
+        do q=1,sets(i)%top%nimpropers
+            if( OnlyFFOptImpropers ) then
+                if( .not. sets(i)%top%improper_types(sets(i)%top%impropers(q)%dt)%ffoptactive ) cycle
             end if
+            ai = sets(i)%top%impropers(q)%ai
+            aj = sets(i)%top%impropers(q)%aj
+            ak = sets(i)%top%impropers(q)%ak
+            al = sets(i)%top%impropers(q)%al
+
+            do j=1,sets(i)%ngeos
+                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+
+                d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al)
+                if( ImpropersErrorLockToPhase ) then
+                    idt = sets(i)%top%impropers(q)%dt
+                    dt = sets(i)%top%improper_types(idt)%g
+                else
+                    dt = ffdev_geometry_get_improper(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)
+                end if
+                err = ffdev_geometry_get_dihedral_deviation(d0,dt) ! this needs values in RAD
+                err = err * DEV_R2D
+                seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
+                nimpropers = nimpropers + 1
+            end do
         end do
     end do
 

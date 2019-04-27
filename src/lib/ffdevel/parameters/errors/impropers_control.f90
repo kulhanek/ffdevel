@@ -42,6 +42,8 @@ subroutine ffdev_err_impropers_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableImpropersError)
         write(DEV_OUT,135) prmfile_onoff(PrintImpropersErrorSummary)
         write(DEV_OUT,125) ImpropersErrorWeight
+        write(DEV_OUT,145) prmfile_onoff(ImpropersErrorLockToPhase)
+        write(DEV_OUT,155) prmfile_onoff(OnlyFFOptImpropers)
         return
     end if
 
@@ -55,15 +57,20 @@ subroutine ffdev_err_impropers_ctrl(fin)
     else
         write(DEV_OUT,135) prmfile_onoff(PrintImpropersErrorSummary)
     end if
+    if( prmfile_get_real8_by_key(fin,'weight', ImpropersErrorWeight)) then
+        write(DEV_OUT,120) ImpropersErrorWeight
+    else
+        write(DEV_OUT,125) ImpropersErrorWeight
+    end if
     if( prmfile_get_logical_by_key(fin,'lock2phase', ImpropersErrorLockToPhase)) then
         write(DEV_OUT,140) prmfile_onoff(ImpropersErrorLockToPhase)
     else
         write(DEV_OUT,145) prmfile_onoff(ImpropersErrorLockToPhase)
     end if
-    if( prmfile_get_real8_by_key(fin,'weight', ImpropersErrorWeight)) then
-        write(DEV_OUT,120) ImpropersErrorWeight
+    if( prmfile_get_logical_by_key(fin,'onlyffopt', OnlyFFOptImpropers)) then
+        write(DEV_OUT,150) prmfile_onoff(OnlyFFOptImpropers)
     else
-        write(DEV_OUT,125) ImpropersErrorWeight
+        write(DEV_OUT,155) prmfile_onoff(OnlyFFOptImpropers)
     end if
 
  10 format('=== [impropers] ================================================================')
@@ -76,6 +83,8 @@ subroutine ffdev_err_impropers_ctrl(fin)
 125  format ('Impropers error weight (weight)        = ',f21.8,'         (default)')
 140  format ('Lock to phase angle (lock2phase)       = ',a12)
 145  format ('Lock to phase angle (lock2phase)       = ',a12,'                  (default)')
+150  format ('Only FFopt impropers (onlyffopt)       = ',a12)
+155  format ('Only FFopt impropers (onlyffopt)       = ',a12,'                  (default)')
 
 end subroutine ffdev_err_impropers_ctrl
 

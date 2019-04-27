@@ -26,6 +26,7 @@ logical                 :: EnableImpropersError
 logical                 :: PrintImpropersErrorSummary
 real(DEVDP)             :: ImpropersErrorWeight
 logical                 :: ImpropersErrorLockToPhase
+logical                 :: OnlyFFOptImpropers
 
 ! ------------------------------------------------------------------------------
 
