@@ -17,21 +17,16 @@ std::mt19937        RnG;
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_create_(int* nactparms,int* method,double* initial_step,int* rngseed,double* initial_params)
+extern "C" void shark_create_(int* nactparms,int* method,double* initial_step,double* initial_params)
 {
     NumOfParams = *nactparms;
+    if( NumOfParams <= 0 ) return;
+
     RealVector params(NumOfParams);
     for(size_t i=0; i < NumOfParams; i++){
             params(i) = initial_params[i];
     }
     tmp_x = shared_ptr<double>(new double[NumOfParams]);
-    if( *rngseed == 0 ) {
-        unsigned seed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
-        RnG.seed(seed);
-    } else {
-        // setup RNG
-        RnG.seed(*rngseed);
-    }
 
     // currently only CMA is supported
     OptMethod = *method;
@@ -46,8 +41,22 @@ extern "C" void shark_create_(int* nactparms,int* method,double* initial_step,in
 
 // -----------------------------------------------------------------------------
 
+extern "C" void shark_set_rngseed_(int* seed)
+{
+    if( *seed == 0 ) {
+        unsigned seed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
+        RnG.seed(seed);
+    } else {
+        // setup RNG
+        RnG.seed(*seed);
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 extern "C" void shark_dostep_(double* error)
 {
+    if( NumOfParams <= 0 ) return;
     switch(OptMethod){
         case SHARK_CMA_ES:
             CMAOpt->step(OptSharkFce);
@@ -60,6 +69,7 @@ extern "C" void shark_dostep_(double* error)
 
 extern "C" void shark_getsol_(double* params)
 {
+    if( NumOfParams <= 0 ) return;
     switch(OptMethod){
         case SHARK_CMA_ES:
             for(size_t i=0; i < NumOfParams; i++ ){

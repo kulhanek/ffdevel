@@ -241,6 +241,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     character(PRMFILE_MAX_PATH) :: string,realm
     logical                     :: rst
     character(10)               :: key
+    real(DEVDP)                 :: rnd, minv, maxv
     ! --------------------------------------------------------------------------
 
 
@@ -268,14 +269,24 @@ subroutine ffdev_parameters_ctrl_realms(fin)
 
     rst = prmfile_first_line(fin)
     do while ( prmfile_get_line(fin,string) )
-        read(string,*) key, realm
+        read(string,*,err=555,end=555) key
         select case(key)
             case('enable')
+                read(string,*,err=556,end=556) key, realm
                 call change_realms(realm,.true.,string,nchanged)
                 write(DEV_OUT,30) nchanged,trim(string)
             case('disable')
+                read(string,*,err=556,end=556) key, realm
                 call change_realms(realm,.false.,string,nchanged)
                 write(DEV_OUT,30) nchanged,trim(string)
+            case('randomize')
+                do i=1,nparams
+                    if( .not. params(i)%enabled ) cycle
+                    call random_number(rnd)
+                    minv = ffdev_params_get_lower_bound(params(i)%realm)
+                    maxv = ffdev_params_get_upper_bound(params(i)%realm)
+                    params(i)%value = minv + (maxv - minv)*rnd
+                end do
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported action key '''//trim(key)//'''!')
         end select
@@ -294,6 +305,10 @@ subroutine ffdev_parameters_ctrl_realms(fin)
         write(DEV_OUT,*)
         write(DEV_OUT,45)
     end if
+
+    return
+555 call ffdev_utils_exit(DEV_OUT,1,'Unable to read key in [prameters]!')
+556 call ffdev_utils_exit(DEV_OUT,1,'Unable to read key and realm in [prameters]!')
 
 10 format('=== [parameters] ===============================================================')
 30 format('Altered parameters = ',I3,' | ', A)
@@ -724,6 +739,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
+        write(DEV_OUT,95) GlbRngSeed
         return
     end if
 
@@ -815,6 +831,15 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
     end if
 
+    if( prmfile_get_integer_by_key(fin,'seed', GlbRngSeed)) then
+        write(DEV_OUT,90) GlbRngSeed
+    else
+        write(DEV_OUT,95) GlbRngSeed
+    end if
+
+    ! setup random number generator
+    call random_seed(GlbRngSeed)
+
     return
 
  10 format('=== [control] ==================================================================')
@@ -833,6 +858,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
  75  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12,'                (default)')
  80  format ('Reset all setup (resetallsetup)          = ',a12)
  85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
+ 90  format ('Random number generator seed (seed)      = ',I12)
+ 95  format ('Random number generator seed (seed)      = ',I12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 
@@ -977,8 +1004,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_nbmanip(fin,exec)
             case('nbload')
                 call ffdev_parameters_ctrl_nbload(fin,exec)
-            case('randomize')
-                call ffdev_parameters_ctrl_randomize(fin,exec)
         end select
 
         rst = prmfile_next_section(fin)
@@ -1375,59 +1400,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_xdm
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_randomize
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_randomize(fin,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-    use ffdev_topology_dat
-
-    implicit none
-    type(PRMFILE_TYPE)  :: fin
-    logical             :: exec
-    ! --------------------------------------------
-    integer             :: seed, i
-    real(DEVDP)         :: rnd
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( prmfile_get_integer_by_key(fin,'seed', seed)) then
-        write(DEV_OUT,20) seed
-    else
-        write(DEV_OUT,25) seed
-    end if
-
-    if( .not. exec ) return
-
-    ! randomize active parameters
-    call random_seed(seed)
-
-    do i=1,nparams
-        if( .not. params(i)%enabled ) cycle
-        call random_number(rnd)
-        params(i)%value = ffdev_params_get_lower_bound(params(i)%realm) + &
-                          (ffdev_params_get_upper_bound(params(i)%realm) - ffdev_params_get_lower_bound(params(i)%realm))*rnd
-    end do
-
-    call ffdev_parameters_to_tops
-
-    if( DebugFFManip ) then
-        call ffdev_parameters_print_parameters()
-    end if
-
-10 format('=== [randomize] ================================================================')
-20  format ('Random number generator seed (seed)    = ',I12)
-25  format ('Random number generator seed (seed)    = ',I12,'                  (default)')
-
-end subroutine ffdev_parameters_ctrl_randomize
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload

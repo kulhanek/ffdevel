@@ -460,7 +460,7 @@ subroutine read_shark_method(fin)
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
         end select
         write(DEV_OUT,35) Shark_InitialStep
-        write(DEV_OUT,45) Shark_RngSeed
+        write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
         return
     end if
 
@@ -487,12 +487,6 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,35) Shark_InitialStep
     end if
 
-    if( prmfile_get_integer_by_key(fin,'seed', Shark_RngSeed)) then
-        write(DEV_OUT,40) Shark_RngSeed
-    else
-        write(DEV_OUT,45) Shark_RngSeed
-    end if
-
     if( prmfile_get_logical_by_key(fin,'boxing', Shark_EnableBoxing)) then
         write(DEV_OUT,50) prmfile_onoff(Shark_EnableBoxing)
     else
@@ -505,8 +499,6 @@ subroutine read_shark_method(fin)
  25  format ('Optmization algorithm (algorithm)      = ',A20,'          (default)')
  30  format ('Initial step (initialstep)             = ',f12.7)
  35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
- 40  format ('Random number generator seed (seed)    = ',I12)
- 45  format ('Random number generator seed (seed)    = ',I12,'                  (default)')
  50  format ('Enable boxing (boxing)                 = ',a12)
  55  format ('Enable boxing (boxing)                 = ',a12,'                  (default)')
 

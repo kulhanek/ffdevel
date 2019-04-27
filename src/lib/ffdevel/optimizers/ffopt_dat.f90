@@ -66,7 +66,6 @@ real(DEVDP)     :: NLOpt_InitialStep
 ! === [Shark] ==================================================================
 integer         :: Shark_Method
 real(DEVDP)     :: Shark_InitialStep
-integer         :: Shark_RngSeed
 logical         :: Shark_EnableBoxing
 
 ! ------------------------------------------------------------------------------

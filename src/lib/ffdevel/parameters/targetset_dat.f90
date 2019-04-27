@@ -60,9 +60,10 @@ character(len=MAX_PATH) :: SaveXYZRPath                 = 'xyzr'
 
 ! [optgeo] --------------------------------------------------------------------
 ! default values set in ffdev_targetset_ctrl_optgeo_set_default
-logical                 :: GlbOptGeometryEnabled  ! force all geometry optimization in each error evaluation
-logical                 :: GlbOptGeometryDisabled ! disable all geometry optimization in each error evaluation
-logical                 :: GlbShowOptProgress     ! print geometry optimization progress
-logical                 :: GlbKeepOptGeometry     ! keep geometry from previous geometry optimization
+logical                 :: GlbOptGeometryEnabled        ! force all geometry optimization in each error evaluation
+logical                 :: GlbOptGeometryDisabled       ! disable all geometry optimization in each error evaluation
+logical                 :: GlbShowOptProgress           ! print geometry optimization progress
+logical                 :: GlbKeepOptGeometry           ! keep geometry from previous geometry optimization
+integer                 :: ResetKeptOptGeoAt            ! reset initial geometry to trg for keepoptgeo = on
 
 end module ffdev_targetset_dat

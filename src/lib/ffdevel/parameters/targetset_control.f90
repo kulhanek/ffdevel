@@ -670,10 +670,11 @@ subroutine ffdev_targetset_ctrl_optgeo_set_default
     ! --------------------------------------------------------------------------
 
     ! setup default parameters
-    GlbOptGeometryEnabled    = .false.   ! force all geometry optimization in each error evaluation
-    GlbOptGeometryDisabled   = .false.   ! disable all geometry optimization in each error evaluation
-    GlbShowOptProgress       = .false.   ! print geometry optimization progress
-    GlbKeepOptGeometry       = .false.   ! keep geometry from previous geometry optimization
+    GlbOptGeometryEnabled   = .false.   ! force all geometry optimization in each error evaluation
+    GlbOptGeometryDisabled  = .false.   ! disable all geometry optimization in each error evaluation
+    GlbShowOptProgress      = .false.   ! print geometry optimization progress
+    GlbKeepOptGeometry      = .false.   ! keep geometry from previous geometry optimization
+    ResetKeptOptGeoAt       = 0         ! reset initial geometry to trg for keepoptgeo = on
 
 end subroutine ffdev_targetset_ctrl_optgeo_set_default
 
@@ -704,6 +705,7 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
         write(DEV_OUT,37) prmfile_onoff(GlbOptGeometryDisabled)
         write(DEV_OUT,45) prmfile_onoff(GlbShowOptProgress)
         write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
+        write(DEV_OUT,65) ResetKeptOptGeoAt
         return
     end if
 
@@ -727,6 +729,11 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
     else
         write(DEV_OUT,55) prmfile_onoff(GlbKeepOptGeometry)
     end if
+    if( prmfile_get_integer_by_key(fin,'resetat', ResetKeptOptGeoAt)) then
+        write(DEV_OUT,60) ResetKeptOptGeoAt
+    else
+        write(DEV_OUT,65) ResetKeptOptGeoAt
+    end if
 
  10 format('=== [optgeo] ===================================================================')
 
@@ -741,6 +748,9 @@ subroutine ffdev_targetset_ctrl_optgeo(fin)
 
  50  format ('Keep optimized geometry (keepoptgeo)   = ',a12)
  55  format ('Keep optimized geometry (keepoptgeo)   = ',a12,'                  (default)')
+
+ 60  format ('Reset kept geometry after (resetat)    = ',i12)
+ 65  format ('Reset kept geometry after (resetat)    = ',i12,'                  (default)')
 
 end subroutine ffdev_targetset_ctrl_optgeo
 

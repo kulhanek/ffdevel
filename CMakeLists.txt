@@ -131,7 +131,7 @@ LINK_DIRECTORIES(${FFTW3_LIB_DIRS})
 SET(FFTW_LIB_NAME fftw3)
 
 # Shark-ML --------------------------------------
-SET(SHARK_ROOT ${DEVELOPMENT_ROOT}/thirdparty/shark/4.0.0)
+SET(SHARK_ROOT ${DEVELOPMENT_ROOT}/thirdparty/shark-ml/4.0.0)
 INCLUDE_DIRECTORIES(${SHARK_ROOT}/include)
 LINK_DIRECTORIES(${SHARK_ROOT}/lib)
 SET(SHARK_LIB_NAME shark)

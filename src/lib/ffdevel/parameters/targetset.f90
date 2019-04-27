@@ -71,8 +71,11 @@ subroutine ffdev_targetset_calc_all
     use ffdev_parameters_dat
 
     implicit none
-    integer     :: i,j,k
+    integer         :: i,j,k
+    integer,save    :: evalcounter = 0      ! global counter
     ! --------------------------------------------------------------------------
+
+    evalcounter = evalcounter + 1
 
     ! apply combination rules
     if( ApplyCombinationRules ) then
@@ -93,6 +96,13 @@ subroutine ffdev_targetset_calc_all
                 .and. sets(i)%geo(j)%trg_crd_loaded ) then
                 if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
                     sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                else
+                    if( ResetKeptOptGeoAt .gt. 0 ) then
+                        if( mod(evalcounter,ResetKeptOptGeoAt) .eq. 0 ) then
+                            sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                            write(DEV_OUT,*) '>>> Geometry reset ... ', evalcounter
+                        end if
+                    end if
                 end if
                 if( GlbShowOptProgress ) then
                     call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
@@ -142,7 +152,7 @@ subroutine ffdev_targetset_calc_all
                 end do
             end do
         end if
-    end do          
+    end do
 
 end subroutine ffdev_targetset_calc_all
 

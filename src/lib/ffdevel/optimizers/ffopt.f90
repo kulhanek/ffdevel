@@ -85,11 +85,10 @@ interface
     end subroutine nlo_destroy
 
     ! shark interfaces
-    subroutine shark_create(nactparms,method,initial_step,rngseed,initial_params)
+    subroutine shark_create(nactparms,method,initial_step,initial_params)
         integer(4)      :: nactparms
         integer(4)      :: method
         real(8)         :: initial_step
-        integer(4)      :: rngseed
         real(8)         :: initial_params(*)
     end subroutine shark_create
 
@@ -103,6 +102,10 @@ interface
 
     subroutine shark_destroy()
     end subroutine shark_destroy
+
+    subroutine shark_set_rngseed(seed)
+        integer(4)      :: seed
+    end subroutine shark_set_rngseed
 
 end interface
 
@@ -148,10 +151,23 @@ subroutine ffdev_ffopt_set_default()
 ! === [Shark] ==================================================================
     Shark_Method        = SHARK_CMA_ES
     Shark_InitialStep   = 0.001d0
-    Shark_RngSeed       = 5489
     Shark_EnableBoxing  = .true.
 
 end subroutine ffdev_ffopt_set_default
+
+!===============================================================================
+! subroutine ffdev_ffopt_setup_rng
+!===============================================================================
+
+subroutine ffdev_ffopt_setup_rng(seed)
+
+    implicit none
+    integer     :: seed
+    ! --------------------------------------------------------------------------
+
+    call shark_set_rngseed(seed)
+
+end subroutine ffdev_ffopt_setup_rng
 
 !===============================================================================
 ! subroutine ffdev_ffopt_single_point
@@ -681,7 +697,7 @@ subroutine opt_shark
         tmp_xg(:) = FFParams(:)
     end if
 
-    call shark_create(nactparms,Shark_Method,Shark_InitialStep,Shark_RngSeed,tmp_xg)
+    call shark_create(nactparms,Shark_Method,Shark_InitialStep,tmp_xg)
 
     ! initial error
     call ffdev_parameters_error_only(FFParams,FFError)

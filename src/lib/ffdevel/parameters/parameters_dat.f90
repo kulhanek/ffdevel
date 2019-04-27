@@ -148,6 +148,7 @@ logical                 :: OnlyDefinedDihItems          = .true.
 logical                 :: LockDihC_PN1                 = .true.
 logical                 :: ResetAllSetup                = .true.
 logical                 :: DebugFFManip                 = .true.
+integer                 :: GlbRngSeed                   = 5489              ! random number generator setup
 
 ! === [grbf2cos] ===============================================================
 integer                 :: GRBF2COSDPts     = 360           ! level of discretization

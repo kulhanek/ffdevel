@@ -1022,9 +1022,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight  Relative Energy E G H P')
-35 format('# ID   File                                     Weight           Energy E G H P')
-40 format('# ---- ---------------------------------------- ------ ---------------- - - - -')
+30 format('# ID   File                                     Weight   Rel Energy E G H P X S')
+35 format('# ID   File                                     Weight       Energy E G H P X S')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1042,10 +1042,11 @@ subroutine ffdev_geometry_info_point_ext(geo)
 
     lname = trim(geo%name)
     write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
-                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded
+                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                      geo%trg_xdm_loaded, geo%trg_surf_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F16.4,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point_ext
 
