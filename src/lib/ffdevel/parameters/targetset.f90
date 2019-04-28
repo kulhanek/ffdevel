@@ -456,7 +456,7 @@ subroutine ffdev_targetset_save_drvene(set,name)
             end do
         end if
         err = set%geo(i)%total_ene - set%offset - set%geo(i)%trg_energy
-        write(DEV_PROFILE,33) set%geo(i)%trg_energy, set%geo(i)%total_ene - set%offset, err
+        write(DEV_PROFILE,33,ADVANCE='NO') set%geo(i)%trg_energy, set%geo(i)%total_ene - set%offset, err
         write(DEV_PROFILE,34) set%offset, set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
                               set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
                               set%geo(i)%nb_ene, set%geo(i)%nb14_ene
