@@ -29,6 +29,7 @@ program ffdev_optimize_program
     use ffdev_mmd3
     use ffdev_mmd3_dontrol
     use ffdev_errors
+    use ffdev_errors_dat
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -174,6 +175,7 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'Initialize', ':')
 
     ! calculate initial data
+    errors_calc_ene = .true. ! we need at least energies for ffdev_targetset_save_initial_drvs
     call ffdev_targetset_calc_all()
 
     ! save initial driving data if requested

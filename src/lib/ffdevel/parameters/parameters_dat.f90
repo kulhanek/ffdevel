@@ -119,7 +119,8 @@ integer,parameter       :: XDM_R0   = 2
 integer,parameter       :: XDM_C6   = 3
 
 ! === [xdm] ====================================================================
-real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0  ! FIXME
+real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0   ! FIXME
+real(DEVDP)     :: xdm_C6Scale      =  2.0      ! FIXME - this is a fake
 
 ! ------------------------------------------------------------------------------
 ! experimental/unfinished setup
@@ -140,6 +141,11 @@ integer,parameter       :: NB_PARAMS_REALMS_ALL         = 1     ! all realms
 integer,parameter       :: NB_PARAMS_REALMS_ERA         = 2     ! ERA realms
 integer,parameter       :: NB_PARAMS_REALMS_ER          = 3     ! ER realms
 
+! keep C6 constant modes
+integer,parameter       :: NB_LEFT_C6                   = 0
+integer,parameter       :: NB_KEEP_XDM_C6_VIA_R0        = 1
+integer,parameter       :: NB_KEEP_XDM_C6_VIA_EPS       = 2
+
 ! === [control] ================================================================
 integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
 integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
@@ -147,8 +153,9 @@ integer                 :: NBCombRules                  = COMB_RULE_LB
 logical                 :: OnlyDefinedDihItems          = .true.
 logical                 :: LockDihC_PN1                 = .true.
 logical                 :: ResetAllSetup                = .true.
-logical                 :: DebugFFManip                 = .true.
+logical                 :: DebugFFManip                 = .false.
 integer                 :: GlbRngSeed                   = 5489              ! random number generator setup
+integer                 :: C6Mode                       = NB_LEFT_C6
 
 ! === [grbf2cos] ===============================================================
 integer                 :: GRBF2COSDPts     = 360           ! level of discretization

@@ -703,6 +703,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
     use ffdev_utils
     use ffdev_topology_dat
     use ffdev_topology
+    use ffdev_ffopt
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -839,6 +840,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
     ! setup random number generator
     call random_seed(GlbRngSeed)
+    call ffdev_ffopt_setup_rng(GlbRngSeed)
 
     return
 

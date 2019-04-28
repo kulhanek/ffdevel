@@ -2257,15 +2257,73 @@ subroutine ffdev_parameters_error_only(prms,error)
 
     ! scatter parameters
     call ffdev_parameters_scatter(prms)
+
+    ! keep C6 if requested
+    call ffdev_parameters_keep_c6()
+
+    ! distribute parameters to topologies
     call ffdev_parameters_to_tops()
 
     ! optimize geometry if requested and then calculate energy, and optionaly gradients and hessians
+    ! apply combining rules for individual topologies
     call ffdev_targetset_calc_all
 
     ! calculate error
     call ffdev_errors_error_only(error)
 
 end subroutine ffdev_parameters_error_only
+
+! ==============================================================================
+! subroutine ffdev_parameters_keep_c6
+! ==============================================================================
+
+subroutine ffdev_parameters_keep_c6()
+
+    use ffdev_parameters_dat
+
+    implicit none
+    integer             :: i, j
+    real(DEVDP)         :: C6
+    ! --------------------------------------------------------------------------
+
+    select case(C6Mode)
+        case(NB_KEEP_XDM_C6_VIA_EPS)
+            do i=1,nparams
+                if( params(i)%realm .ne. REALM_VDW_R0 ) cycle
+                if( params(i)%value .eq. 0.0d0 ) cycle
+                ! get C6
+                C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
+                     xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
+                do j=1,nparams
+                    if( params(j)%realm .ne. REALM_VDW_EPS ) cycle
+                    if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
+                        params(j)%value = 0.5d0 * C6 / params(i)%value**6
+                        exit
+                    end if
+                end do
+            end do
+            case(NB_KEEP_XDM_C6_VIA_R0)
+                do i=1,nparams
+                    if( params(i)%realm .ne. REALM_VDW_EPS ) cycle
+                    if( params(i)%value .eq. 0.0d0 ) cycle
+                    ! get C6
+                    C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
+                         xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
+                    do j=1,nparams
+                        if( params(j)%realm .ne. REALM_VDW_R0 ) cycle
+                        if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
+                            params(j)%value = (0.5d0 * C6 / params(i)%value)**(1.0d0/6.0d0)
+                            exit
+                        end if
+                    end do
+                end do
+        case(NB_LEFT_C6)
+            ! nothing to do
+        case default
+            ! nothing to do
+    end select
+
+end subroutine ffdev_parameters_keep_c6
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_run_xdm_stat
@@ -2456,7 +2514,8 @@ subroutine ffdev_parameters_run_xdm_stat()
 
             ! eps
             if( xdm_pairs(ti,tj)%Rvdw .gt. 0 ) then
-                xdm_pairs(ti,tj)%eps = DEV_HARTREE2KCL * DEV_AU2A**6 * xdm_pairs(ti,tj)%c6ave / xdm_pairs(ti,tj)%Rvdw**6
+                xdm_pairs(ti,tj)%eps = xdm_C6Scale * 0.5d0 * DEV_HARTREE2KCL * DEV_AU2A**6 * &
+                                       xdm_pairs(ti,tj)%c6ave / xdm_pairs(ti,tj)%Rvdw**6
             else
                 xdm_pairs(ti,tj)%eps = 0.0d0
             end if

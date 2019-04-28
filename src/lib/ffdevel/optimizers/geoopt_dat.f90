@@ -60,4 +60,11 @@ integer         :: NumberOfCorrections
 !-------------------------------------------------------------------------------
 type(XYZFILE_TYPE)  :: OptTrajFile
 
+!-------------------------------------------------------------------------------
+! statistics
+integer(8)      :: NumberOfRuns         ! total number of geometry optimizations
+integer(8)      :: NumberOfFailedRuns   ! totla number of failed geometry optimizations
+integer(8)      :: NumberOfGrdEvals     ! total number of MM gradient evaluations
+
+
 end module ffdev_geoopt_dat

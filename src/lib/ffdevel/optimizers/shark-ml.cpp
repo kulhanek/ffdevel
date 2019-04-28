@@ -56,6 +56,7 @@ extern "C" void shark_set_rngseed_(int* seed)
 
 extern "C" void shark_dostep_(double* error)
 {
+    *error = 0.0;
     if( NumOfParams <= 0 ) return;
     switch(OptMethod){
         case SHARK_CMA_ES:

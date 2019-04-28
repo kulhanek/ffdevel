@@ -60,6 +60,23 @@ subroutine ffdev_geoopt_set_default()
 end subroutine ffdev_geoopt_set_default
 
 !===============================================================================
+! subroutine ffdev_geoopt_reset_stat_counters
+!===============================================================================
+
+subroutine ffdev_geoopt_reset_stat_counters()
+
+    use ffdev_geoopt_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    NumberOfRuns        = 0
+    NumberOfFailedRuns  = 0
+    NumberOfGrdEvals    = 0
+
+end subroutine ffdev_geoopt_reset_stat_counters
+
+!===============================================================================
 ! subroutine ffdev_geoopt_run
 !===============================================================================
 
