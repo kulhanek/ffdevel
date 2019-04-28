@@ -426,13 +426,15 @@ subroutine ffdev_targetset_save_drvene(set,name)
     do i=1,set%geo(1)%nrst
         write(DEV_PROFILE,11,ADVANCE='NO') i
     end do
-    write(DEV_PROFILE,12)
+    write(DEV_PROFILE,12,ADVANCE='NO')
+    write(DEV_PROFILE,13)
 
     write(DEV_PROFILE,20,ADVANCE='NO')
     do i=1,set%geo(1)%nrst
         write(DEV_PROFILE,21,ADVANCE='NO')
     end do
-    write(DEV_PROFILE,22)
+    write(DEV_PROFILE,22,ADVANCE='NO')
+    write(DEV_PROFILE,23)
 
     do i=1,set%ngeos
         write(DEV_PROFILE,30,ADVANCE='NO') i
@@ -455,6 +457,9 @@ subroutine ffdev_targetset_save_drvene(set,name)
         end if
         err = set%geo(i)%total_ene - set%offset - set%geo(i)%trg_energy
         write(DEV_PROFILE,33) set%geo(i)%trg_energy, set%geo(i)%total_ene - set%offset, err
+        write(DEV_PROFILE,34) set%offset, set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
+                              set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
+                              set%geo(i)%nb_ene, set%geo(i)%nb14_ene
     end do
 
     close(DEV_PROFILE)
@@ -462,13 +467,16 @@ subroutine ffdev_targetset_save_drvene(set,name)
  10 format('# IDX')
  11 format('       CV',I2.2)
  12 format('   E(TRG,1)    E(MM,2)     E(2-1)')
+ 13 format('   Eoffset      Ebonds    Eangles      Etors    Eimprps       Eeel      E14el        Enb      E14nb')
  20 format('# ---')
  21 format(' ----------')
  22 format(' ---------- ---------- ----------')
+ 23 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
  30 format(I5)
  31 format(1X,F10.4)
  32 format(1X,F10.1)
  33 format(1X,F10.2,1X,F10.2,1X,F10.2)
+ 34 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
 
 end subroutine ffdev_targetset_save_drvene
 
