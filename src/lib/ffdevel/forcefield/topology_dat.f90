@@ -183,8 +183,8 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 ! possible values for lj2exp6_alpha
 ! 12.0                           - identical long-range
 ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
-real(DEVDP)         :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
-logical             :: keep_era      = .true.  ! keep eps, r0, and alpha in A,B,C6 and C8 mode
+real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
+logical     :: keep_era      = .true.   ! keep eps, r0, and alpha in A,B,C6 and C8 mode
 
 
 ! ------------------------------------------------------------------------------

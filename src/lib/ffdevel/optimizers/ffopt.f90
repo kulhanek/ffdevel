@@ -674,6 +674,8 @@ subroutine opt_shark
     use ffdev_errors_dat
     use ffdev_parameters_dat
     use ffdev_parameters
+    use ffdev_targetset_dat
+    use ffdev_topology
 
     implicit none
 
@@ -942,11 +944,19 @@ subroutine ffdev_ffopt_unbox_prms(boxed,prms)
     real(DEVDP)     :: boxed(:)
     real(DEVDP)     :: prms(:)
     ! --------------------------------------------
-    integer         :: i
+    integer         :: i, j
     ! --------------------------------------------------------------------------
 
-    do i=1,nactparms
-        prms(i) = tmp_lb(i) + 0.5d0*(tmp_ub(i)-tmp_lb(i))*(1.0d0-cos(boxed(i)))
+    i = 1
+    do j=1,nparams
+        if( .not. params(j)%enabled ) cycle
+       ! FIXME
+       ! if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
+       !     prms(i) = boxed(i)
+       ! else
+            prms(i) = tmp_lb(i) + 0.5d0*(tmp_ub(i)-tmp_lb(i))*(1.0d0-cos(boxed(i)))
+       ! end if
+        i = i + 1
     end do
 
 end subroutine ffdev_ffopt_unbox_prms
@@ -964,15 +974,23 @@ subroutine ffdev_ffopt_box_prms(prms,boxed)
     real(DEVDP)     :: prms(:)
     real(DEVDP)     :: boxed(:)
     ! --------------------------------------------
-    integer         :: i
+    integer         :: i, j
     real(DEVDP)     :: sc
     ! --------------------------------------------------------------------------
 
-    do i=1,nactparms
-        sc = 1.0d0 - 2.0d0*(prms(i)-tmp_lb(i))/(tmp_ub(i)-tmp_lb(i))
-        if( sc .gt.  1.0d0 ) sc =  1.0d0
-        if( sc .lt. -1.0d0 ) sc = -1.0d0
-        boxed(i) = acos(sc)
+    i = 1
+    do j=1,nparams
+        if( .not. params(j)%enabled ) cycle
+       ! FIXME
+       ! if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
+       !     boxed(i) = prms(i)
+       ! else
+            sc = 1.0d0 - 2.0d0*(prms(i)-tmp_lb(i))/(tmp_ub(i)-tmp_lb(i))
+            if( sc .gt.  1.0d0 ) sc =  1.0d0
+            if( sc .lt. -1.0d0 ) sc = -1.0d0
+            boxed(i) = acos(sc)
+       ! end if
+        i = i + 1
     end do
 
 end subroutine ffdev_ffopt_box_prms
