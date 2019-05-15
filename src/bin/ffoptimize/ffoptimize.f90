@@ -30,6 +30,8 @@ program ffdev_optimize_program
     use ffdev_mmd3_dontrol
     use ffdev_errors
     use ffdev_errors_dat
+    use ffdev_xdm
+    use ffdev_timers
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -41,6 +43,9 @@ program ffdev_optimize_program
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Optimize')
+
+    call ffdev_timers_init_top
+    call ffdev_timers_init
 
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
@@ -168,7 +173,7 @@ program ffdev_optimize_program
     call ffdev_errors_init_all()
 
     ! run XDM stat if data available
-    call ffdev_parameters_run_xdm_stat()
+    call ffdev_xdm_run_stat()
 
     ! initialize
     write(DEV_OUT,*)
@@ -276,6 +281,8 @@ program ffdev_optimize_program
         write(DEV_OUT,120) trim(OutAmberPrmsFileName)
         call ffdev_parameters_save_amber(OutAmberPrmsFileName)
     end if
+
+    call ffdev_timers_finalize(.true.)
 
     call ffdev_utils_footer('FF Optimize')
 

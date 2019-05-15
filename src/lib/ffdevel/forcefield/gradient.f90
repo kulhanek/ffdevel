@@ -31,11 +31,14 @@ subroutine ffdev_gradient_all(top,geo)
     use ffdev_topology
     use ffdev_geometry
     use ffdev_utils
+    use ffdev_timers
 
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
+
+    call ffdev_timers_start_timer(FFDEV_POT_GRADIENT)
 
     ! reset energy
     geo%bond_ene = 0.0d0
@@ -71,6 +74,8 @@ subroutine ffdev_gradient_all(top,geo)
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
                   + geo%ele_ene + geo%nb_ene
+
+    call ffdev_timers_stop_timer(FFDEV_POT_GRADIENT)
 
 end subroutine ffdev_gradient_all
 

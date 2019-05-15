@@ -471,12 +471,12 @@ subroutine change_realms(realm,enable,options,nchanged)
             realmid = REALM_VDW_R0
         case('vdw_alpha')
             realmid = REALM_VDW_ALPHA
-        case('vdw_A')
-            realmid = REALM_VDW_A
-        case('vdw_B')
-            realmid = REALM_VDW_B
-        case('vdw_C')
-            realmid = REALM_VDW_C
+        case('pauli_A')
+            realmid = REALM_PAULI_A
+        case('pauli_B')
+            realmid = REALM_PAULI_B
+        case('pauli_C')
+            realmid = REALM_PAULI_C
         case('all')
             realmid = -1
         case default
@@ -553,22 +553,22 @@ subroutine change_realms(realm,enable,options,nchanged)
                 select case(LastNBMode)
                     case(NB_MODE_LJ)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_A ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
                     case(NB_MODE_EXP6)
-                        if( params(i)%realm .eq. REALM_VDW_A ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
-                    case(NB_MODE_BP)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.                    
-                    case(NB_MODE_EXPONLY)
+                        if( params(i)%realm .eq. REALM_PAULI_A ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_B ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
+                    case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_C ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
+                    case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
                 end select
                 if( realmid .eq. REALM_DIH_C ) then
                     if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
@@ -727,14 +727,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case(NB_PARAMS_MODE_ALL)
                 write(DEV_OUT,25) 'all'
         end select
-        select case(NBParamsRealms)
-            case(NB_PARAMS_REALMS_ALL)
-                write(DEV_OUT,35) 'all'
-            case(NB_PARAMS_REALMS_ERA)
-                write(DEV_OUT,35) 'era'
-            case(NB_PARAMS_REALMS_ER)
-                write(DEV_OUT,35) 'er'
-        end select
         write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
         write(DEV_OUT,45) lj2exp6_alpha
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
@@ -773,31 +765,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'like-all'
             case(NB_PARAMS_MODE_ALL)
                 write(DEV_OUT,25) 'all'
-        end select
-    end if
-
-    if( prmfile_get_string_by_key(fin,'nb_realms', string)) then
-        select case(trim(string))
-            case('all')
-                NBParamsRealms = NB_PARAMS_REALMS_ALL
-                write(DEV_OUT,30) trim(string)
-            case('era')
-                NBParamsRealms = NB_PARAMS_REALMS_ERA
-                write(DEV_OUT,30) trim(string)
-            case('er')
-                NBParamsRealms = NB_PARAMS_REALMS_ER
-                write(DEV_OUT,30) trim(string)
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_realms ('//trim(string)//')')
-        end select
-    else
-        select case(NBParamsRealms)
-            case(NB_PARAMS_REALMS_ALL)
-                write(DEV_OUT,35) 'all'
-            case(NB_PARAMS_REALMS_ERA)
-                write(DEV_OUT,35) 'era'
-            case(NB_PARAMS_REALMS_ER)
-                write(DEV_OUT,35) 'er'
         end select
     end if
 
@@ -848,8 +815,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
  20  format ('NB parameter assembly mode (nb_params)   = ',a12)
  25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
- 30  format ('NB parameter realms (nb_realms)          = ',a12)
- 35  format ('NB parameter realms (nb_realms)          = ',a12,'                (default)')
  50  format ('NB combining rules (comb_rules)          = ',a26)
  55  format ('NB combining rules (comb_rules)          = ',a26,'  (default)')
  40  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7)
@@ -1176,6 +1141,7 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
     use prmfile
     use ffdev_utils
     use ffdev_topology_dat
+    use ffdev_xdm
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -1205,7 +1171,7 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
                 end if
             case('xdm')
                 if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
+                    call ffdev_xdm_control_nbmanip(string,exec)
                 end if
             case default
                 ! do nothing
@@ -1267,7 +1233,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
     end do
 
     ! update nb parameters
-    call ffdev_parameters_reinit_nbparams
+    call ffdev_targetset_reinit_nbparams
 
 10 format('Combination rules (comb_rules)   = ',A)
 20 format('=== SET ',I2.2)
@@ -1332,76 +1298,53 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     LastNBMode = nb_mode
 
     ! update nb parameters
-    call ffdev_parameters_reinit_nbparams
+    call ffdev_targetset_reinit_nbparams
 
 10 format('NB mode (nb_mode)                = ',A)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
 
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip_xdm
-! ==============================================================================
+! FIXME
+!if( NBParamsRealms .eq. NB_PARAMS_REALMS_ERA ) then
+!    select case(nb_mode)
+!        case(NB_MODE_LJ,NB_MODE_EXP6)
+!            ! OK
+!        case default
+!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
+!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
+!    end select
+!end if
 
-subroutine ffdev_parameters_ctrl_nbmanip_xdm(string,exec)
+!if( NBParamsRealms .eq. NB_PARAMS_REALMS_ER ) then
+!    select case(nb_mode)
+!        case(NB_MODE_LJ)
+!            ! OK
+!        case default
+!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
+!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
+!    end select
+!end if
 
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
+!if( NBParamsRealms .eq. NB_PARAMS_REALMS_PAB ) then
+!    select case(nb_mode)
+!        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
+!            ! OK
+!        case default
+!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
+!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
+!    end select
+!end if
 
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,mode
-    ! --------------------------------------------------------------------------
-
-    mode = XDM_NONE
-    if( trim(string) .eq. 'r0' )  mode = XDM_R0
-    if( trim(string) .eq. 'eps' ) mode = XDM_EPS
-    if( trim(string) .eq. 'c6' )  mode = XDM_C6
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'XDM parameters', '%')
-    write(DEV_OUT,10)  trim(string)
-
-    if( mode .eq. XDM_NONE ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unsupported XDM mode '//trim(string)//'!')
-    end if
-
-    if( .not. exec ) return ! do not execute
-
-    do i=1,nsets
-        if( DebugFFManip ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! remix parameters
-        call ffdev_topology_apply_xdm_parameters(sets(i)%top,mode)
-
-        if( DebugFFManip ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! update nb parameters
-    call ffdev_parameters_reinit_nbparams
-
-10 format('Apply XDM parameters (xdm) = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_parameters_ctrl_nbmanip_xdm
+!if( NBParamsRealms .eq. NB_PARAMS_REALMS_PABC ) then
+!    select case(nb_mode)
+!        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+!            ! OK
+!        case default
+!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
+!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
+!    end select
+!end if
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload
@@ -1453,9 +1396,9 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 
         ! read the entire record
         select case(nb_mode)
-            case(NB_MODE_LJ,NB_MODE_EXPONLY)
+            case(NB_MODE_LJ,NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
                 read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
-            case(NB_MODE_EXP6,NB_MODE_BP)
+            case(NB_MODE_EXP6,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
                 read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
@@ -1477,13 +1420,13 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
                             sets(j)%top%nb_types(nbt)%eps = a
                             sets(j)%top%nb_types(nbt)%r0 = b
                             sets(j)%top%nb_types(nbt)%alpha = c
-                        case(NB_MODE_BP)
-                            sets(j)%top%nb_types(nbt)%a = a
-                            sets(j)%top%nb_types(nbt)%b = b
-                            sets(j)%top%nb_types(nbt)%c = c
-                        case(NB_MODE_EXPONLY)
-                            sets(j)%top%nb_types(nbt)%a = a
-                            sets(j)%top%nb_types(nbt)%b = b
+                        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
+                            sets(j)%top%nb_types(nbt)%pa = a
+                            sets(j)%top%nb_types(nbt)%pb = b
+                        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+                            sets(j)%top%nb_types(nbt)%pa = a
+                            sets(j)%top%nb_types(nbt)%pb = b
+                            sets(j)%top%nb_types(nbt)%pc = c
                         case default
                             call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
                     end select
@@ -1510,7 +1453,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     end if
 
 ! update nb parameters
-    call ffdev_parameters_reinit_nbparams
+    call ffdev_targetset_reinit_nbparams
 
     return
 

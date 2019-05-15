@@ -1361,7 +1361,6 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "nb_types          " << nnb_types << endl;
 
 //    integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
-//    integer,parameter               :: NB_MODE_BP = 2   ! Buckingham potential
 
     sout << "nb_mode           " << 1 << endl;
 }

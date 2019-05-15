@@ -533,9 +533,9 @@ subroutine ffdev_topology_load(top,name)
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_types] section!')
         end if
-        top%nb_types(i)%a = 0.0d0
-        top%nb_types(i)%b = 0.0d0
-        top%nb_types(i)%c = 0.0d0
+        top%nb_types(i)%pa = 0.0d0
+        top%nb_types(i)%pb = 0.0d0
+        top%nb_types(i)%pc = 0.0d0
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
@@ -834,12 +834,16 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
     select case(nb_mode)
         case(NB_MODE_LJ)
             ffdev_topology_nb_mode_to_string = 'LJ - Lennard-Jones potential'
-        case(NB_MODE_BP)
-            ffdev_topology_nb_mode_to_string = 'BP - Buckingham potential'
         case(NB_MODE_EXP6)
             ffdev_topology_nb_mode_to_string = 'EXP6 - Exp-6 potential'
-        case(NB_MODE_EXPONLY)
-            ffdev_topology_nb_mode_to_string = 'EXPONLY - Born-Mayer potential'            
+        case(NB_MODE_PAULI_DENS2)
+            ffdev_topology_nb_mode_to_string = 'PDENS2 - Pauli via electron density overlap (two params A,B)'
+        case(NB_MODE_PAULI_DENS3)
+            ffdev_topology_nb_mode_to_string = 'PDENS3 - Pauli via electron density overlap (three params A,B,C)'
+        case(NB_MODE_PAULI_WAVE2)
+            ffdev_topology_nb_mode_to_string = 'PWAVE2 - Pauli via wavefunction overlap (two params A,B)'
+        case(NB_MODE_PAULI_WAVE3)
+            ffdev_topology_nb_mode_to_string = 'PWAVE3 - Pauli via wavefunction overlap (three params A,B,C)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -861,12 +865,16 @@ integer function ffdev_topology_nb_mode_from_string(string)
     select case(trim(string))
         case('LJ')
             ffdev_topology_nb_mode_from_string = NB_MODE_LJ
-        case('BP')
-            ffdev_topology_nb_mode_from_string = NB_MODE_BP
         case('EXP6')
             ffdev_topology_nb_mode_from_string = NB_MODE_EXP6
-        case('EXPONLY')
-            ffdev_topology_nb_mode_from_string = NB_MODE_EXPONLY
+        case('PDENS2')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS2
+        case('PDENS3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS3
+        case('PWAVE2')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE2
+        case('PWAVE3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE3
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -896,8 +904,6 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
             ffdev_topology_comb_rules_to_string = 'KG (Kong)'
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
-        case(COMB_RULE_GS)
-            ffdev_topology_comb_rules_to_string = 'GS (Gilbert-Smith)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
     end select
@@ -927,8 +933,6 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
-        case('GS')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_GS
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
     end select
@@ -1110,22 +1114,14 @@ subroutine ffdev_topology_info_types(top,mode)
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                                top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
                     end do
-                case(NB_MODE_BP)
+                case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
                     write(DEV_OUT,620)
                     write(DEV_OUT,630)
                     do i=1,top%nnb_types
                         write(DEV_OUT,640)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
-                                               top%nb_types(i)%A, top%nb_types(i)%B, top%nb_types(i)%C
-                    end do
-                case(NB_MODE_EXPONLY)
-                    write(DEV_OUT,720)
-                    write(DEV_OUT,730)
-                    do i=1,top%nnb_types
-                        write(DEV_OUT,740)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
-                                               adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
-                                               top%nb_types(i)%A, top%nb_types(i)%B
-                    end do                                                 
+                                               top%nb_types(i)%PA, top%nb_types(i)%PB, top%nb_types(i)%PC
+                    end do                                               
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_topology_info_types!')
             end select
@@ -1387,63 +1383,12 @@ integer function ffdev_topology_find_nbtype_by_types(top,sti,stj)
 end function ffdev_topology_find_nbtype_by_types
 
 ! ==============================================================================
-! function ffdev_topology_is_nbtype_used
-! ==============================================================================
-
-logical function ffdev_topology_is_nbtype_used(top,nbt)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: nbt
-    ! --------------------------------------------
-    integer         :: i
-    ! --------------------------------------------------------------------------
-
-    ffdev_topology_is_nbtype_used = .false.
-
-    select case(NBParamsMode)
-        case(NB_PARAMS_MODE_NORMAL)
-            ! keep only those that are needed for NB calculation
-            do i=1,top%nb_size
-                if( top%nb_list(i)%nbt .eq. nbt ) then
-                    ffdev_topology_is_nbtype_used = .true.
-                    return
-                end if
-            end do
-        case(NB_PARAMS_MODE_LIKE_ALL)
-            ffdev_topology_is_nbtype_used = top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj
-            return
-        case(NB_PARAMS_MODE_LIKE_ONLY)
-            if( top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj ) then
-                if( top%atom_types(top%nb_types(nbt)%ti)%probe ) then
-                    return
-                end if
-                ffdev_topology_is_nbtype_used = .true.
-                return
-            end if
-        case(NB_PARAMS_MODE_ALL)
-            ffdev_topology_is_nbtype_used = .true.
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'not implemented in ffdev_topology_is_nbtype_used!')
-    end select
-
-    ! not found
-    return
-
-end function ffdev_topology_is_nbtype_used
-
-! ==============================================================================
 ! function ffdev_topology_switch_nbmode
 ! ==============================================================================
 
 subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 
     use ffdev_utils
-    use ffdev_mmd3
-    use ffdev_parameters_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1455,98 +1400,28 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 
     if( top%nb_mode .eq. nb_mode ) return ! nothing to change
 
-    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ERA ) then
-        select case(nb_mode)
-            case(NB_MODE_LJ,NB_MODE_EXP6)
-                ! OK
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-        end select
-    end if
+    ! check for probe mode, which is required for Pauli repulsion nb_mode
+    select case(nb_mode)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+            ! FIXME - maybe in the future, we can also consider nfragments > 0
+            if( top%probe_size .eq. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'nb_mode "' // &
+                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" requires probe mode!')
+            end if
+    end select
 
-    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ER ) then
-        select case(nb_mode)
-            case(NB_MODE_LJ)
-                ! OK
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-        end select
-    end if
-
-    select case(top%nb_mode)
-! from LJ ->
+    select case(nb_mode)
         case(NB_MODE_LJ)
-            select case(nb_mode)
-                case(NB_MODE_LJ)
-                    ! keep eps, r0
-                    do i=1,top%nnb_types
-                        if( (.not. keep_era) .or. (top%nb_types(i)%alpha .eq. 0.0d0) ) then
-                            top%nb_types(i)%alpha = lj2exp6_alpha
-                        end if
-                        top%nb_types(i)%A  = 0.0d0
-                        top%nb_types(i)%B  = 0.0d0
-                        top%nb_types(i)%C  = 0.0d0
-                    end do
-                case(NB_MODE_EXP6)
-                    ! keep eps, r0; take user defined alpha
-                    do i=1,top%nnb_types
-                        if( (.not. keep_era) .or. (top%nb_types(i)%alpha .eq. 0.0d0) ) then
-                            top%nb_types(i)%alpha = lj2exp6_alpha
-                        end if
-                        top%nb_types(i)%A  = 0.0d0
-                        top%nb_types(i)%B  = 0.0d0
-                        top%nb_types(i)%C  = 0.0d0
-                    end do
-                case(NB_MODE_BP)
-                    ! take user defined alpha
-                    ! and switch from ERA to ABC
-                    do i=1,top%nnb_types
-                        if( (.not. keep_era) .or. (top%nb_types(i)%alpha .eq. 0.0d0) ) then
-                            top%nb_types(i)%alpha = lj2exp6_alpha
-                        end if
-                        call ffdev_topology_ERA2ABC(NB_MODE_EXP6,top%nb_types(i))
-                        if( .not. keep_era ) then
-                            top%nb_types(i)%eps   = 0.0d0
-                            top%nb_types(i)%r0    = 0.0d0
-                            top%nb_types(i)%alpha = 0.0d0
-                        end if
-                    end do
-
-                case(NB_MODE_EXPONLY)
-                    do i=1,top%nnb_types
-                        ! keep repulsive parameters
-                        if( (.not. keep_era) .or. (top%nb_types(i)%alpha .eq. 0.0d0) ) then
-                            top%nb_types(i)%alpha = lj2exp6_alpha
-                        end if
-                        call ffdev_topology_ERA2ABC(NB_MODE_EXP6,top%nb_types(i))
-                        ! erase old LJ parameters
-                        if( .not. keep_era ) then
-                            top%nb_types(i)%eps   = 0.0d0
-                            top%nb_types(i)%r0    = 0.0d0
-                            top%nb_types(i)%alpha = 0.0d0
-                        end if
-                    end do                                    
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
-            end select
-
-! from ExpONLY ->
-        case(NB_MODE_EXPONLY)
-            select case(nb_mode)
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Only EXPONLY->ADDD3BJ supported!')
-            end select
-
-! from Exp6 ->
+            ! keep eps, r0
         case(NB_MODE_EXP6)
-            call ffdev_utils_exit(DEV_OUT,1,'not implemented!')
-
-! from BP ->
-        case(NB_MODE_BP)
-            call ffdev_utils_exit(DEV_OUT,1,'not implemented!')
-
+            ! keep eps, r0; take user defined alpha if not defined
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%alpha .eq. 0.0d0 ) then
+                    top%nb_types(i)%alpha = lj2exp6_alpha
+                end if
+            end do
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+            ! nothing to do, use old PA, PB, PC
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
     end select
@@ -1554,41 +1429,6 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
     top%nb_mode = nb_mode
 
 end subroutine ffdev_topology_switch_nbmode
-
-! ==============================================================================
-! function ffdev_topology_apply_xdm_parameters
-! ==============================================================================
-
-subroutine ffdev_topology_apply_xdm_parameters(top,xdm_mode)
-
-    use ffdev_utils
-    use ffdev_mmd3
-    use ffdev_parameters_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: xdm_mode
-    ! --------------------------------------------
-    integer         :: i, glbti, glbtj
-    ! --------------------------------------------------------------------------
-
-    do i=1,top%nnb_types
-        glbti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
-        glbtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
-
-        select case(xdm_mode)
-            case(XDM_EPS)
-                top%nb_types(i)%eps = xdm_pairs(glbti,glbtj)%eps
-            case(XDM_R0)
-                top%nb_types(i)%r0  = xdm_pairs(glbti,glbtj)%Rvdw
-            case(XDM_C6)
-                top%nb_types(i)%c   = xdm_pairs(glbti,glbtj)%C6ave * DEV_HARTREE2KCL * DEV_AU2A**6
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported xdm_mode in ffdev_topology_apply_xdm_parameters!')
-        end select
-    end do
-
-end subroutine ffdev_topology_apply_xdm_parameters
 
 ! ==============================================================================
 ! function ffdev_topology_find_r_for_lj
@@ -1694,9 +1534,6 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     select case(comb_rules)
         case(COMB_RULE_LB,COMB_RULE_KG,COMB_RULE_WH,COMB_RULE_FB)
             if( top%nb_mode .eq. NB_MODE_LJ ) ok = .true.
-            if( top%nb_mode .eq. NB_MODE_EXP6 ) ok = .true.
-        case(COMB_RULE_GS)
-            if( top%nb_mode .eq. NB_MODE_EXPONLY ) ok = .true.
     end select
 
     if( .not. ok ) then
@@ -1750,16 +1587,6 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
                     epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
                     top%nb_types(i)%eps = epsij
                     top%nb_types(i)%r0 = r0ij
-                case(COMB_RULE_GS)
-                    aii  = top%nb_types(nbii)%a
-                    bii  = top%nb_types(nbii)%b
-                    ajj  = top%nb_types(nbjj)%a
-                    bjj  = top%nb_types(nbjj)%b
-                    bij  = 2.0d0*bii*bjj/(bii+bjj)
-                    aij  = ( ((aii*bii)**(1.0d0/bii) * (ajj*bjj)**(1.0d0/bjj))**(bij/2.0d0) ) / bij
-                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
-                    top%nb_types(i)%a = aij
-                    top%nb_types(i)%b = bij
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules!')
             end select
@@ -1769,104 +1596,6 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     top%assumed_comb_rules = comb_rules
 
 end subroutine ffdev_topology_apply_NB_comb_rules
-
-! ==============================================================================
-! subroutine ffdev_topology_expand_exponly
-! ==============================================================================
-
-subroutine ffdev_topology_expand_exponly(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,pt,at
-    real(DEVDP)     :: aii,ajj,aij,bii,bjj,bij
-    ! --------------------------------------------------------------------------
-
-    if( top%nb_mode .ne. NB_MODE_EXPONLY ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Cannot expand exponly if nb_mode .ne. NB_MODE_EXPONLY!')
-    end if
-
-    if( top%probe_size .eq. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Cannot expand exponly if not in probe mode!')
-    end if
-
-    do i=1,top%nnb_types
-        ! skip like atoms
-        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
-
-        ! at least one atom must be a probe
-        if( .not. (top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe) ) cycle
-
-        ! determine probe and probed atom
-        if( top%atom_types(top%nb_types(i)%ti)%probe ) then
-            pt = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            at = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-        else
-            pt = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-            at = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-        end if
-
-        ! get parameters of probe
-        aii = top%nb_types(pt)%a
-        bii = top%nb_types(pt)%b
-
-        ! get source parameters
-        aij = top%nb_types(i)%a
-        bij = top%nb_types(i)%b
-
-        ! write(*,*) aii,bii,aij,bij
-
-        ! get jj parameters
-        select case(comb_rules)
-            case(COMB_RULE_GS)
-                bjj = bij*bii/(2.0d0*bii-bij)
-                ajj = ((aij*bij)**(2.0d0/bij)/((aii*bii)**(1.0d0/bii)*bjj**(1.0d0/bjj)))**bjj
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported combining rule in ffdev_topology_expand_exponly!')
-        end select
-
-        ! update parameters
-        top%nb_types(at)%a = ajj
-        top%nb_types(at)%b = bjj
-    end do
-
-end subroutine ffdev_topology_expand_exponly
-
-! ==============================================================================
-! subroutine ffdev_topology_ERA2ABC
-! ==============================================================================
-
-subroutine ffdev_topology_ERA2ABC(nbmode,nbtype)
-
-    use ffdev_utils
-
-    implicit none
-    integer         :: nbmode
-    type(NB_TYPE)   :: nbtype
-    ! --------------------------------------------------------------------------
-
-    select case(nbmode)
-        case(NB_MODE_LJ)
-            nbtype%A  = nbtype%eps*nbtype%r0**12
-            nbtype%B  = 2.0d0*nbtype%eps*nbtype%r0**6
-            nbtype%C  = 0.0d0
-        case(NB_MODE_EXP6)
-            if( nbtype%r0 .gt. 0.0d0 ) then
-                nbtype%A  = 6.0d0*nbtype%eps*exp(nbtype%alpha)/(nbtype%alpha - 6.0d0)
-                nbtype%B  = nbtype%alpha/nbtype%r0
-                nbtype%C  = nbtype%eps*nbtype%alpha*nbtype%r0**6/(nbtype%alpha - 6.0d0)
-            end if
-        case(NB_MODE_BP,NB_MODE_EXPONLY)
-            ! nothing to be here
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_topology_ERA2ABC!')
-    end select
-
-end subroutine ffdev_topology_ERA2ABC
 
 ! ==============================================================================
 ! function ffdev_topology_get_nbprms
@@ -1980,9 +1709,9 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
                 top%nb_types(i)%eps   = 0.0d0
                 top%nb_types(i)%r0    = 0.0d0
                 top%nb_types(i)%alpha = 0.0d0
-                top%nb_types(i)%a     = 0.0d0
-                top%nb_types(i)%b     = 0.0d0
-                top%nb_types(i)%c     = 0.0d0
+                top%nb_types(i)%pa     = 0.0d0
+                top%nb_types(i)%pb     = 0.0d0
+                top%nb_types(i)%pc     = 0.0d0
             end do
         end if
     end if

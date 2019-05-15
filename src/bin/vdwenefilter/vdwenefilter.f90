@@ -124,10 +124,6 @@ program ffdev_enefilter_program
     select case(trim(fmethod))
         case('lj')   
             call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)         
-        case('exp')
-            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)
-        case('exp-bin')
-            call ffdev_topology_switch_nbmode(top,NB_MODE_EXPONLY)
             nbins = enemax / binsize
             allocate(bins(nbins))
             bins(:) = 0

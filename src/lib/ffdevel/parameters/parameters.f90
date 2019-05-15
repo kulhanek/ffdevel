@@ -33,8 +33,9 @@ subroutine ffdev_parameters_init()
     use ffdev_utils
 
     implicit none
-    integer     :: maxnparams, i, j, k, alloc_stat, parmid
+    integer     :: maxnparams, i, alloc_stat, parmid
     ! --------------------------------------------------------------------------
+
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'PARAMETERS', ':')
 
@@ -61,7 +62,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 10*sets(i)%top%nnb_types       ! NB
+        maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! NB
     end do
 
     write(DEV_OUT,*)
@@ -77,6 +78,45 @@ subroutine ffdev_parameters_init()
             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for parameter extraction!')
         end if
     end do
+
+    ! generate parameters
+    call ffdev_parameters_reinit()
+
+    write(DEV_OUT,30) nparams
+
+    ! load parameters from file
+    if( (len_trim(InpParamFileName) .gt. 0) .and. (trim(InpParamFileName) .ne. '-none-') ) then
+        write(DEV_OUT,40) trim(InpParamFileName)
+        call ffdev_parameters_load(InpParamFileName)
+    else
+        write(DEV_OUT,50)
+    end if
+
+    call ffdev_parameters_print_parameters()
+
+ 10 format('=== [topology] #',I2.2,' =============================================================')
+ 20 format('Estimated number of parameters (maximum) = ',I6)
+ 30 format('Final number of parameters               = ',I6)
+ 40 format('Loading input parameters from file       = ',A)
+ 50 format('Input parameters taken from topologies ... ')
+
+end subroutine ffdev_parameters_init
+
+! ==============================================================================
+! subroutine ffdev_parameters_reinit
+! ==============================================================================
+
+subroutine ffdev_parameters_reinit()
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: i, j, k, parmid
+    logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
+    logical     :: use_pauli_a, use_pauli_b, use_pauli_c
+    ! --------------------------------------------------------------------------  
 
     nparams = 0
 
@@ -388,59 +428,90 @@ subroutine ffdev_parameters_init()
         end do
     end do
 
-    ! vdw eps realm =====================
-    do i=1,nsets
-        do j=1,sets(i)%top%nnb_types
-            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_EPS)
-            if( parmid .eq. 0 ) then    ! new parameter
-                nparams = nparams + 1
-                params(nparams)%value = sets(i)%top%nb_types(j)%eps
-                params(nparams)%realm = REALM_VDW_EPS
-                params(nparams)%enabled = .false.
-                params(nparams)%identity = 0
-                params(nparams)%pn    = 0
-                params(nparams)%ids(:) = 0
-                params(nparams)%ids(i) = j
-                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                params(nparams)%tk   = 0
-                params(nparams)%tl   = 0
-            else
-                params(parmid)%ids(i) = j ! parameter already exists, update link
-            end if
-        end do
-    end do
+! ------------------------------------------------------------------------------
+    use_vdw_eps = .false.
+    use_vdw_r0 = .false.
+    use_vdw_alpha = .false.
+    use_pauli_a = .false.
+    use_pauli_b = .false.
+    use_pauli_c = .false.
 
-    ! vdw r0 realm =====================
-    do i=1,nsets
-        do j=1,sets(i)%top%nnb_types
-            if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-            parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_R0)
-            if( parmid .eq. 0 ) then    ! new parameter
-                nparams = nparams + 1
-                params(nparams)%value = sets(i)%top%nb_types(j)%r0
-                params(nparams)%realm = REALM_VDW_R0
-                params(nparams)%enabled = .false.
-                params(nparams)%identity = 0
-                params(nparams)%pn    = 0
-                params(nparams)%ids(:) = 0
-                params(nparams)%ids(i) = j
-                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                params(nparams)%tk   = 0
-                params(nparams)%tl   = 0
-            else
-                params(parmid)%ids(i) = j ! parameter already exists, update link
-            end if
-        end do
-    end do
+    select case(LastNBMode)
+        case(NB_MODE_LJ)
+            use_vdw_eps = .true.
+            use_vdw_r0 = .true.
+        case(NB_MODE_EXP6)
+            use_vdw_eps = .true.
+            use_vdw_r0 = .true.
+            use_vdw_alpha = .true.
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+            use_pauli_c = .true.
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in ffdev_parameters_reinit!')
+    end select
 
-    if( (NBParamsRealms .eq. NB_PARAMS_REALMS_ALL) .or. (NBParamsRealms .eq. NB_PARAMS_REALMS_ERA) ) then
+    if( use_vdw_eps ) then
+        ! vdw eps realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_EPS)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%eps
+                    params(nparams)%realm = REALM_VDW_EPS
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_vdw_r0 ) then
+        ! vdw r0 realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_R0)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%r0
+                    params(nparams)%realm = REALM_VDW_R0
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_vdw_alpha ) then
         ! vdw alpha realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
                 parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_ALPHA)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
@@ -462,17 +533,16 @@ subroutine ffdev_parameters_init()
         end do
     end if
 
-    if( NBParamsRealms .eq. NB_PARAMS_REALMS_ALL ) then
-
-        ! vdw A realm =====================
+    if( use_pauli_a ) then
+        ! pauli A realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_A)
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%A
-                    params(nparams)%realm = REALM_VDW_A
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PA
+                    params(nparams)%realm = REALM_PAULI_A
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -487,16 +557,18 @@ subroutine ffdev_parameters_init()
                 end if
             end do
         end do
+    end if
 
-        ! vdw B realm =====================
+    if( use_pauli_b ) then
+        ! pauli B realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_B)
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%B
-                    params(nparams)%realm = REALM_VDW_B
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PB
+                    params(nparams)%realm = REALM_PAULI_B
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -511,16 +583,18 @@ subroutine ffdev_parameters_init()
                 end if
             end do
         end do
+    end if
         
-        ! vdw G realm =====================
+    if( use_pauli_c ) then
+        ! pauli C realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_topology_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_C)
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_C)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%C
-                    params(nparams)%realm = REALM_VDW_C
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PC
+                    params(nparams)%realm = REALM_PAULI_C
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -537,39 +611,56 @@ subroutine ffdev_parameters_init()
         end do                
     end if
 
-    write(DEV_OUT,30) nparams
+end subroutine ffdev_parameters_reinit
 
-    ! assign global type id to topologies
-    do i=1,nsets
-        do j=1,sets(i)%top%natom_types
-            sets(i)%top%atom_types(j)%glbtypeid = 0
-            do k=1,ntypes
-                if( trim(types(k)%name) .eq. trim(sets(i)%top%atom_types(j)%name) ) then
-                    sets(i)%top%atom_types(j)%glbtypeid = k
-                    exit
+! ==============================================================================
+! function ffdev_parameters_is_nbtype_used
+! ==============================================================================
+
+logical function ffdev_parameters_is_nbtype_used(top,nbt)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    ffdev_parameters_is_nbtype_used = .false.
+
+    select case(NBParamsMode)
+        case(NB_PARAMS_MODE_NORMAL)
+            ! keep only those that are needed for NB calculation
+            do i=1,top%nb_size
+                if( top%nb_list(i)%nbt .eq. nbt ) then
+                    ffdev_parameters_is_nbtype_used = .true.
+                    return
                 end if
             end do
-        end do
-    end do
+        case(NB_PARAMS_MODE_LIKE_ALL)
+            ffdev_parameters_is_nbtype_used = top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj
+            return
+        case(NB_PARAMS_MODE_LIKE_ONLY)
+            if( top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj ) then
+                if( top%atom_types(top%nb_types(nbt)%ti)%probe ) then
+                    return
+                end if
+                ffdev_parameters_is_nbtype_used = .true.
+                return
+            end if
+        case(NB_PARAMS_MODE_ALL)
+            ffdev_parameters_is_nbtype_used = .true.
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'not implemented in ffdev_parameters_is_nbtype_used!')
+    end select
 
-    ! load parameters from file
-    if( (len_trim(InpParamFileName) .gt. 0) .and. (trim(InpParamFileName) .ne. '-none-') ) then
-        write(DEV_OUT,40) trim(InpParamFileName)
-        call ffdev_parameters_load(InpParamFileName)
-    else
-        write(DEV_OUT,50)
-    end if
+    ! not found
+    return
 
-    call ffdev_parameters_print_parameters()
-
- 10 format('=== [topology] #',I2.2,' =============================================================')
- 20 format('Estimated number of parameters (maximum) = ',I6)
- 30 format('Final number of parameters               = ',I6)
- 40 format('Loading input parameters from file       = ',A)
- 50 format('Input parameters taken from topologies ... ')
-
-end subroutine ffdev_parameters_init
-
+end function ffdev_parameters_is_nbtype_used
 
 ! ------------------------------------------------------------------------------
 
@@ -610,7 +701,7 @@ integer function find_parameter(top,id,pn,realm)
             tj = get_common_type_id(top,top%improper_types(id)%tj)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
-        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C)
+        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
     end select
@@ -645,7 +736,7 @@ integer function find_parameter(top,id,pn,realm)
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -1149,8 +1240,7 @@ subroutine ffdev_parameters_save_amber(name)
     end do
     do i=1,nparams
         if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
-            ( params(i)%realm .eq. REALM_VDW_ALPHA ) .or. ( params(i)%realm .eq. REALM_VDW_A ) .or. &
-            ( params(i)%realm .eq. REALM_VDW_B ) .or. ( params(i)%realm .eq. REALM_VDW_C ) ) then
+            ( params(i)%realm .eq. REALM_VDW_ALPHA ) ) then
             ! we need LJ or EXP6 to be able to print parameters
             ok = .false.
             do j=1,nsets
@@ -1454,14 +1544,14 @@ subroutine ffdev_parameters_print_parameters()
             case(REALM_VDW_ALPHA)
                 tmp = 'vdw_alpha'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_A)
-                tmp = 'vdw_A'
+            case(REALM_PAULI_A)
+                tmp = 'pauli_A'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_B)
-                tmp = 'vdw_B'
+            case(REALM_PAULI_B)
+                tmp = 'pauli_B'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_C)
-                tmp = 'vdw_C'
+            case(REALM_PAULI_C)
+                tmp = 'pauli_C'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)                                 
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
@@ -1537,12 +1627,12 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'vdW_r0'
             case(REALM_VDW_ALPHA)
                 tmp = 'vdW_alpha'
-            case(REALM_VDW_A)
-                tmp = 'vdW_A'
-            case(REALM_VDW_B)
-                tmp = 'vdW_B'
-            case(REALM_VDW_C)
-                tmp = 'vdW_C'
+            case(REALM_PAULI_A)
+                tmp = 'pauli_A'
+            case(REALM_PAULI_B)
+                tmp = 'pauli_B'
+            case(REALM_PAULI_C)
+                tmp = 'pauli_C'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -1807,24 +1897,24 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_VDW_A)
+            case(REALM_PAULI_A)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%A = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PA = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_VDW_B)
+            case(REALM_PAULI_B)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%B = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PB = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_VDW_C)
+            case(REALM_PAULI_C)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%C = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PC = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do                               
@@ -1906,12 +1996,12 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinVdwR0
         case(REALM_VDW_ALPHA)
             ffdev_params_get_lower_bound = MinVdwAlpha
-        case(REALM_VDW_A)
-            ffdev_params_get_lower_bound = MinVdwA
-        case(REALM_VDW_B)
-            ffdev_params_get_lower_bound = MinVdwB
-        case(REALM_VDW_C)
-            ffdev_params_get_lower_bound = MinVdwC
+        case(REALM_PAULI_A)
+            ffdev_params_get_lower_bound = MinPauliA
+        case(REALM_PAULI_B)
+            ffdev_params_get_lower_bound = MinPauliB
+        case(REALM_PAULI_C)
+            ffdev_params_get_lower_bound = MinPauliC
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
     end select
@@ -1989,12 +2079,12 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxVdwR0
         case(REALM_VDW_ALPHA)
             ffdev_params_get_upper_bound = MaxVdwAlpha
-        case(REALM_VDW_A)
-            ffdev_params_get_upper_bound = MaxVdwA
-        case(REALM_VDW_B)
-            ffdev_params_get_upper_bound = MaxVdwB
-        case(REALM_VDW_C)
-            ffdev_params_get_upper_bound = MaxVdwC
+        case(REALM_PAULI_A)
+            ffdev_params_get_upper_bound = MaxPauliA
+        case(REALM_PAULI_B)
+            ffdev_params_get_upper_bound = MaxPauliB
+        case(REALM_PAULI_C)
+            ffdev_params_get_upper_bound = MaxPauliC
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
     end select
@@ -2258,6 +2348,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     use ffdev_errors_dat
     use ffdev_errors
     use ffdev_targetset
+    use ffdev_xdm
 
     implicit none
     real(DEVDP)         :: prms(:)
@@ -2268,7 +2359,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     call ffdev_parameters_scatter(prms)
 
     ! keep C6 if requested
-    call ffdev_parameters_keep_c6()
+    call ffdev_xdm_keep_c6()
 
     ! distribute parameters to topologies
     call ffdev_parameters_to_tops()
@@ -2281,337 +2372,6 @@ subroutine ffdev_parameters_error_only(prms,error)
     call ffdev_errors_error_only(error)
 
 end subroutine ffdev_parameters_error_only
-
-! ==============================================================================
-! subroutine ffdev_parameters_keep_c6
-! ==============================================================================
-
-subroutine ffdev_parameters_keep_c6()
-
-    use ffdev_parameters_dat
-
-    implicit none
-    integer             :: i, j
-    real(DEVDP)         :: C6
-    ! --------------------------------------------------------------------------
-
-    select case(C6Mode)
-        case(NB_KEEP_XDM_C6_VIA_EPS)
-            do i=1,nparams
-                if( params(i)%realm .ne. REALM_VDW_R0 ) cycle
-                if( params(i)%value .eq. 0.0d0 ) cycle
-                ! get C6
-                C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                     xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
-                do j=1,nparams
-                    if( params(j)%realm .ne. REALM_VDW_EPS ) cycle
-                    if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
-                        params(j)%value = 0.5d0 * C6 / params(i)%value**6
-                        exit
-                    end if
-                end do
-            end do
-            case(NB_KEEP_XDM_C6_VIA_R0)
-                do i=1,nparams
-                    if( params(i)%realm .ne. REALM_VDW_EPS ) cycle
-                    if( params(i)%value .eq. 0.0d0 ) cycle
-                    ! get C6
-                    C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                         xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
-                    do j=1,nparams
-                        if( params(j)%realm .ne. REALM_VDW_R0 ) cycle
-                        if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
-                            params(j)%value = (0.5d0 * C6 / params(i)%value)**(1.0d0/6.0d0)
-                            exit
-                        end if
-                    end do
-                end do
-        case(NB_LEFT_C6)
-            ! nothing to do
-        case default
-            ! nothing to do
-    end select
-
-end subroutine ffdev_parameters_keep_c6
-
-! ==============================================================================
-! subroutine ffdev_parameters_run_xdm_stat
-! ==============================================================================
-
-subroutine ffdev_parameters_run_xdm_stat()
-
-    use ffdev_targetset
-    use ffdev_targetset_dat
-    use ffdev_parameters_dat
-    use ffdev_utils
-
-    implicit none
-    integer     :: ti, tj, ai, aj, i, j, num, alloc_stat
-    real(DEVDP) :: c6sum, c8sum, c10sum, rms, pol
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'XDM', ':')
-
-    ! do we have XDM data?
-    xdm_data_loaded = .false.
-
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_xdm_loaded ) then
-                xdm_data_loaded = .true.
-                exit
-            end if
-        end do
-    end do
-    if( .not. xdm_data_loaded ) then
-        write(DEV_OUT,10)
-        return
-    end if
-
-    ! allocate xdm pairs
-    allocate( xdm_pairs(ntypes,ntypes), xdm_atoms(ntypes), stat = alloc_stat )
-    if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,trim('Unable to allocate xdm_pairs or xdm_atoms'))
-    end if
-
-    ! clear data
-    do ti=1,ntypes
-        xdm_atoms(ti)%vave = 0.0d0
-        xdm_atoms(ti)%vsig = 0.0d0
-        xdm_atoms(ti)%v0ave = 0.0d0
-        xdm_atoms(ti)%v0sig = 0.0d0
-        xdm_atoms(ti)%p0ave = 0.0d0
-        xdm_atoms(ti)%p0sig = 0.0d0
-        xdm_atoms(ti)%Rvdw  = 0.0d0
-        xdm_atoms(ti)%pol = 0.0d0
-        xdm_atoms(ti)%num = 0
-        do tj=1,ntypes
-            xdm_pairs(ti,tj)%c6ave = 0.0d0
-            xdm_pairs(ti,tj)%c6sig = 0.0d0
-            xdm_pairs(ti,tj)%c8ave = 0.0d0
-            xdm_pairs(ti,tj)%c8sig = 0.0d0
-            xdm_pairs(ti,tj)%c10ave = 0.0d0
-            xdm_pairs(ti,tj)%c10sig = 0.0d0
-            xdm_pairs(ti,tj)%num = 0
-        end do
-    end do
-
-    ! gather data
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            ! do we have data?
-            if( .not. sets(i)%geo(j)%trg_xdm_loaded ) cycle
-
-            do ai=1,sets(i)%geo(j)%natoms
-                ! get types
-                ti = sets(i)%top%atom_types(sets(i)%top%atoms(ai)%typeid)%glbtypeid
-
-                ! accumulate data
-                xdm_atoms(ti)%vave  = xdm_atoms(ti)%vave + sets(i)%geo(j)%trg_xdm_vol(ai)
-                xdm_atoms(ti)%vsig  = xdm_atoms(ti)%vsig + sets(i)%geo(j)%trg_xdm_vol(ai)**2
-                xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave + sets(i)%geo(j)%trg_xdm_vol0(ai)
-                xdm_atoms(ti)%v0sig = xdm_atoms(ti)%v0sig + sets(i)%geo(j)%trg_xdm_vol0(ai)**2
-                xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave + sets(i)%geo(j)%trg_xdm_pol0(ai)
-                xdm_atoms(ti)%p0sig = xdm_atoms(ti)%p0sig + sets(i)%geo(j)%trg_xdm_pol0(ai)**2
-                xdm_atoms(ti)%num   = xdm_atoms(ti)%num + 1
-
-                do aj=ai,sets(i)%geo(j)%natoms
-
-                    ! get types
-                    tj = sets(i)%top%atom_types(sets(i)%top%atoms(aj)%typeid)%glbtypeid
-
-                    ! accumulate data
-                    xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave + sets(i)%geo(j)%trg_xdm_c6(ai,aj)
-                    xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + sets(i)%geo(j)%trg_xdm_c6(ai,aj)**2
-                    xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + sets(i)%geo(j)%trg_xdm_c8(ai,aj)
-                    xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + sets(i)%geo(j)%trg_xdm_c8(ai,aj)**2
-                    xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + sets(i)%geo(j)%trg_xdm_c10(ai,aj)
-                    xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + sets(i)%geo(j)%trg_xdm_c10(ai,aj)**2
-                    xdm_pairs(ti,tj)%num = xdm_pairs(ti,tj)%num + 1
-
-                    ! complete matrix
-                    if( ti .ne. tj ) then
-                        xdm_pairs(tj,ti)%c6ave  = xdm_pairs(ti,tj)%c6ave
-                        xdm_pairs(tj,ti)%c6sig  = xdm_pairs(ti,tj)%c6sig
-                        xdm_pairs(tj,ti)%c8ave  = xdm_pairs(ti,tj)%c8ave
-                        xdm_pairs(tj,ti)%c8sig  = xdm_pairs(ti,tj)%c8sig
-                        xdm_pairs(tj,ti)%c10ave = xdm_pairs(ti,tj)%c10ave
-                        xdm_pairs(tj,ti)%c10sig = xdm_pairs(ti,tj)%c10sig
-                        xdm_pairs(tj,ti)%num    = xdm_pairs(ti,tj)%num
-                    end if
-                end do
-            end do
-        end do
-    end do
-
-    ! finish statistics for dispersion cooeficients
-    do ti=1,ntypes
-
-        if( xdm_atoms(ti)%num .gt. 0 ) then
-            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%vsig - xdm_atoms(ti)%vave**2;
-            if( rms .gt. 0.0d0 ) then
-                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
-            else
-                rms = 0.0d0
-            end if
-            xdm_atoms(ti)%vsig = rms
-            xdm_atoms(ti)%vave = xdm_atoms(ti)%vave / real(xdm_atoms(ti)%num)
-
-            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%v0sig - xdm_atoms(ti)%v0ave**2;
-            if( rms .gt. 0.0d0 ) then
-                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
-            else
-                rms = 0.0d0
-            end if
-            xdm_atoms(ti)%v0sig = rms
-            xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave / real(xdm_atoms(ti)%num)
-
-            rms = xdm_atoms(ti)%num*xdm_atoms(ti)%p0sig - xdm_atoms(ti)%p0ave**2;
-            if( rms .gt. 0.0d0 ) then
-                rms = sqrt(rms) / real(xdm_atoms(ti)%num)
-            else
-                rms = 0.0d0
-            end if
-            xdm_atoms(ti)%p0sig = rms
-            xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave / real(xdm_atoms(ti)%num)
-
-            ! final polarizability
-            xdm_atoms(ti)%pol = xdm_atoms(ti)%vave*xdm_atoms(ti)%p0ave / xdm_atoms(ti)%v0ave
-
-            ! rvdw
-            xdm_atoms(ti)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*xdm_atoms(ti)%pol**(1.0d0/7.0d0)
-        end if
-
-    end do
-
-    do ti=1,ntypes
-        do tj=1,ntypes
-            if( xdm_pairs(ti,tj)%num .gt. 0 ) then
-
-                rms = xdm_pairs(ti,tj)%num*xdm_pairs(ti,tj)%c6sig - xdm_pairs(ti,tj)%c6ave**2;
-                if( rms .gt. 0.0d0 ) then
-                    rms = sqrt(rms) / real(xdm_pairs(ti,tj)%num)
-                else
-                    rms = 0.0d0
-                end if
-                xdm_pairs(ti,tj)%c6sig = rms
-                xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave / real(xdm_pairs(ti,tj)%num)
-
-                rms = xdm_pairs(ti,tj)%num*xdm_pairs(ti,tj)%c8sig - xdm_pairs(ti,tj)%c8ave**2;
-                if( rms .gt. 0.0d0 ) then
-                    rms = sqrt(rms) / real(xdm_pairs(ti,tj)%num)
-                else
-                    rms = 0.0d0
-                end if
-                xdm_pairs(ti,tj)%c8sig = rms
-                xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave / real(xdm_pairs(ti,tj)%num)
-
-                rms = xdm_pairs(ti,tj)%num*xdm_pairs(ti,tj)%c10sig - xdm_pairs(ti,tj)%c10ave**2;
-                if( rms .gt. 0.0d0 ) then
-                    rms = sqrt(rms) / real(xdm_pairs(ti,tj)%num)
-                else
-                    rms = 0.0d0
-                end if
-                xdm_pairs(ti,tj)%c10sig = rms
-                xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave / real(xdm_pairs(ti,tj)%num)
-            end if
-
-            ! rvdw
-            pol = 0.5d0 * (xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)
-            xdm_pairs(ti,tj)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*pol**(1.0d0/7.0d0)
-
-            ! eps
-            if( xdm_pairs(ti,tj)%Rvdw .gt. 0 ) then
-                xdm_pairs(ti,tj)%eps = xdm_C6Scale * 0.5d0 * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                                       xdm_pairs(ti,tj)%c6ave / xdm_pairs(ti,tj)%Rvdw**6
-            else
-                xdm_pairs(ti,tj)%eps = 0.0d0
-            end if
-        end do
-    end do
-
-    ! dispersion data ----------------------------
-    write(DEV_OUT,*)
-    write(DEV_OUT,20)
-    write(DEV_OUT,*)
-
-    write(DEV_OUT,30)
-    write(DEV_OUT,40)
-
-    do ti=1,ntypes
-        tj = ti
-        write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
-                          xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
-                          xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                          xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
-    end do
-    write(DEV_OUT,40)
-    do ti=1,ntypes
-        do tj=ti+1,ntypes
-            write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
-                              xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
-                              xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
-        end do
-    end do
-    write(DEV_OUT,40)
-
-    ! atomic data ----------------------------
-    write(DEV_OUT,*)
-    write(DEV_OUT,120)
-    write(DEV_OUT,*)
-
-    write(DEV_OUT,130)
-    write(DEV_OUT,140)
-    do ti=1,ntypes
-        write(DEV_OUT,150) trim(types(ti)%name),xdm_atoms(ti)%num, &
-                          xdm_atoms(ti)%p0ave, xdm_atoms(ti)%p0sig, &
-                          xdm_atoms(ti)%v0ave, xdm_atoms(ti)%v0sig, &
-                          xdm_atoms(ti)%vave, xdm_atoms(ti)%vsig, &
-                          xdm_atoms(ti)%pol, xdm_atoms(ti)%Rvdw
-    end do
-
-
-    ! LJ data ----------------------------
-    write(DEV_OUT,*)
-    write(DEV_OUT,220)
-    write(DEV_OUT,*)
-
-    write(DEV_OUT,230)
-    write(DEV_OUT,240)
-    do ti=1,ntypes
-        tj = ti
-        write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
-                           xdm_pairs(ti,tj)%Rvdw
-    end do
-    write(DEV_OUT,240)
-    do ti=1,ntypes
-        do tj=ti+1,ntypes
-            write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
-                               xdm_pairs(ti,tj)%Rvdw
-        end do
-    end do
-    write(DEV_OUT,240)
-
- 10 format('>>> No XDM data available ....')
-
- 20 format('# Dispersion coefficients ...')
- 30 format('# TypA TypB Number         <C6>        s(C6)         <C8>        s(C8)        <C10>       s(C10)')
- 40 format('# ---- ---- ------ ------------ ------------ ------------ ------------ ------------ ------------')
- 50 format(2X,A4,1X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
-
-120 format('# Atomic data ...')
-130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol   Rvdw')
-140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------')
-150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,F6.3)
-
-220 format('# LJ parameters ...')
-230 format('# TypA TypB        eps         R0')
-240 format('# ---- ---- ---------- ----------')
-250 format(2X,A4,1X,A4,1X,F10.5,1X,F10.5)
-
-end subroutine ffdev_parameters_run_xdm_stat
 
 ! ------------------------------------------------------------------------------
 

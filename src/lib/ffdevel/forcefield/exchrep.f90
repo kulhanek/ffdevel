@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_energy
+module ffdev_exchrep
 
 use ffdev_geometry_dat
 use ffdev_constants
@@ -23,22 +23,19 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
-! subroutine ffdev_energy_all
+! subroutine ffdev_exchrep_all
 ! ==============================================================================
 
-subroutine ffdev_energy_all(top,geo)
+subroutine ffdev_exchrep_all(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_utils
-    use ffdev_timers
 
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
-
-    call ffdev_timers_start_timer(FFDEV_POT_ENERGY)
 
     ! reset energy
     geo%bond_ene = 0.0d0
@@ -50,40 +47,41 @@ subroutine ffdev_energy_all(top,geo)
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
     geo%total_ene = 0.0d0
-    geo%rst_energy = 0.0d0
+    geo%rst_exchrep = 0.0d0
 
     ! bonded terms
     if( top%probe_size .eq. 0 ) then
-        call ffdev_energy_bonds(top,geo)
-        call ffdev_energy_angles(top,geo)
-        call ffdev_energy_dihedrals(top,geo)
-        call ffdev_energy_impropers(top,geo)
+        call ffdev_exchrep_bonds(top,geo)
+        call ffdev_exchrep_angles(top,geo)
+        call ffdev_exchrep_dihedrals(top,geo)
+        call ffdev_exchrep_impropers(top,geo)
     end if
 
     ! non-bonded terms
     select case(top%nb_mode)
         case(NB_MODE_LJ)
-            call ffdev_energy_nb_lj(top,geo)
+            call ffdev_exchrep_nb_lj(top,geo)
         case(NB_MODE_EXP6)
-            call ffdev_energy_nb_exp6(top,geo)
-        ! FIXME - exchange energy
+            call ffdev_exchrep_nb_exp6(top,geo)
+        case(NB_MODE_BP)
+            call ffdev_exchrep_nb_bp(top,geo)
+        case(NB_MODE_EXPONLY)
+            call ffdev_exchrep_nb_exponly(top,geo)
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_energy_all!')
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_exchrep_all!')
     end select
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
                   + geo%ele_ene + geo%nb_ene
 
-    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY)
-
-end subroutine ffdev_energy_all
+end subroutine ffdev_exchrep_all
 
 !===============================================================================
-! subroutine ffdev_energy_bonds
+! subroutine ffdev_exchrep_bonds
 !===============================================================================
 
-subroutine ffdev_energy_bonds(top,geo)
+subroutine ffdev_exchrep_bonds(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -114,13 +112,13 @@ subroutine ffdev_energy_bonds(top,geo)
         geo%bond_ene = geo%bond_ene + 0.5*top%bond_types(ic)%k*db**2
     end do
 
-end subroutine ffdev_energy_bonds
+end subroutine ffdev_exchrep_bonds
 
 !===============================================================================
-! subroutine ffdev_energy_angles
+! subroutine ffdev_exchrep_angles
 !===============================================================================
 
-subroutine ffdev_energy_angles(top,geo)
+subroutine ffdev_exchrep_angles(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -169,13 +167,13 @@ subroutine ffdev_energy_angles(top,geo)
         geo%angle_ene = geo%angle_ene + 0.5d0*top%angle_types(ic)%k*da**2
     end do
 
-end subroutine ffdev_energy_angles
+end subroutine ffdev_exchrep_angles
 
 !===============================================================================
-! subroutine ffdev_energy_dihedrals
+! subroutine ffdev_exchrep_dihedrals
 !===============================================================================
 
-subroutine ffdev_energy_dihedrals(top,geo)
+subroutine ffdev_exchrep_dihedrals(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -252,17 +250,17 @@ subroutine ffdev_energy_dihedrals(top,geo)
                                   / top%dihedral_types(ic)%w2(pn))
                 end do
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_energy_dihedrals]!')
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_exchrep_dihedrals]!')
         end select
     end do
 
-end subroutine ffdev_energy_dihedrals
+end subroutine ffdev_exchrep_dihedrals
 
 !===============================================================================
-! subroutine ffdev_energy_impropers
+! subroutine ffdev_exchrep_impropers
 !===============================================================================
 
-subroutine ffdev_energy_impropers(top,geo)
+subroutine ffdev_exchrep_impropers(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -321,13 +319,13 @@ subroutine ffdev_energy_impropers(top,geo)
 
     end do
 
-end subroutine ffdev_energy_impropers
+end subroutine ffdev_exchrep_impropers
 
 !===============================================================================
-! subroutine ffdev_energy_nb_lj
+! subroutine ffdev_exchrep_nb_lj
 !===============================================================================
 
-subroutine ffdev_energy_nb_lj(top,geo)
+subroutine ffdev_exchrep_nb_lj(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -375,13 +373,68 @@ subroutine ffdev_energy_nb_lj(top,geo)
         end if
     end do
 
-end subroutine ffdev_energy_nb_lj
+end subroutine ffdev_exchrep_nb_lj
 
 !===============================================================================
-! subroutine ffdev_energy_nb_exp6
+! subroutine ffdev_exchrep_nb_bp
 !===============================================================================
 
-subroutine ffdev_energy_nb_exp6(top,geo)
+subroutine ffdev_exchrep_nb_bp(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt
+    real(DEVDP)     :: inv_scee,inv_scnb,aBP,bBP,cBP,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2a,ra,r6a
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+        aBP  = top%nb_types(nbt)%A
+        bBP  = top%nb_types(nbt)%B
+        cBP  = top%nb_types(nbt)%C
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2a
+        ra  = sqrt(r2a)
+        r6a = r2a*r2a*r2a
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij*ra
+            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra) - cBP*r6a
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij*ra
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*(aBP*exp(-bBP/ra) - cBP*r6a)
+        end if
+    end do
+
+end subroutine ffdev_exchrep_nb_bp
+
+!===============================================================================
+! subroutine ffdev_exchrep_nb_exp6
+!===============================================================================
+
+subroutine ffdev_exchrep_nb_exp6(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -428,8 +481,62 @@ subroutine ffdev_energy_nb_exp6(top,geo)
         end if
     end do
 
-end subroutine ffdev_energy_nb_exp6
+end subroutine ffdev_exchrep_nb_exp6
+
+!===============================================================================
+! subroutine ffdev_exchrep_nb_exponly
+!===============================================================================
+
+subroutine ffdev_exchrep_nb_exponly(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt
+    real(DEVDP)     :: inv_scee,inv_scnb,aBP,bBP,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2a,ra
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+        aBP  = top%nb_types(nbt)%A
+        bBP  = top%nb_types(nbt)%B
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2a
+        ra  = sqrt(r2a)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij*ra
+            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra)
+            ! write(*,*) geo%nb_ene, 1.0/ra, aBP, bBP
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij*ra
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*aBP*exp(-bBP/ra)
+        end if
+    end do
+
+end subroutine ffdev_exchrep_nb_exponly
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_energy
+end module ffdev_exchrep

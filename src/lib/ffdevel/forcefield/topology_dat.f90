@@ -124,8 +124,8 @@ end type ATOM_TYPE
 
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
-    real(DEVDP)         :: eps, r0, alpha           ! vdW parameters
-    real(DEVDP)         :: A, B, C                  ! alternative/complementary data
+    real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
+    real(DEVDP)         :: PA, PB, PC               ! Pauli repulsion data
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -184,22 +184,26 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 ! 12.0                           - identical long-range
 ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
-logical     :: keep_era      = .true.   ! keep eps, r0, and alpha in A,B,C6 and C8 mode
-
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter               :: NB_MODE_LJ       = 1   ! Lennard-Jones potential (eps,r0)
-integer,parameter               :: NB_MODE_EXP6     = 2   ! Exp-6 potential (eps,r0,alpha)
-integer,parameter               :: NB_MODE_BP       = 3   ! Buckingham potential (A,B,C)
-integer,parameter               :: NB_MODE_EXPONLY  = 4   ! Born-Mayer potential - Exp only (A,B)
+! full mode
+integer,parameter               :: NB_MODE_LJ       = 1     ! Lennard-Jones potential (eps,r0)
+integer,parameter               :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
 
+! exchange repulsion only (Pauli repulsion), gradient and hessian is not available
+integer,parameter               :: NB_MODE_PAULI_DENS2  = 5 ! overlap of densities with two parameters (A,B)
+integer,parameter               :: NB_MODE_PAULI_DENS3  = 6 ! overlap of densities with three parameters (A,B,C)
+integer,parameter               :: NB_MODE_PAULI_WAVE2  = 7 ! overlap of wavefunctions with two parameters (A,B)
+integer,parameter               :: NB_MODE_PAULI_WAVE3  = 8 ! overlap of wavefunctions with three parameters (A,B,C)
+
+! combining rules for nb_mode
 integer,parameter               :: COMB_RULE_IN = 05  ! input data
+! applicable for NB_MODE_LJ
 integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)
 integer,parameter               :: COMB_RULE_WH = 20  ! WH (Waldman-Hagler)
 integer,parameter               :: COMB_RULE_KG = 30  ! KG (Kong)
 integer,parameter               :: COMB_RULE_FB = 40  ! FB (Fender-Halsey-Berthelot)
-integer,parameter               :: COMB_RULE_GS = 50  ! GS (Gilbert-Smith)
 
 ! ------------------------------------------------------------------------------
 

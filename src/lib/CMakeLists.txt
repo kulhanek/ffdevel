@@ -2,6 +2,7 @@
 # FFDevel CMake File
 # ==============================================================================
 
+ADD_SUBDIRECTORY(numgrid)
 ADD_SUBDIRECTORY(ffdevel)
 
 

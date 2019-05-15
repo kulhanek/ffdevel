@@ -86,7 +86,7 @@ subroutine ffdev_targetset_calc_all
                 call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
             end if
         end do
-        call ffdev_parameters_reinit_nbparams()
+        call ffdev_targetset_reinit_nbparams()
     end if    
     
     ! optimize geometry
@@ -157,10 +157,10 @@ subroutine ffdev_targetset_calc_all
 end subroutine ffdev_targetset_calc_all
 
 ! ==============================================================================
-! subroutine ffdev_parameters_reinit_nbparams
+! subroutine ffdev_targetset_reinit_nbparams
 ! ==============================================================================
 
-subroutine ffdev_parameters_reinit_nbparams()
+subroutine ffdev_targetset_reinit_nbparams()
 
     use ffdev_parameters_dat
     use ffdev_targetset_dat
@@ -172,7 +172,7 @@ subroutine ffdev_parameters_reinit_nbparams()
     ! update parameter values
     do i=1,nparams
         select case(params(i)%realm)
-            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_A,REALM_VDW_B,REALM_VDW_C)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C)
                 do j=1,nsets
                     if( params(i)%ids(j) .eq. 0 ) cycle
                     select case(params(i)%realm)
@@ -182,18 +182,18 @@ subroutine ffdev_parameters_reinit_nbparams()
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
                         case(REALM_VDW_ALPHA)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
-                        case(REALM_VDW_A)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%A
-                        case(REALM_VDW_B)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%B
-                        case(REALM_VDW_C)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C
+                        case(REALM_PAULI_A)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
+                        case(REALM_PAULI_B)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
+                        case(REALM_PAULI_C)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC
                     end select
                 end do
         end select
     end do
 
-end subroutine ffdev_parameters_reinit_nbparams
+end subroutine ffdev_targetset_reinit_nbparams
 
 ! ==============================================================================
 ! subroutine ffdev_targetset_save_final_stops

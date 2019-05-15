@@ -38,12 +38,12 @@ integer,parameter       :: REALM_DIH_C      = 12
 integer,parameter       :: REALM_VDW_EPS    = 13
 integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
-integer,parameter       :: REALM_VDW_A      = 16
-integer,parameter       :: REALM_VDW_B      = 17
-integer,parameter       :: REALM_VDW_C      = 18
+integer,parameter       :: REALM_PAULI_A    = 16
+integer,parameter       :: REALM_PAULI_B    = 17
+integer,parameter       :: REALM_PAULI_C    = 18
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_VDW_C
+integer,parameter       :: REALM_LAST    = REALM_PAULI_C
 
 ! ------------------------------------------------------------------------------
 
@@ -83,46 +83,6 @@ integer                     :: ntypes    ! number of types
 type(PARM_TYPE),allocatable :: types(:)  ! types
 
 ! ------------------------------------------------------------------------------
-
-! XDM data
-type XDM_PAIR_TYPE
-    real(DEVDP)         :: c6ave
-    real(DEVDP)         :: c6sig
-    real(DEVDP)         :: c8ave
-    real(DEVDP)         :: c8sig
-    real(DEVDP)         :: c10ave
-    real(DEVDP)         :: c10sig
-    integer             :: num
-    real(DEVDP)         :: eps      ! LJ eps = C6/Rvdw**6
-    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
-end type XDM_PAIR_TYPE
-
-type XDM_ATOM_TYPE
-    real(DEVDP)         :: vave     ! atom volume
-    real(DEVDP)         :: vsig
-    real(DEVDP)         :: v0ave    ! free atom volume
-    real(DEVDP)         :: v0sig
-    real(DEVDP)         :: p0ave    ! free atom polarizability
-    real(DEVDP)         :: p0sig
-    real(DEVDP)         :: pol      ! atomic polarizability
-    integer             :: num
-    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
-end type XDM_ATOM_TYPE
-
-logical                         :: xdm_data_loaded = .false.
-type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
-type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
-
-integer,parameter       :: XDM_NONE = 0
-integer,parameter       :: XDM_EPS  = 1
-integer,parameter       :: XDM_R0   = 2
-integer,parameter       :: XDM_C6   = 3
-
-! === [xdm] ====================================================================
-real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0   ! FIXME
-real(DEVDP)     :: xdm_C6Scale      =  2.0      ! FIXME - this is a fake
-
-! ------------------------------------------------------------------------------
 ! experimental/unfinished setup
 integer                 :: LastNBMode                   = NB_MODE_LJ        ! determine which realms will be activated for NB
 
@@ -136,70 +96,58 @@ integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1     ! only like nb_t
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2     ! only_like nb_types including probes
 integer,parameter       :: NB_PARAMS_MODE_ALL           = 3     ! all nb types
 
-! NBParamsRealms
-integer,parameter       :: NB_PARAMS_REALMS_ALL         = 1     ! all realms
-integer,parameter       :: NB_PARAMS_REALMS_ERA         = 2     ! ERA realms
-integer,parameter       :: NB_PARAMS_REALMS_ER          = 3     ! ER realms
-
-! keep C6 constant modes
-integer,parameter       :: NB_LEFT_C6                   = 0
-integer,parameter       :: NB_KEEP_XDM_C6_VIA_R0        = 1
-integer,parameter       :: NB_KEEP_XDM_C6_VIA_EPS       = 2
-
 ! === [control] ================================================================
-integer                 :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
-integer                 :: NBParamsRealms               = NB_PARAMS_REALMS_ER
-integer                 :: NBCombRules                  = COMB_RULE_LB
-logical                 :: OnlyDefinedDihItems          = .true.
-logical                 :: LockDihC_PN1                 = .true.
-logical                 :: ResetAllSetup                = .true.
-logical                 :: DebugFFManip                 = .false.
-integer                 :: GlbRngSeed                   = 5489              ! random number generator setup
-integer                 :: C6Mode                       = NB_LEFT_C6
+integer         :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
+integer         :: NBCombRules                  = COMB_RULE_LB
+logical         :: OnlyDefinedDihItems          = .true.
+logical         :: LockDihC_PN1                 = .true.
+logical         :: ResetAllSetup                = .true.
+logical         :: DebugFFManip                 = .false.
+integer         :: GlbRngSeed                   = 5489              ! random number generator setup
 
 ! === [grbf2cos] ===============================================================
-integer                 :: GRBF2COSDPts     = 360           ! level of discretization
-integer                 :: GRBF2COSMaxN     = 4             ! max length of cos series
-real(DEVDP)             :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
+integer         :: GRBF2COSDPts     = 360           ! level of discretization
+integer         :: GRBF2COSMaxN     = 4             ! max length of cos series
+real(DEVDP)     :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
 
 ! === [ranges] =================================================================
 
-real(DEVDP)             :: MinOffset    =   -1000.0d0
-real(DEVDP)             :: MaxOffset    =    1000.0d0
-real(DEVDP)             :: MinBondD0    =       0.5d0
-real(DEVDP)             :: MaxBondD0    =       5.0d0
-real(DEVDP)             :: MinBondK     =       0.0
-real(DEVDP)             :: MaxBondK     =    1500.0d0
-real(DEVDP)             :: MinAngleA0   =       0.0
-real(DEVDP)             :: MaxAngleA0   =       DEV_PI
-real(DEVDP)             :: MinAngleK    =       0.0d0
-real(DEVDP)             :: MaxAngleK    =    1000.0d0
-real(DEVDP)             :: MinDihV      =       0.0d0
-real(DEVDP)             :: MaxDihV      =      50.0d0
-real(DEVDP)             :: MinDihG      =       0.0d0
-real(DEVDP)             :: MaxDihG      =     2*DEV_PI
-real(DEVDP)             :: MinDihSCEE   =       0.5d0
-real(DEVDP)             :: MaxDihSCEE   =       3.0d0
-real(DEVDP)             :: MinDihSCNB   =       0.5d0
-real(DEVDP)             :: MaxDihSCNB   =       3.0d0
-real(DEVDP)             :: MinImprV     =       0.0d0
-real(DEVDP)             :: MaxImprV     =      50.0d0
-real(DEVDP)             :: MinImprG     =      -DEV_PI
-real(DEVDP)             :: MaxImprG     =       DEV_PI
-real(DEVDP)             :: MinDihC      =     -50.0d0
-real(DEVDP)             :: MaxDihC      =      50.0d0
-real(DEVDP)             :: MinVdwEps    =       0.0d0
-real(DEVDP)             :: MaxVdwEps    =       1.0d0
-real(DEVDP)             :: MinVdwR0     =       0.5d0
-real(DEVDP)             :: MaxVdwR0     =       5.0d0
-real(DEVDP)             :: MinVdwAlpha  =      10.0
-real(DEVDP)             :: MaxVdwAlpha  =      25.0
-real(DEVDP)             :: MinVdwA      =       0.0d0
-real(DEVDP)             :: MaxVdwA      =       1.0d7
-real(DEVDP)             :: MinVdwB      =       0.0d0
-real(DEVDP)             :: MaxVdwB      =      10.0d0
-real(DEVDP)             :: MinVdwC      =       0.0d0
-real(DEVDP)             :: MaxVdwC      =      10.0d0
+real(DEVDP)     :: MinOffset    =   -1000.0d0
+real(DEVDP)     :: MaxOffset    =    1000.0d0
+real(DEVDP)     :: MinBondD0    =       0.5d0
+real(DEVDP)     :: MaxBondD0    =       5.0d0
+real(DEVDP)     :: MinBondK     =       0.0
+real(DEVDP)     :: MaxBondK     =    1500.0d0
+real(DEVDP)     :: MinAngleA0   =       0.0
+real(DEVDP)     :: MaxAngleA0   =       DEV_PI
+real(DEVDP)     :: MinAngleK    =       0.0d0
+real(DEVDP)     :: MaxAngleK    =    1000.0d0
+real(DEVDP)     :: MinDihV      =       0.0d0
+real(DEVDP)     :: MaxDihV      =      50.0d0
+real(DEVDP)     :: MinDihG      =       0.0d0
+real(DEVDP)     :: MaxDihG      =     2*DEV_PI
+real(DEVDP)     :: MinDihSCEE   =       0.5d0
+real(DEVDP)     :: MaxDihSCEE   =       3.0d0
+real(DEVDP)     :: MinDihSCNB   =       0.5d0
+real(DEVDP)     :: MaxDihSCNB   =       3.0d0
+real(DEVDP)     :: MinImprV     =       0.0d0
+real(DEVDP)     :: MaxImprV     =      50.0d0
+real(DEVDP)     :: MinImprG     =      -DEV_PI
+real(DEVDP)     :: MaxImprG     =       DEV_PI
+real(DEVDP)     :: MinDihC      =     -50.0d0
+real(DEVDP)     :: MaxDihC      =      50.0d0
+real(DEVDP)     :: MinVdwEps    =       0.0d0
+real(DEVDP)     :: MaxVdwEps    =       1.0d0
+real(DEVDP)     :: MinVdwR0     =       0.5d0
+real(DEVDP)     :: MaxVdwR0     =       5.0d0
+real(DEVDP)     :: MinVdwAlpha  =      10.0
+real(DEVDP)     :: MaxVdwAlpha  =      25.0
+real(DEVDP)     :: MinPauliA    =       1.0d0
+real(DEVDP)     :: MaxPauliA    =      15.0d0
+real(DEVDP)     :: MinPauliB    =       1.0d0
+real(DEVDP)     :: MaxPauliB    =       4.0d0
+real(DEVDP)     :: MinPauliC    =      -3.0d0
+real(DEVDP)     :: MaxPauliC    =       3.0d0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

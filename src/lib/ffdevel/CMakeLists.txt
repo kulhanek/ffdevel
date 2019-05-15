@@ -8,6 +8,7 @@ SET(FFDEVEL_SRC
         constants.f90
         ver.f90
         utils.f90
+        timers.f90
 
         forcefield/topology_dat.f90
         forcefield/topology.f90
@@ -50,6 +51,8 @@ SET(FFDEVEL_SRC
         parameters/errors/energy.f90
         parameters/errors/energy_control.f90
 
+        parameters/xdm_dat.f90
+        parameters/xdm.f90
         parameters/targetset_dat.f90
         parameters/targetset.f90
         parameters/targetset_control.f90
