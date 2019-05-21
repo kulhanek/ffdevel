@@ -16,6 +16,7 @@ SET(FFDEVEL_SRC
         forcefield/geometry.f90
         forcefield/geometry_utils.f90
         forcefield/energy.f90
+        forcefield/exchrep.f90
         forcefield/gradient.f90
         forcefield/gradient_utils.f90
         forcefield/hessian.f90
@@ -97,6 +98,7 @@ IF(LIBS_SHARED)
                             VERSION ${FFDEVEL_VERSION})
     TARGET_LINK_LIBRARIES(ffdevel_shared
             ${SHARK_LIB_NAME}
+            numgrid
             ${FFTW_LIB_NAME}
             ${NLOPT_LIB_NAME}
             ${LBFGS_LIB_NAME}

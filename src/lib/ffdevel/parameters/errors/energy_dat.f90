@@ -19,12 +19,17 @@ module ffdev_err_energy_dat
 
 use ffdev_constants
 
+integer,parameter       :: EE_ABSOLUTE = 1
+integer,parameter       :: EE_RELATIVE = 2
+integer,parameter       :: EE_LOG      = 3
+
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_energy_init
 logical                 :: EnableEnergyError
 logical                 :: PrintEnergyErrorSummary
 real(DEVDP)             :: EnergyErrorWeight
+integer                 :: EnergyErrorMode = EE_LOG
 
 ! ------------------------------------------------------------------------------
 

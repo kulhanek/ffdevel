@@ -455,6 +455,8 @@ subroutine ffdev_parameters_reinit()
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in ffdev_parameters_reinit!')
     end select
 
+    write(*,*) use_vdw_eps, use_vdw_r0, use_vdw_alpha, use_pauli_a, use_pauli_b, use_pauli_c
+
     if( use_vdw_eps ) then
         ! vdw eps realm =====================
         do i=1,nsets
@@ -1545,13 +1547,13 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'vdw_alpha'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case(REALM_PAULI_A)
-                tmp = 'pauli_A'
+                tmp = 'pauli_a'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case(REALM_PAULI_B)
-                tmp = 'pauli_B'
+                tmp = 'pauli_b'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case(REALM_PAULI_C)
-                tmp = 'pauli_C'
+                tmp = 'pauli_c'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)                                 
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
@@ -1628,11 +1630,11 @@ subroutine ffdev_parameters_print_parameters()
             case(REALM_VDW_ALPHA)
                 tmp = 'vdW_alpha'
             case(REALM_PAULI_A)
-                tmp = 'pauli_A'
+                tmp = 'pauli_a'
             case(REALM_PAULI_B)
-                tmp = 'pauli_B'
+                tmp = 'pauli_b'
             case(REALM_PAULI_C)
-                tmp = 'pauli_C'
+                tmp = 'pauli_c'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select

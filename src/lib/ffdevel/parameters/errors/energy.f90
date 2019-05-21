@@ -49,6 +49,7 @@ subroutine ffdev_err_energy_error(error)
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
+    use ffdev_err_energy_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -66,11 +67,24 @@ subroutine ffdev_err_energy_error(error)
         if( sets(i)%isref ) cycle ! ignore reference sets
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
-            if( sets(i)%geo(j)%trg_ene_loaded ) then
-                nene = nene + 1
-                err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
-                seterrene = seterrene + sets(i)%geo(j)%weight * err**2
-            end if
+            if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
+
+            select case(EnergyErrorMode)
+                case(EE_ABSOLUTE)
+                    nene = nene + 1
+                    err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                    seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                case(EE_RELATIVE)
+                    ! FIXME
+                case(EE_LOG)
+                    if( ((sets(i)%geo(j)%total_ene - sets(i)%offset) .gt. 0) .and. &
+                        (sets(i)%geo(j)%trg_energy .gt. 0) ) then
+                        nene = nene + 1
+                        err = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
+                        seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                    end if
+            end select
+
         end do
     end do
 

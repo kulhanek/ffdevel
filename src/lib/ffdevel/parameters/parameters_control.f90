@@ -471,11 +471,11 @@ subroutine change_realms(realm,enable,options,nchanged)
             realmid = REALM_VDW_R0
         case('vdw_alpha')
             realmid = REALM_VDW_ALPHA
-        case('pauli_A')
+        case('pauli_a')
             realmid = REALM_PAULI_A
-        case('pauli_B')
+        case('pauli_b')
             realmid = REALM_PAULI_B
-        case('pauli_C')
+        case('pauli_c')
             realmid = REALM_PAULI_C
         case('all')
             realmid = -1
@@ -1268,11 +1268,11 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
     write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(nb_mode)
 
-    if( .not. exec ) then
-        ! do not execute but minic that we changed the mode
-        LastNBMode = nb_mode
-        return
-    end if
+!    if( .not. exec ) then
+!        ! do not execute but minic that we changed the mode
+!        LastNBMode = nb_mode
+!        return
+!    end if
 
     do i=1,nsets
         if( DebugFFManip ) then
@@ -1298,6 +1298,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     LastNBMode = nb_mode
 
     ! update nb parameters
+    call ffdev_parameters_reinit
     call ffdev_targetset_reinit_nbparams
 
 10 format('NB mode (nb_mode)                = ',A)

@@ -30,6 +30,16 @@ end type RESTRAINT
 
 ! ------------------------------------------------------------------------------
 
+type GRID_CACHE
+    integer                     :: npts1
+    real(DEVDP),pointer         :: grid_1(:,:)
+    integer                     :: npts2
+    real(DEVDP),pointer         :: grid_2(:,:)
+    real(DEVDP)                 :: r
+end type GRID_CACHE
+
+! ------------------------------------------------------------------------------
+
 type GEOMETRY
     integer                 :: id
     integer                 :: natoms           ! number of atoms
@@ -83,6 +93,9 @@ type GEOMETRY
     logical                 :: trg_surf_loaded
     real(DEVDP),pointer     :: trg_surf_r0(:)       ! atomic radii for molecular surface
     real(DEVDP),pointer     :: trg_surf_a0(:)       ! atomic surface contribution
+    ! integration grid cache
+    logical                     :: grid_cached
+    type(GRID_CACHE),pointer    :: grid_cache(:)    ! length - nb_size
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------

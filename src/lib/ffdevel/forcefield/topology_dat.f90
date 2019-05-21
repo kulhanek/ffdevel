@@ -105,9 +105,11 @@ end type IMPROPER_TYPE
 ! ------------------------------------------------------------------------------
 
 type NB_PAIR
-    integer     ::  ai,aj   ! pair
-    integer     ::  nbt     ! NB type
-    integer     ::  dt      ! dihedral type for scaling factors
+    integer     ::  ai,aj       ! pair
+    integer     ::  nbt         ! NB type
+    integer     ::  nbtii,nbtjj ! NB types of correponding like atoms
+    integer     ::  dt          ! dihedral type for scaling factors
+    integer     ::  ci          ! index to grid cache
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -184,6 +186,8 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
 ! 12.0                           - identical long-range
 ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
+
+logical     :: cache_grid = .true.     ! cache grid for Eexchrep calculation
 
 ! ------------------------------------------------------------------------------
 

@@ -94,6 +94,9 @@ subroutine ffdev_geometry_init(geo)
 
     geo%rst         => null()
 
+    geo%grid_cached = .false.
+    geo%grid_cache  => null()
+
 end subroutine ffdev_geometry_init
 
 ! ==============================================================================

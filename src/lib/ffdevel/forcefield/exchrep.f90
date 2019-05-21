@@ -20,522 +20,519 @@ module ffdev_exchrep
 use ffdev_geometry_dat
 use ffdev_constants
 
+private get_dens_overlap2
+private get_dens_overlap3
+private get_wave_overlap2
+private get_wave_overlap3
+private grid_integrate
+
 contains
 
 ! ==============================================================================
-! subroutine ffdev_exchrep_all
+! subroutine ffdevel_exchrep_gen_cache
 ! ==============================================================================
 
-subroutine ffdev_exchrep_all(top,geo)
+subroutine ffdevel_exchrep_gen_cache(cache,z1,z2)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use, intrinsic :: iso_c_binding, only: c_ptr
+    use numgrid
+    use ffdev_timers
     use ffdev_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(GRID_CACHE)    :: cache
+    integer             :: z1
+    integer             :: z2
+    ! --------------------------------------------
+    integer             :: xidx
+    type(c_ptr)         :: gctx
+    real(DEVDP)         :: radial_precision
+    integer             :: min_num_angular_points, max_num_angular_points
+    real(DEVDP)         :: alpha_max(2)
+    integer             :: max_l_quantum_number(2)
+    real(DEVDP)         :: alpha_min(5,2)
+    integer             :: az(2)
+    real(DEVDP)         :: px(2),py(2),pz(2)
+    integer             :: nats, cidx, npts, ipts, alloc_stat
     ! --------------------------------------------------------------------------
 
-    ! reset energy
-    geo%bond_ene = 0.0d0
-    geo%angle_ene = 0.0d0
-    geo%dih_ene = 0.0d0
-    geo%impropr_ene = 0.0d0
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-    geo%total_ene = 0.0d0
-    geo%rst_exchrep = 0.0d0
+    ! numgrid setup
+    radial_precision = 1.0d-12
+    min_num_angular_points = 86
+    max_num_angular_points = 302
 
-    ! bonded terms
-    if( top%probe_size .eq. 0 ) then
-        call ffdev_exchrep_bonds(top,geo)
-        call ffdev_exchrep_angles(top,geo)
-        call ffdev_exchrep_dihedrals(top,geo)
-        call ffdev_exchrep_impropers(top,geo)
-    end if
+    ! ne/ne - def2-
+    alpha_max(1) =  160676.2795500
+    alpha_max(2) =  160676.2795500
+    max_l_quantum_number(1) = 4
+    max_l_quantum_number(2) = 4
 
-    ! non-bonded terms
-    select case(top%nb_mode)
-        case(NB_MODE_LJ)
-            call ffdev_exchrep_nb_lj(top,geo)
-        case(NB_MODE_EXP6)
-            call ffdev_exchrep_nb_exp6(top,geo)
-        case(NB_MODE_BP)
-            call ffdev_exchrep_nb_bp(top,geo)
-        case(NB_MODE_EXPONLY)
-            call ffdev_exchrep_nb_exponly(top,geo)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_exchrep_all!')
+    alpha_min(1,1) = 0.30548672205
+    alpha_min(2,1) = 0.16889708453
+    alpha_min(3,1) = 0.74700000
+    alpha_min(4,1) = 1.52400000
+    alpha_min(5,1) = 2.98300000
+
+    alpha_min(1,2) = 0.30548672205
+    alpha_min(2,2) = 0.16889708453
+    alpha_min(3,2) = 0.74700000
+    alpha_min(4,2) = 1.52400000
+    alpha_min(5,2) = 2.98300000
+
+    az(1) = z1
+    az(2) = z2
+
+    ! coordinates are in a.u.
+    px(1) = 0.0d0
+    py(1) = 0.0d0
+    pz(1) = 0.0d0
+
+    px(2) = cache%r * DEV_A2AU
+    py(2) = 0.0d0
+    pz(2) = 0.0d0
+
+    ! we have two centers
+    nats = 2
+
+    ! generate grid
+    call ffdev_timers_start_timer(FFDEV_POT_NB_GRID)
+
+        cidx = 1
+
+        gctx = numgrid_new_atom_grid(radial_precision,       &
+                                   min_num_angular_points, &
+                                   max_num_angular_points, &
+                                   az(cidx),      &
+                                   alpha_max(cidx),              &
+                                   max_l_quantum_number(cidx),   &
+                                   alpha_min(:,cidx))
+
+        npts = numgrid_get_num_grid_points(gctx)
+
+        cache%npts1 = npts
+        allocate(cache%grid_1(npts,4), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate grid buffers in ffdevel_exchrep_gen_cache!')
+        end if
+
+        call numgrid_get_grid(gctx, nats, cidx-1,   &
+                         px, py, pz, az,            &
+                         cache%grid_1(:,1), cache%grid_1(:,2), cache%grid_1(:,3), cache%grid_1(:,4))
+
+        call numgrid_free_atom_grid(gctx)
+
+! --------------------------
+
+        cidx = 2
+
+        gctx = numgrid_new_atom_grid(radial_precision,       &
+                                   min_num_angular_points, &
+                                   max_num_angular_points, &
+                                   az(cidx),      &
+                                   alpha_max(cidx),              &
+                                   max_l_quantum_number(cidx),   &
+                                   alpha_min(:,cidx))
+
+        npts = numgrid_get_num_grid_points(gctx)
+
+        cache%npts2 = npts
+        allocate(cache%grid_2(npts,4), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate grid buffers in ffdevel_exchrep_gen_cache!')
+        end if
+
+        call numgrid_get_grid(gctx, nats, cidx-1,   &
+                         px, py, pz, az,            &
+                         cache%grid_2(:,1), cache%grid_2(:,2), cache%grid_2(:,3), cache%grid_2(:,4))
+
+        call numgrid_free_atom_grid(gctx)
+
+    call ffdev_timers_stop_timer(FFDEV_POT_NB_GRID)
+
+end subroutine ffdevel_exchrep_gen_cache
+
+! ==============================================================================
+! function ffdevel_exchrep_ene_nocache
+! ==============================================================================
+
+real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,z2,pa2,pb2,pc2)
+
+    use numgrid
+    use, intrinsic :: iso_c_binding, only: c_ptr
+    use ffdev_timers
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: mode
+    real(DEVDP) :: r
+    integer     :: z1
+    real(DEVDP) :: pa1,pb1,pc1
+    integer     :: z2
+    real(DEVDP) :: pa2,pb2,pc2
+    ! --------------------------------------------
+    integer                     :: xidx
+    type(c_ptr)                 :: gctx
+    real(DEVDP)                 :: radial_precision
+    integer                     :: min_num_angular_points, max_num_angular_points
+    real(DEVDP)                 :: alpha_max(2)
+    integer                     :: max_l_quantum_number(2)
+    real(DEVDP)                 :: alpha_min(5,2)
+    integer                     :: az(2)
+    real(DEVDP)                 :: px(2),py(2),pz(2)
+    real(DEVDP), allocatable    :: grid_x(:)
+    real(DEVDP), allocatable    :: grid_y(:)
+    real(DEVDP), allocatable    :: grid_z(:)
+    real(DEVDP), allocatable    :: grid_w(:)
+    integer                     :: nats, cidx, npts, ipts, alloc_stat
+    real(DEVDP)                 :: eexch, rsum
+    ! --------------------------------------------------------------------------
+
+    ffdevel_exchrep_ene_nocache = 0.0d0
+
+    if( pb2 .eq. 0.0d0 ) return
+    if( pb2 .eq. 0.0d0 ) return
+
+    ! numgrid setup
+    radial_precision = 1.0d-12
+    min_num_angular_points = 86
+    max_num_angular_points = 302
+
+    ! ne/ne - def2-
+    alpha_max(1) =  160676.2795500
+    alpha_max(2) =  160676.2795500
+    max_l_quantum_number(1) = 4
+    max_l_quantum_number(2) = 4
+
+    alpha_min(1,1) = 0.30548672205
+    alpha_min(2,1) = 0.16889708453
+    alpha_min(3,1) = 0.74700000
+    alpha_min(4,1) = 1.52400000
+    alpha_min(5,1) = 2.98300000
+
+    alpha_min(1,2) = 0.30548672205
+    alpha_min(2,2) = 0.16889708453
+    alpha_min(3,2) = 0.74700000
+    alpha_min(4,2) = 1.52400000
+    alpha_min(5,2) = 2.98300000
+
+    az(1) = z1
+    az(2) = z2
+
+    ! coordinates are in a.u.
+    px(1) = 0.0d0
+    py(1) = 0.0d0
+    pz(1) = 0.0d0
+
+    px(2) = r * DEV_A2AU
+    py(2) = 0.0d0
+    pz(2) = 0.0d0
+
+    eexch = 0.0d0
+    rsum =  0.0d0
+
+    ! we have two centers
+    nats = 2
+    do cidx=1,nats
+
+        ! generate grid
+        call ffdev_timers_start_timer(FFDEV_POT_NB_GRID)
+
+            gctx = numgrid_new_atom_grid(radial_precision,       &
+                                       min_num_angular_points, &
+                                       max_num_angular_points, &
+                                       az(cidx),      &
+                                       alpha_max(cidx),              &
+                                       max_l_quantum_number(cidx),   &
+                                       alpha_min(:,cidx))
+
+            npts = numgrid_get_num_grid_points(gctx)
+
+            allocate(grid_x(npts),grid_y(npts),grid_z(npts),grid_w(npts), &
+                     stat = alloc_stat)
+            if( alloc_stat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate grid buffers in ffdevel_exchrep_ene_nocache!')
+            end if
+
+            call numgrid_get_grid(gctx, nats, cidx-1,   &
+                             px, py, pz, az,            &
+                             grid_x, grid_y, grid_z, grid_w)
+
+        call ffdev_timers_stop_timer(FFDEV_POT_NB_GRID)
+
+        ! calculate integral
+        call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
+            select case(mode)
+                case(NB_MODE_PAULI_DENS2)
+                    do ipts = 1, npts
+                        rsum = rsum + grid_w(ipts) * get_dens_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
+                                                       px(2),pb1,pb2)
+                    end do
+                case(NB_MODE_PAULI_DENS3)
+                    do ipts = 1, npts
+                        rsum = rsum + grid_w(ipts) * get_dens_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
+                                                       px(2),pb1,pb2,pc1,pc2)
+                    end do
+                case(NB_MODE_PAULI_WAVE2)
+                    do ipts = 1, npts
+                        rsum = rsum + grid_w(ipts) * get_wave_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
+                                                       px(2),pb1,pb2)
+                    end do
+                case(NB_MODE_PAULI_WAVE3)
+                    do ipts = 1, npts
+                        rsum = rsum + grid_w(ipts) * get_wave_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
+                                                       px(2),pb1,pb2,pc1,pc2)
+                    end do
+            end select
+        call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
+
+        ! destroy grid
+        call ffdev_timers_start_timer(FFDEV_POT_NB_GRID)
+            deallocate(grid_x, grid_y, grid_z, grid_w)
+            call numgrid_free_atom_grid(gctx)
+        call ffdev_timers_stop_timer(FFDEV_POT_NB_GRID)
+
+    end do
+
+    select case(mode)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3)
+            eexch = rsum*exp(pa1)*exp(pa2)
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
+            eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
     end select
 
-    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
-                  + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
-                  + geo%ele_ene + geo%nb_ene
+    ffdevel_exchrep_ene_nocache = eexch
 
-end subroutine ffdev_exchrep_all
+end function ffdevel_exchrep_ene_nocache
 
-!===============================================================================
-! subroutine ffdev_exchrep_bonds
-!===============================================================================
+! ==============================================================================
+! function ffdevel_exchrep_ene_cache
+! ==============================================================================
 
-subroutine ffdev_exchrep_bonds(top,geo)
+real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pa2,pb2,pc2)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use numgrid
+    use, intrinsic :: iso_c_binding, only: c_ptr
+    use ffdev_timers
+    use ffdev_topology_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(GRID_CACHE)    :: cache
+    integer             :: mode
+    real(DEVDP)         :: r
+    integer             :: z1
+    real(DEVDP)         :: pa1,pb1,pc1
+    integer             :: z2
+    real(DEVDP)         :: pa2,pb2,pc2
     ! --------------------------------------------
-    integer         ::  i,j,ib,ic
-    real(DEVDP)     ::  b,db
-    real(DEVDP)     ::  rij(3)
+    real(DEVDP)         :: lr
+    real(DEVDP)         :: rsum, eexch
     ! --------------------------------------------------------------------------
 
-    ! reset energy
-    geo%bond_ene = 0.0d0
+    ffdevel_exchrep_ene_cache = 0.0d0
 
-    do ib=1,top%nbonds
-        ! for each bond
-        i  = top%bonds(ib)%ai
-        j  = top%bonds(ib)%aj
-        ic = top%bonds(ib)%bt
-        ! calculate rij
-        rij(:) = geo%crd(:,j) - geo%crd(:,i)
+    if( pb2 .eq. 0.0d0 ) return
+    if( pb2 .eq. 0.0d0 ) return
 
-        ! calculate b and db, update energy
-        b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
-        db = b - top%bond_types(ic)%d0
-        geo%bond_ene = geo%bond_ene + 0.5*top%bond_types(ic)%k*db**2
-    end do
+    lr = cache%r * DEV_A2AU
 
-end subroutine ffdev_exchrep_bonds
+    rsum = grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
+                    cache%grid_1(:,3),cache%grid_1(:,4),pb1,pc1,pb2,pc2)
+    rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
+                    cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pb2,pc2)
 
-!===============================================================================
-! subroutine ffdev_exchrep_angles
-!===============================================================================
+    select case(mode)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3)
+            eexch = rsum*exp(pa1)*exp(pa2)
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
+            eexch = exp(pa1)*exp(pa2)*rsum**2/lr
+    end select
 
-subroutine ffdev_exchrep_angles(top,geo)
+    ffdevel_exchrep_ene_cache = eexch
 
-    use ffdev_topology
-    use ffdev_geometry
+end function ffdevel_exchrep_ene_cache
+
+! ==============================================================================
+! function grid_integrate
+! ==============================================================================
+
+real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
+
+    use ffdev_timers
+    use ffdev_topology_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    integer     :: mode
+    real(DEVDP) :: eexch
+    real(DEVDP) :: lr
+    integer     :: npts
+    real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
+    real(DEVDP) :: pb1,pc1
+    real(DEVDP) :: pb2,pc2
     ! --------------------------------------------
-    integer         :: i,j,k,ia,ic
-    real(DEVDP)     :: bjiinv, bjkinv, bji2inv, bjk2inv
-    real(DEVDP)     :: scp,angv,da
-    real(DEVDP)     :: rji(3),rjk(3)
+    integer     :: ipts
+    real(DEVDP) :: rsum
     ! --------------------------------------------------------------------------
 
-    ! reset energy
-    geo%angle_ene = 0.0d0
+    rsum =  0.0d0
 
-    do ia=1,top%nangles
-        i  = top%angles(ia)%ai
-        j  = top%angles(ia)%aj
-        k  = top%angles(ia)%ak
-        ic = top%angles(ia)%at
+    call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
 
-        ! calculate rji and rjk
-        rji(:) = geo%crd(:,i) - geo%crd(:,j)
-        rjk(:) = geo%crd(:,k) - geo%crd(:,j)
+!$omp parallel
 
-        ! calculate bjiinv and bjkinv and their squares
-        bji2inv = 1.0d0/(rji(1)**2 + rji(2)**2 + rji(3)**2 )
-        bjk2inv = 1.0d0/(rjk(1)**2 + rjk(2)**2 + rjk(3)**2 )
-        bjiinv = sqrt(bji2inv)
-        bjkinv = sqrt(bjk2inv)
-
-            ! calculate scp and angv
-        scp = ( rji(1)*rjk(1) + rji(2)*rjk(2) + rji(3)*rjk(3) )
-        scp = scp * bjiinv*bjkinv
-        if ( scp .gt.  1.0d0 ) then
-            scp =  1.0d0
-        else if ( scp .lt. -1.0d0 ) then
-            scp = -1.0d0
-        end if
-        angv = acos(scp)
-
-        ! calculate da and dv
-        da = angv - top%angle_types(ic)%a0
-        geo%angle_ene = geo%angle_ene + 0.5d0*top%angle_types(ic)%k*da**2
-    end do
-
-end subroutine ffdev_exchrep_angles
-
-!===============================================================================
-! subroutine ffdev_exchrep_dihedrals
-!===============================================================================
-
-subroutine ffdev_exchrep_dihedrals(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         ::  i,j,k,l,ic,ip,pn
-    real(DEVDP)     ::  scp,phi,arg
-    real(DEVDP)     ::  bjinv, bkinv, bj2inv, bk2inv
-    real(DEVDP)     ::  rji(3),rjk(3),rkl(3),rnj(3),rnk(3)
-    ! -----------------------------------------------------------------------------
-
-    geo%dih_ene = 0.0d0
-
-    do ip=1,top%ndihedrals
-        i  = top%dihedrals(ip)%ai
-        j  = top%dihedrals(ip)%aj
-        k  = top%dihedrals(ip)%ak
-        l  = top%dihedrals(ip)%al
-        ic = top%dihedrals(ip)%dt
-
-        rji(:) = geo%crd(:,i) - geo%crd(:,j)
-        rjk(:) = geo%crd(:,k) - geo%crd(:,j)
-        rkl(:) = geo%crd(:,l) - geo%crd(:,k)
-        rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
-        rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
-        rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)
-        rnk(1) = -rjk(2)*rkl(3) + rjk(3)*rkl(2)
-        rnk(2) = -rjk(3)*rkl(1) + rjk(1)*rkl(3)
-        rnk(3) = -rjk(1)*rkl(2) + rjk(2)*rkl(1)
-
-        bj2inv = 1.0d0/(rnj(1)**2 + rnj(2)**2 + rnj(3)**2 )
-        bk2inv = 1.0d0/(rnk(1)**2 + rnk(2)**2 + rnk(3)**2 )
-        bjinv = sqrt(bj2inv)
-        bkinv = sqrt(bk2inv)
-
-        ! calculate scp and phi
-        scp = (rnj(1)*rnk(1)+rnj(2)*rnk(2)+rnj(3)*rnk(3))*(bjinv*bkinv)
-        if ( scp .gt.  1.0 ) then
-                scp =  1.0
-                phi = acos (1.0) ! const
-        else if ( scp .lt. -1.0 ) then
-                scp = -1.0
-                phi = acos (-1.0) ! const
-        else
-            phi = acos ( scp )
-        end if
-        if(rjk(1)*(rnj(2)*rnk(3)-rnj(3)*rnk(2)) &
-           +rjk(2)*(rnj(3)*rnk(1)-rnj(1)*rnk(3)) &
-           +rjk(3)*(rnj(1)*rnk(2)-rnj(2)*rnk(1)) .lt. 0) then
-                    phi = -phi
-        end if
-
-        select case(top%dihedral_types(ic)%mode)
-            case(DIH_COS)
-                do pn=1,top%dihedral_types(ic)%n
-                   ! write(*,*) i,j,k,l,pn
-                    if( .not. top%dihedral_types(ic)%enabled(pn) ) cycle
-                    arg = pn*phi - top%dihedral_types(ic)%g(pn)
-                    if( dih_cos_only ) then
-                        geo%dih_ene = geo%dih_ene + top%dihedral_types(ic)%v(pn)*cos(arg)
-                    else
-                        geo%dih_ene = geo%dih_ene + top%dihedral_types(ic)%v(pn)*(1.0d0+cos(arg))
-                    end if
+    ! calculate integral
+        select case(mode)
+            case(NB_MODE_PAULI_DENS2)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_overlap2(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pb1,pb2)
                 end do
-            case(DIH_GRBF)
-                do pn=1,top%dihedral_types(ic)%n
-                    if( .not. top%dihedral_types(ic)%enabled(pn) ) cycle
-                    geo%dih_ene = geo%dih_ene + top%dihedral_types(ic)%c(pn) &
-                                  * exp(-(ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(ic)%p(pn))**2) &
-                                  / top%dihedral_types(ic)%w2(pn))
+            case(NB_MODE_PAULI_DENS3)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_overlap3(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pb1,pb2,pc1,pc2)
                 end do
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_exchrep_dihedrals]!')
+            case(NB_MODE_PAULI_WAVE2)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_wave_overlap2(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pb1,pb2)
+                end do
+            case(NB_MODE_PAULI_WAVE3)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_wave_overlap3(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pb1,pb2,pc1,pc2)
+                end do
         end select
-    end do
 
-end subroutine ffdev_exchrep_dihedrals
+!$omp end parallel
 
-!===============================================================================
-! subroutine ffdev_exchrep_impropers
-!===============================================================================
+    call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
-subroutine ffdev_exchrep_impropers(top,geo)
+    grid_integrate = rsum
 
-    use ffdev_topology
-    use ffdev_geometry
+end function grid_integrate
 
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         ::  i,j,k,l,ic,ip
-    real(DEVDP)     ::  scp,phi,arg
-    real(DEVDP)     ::  bjinv, bkinv, bj2inv, bk2inv
-    real(DEVDP)     ::  rji(3),rjk(3),rkl(3),rnj(3),rnk(3)
-    ! -----------------------------------------------------------------------------
+! ------------------------------------------------------------------------------
 
-    geo%impropr_ene = 0.0d0
-
-    do ip=1,top%nimpropers
-        i  = top%impropers(ip)%ai
-        j  = top%impropers(ip)%aj
-        k  = top%impropers(ip)%ak
-        l  = top%impropers(ip)%al
-        ic = top%impropers(ip)%dt
-
-        rji(:) = geo%crd(:,i) - geo%crd(:,j)
-        rjk(:) = geo%crd(:,k) - geo%crd(:,j)
-        rkl(:) = geo%crd(:,l) - geo%crd(:,k)
-
-        rnj(1) =  rji(2)*rjk(3) - rji(3)*rjk(2)
-        rnj(2) =  rji(3)*rjk(1) - rji(1)*rjk(3)
-        rnj(3) =  rji(1)*rjk(2) - rji(2)*rjk(1)
-        rnk(1) = -rjk(2)*rkl(3) + rjk(3)*rkl(2)
-        rnk(2) = -rjk(3)*rkl(1) + rjk(1)*rkl(3)
-        rnk(3) = -rjk(1)*rkl(2) + rjk(2)*rkl(1)
-
-        bj2inv  = 1.0d0/( rnj(1)**2 + rnj(2)**2 + rnj(3)**2)
-        bk2inv  = 1.0d0/( rnk(1)**2 + rnk(2)**2 + rnk(3)**2)
-        bjinv = sqrt(bj2inv)
-        bkinv = sqrt(bk2inv)
-
-        scp = (rnj(1)*rnk(1)+rnj(2)*rnk(2)+rnj(3)*rnk(3))*(bjinv*bkinv)
-        if ( scp .gt.  1.0d0 ) then
-            scp =  1.0d0
-        else if ( scp .lt. -1.0d0 ) then
-            scp = -1.0d0
-        end if
-        phi = acos ( scp )
-        if(rjk(1)*(rnj(2)*rnk(3)-rnj(3)*rnk(2)) &
-            +rjk(2)*(rnj(3)*rnk(1)-rnj(1)*rnk(3)) &
-            +rjk(3)*(rnj(1)*rnk(2)-rnj(2)*rnk(1)) &
-            .lt. 0) then
-                  phi = -phi
-        end if
-
-        arg = 2*phi - top%improper_types(ic)%g
-        geo%impropr_ene = geo%impropr_ene + top%improper_types(ic)%v * (1.0d0 + cos(arg))
-
-    end do
-
-end subroutine ffdev_exchrep_impropers
-
-!===============================================================================
-! subroutine ffdev_exchrep_nb_lj
-!===============================================================================
-
-subroutine ffdev_exchrep_nb_lj(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
+real(DEVDP)  function get_dens_overlap2(x,y,z,r,pb1,pb2)
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a
-    ! --------------------------------------------------------------------------
-
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
-        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
-
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
-
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene  = geo%ele_ene + crgij*ra
-            geo%nb_ene  = geo%nb_ene + aLJa*r6a*r6a - bLJa*r6a
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene  = geo%ele14_ene + inv_scee*crgij*ra
-            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(aLJa*r6a*r6a - bLJa*r6a)
-        end if
-    end do
-
-end subroutine ffdev_exchrep_nb_lj
-
-!===============================================================================
-! subroutine ffdev_exchrep_nb_bp
-!===============================================================================
-
-subroutine ffdev_exchrep_nb_bp(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aBP,bBP,cBP,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a
-    ! --------------------------------------------------------------------------
-
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aBP  = top%nb_types(nbt)%A
-        bBP  = top%nb_types(nbt)%B
-        cBP  = top%nb_types(nbt)%C
-        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
-
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
-
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene = geo%ele_ene + crgij*ra
-            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra) - cBP*r6a
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij*ra
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*(aBP*exp(-bBP/ra) - cBP*r6a)
-        end if
-    end do
-
-end subroutine ffdev_exchrep_nb_bp
-
-!===============================================================================
-! subroutine ffdev_exchrep_nb_exp6
-!===============================================================================
-
-subroutine ffdev_exchrep_nb_exp6(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,eps,r0,alpha,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: x, y, z
     real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pb2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    get_dens_overlap2 = 0.0
 
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        eps = top%nb_types(nbt)%eps
-        r0  = top%nb_types(nbt)%r0
-        alpha  = top%nb_types(nbt)%alpha
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
 
-        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
 
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+    w1 = exp(-2.0d0*pb1*r1)
+    w2 = exp(-2.0d0*pb2*r2)
 
-        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+    get_dens_overlap2 = w1*w2
 
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene = geo%ele_ene + crgij/r
-            geo%nb_ene  = geo%nb_ene + eps*(6.0d0/(alpha-6.0d0)*exp(alpha*(1.0d0-r/r0)) - alpha/(alpha-6.0d0)*(r0/r)**6)
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*eps*(6.0d0/(alpha-6.0d0)*exp(alpha*(1.0d0-r/r0)) - alpha/(alpha-6.0d0)*(r0/r)**6)
-        end if
-    end do
+end function get_dens_overlap2
 
-end subroutine ffdev_exchrep_nb_exp6
+! ------------------------------------------------------------------------------
 
-!===============================================================================
-! subroutine ffdev_exchrep_nb_exponly
-!===============================================================================
-
-subroutine ffdev_exchrep_nb_exponly(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
+real(DEVDP) function get_dens_overlap3(x,y,z,r,pb1,pb2,pc1,pc2)
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pb2
+    real(DEVDP)     :: pc1,pc2
     ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aBP,bBP,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    get_dens_overlap3 = 0.0
 
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aBP  = top%nb_types(nbt)%A
-        bBP  = top%nb_types(nbt)%B
-        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
 
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
 
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
+    w1 = r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)
+    w2 = r2**(2.0d0*pc2)*exp(-2.0d0*pb2*r2)
 
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene = geo%ele_ene + crgij*ra
-            geo%nb_ene  = geo%nb_ene + aBP*exp(-bBP/ra)
-            ! write(*,*) geo%nb_ene, 1.0/ra, aBP, bBP
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij*ra
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*aBP*exp(-bBP/ra)
-        end if
-    end do
+    get_dens_overlap3 = w1*w2
 
-end subroutine ffdev_exchrep_nb_exponly
+end function get_dens_overlap3
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_wave_overlap2(x,y,z,r,pb1,pb2)
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pb2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_wave_overlap2 = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = exp(-pb1*r1)
+    w2 = exp(-pb2*r2)
+
+    get_wave_overlap2 = w1*w2
+
+end function get_wave_overlap2
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_wave_overlap3(x,y,z,r,pb1,pb2,pc1,pc2)
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pb2
+    real(DEVDP)     :: pc1,pc2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_wave_overlap3 = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = r1**(pc1)*exp(-pb1*r1)
+    w2 = r2**(pc2)*exp(-pb2*r2)
+
+    get_wave_overlap3 = w1*w2
+
+end function get_wave_overlap3
 
 ! ------------------------------------------------------------------------------
 

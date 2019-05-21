@@ -554,13 +554,16 @@ subroutine ffdev_topology_load(top,name)
 
     ! release the file
     call prmfile_clear(fin)
-    
+
     ! create list of bonded atoms
     call ffdev_topology_gen_bonded(top)
     
     ! create fragments
     call ffdev_topology_gen_fragments(top)
-        
+
+    ! call init nbi and nbj in nb_pairs
+    call ffdev_topology_init_nbij(top)
+
     return
 
 end subroutine ffdev_topology_load
@@ -1304,6 +1307,30 @@ subroutine ffdev_topology_gen_fragments(top)
 end subroutine ffdev_topology_gen_fragments
 
 ! ==============================================================================
+! subroutine ffdev_topology_init_nbij
+! ==============================================================================
+
+subroutine ffdev_topology_init_nbij(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,nbt,ti,tj
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nb_size
+        nbt = top%nb_list(i)%nbt
+        ti = top%nb_types(nbt)%ti
+        tj = top%nb_types(nbt)%tj
+        top%nb_list(i)%nbtii = ffdev_topology_find_nbtype_by_tindex(top,ti,ti)
+        top%nb_list(i)%nbtjj = ffdev_topology_find_nbtype_by_tindex(top,tj,tj)
+    end do
+
+end subroutine ffdev_topology_init_nbij
+
+! ==============================================================================
 ! function ffdev_topology_find_nbtype
 ! ==============================================================================
 
@@ -1406,7 +1433,7 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
             ! FIXME - maybe in the future, we can also consider nfragments > 0
             if( top%probe_size .eq. 0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'nb_mode "' // &
-                     trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" requires probe mode!')
+                     trim(ffdev_topology_nb_mode_to_string(nb_mode)) // '" requires probe mode!')
             end if
     end select
 
@@ -1534,6 +1561,8 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     select case(comb_rules)
         case(COMB_RULE_LB,COMB_RULE_KG,COMB_RULE_WH,COMB_RULE_FB)
             if( top%nb_mode .eq. NB_MODE_LJ ) ok = .true.
+        case default
+            ok = .true.
     end select
 
     if( .not. ok ) then
@@ -1542,6 +1571,13 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
                                         '" is not implemented/allowed!')
     end if
 
+    ! should we apply cobination rules
+    if( comb_rules .eq. COMB_RULE_IN ) then
+        top%assumed_comb_rules = comb_rules
+        return
+    end if
+
+    ! apply combination rules
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
             ! get type parameters
@@ -1700,6 +1736,9 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
             ip = ip + 1
         end do
     end do
+
+    ! regenerate nbtii and nbtjj indexes
+    call ffdev_topology_init_nbij(top)
 
 ! erase all NB parameters except of probe and probe/probed structure
     if( unique_probe_types ) then

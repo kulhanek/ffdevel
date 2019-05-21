@@ -32,6 +32,7 @@ program ffdev_optimize_program
     use ffdev_errors_dat
     use ffdev_xdm
     use ffdev_timers
+!$ use omp_lib
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -39,7 +40,7 @@ program ffdev_optimize_program
     type(PRMFILE_TYPE)          :: tmpfin
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
-    integer                     :: i    
+    integer                     :: i, ncpu
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Optimize')
@@ -166,6 +167,10 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
     call ffdev_utils_heading(DEV_OUT,'Starting real optimization', '!')
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
+
+    ncpu = 1
+    !$ ncpu = omp_get_max_threads()
+    write(*,*) 'Number of threads = ',ncpu
 
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
