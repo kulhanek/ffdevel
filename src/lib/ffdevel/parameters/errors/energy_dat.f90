@@ -19,9 +19,9 @@ module ffdev_err_energy_dat
 
 use ffdev_constants
 
-integer,parameter       :: EE_ABSOLUTE = 1
-integer,parameter       :: EE_RELATIVE = 2
-integer,parameter       :: EE_LOG      = 3
+integer,parameter       :: EE_ABS   = 1 ! absolute
+integer,parameter       :: EE_REL   = 2 ! relative
+integer,parameter       :: EE_LOG   = 3 ! log
 
 ! ------------------------------------------------------------------------------
 

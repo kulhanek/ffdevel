@@ -70,12 +70,17 @@ subroutine ffdev_err_energy_error(error)
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
 
             select case(EnergyErrorMode)
-                case(EE_ABSOLUTE)
+                case(EE_ABS)
                     nene = nene + 1
                     err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
                     seterrene = seterrene + sets(i)%geo(j)%weight * err**2
-                case(EE_RELATIVE)
-                    ! FIXME
+                case(EE_REL)
+                    if( sets(i)%geo(j)%trg_energy .gt. 0 ) then
+                        nene = nene + 1
+                        err = (sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy) / &
+                              sets(i)%geo(j)%trg_energy
+                        seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                    end if
                 case(EE_LOG)
                     if( ((sets(i)%geo(j)%total_ene - sets(i)%offset) .gt. 0) .and. &
                         (sets(i)%geo(j)%trg_energy .gt. 0) ) then
