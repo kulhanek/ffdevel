@@ -449,7 +449,7 @@ subroutine ffdev_parameters_reinit()
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
             use_pauli_a = .true.
             use_pauli_b = .true.
-        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
+        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_DENS3P)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
