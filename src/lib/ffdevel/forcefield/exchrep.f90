@@ -23,7 +23,6 @@ use ffdev_constants
 private get_dens_overlap2
 private get_dens_overlap3
 private get_dens_overlap3p
-private get_dens_overlap5
 private get_wave_overlap2
 private get_wave_overlap3
 private grid_integrate
@@ -280,12 +279,7 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
                         rsum = rsum + grid_w(ipts) * get_dens_overlap3p(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pc1,pb2,pc2)
                     end do
-                case(NB_MODE_PAULI_DENS5)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_overlap5(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
-                    end do
-                case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L)
+                case(NB_MODE_PAULI_WAVE2)
                     do ipts = 1, npts
                         rsum = rsum + grid_w(ipts) * get_wave_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pb2)
@@ -295,6 +289,8 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
                         rsum = rsum + grid_w(ipts) * get_wave_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pc1,pb2,pc2)
                     end do
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_nocache!')
             end select
         call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
@@ -307,12 +303,12 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
     end do
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5,NB_MODE_PAULI_DENS3P)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS3P)
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
-            case(NB_MODE_PAULI_WAVE2L)
-                eexch = exp(pa1)*exp(pa2)*sqrt(-log(rsum))*rsum**2/px(2)
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_nocache!')
     end select
 
     ffdevel_exchrep_ene_nocache = eexch
@@ -329,6 +325,7 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pr1,pa
     use, intrinsic :: iso_c_binding, only: c_ptr
     use ffdev_timers
     use ffdev_topology_dat
+    use ffdev_utils
 
     implicit none
     type(GRID_CACHE)    :: cache
@@ -356,12 +353,12 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pr1,pa
                     cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5,NB_MODE_PAULI_DENS3P)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS3P)
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/lr
-        case(NB_MODE_PAULI_WAVE2L)
-            eexch = exp(pa1)*exp(pa2)*sqrt(-log(rsum))*rsum**2/lr
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
     end select
 
     ffdevel_exchrep_ene_cache = eexch
@@ -376,6 +373,7 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pr1,pb2
 
     use ffdev_timers
     use ffdev_topology_dat
+    use ffdev_utils
 
     implicit none
     integer     :: mode
@@ -410,19 +408,13 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pr1,pb2
                     rsum = rsum + gw(ipts) * get_dens_overlap3(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
                 end do
-            case(NB_MODE_PAULI_DENS5)
-                !$omp do private(ipts), reduction(+:rsum)
-                do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_overlap5(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
-                end do
             case(NB_MODE_PAULI_DENS3P)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
                     rsum = rsum + gw(ipts) * get_dens_overlap3p(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
                 end do
-            case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L)
+            case(NB_MODE_PAULI_WAVE2)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
                     rsum = rsum + gw(ipts) * get_wave_overlap2(gx(ipts), gy(ipts), gz(ipts), &
@@ -434,6 +426,8 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pr1,pb2
                     rsum = rsum + gw(ipts) * get_wave_overlap3(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
                 end do
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
         end select
 
 !$omp end parallel

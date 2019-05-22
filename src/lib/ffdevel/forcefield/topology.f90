@@ -847,12 +847,8 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = 'PDENS3 - Pauli via electron density overlap (three params A,B,C)'
         case(NB_MODE_PAULI_DENS3P)
             ffdev_topology_nb_mode_to_string = 'PDENS3P - Pauli via electron density overlap (three params A,B,C - polynomial)'
-        case(NB_MODE_PAULI_DENS5)
-            ffdev_topology_nb_mode_to_string = 'PDENS5 - Pauli via electron density overlap (five params A,B,C,D,R)'
         case(NB_MODE_PAULI_WAVE2)
             ffdev_topology_nb_mode_to_string = 'PWAVE2 - Pauli via wavefunction overlap (two params A,B)'
-        case(NB_MODE_PAULI_WAVE2L)
-            ffdev_topology_nb_mode_to_string = 'PWAVE2L - Pauli via wavefunction overlap (two params A,B - log)'
         case(NB_MODE_PAULI_WAVE3)
             ffdev_topology_nb_mode_to_string = 'PWAVE3 - Pauli via wavefunction overlap (three params A,B,C)'
         case default
@@ -884,12 +880,8 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS3
         case('PDENS3P')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS3P
-        case('PDENS5')
-            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS5
         case('PWAVE2')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE2
-        case('PWAVE2L')
-            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE2L
         case('PWAVE3')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE3
         case default
@@ -1140,15 +1132,6 @@ subroutine ffdev_topology_info_types(top,mode)
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                                top%nb_types(i)%PA, top%nb_types(i)%PB, top%nb_types(i)%PC
                     end do
-                    case(NB_MODE_PAULI_DENS5)
-                        ! FIXME 3->5
-                        write(DEV_OUT,620)
-                        write(DEV_OUT,630)
-                        do i=1,top%nnb_types
-                            write(DEV_OUT,640)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
-                                                   adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
-                                                   top%nb_types(i)%PA, top%nb_types(i)%PB, top%nb_types(i)%PC
-                        end do
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_topology_info_types!')
             end select
@@ -1453,9 +1436,9 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
 
     ! check for probe mode, which is required for Pauli repulsion nb_mode
     select case(nb_mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L, &
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2, &
              NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS3P,NB_MODE_PAULI_DENS5)
+             NB_MODE_PAULI_DENS3P)
             ! FIXME - maybe in the future, we can also consider nfragments > 0
             if( top%probe_size .eq. 0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'nb_mode "' // &
@@ -1473,9 +1456,9 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
                     top%nb_types(i)%alpha = lj2exp6_alpha
                 end if
             end do
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L, &
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2, &
              NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS3P,NB_MODE_PAULI_DENS5)
+             NB_MODE_PAULI_DENS3P)
             ! nothing to do, use old PA, PB, PC
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')

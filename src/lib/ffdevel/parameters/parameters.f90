@@ -446,19 +446,13 @@ subroutine ffdev_parameters_reinit()
             use_vdw_eps = .true.
             use_vdw_r0 = .true.
             use_vdw_alpha = .true.
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
             use_pauli_a = .true.
             use_pauli_b = .true.
         case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_DENS3P)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
-        case(NB_MODE_PAULI_DENS5)
-            use_pauli_a = .true.
-            use_pauli_b = .true.
-            use_pauli_c = .true.
-            use_pauli_d = .true.
-            use_pauli_r = .true.
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in ffdev_parameters_reinit!')
     end select
