@@ -275,6 +275,11 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
                         rsum = rsum + grid_w(ipts) * get_dens_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pc1,pb2,pc2)
                     end do
+                case(NB_MODE_PAULI_DENS3P)
+                    do ipts = 1, npts
+                        rsum = rsum + grid_w(ipts) * get_dens_overlap3p(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
+                                                       px(2),pb1,pc1,pb2,pc2)
+                    end do
                 case(NB_MODE_PAULI_DENS5)
                     do ipts = 1, npts
                         rsum = rsum + grid_w(ipts) * get_dens_overlap5(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
@@ -302,7 +307,7 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
     end do
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5,NB_MODE_PAULI_DENS3P)
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
@@ -349,7 +354,7 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pr1,pa
                     cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5,NB_MODE_PAULI_DENS3P)
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/lr
