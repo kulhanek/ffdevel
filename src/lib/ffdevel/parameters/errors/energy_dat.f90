@@ -29,7 +29,7 @@ integer,parameter       :: EE_LOG   = 3 ! log
 logical                 :: EnableEnergyError
 logical                 :: PrintEnergyErrorSummary
 real(DEVDP)             :: EnergyErrorWeight
-integer                 :: EnergyErrorMode = EE_LOG
+integer                 :: EnergyErrorMode = EE_ABS
 
 ! ------------------------------------------------------------------------------
 
