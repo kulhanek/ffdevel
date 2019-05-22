@@ -201,6 +201,7 @@ integer,parameter   :: NB_MODE_PAULI_DENS3  = 6     ! overlap of densities with 
 integer,parameter   :: NB_MODE_PAULI_DENS3P = 10    ! overlap of densities with three parameters (A,B,C - polynomial)
 integer,parameter   :: NB_MODE_PAULI_DENS5  = 9     ! overlap of densities with five parameters (A,B,C,D,R)
 integer,parameter   :: NB_MODE_PAULI_WAVE2  = 7     ! overlap of wavefunctions with two parameters (A,B)
+integer,parameter   :: NB_MODE_PAULI_WAVE2L = 11    ! overlap of wavefunctions with two parameters (A,B - log)
 integer,parameter   :: NB_MODE_PAULI_WAVE3  = 8     ! overlap of wavefunctions with three parameters (A,B,C)
 
 ! combining rules for nb_mode

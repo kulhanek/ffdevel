@@ -285,7 +285,7 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
                         rsum = rsum + grid_w(ipts) * get_dens_overlap5(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
                     end do
-                case(NB_MODE_PAULI_WAVE2)
+                case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L)
                     do ipts = 1, npts
                         rsum = rsum + grid_w(ipts) * get_wave_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pb2)
@@ -311,6 +311,8 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pr1,z
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
+            case(NB_MODE_PAULI_WAVE2L)
+                eexch = exp(pa1)*exp(pa2)*sqrt(-log(rsum))*rsum**2/px(2)
     end select
 
     ffdevel_exchrep_ene_nocache = eexch
@@ -358,6 +360,8 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pr1,pa
             eexch = rsum*exp(pa1)*exp(pa2)
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/lr
+        case(NB_MODE_PAULI_WAVE2L)
+            eexch = exp(pa1)*exp(pa2)*sqrt(-log(rsum))*rsum**2/lr
     end select
 
     ffdevel_exchrep_ene_cache = eexch
@@ -418,7 +422,7 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pr1,pb2
                     rsum = rsum + gw(ipts) * get_dens_overlap3p(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
                 end do
-            case(NB_MODE_PAULI_WAVE2)
+            case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE2L)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
                     rsum = rsum + gw(ipts) * get_wave_overlap2(gx(ipts), gy(ipts), gz(ipts), &
