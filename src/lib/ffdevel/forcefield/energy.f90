@@ -68,7 +68,7 @@ subroutine ffdev_energy_all(top,geo)
             call ffdev_energy_nb_exp6(top,geo)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
              NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS5)
+             NB_MODE_PAULI_DENS3P,NB_MODE_PAULI_DENS5)
             if( cache_grid ) then
                 if( .not. geo%grid_cached ) then
                     call ffdev_energy_nb_exchrep_gen_cache(top,geo)

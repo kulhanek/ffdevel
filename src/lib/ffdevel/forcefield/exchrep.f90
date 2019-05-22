@@ -22,6 +22,7 @@ use ffdev_constants
 
 private get_dens_overlap2
 private get_dens_overlap3
+private get_dens_overlap3p
 private get_dens_overlap5
 private get_wave_overlap2
 private get_wave_overlap3
@@ -406,6 +407,12 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pr1,pb2
                     rsum = rsum + gw(ipts) * get_dens_overlap5(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pd1,pr1,pb2,pc2,pd2,pr2)
                 end do
+            case(NB_MODE_PAULI_DENS3P)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_overlap3p(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pb1,pc1,pb2,pc2)
+                end do
             case(NB_MODE_PAULI_WAVE2)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
@@ -486,6 +493,36 @@ real(DEVDP) function get_dens_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
     get_dens_overlap3 = w1*w2
 
 end function get_dens_overlap3
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_dens_overlap3p(x,y,z,r,pb1,pc1,pb2,pc2)
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pc1
+    real(DEVDP)     :: pb2,pc2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_dens_overlap3p = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = exp(-2.0d0*pb1*r1 + pc1*r1**2)
+    w2 = exp(-2.0d0*pb2*r2 + pc2*r2**2)
+
+    get_dens_overlap3p = w1*w2
+
+end function get_dens_overlap3p
 
 ! ------------------------------------------------------------------------------
 

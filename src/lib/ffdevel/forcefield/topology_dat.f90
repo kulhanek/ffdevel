@@ -192,23 +192,24 @@ logical     :: cache_grid = .true.     ! cache grid for Eexchrep calculation
 ! ------------------------------------------------------------------------------
 
 ! full mode
-integer,parameter               :: NB_MODE_LJ       = 1     ! Lennard-Jones potential (eps,r0)
-integer,parameter               :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
+integer,parameter   :: NB_MODE_LJ       = 1     ! Lennard-Jones potential (eps,r0)
+integer,parameter   :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
 
 ! exchange repulsion only (Pauli repulsion), gradient and hessian is not available
-integer,parameter               :: NB_MODE_PAULI_DENS2  = 5 ! overlap of densities with two parameters (A,B)
-integer,parameter               :: NB_MODE_PAULI_DENS3  = 6 ! overlap of densities with three parameters (A,B,C)
-integer,parameter               :: NB_MODE_PAULI_DENS5  = 9 ! overlap of densities with five parameters (A,B,C,D,R)
-integer,parameter               :: NB_MODE_PAULI_WAVE2  = 7 ! overlap of wavefunctions with two parameters (A,B)
-integer,parameter               :: NB_MODE_PAULI_WAVE3  = 8 ! overlap of wavefunctions with three parameters (A,B,C)
+integer,parameter   :: NB_MODE_PAULI_DENS2  = 5     ! overlap of densities with two parameters (A,B)
+integer,parameter   :: NB_MODE_PAULI_DENS3  = 6     ! overlap of densities with three parameters (A,B,C)
+integer,parameter   :: NB_MODE_PAULI_DENS3P = 10    ! overlap of densities with three parameters (A,B,C - polynomial)
+integer,parameter   :: NB_MODE_PAULI_DENS5  = 9     ! overlap of densities with five parameters (A,B,C,D,R)
+integer,parameter   :: NB_MODE_PAULI_WAVE2  = 7     ! overlap of wavefunctions with two parameters (A,B)
+integer,parameter   :: NB_MODE_PAULI_WAVE3  = 8     ! overlap of wavefunctions with three parameters (A,B,C)
 
 ! combining rules for nb_mode
-integer,parameter               :: COMB_RULE_IN = 05  ! input data
+integer,parameter   :: COMB_RULE_IN = 05  ! input data
 ! applicable for NB_MODE_LJ
-integer,parameter               :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)
-integer,parameter               :: COMB_RULE_WH = 20  ! WH (Waldman-Hagler)
-integer,parameter               :: COMB_RULE_KG = 30  ! KG (Kong)
-integer,parameter               :: COMB_RULE_FB = 40  ! FB (Fender-Halsey-Berthelot)
+integer,parameter   :: COMB_RULE_LB = 10  ! LB (Lorentz-Berthelot)
+integer,parameter   :: COMB_RULE_WH = 20  ! WH (Waldman-Hagler)
+integer,parameter   :: COMB_RULE_KG = 30  ! KG (Kong)
+integer,parameter   :: COMB_RULE_FB = 40  ! FB (Fender-Halsey-Berthelot)
 
 ! ------------------------------------------------------------------------------
 
