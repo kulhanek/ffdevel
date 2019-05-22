@@ -115,7 +115,7 @@ subroutine ffdev_parameters_reinit()
     implicit none
     integer     :: i, j, k, parmid
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
-    logical     :: use_pauli_a, use_pauli_b, use_pauli_c, use_pauli_d, use_pauli_r
+    logical     :: use_pauli_a, use_pauli_b, use_pauli_c, use_pauli_d, use_pauli_e
     ! --------------------------------------------------------------------------  
 
     nparams = 0
@@ -436,7 +436,7 @@ subroutine ffdev_parameters_reinit()
     use_pauli_b = .false.
     use_pauli_c = .false.
     use_pauli_d = .false.
-    use_pauli_r = .false.
+    use_pauli_e = .false.
 
     select case(LastNBMode)
         case(NB_MODE_LJ)
@@ -449,10 +449,16 @@ subroutine ffdev_parameters_reinit()
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
             use_pauli_a = .true.
             use_pauli_b = .true.
-        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_DENS3P)
+        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
+        case(NB_MODE_PAULI_DENS5P)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+            use_pauli_c = .true.
+            use_pauli_d = .true.
+            use_pauli_e = .true.
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in ffdev_parameters_reinit!')
     end select
@@ -641,16 +647,16 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_pauli_r ) then
-        ! pauli R realm =====================
+    if( use_pauli_e ) then
+        ! pauli E realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
                 if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_R)
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_E)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PR
-                    params(nparams)%realm = REALM_PAULI_R
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PE
+                    params(nparams)%realm = REALM_PAULI_E
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -758,7 +764,7 @@ integer function find_parameter(top,id,pn,realm)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
         case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,&
-             REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D,REALM_PAULI_R)
+             REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D,REALM_PAULI_E)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
     end select
@@ -794,7 +800,7 @@ integer function find_parameter(top,id,pn,realm)
                         find_parameter = i
                 end if
             case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,&
-                 REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D,REALM_PAULI_R)
+                 REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D,REALM_PAULI_E)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -1614,8 +1620,8 @@ subroutine ffdev_parameters_print_parameters()
             case(REALM_PAULI_D)
                 tmp = 'pauli_d'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_R)
-                tmp = 'pauli_r'
+            case(REALM_PAULI_E)
+                tmp = 'pauli_e'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
@@ -1699,8 +1705,8 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'pauli_c'
             case(REALM_PAULI_D)
                 tmp = 'pauli_d'
-            case(REALM_PAULI_R)
-                tmp = 'pauli_r'
+            case(REALM_PAULI_E)
+                tmp = 'pauli_e'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
         end select
@@ -1993,10 +1999,10 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_PAULI_R)
+            case(REALM_PAULI_E)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PR = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PE = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
@@ -2086,8 +2092,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinPauliC
         case(REALM_PAULI_D)
             ffdev_params_get_lower_bound = MinPauliD
-        case(REALM_PAULI_R)
-            ffdev_params_get_lower_bound = MinPauliR
+        case(REALM_PAULI_E)
+            ffdev_params_get_lower_bound = MinPauliE
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
     end select
@@ -2173,8 +2179,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxPauliC
         case(REALM_PAULI_D)
             ffdev_params_get_upper_bound = MaxPauliD
-        case(REALM_PAULI_R)
-            ffdev_params_get_upper_bound = MaxPauliR
+        case(REALM_PAULI_E)
+            ffdev_params_get_upper_bound = MaxPauliE
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
     end select

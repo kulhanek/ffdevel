@@ -127,7 +127,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA, PB, PC, PD, PR       ! Pauli repulsion data
+    real(DEVDP)         :: PA, PB, PC, PD, PE       ! Pauli repulsion data
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -198,7 +198,7 @@ integer,parameter   :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
 ! exchange repulsion only (Pauli repulsion), gradient and hessian is not available
 integer,parameter   :: NB_MODE_PAULI_DENS2  = 5     ! overlap of densities with two parameters (A,B)
 integer,parameter   :: NB_MODE_PAULI_DENS3  = 6     ! overlap of densities with three parameters (A,B,C)
-integer,parameter   :: NB_MODE_PAULI_DENS3P = 10    ! overlap of densities with three parameters (A,B,C - polynomial)
+integer,parameter   :: NB_MODE_PAULI_DENS5P = 10    ! overlap of densities with three parameters (A,B,C - polynomial)
 integer,parameter   :: NB_MODE_PAULI_WAVE2  = 7     ! overlap of wavefunctions with two parameters (A,B)
 integer,parameter   :: NB_MODE_PAULI_WAVE3  = 8     ! overlap of wavefunctions with three parameters (A,B,C)
 

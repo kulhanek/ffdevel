@@ -479,8 +479,8 @@ subroutine change_realms(realm,enable,options,nchanged)
             realmid = REALM_PAULI_C
         case('pauli_d')
             realmid = REALM_PAULI_D
-        case('pauli_r')
-            realmid = REALM_PAULI_R
+        case('pauli_e')
+            realmid = REALM_PAULI_E
         case('all')
             realmid = -1
         case default
