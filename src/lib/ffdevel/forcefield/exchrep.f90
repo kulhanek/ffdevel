@@ -520,8 +520,8 @@ real(DEVDP) function get_dens_overlap5p(x,y,z,r,pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = exp(-2.0d0*pb1*r1)*(1.0 + pc1*r1 + pd1*r1**2 + pe1*r1**3)
-    w2 = exp(-2.0d0*pb2*r2)*(1.0 + pc2*r2 + pd2*r2**2 + pe2*r2**3)
+    w1 = exp(-2.0d0*pb1*r1)*(1.0 + pc1/r1 + pd1/r1**2 + pe1/r1**3)
+    w2 = exp(-2.0d0*pb2*r2)*(1.0 + pc2/r2 + pd2/r2**2 + pe2/r2**3)
 
     get_dens_overlap5p = w1*w2
 
