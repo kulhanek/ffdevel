@@ -46,6 +46,10 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintEnergyErrorSummary)
         write(DEV_OUT,125) EnergyErrorWeight
         write(DEV_OUT,145) ffdev_err_energy_ctrl_scale_to_string(EnergyErrorMode)
+        write(DEV_OUT,155) prmfile_onoff(EnableMaxFilter)
+        write(DEV_OUT,165) MaxTargetEnergy
+        write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
+        write(DEV_OUT,175) MinTargetEnergy
         errors_calc_ene = EnableEnergyError
         return
     end if
@@ -72,6 +76,28 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,145) ffdev_err_energy_ctrl_scale_to_string(EnergyErrorMode)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'maxfilter', EnableMaxFilter)) then
+        write(DEV_OUT,150) prmfile_onoff(EnableMaxFilter)
+    else
+        write(DEV_OUT,155) prmfile_onoff(EnableMaxFilter)
+    end if
+    if( prmfile_get_real8_by_key(fin,'maxvalue', MaxTargetEnergy)) then
+        write(DEV_OUT,160) MaxTargetEnergy
+    else
+        write(DEV_OUT,165) MaxTargetEnergy
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'minfilter', EnableMinFilter)) then
+        write(DEV_OUT,170) prmfile_onoff(EnableMinFilter)
+    else
+        write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
+    end if
+    if( prmfile_get_real8_by_key(fin,'minvalue', MinTargetEnergy)) then
+        write(DEV_OUT,170) MinTargetEnergy
+    else
+        write(DEV_OUT,175) MinTargetEnergy
+    end if
+
     errors_calc_ene = EnableEnergyError
 
  10 format('=== [energy] ===================================================================')
@@ -82,8 +108,16 @@ subroutine ffdev_err_energy_ctrl(fin)
 135  format ('Print bonds error summary (summary)    = ',a12,'                  (default)')
 120  format ('Energy error weight (weight)           = ',f21.8)
 125  format ('Energy error weight (weight)           = ',f21.8,'         (default)')
-140  format ('Error scale (scale)                    = ',a12)
-145  format ('Error scale (scale)                    = ',a12,'                  (default)')
+140  format ('Error scale (scale)                    = ',a24)
+145  format ('Error scale (scale)                    = ',a24,'     (default)')
+150  format ('Enable max energy filter (maxfilter)   = ',a12)
+155  format ('Enable max energy filter (maxfilter)   = ',a12,'                  (default)')
+160  format ('Max target rnergy (maxvalue)           = ',f21.8)
+165  format ('Max target rnergy (maxvalue)           = ',f21.8,'         (default)')
+170  format ('Enable min energy filter (minfilter)   = ',a12)
+175  format ('Enable min energy filter (minfilter)   = ',a12,'                  (default)')
+180  format ('Min target rnergy (maxvalue)           = ',f21.8)
+185  format ('Min target rnergy (maxvalue)           = ',f21.8,'         (default)')
 
 end subroutine ffdev_err_energy_ctrl
 

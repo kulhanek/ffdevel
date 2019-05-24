@@ -30,6 +30,10 @@ logical                 :: EnableEnergyError
 logical                 :: PrintEnergyErrorSummary
 real(DEVDP)             :: EnergyErrorWeight
 integer                 :: EnergyErrorMode = EE_ABS
+logical                 :: EnableMaxFilter
+real(DEVDP)             :: MaxTargetEnergy
+logical                 :: EnableMinFilter
+real(DEVDP)             :: MinTargetEnergy
 
 ! ------------------------------------------------------------------------------
 

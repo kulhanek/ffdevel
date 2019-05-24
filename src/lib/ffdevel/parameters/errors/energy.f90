@@ -32,9 +32,14 @@ subroutine ffdev_err_energy_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableEnergyError        = .false.
-    PrintEnergyErrorSummary  = .false.
-    EnergyErrorWeight        = 1.0
+    EnableEnergyError       = .false.
+    PrintEnergyErrorSummary = .false.
+    EnergyErrorWeight       = 1.0
+    EnergyErrorMode         = EE_ABS
+    EnableMaxFilter         = .false.
+    MaxTargetEnergy         = 0.0
+    EnableMinFilter         = .false.
+    MinTargetEnergy         = 0.0
 
 end subroutine ffdev_err_energy_init
 
@@ -68,6 +73,14 @@ subroutine ffdev_err_energy_error(error)
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
+
+            ! filters
+            if( EnableMaxFilter ) then
+                if( sets(i)%geo(j)%trg_energy .gt. MaxTargetEnergy ) cycle
+            end if
+            if( EnableMinFilter ) then
+                if( sets(i)%geo(j)%trg_energy .lt. MinTargetEnergy ) cycle
+            end if
 
             select case(EnergyErrorMode)
                 case(EE_ABS)
