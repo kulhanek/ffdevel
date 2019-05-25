@@ -66,9 +66,15 @@ subroutine ffdev_energy_all(top,geo)
             call ffdev_energy_nb_lj(top,geo)
         case(NB_MODE_EXP6)
             call ffdev_energy_nb_exp6(top,geo)
+        case(NB_MODE_TT)
+            call ffdev_energy_nb_tt(top,geo)
+        case(NB_MODE_PAULI_EXP2)
+            call ffdev_energy_nb_pauli_exp2(top,geo)
+        case(NB_MODE_PAULI_EXP3)
+            call ffdev_energy_nb_pauli_exp3(top,geo)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
              NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS5P)
+             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
             if( pauli_cache_grid ) then
                 if( .not. geo%grid_cached ) then
                     call ffdev_energy_nb_exchrep_gen_cache(top,geo)
@@ -442,6 +448,163 @@ subroutine ffdev_energy_nb_exp6(top,geo)
 end subroutine ffdev_energy_nb_exp6
 
 !===============================================================================
+! subroutine ffdev_energy_nb_tt
+!===============================================================================
+
+subroutine ffdev_energy_nb_tt(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+        pa  = top%nb_types(nbt)%pa
+        pb  = top%nb_types(nbt)%pb
+
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij/r
+            geo%nb_ene  = geo%nb_ene + exp(pa)*exp(-pb*r)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*exp(pa)*exp(-pb*r)
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_tt
+
+!===============================================================================
+! subroutine ffdev_energy_nb_pauli_exp2
+!===============================================================================
+
+subroutine ffdev_energy_nb_pauli_exp2(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+        pa  = top%nb_types(nbt)%pa
+        pb  = top%nb_types(nbt)%pb
+
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij/r
+            geo%nb_ene  = geo%nb_ene + exp(pa)*exp(-2.0d0*pb*r)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*exp(pa)*exp(-2.0d0*pb*r)
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_pauli_exp2
+
+!===============================================================================
+! subroutine ffdev_energy_nb_pauli_exp3
+!===============================================================================
+
+subroutine ffdev_energy_nb_pauli_exp3(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,pc,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+        pa  = top%nb_types(nbt)%pa
+        pb  = top%nb_types(nbt)%pb
+        pc  = top%nb_types(nbt)%pc
+
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij/r
+            geo%nb_ene  = geo%nb_ene + exp(pa)*exp(-2.0d0*pb*r)*r**(pc)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*exp(pa)*exp(-2.0d0*pb*r)*r**(pc)
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_pauli_exp3
+
+!===============================================================================
 ! subroutine ffdev_energy_nb_exchrep_nocache
 !===============================================================================
 
@@ -542,7 +705,7 @@ subroutine ffdev_energy_nb_exchrep_gen_cache(top,geo)
 
         geo%grid_cache(ip)%r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
 
-        call ffdevel_exchrep_gen_cache(geo%grid_cache(ip),z1,z2)
+        call ffdevel_exchrep_gen_cache(top%nb_mode,geo%grid_cache(ip),z1,z2)
     end do
 
 end subroutine ffdev_energy_nb_exchrep_gen_cache

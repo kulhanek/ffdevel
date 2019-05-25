@@ -31,11 +31,16 @@ end type RESTRAINT
 ! ------------------------------------------------------------------------------
 
 type GRID_CACHE
+    real(DEVDP)                 :: r
     integer                     :: npts1
     real(DEVDP),pointer         :: grid_1(:,:)
     integer                     :: npts2
     real(DEVDP),pointer         :: grid_2(:,:)
-    real(DEVDP)                 :: r
+    ! for LDA
+    integer                     :: npts3
+    real(DEVDP),pointer         :: grid_3(:,:)
+    integer                     :: npts4
+    real(DEVDP),pointer         :: grid_4(:,:)
 end type GRID_CACHE
 
 ! ------------------------------------------------------------------------------

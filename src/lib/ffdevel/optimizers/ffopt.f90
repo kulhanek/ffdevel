@@ -131,7 +131,7 @@ subroutine ffdev_ffopt_set_default()
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.001d0
     MaxG                = 0.001d0
-    MinErrorChange      = 0.0000001d0   ! if negative number - this test is switched off
+    MinErrorChange      = -1   ! if negative number - this test is switched off
     PrintFinalGradient  = .false.
 
 ! === [steepest-descent] =======================================================
@@ -150,7 +150,7 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [Shark] ==================================================================
     Shark_Method        = SHARK_CMA_ES
-    Shark_InitialStep   = 0.001d0
+    Shark_InitialStep   = 0.5d0
     Shark_EnableBoxing  = .true.
 
 end subroutine ffdev_ffopt_set_default

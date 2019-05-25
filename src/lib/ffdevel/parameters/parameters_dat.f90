@@ -42,9 +42,10 @@ integer,parameter       :: REALM_PAULI_A    = 16
 integer,parameter       :: REALM_PAULI_B    = 17
 integer,parameter       :: REALM_PAULI_C    = 18
 integer,parameter       :: REALM_PAULI_DP   = 19
+integer,parameter       :: REALM_PAULI_LP   = 20
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_PAULI_DP
+integer,parameter       :: REALM_LAST    = REALM_PAULI_LP
 
 ! ------------------------------------------------------------------------------
 
@@ -144,13 +145,15 @@ real(DEVDP)     :: MaxVdwR0     =       5.0d0
 real(DEVDP)     :: MinVdwAlpha  =      10.0
 real(DEVDP)     :: MaxVdwAlpha  =      25.0
 real(DEVDP)     :: MinPauliA    =       1.0d0
-real(DEVDP)     :: MaxPauliA    =      10.0d0
+real(DEVDP)     :: MaxPauliA    =      15.0d0
 real(DEVDP)     :: MinPauliB    =       0.1d0
-real(DEVDP)     :: MaxPauliB    =       2.0d0
+real(DEVDP)     :: MaxPauliB    =       3.0d0
 real(DEVDP)     :: MinPauliC    =      -3.0d0
 real(DEVDP)     :: MaxPauliC    =       3.0d0
 real(DEVDP)     :: MinPauliDP   =       0.5d0
 real(DEVDP)     :: MaxPauliDP   =       1.5d0
+real(DEVDP)     :: MinPauliLP   =       1.0d0
+real(DEVDP)     :: MaxPauliLP   =       3.0d0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

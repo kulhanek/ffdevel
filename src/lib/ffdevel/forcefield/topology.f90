@@ -839,16 +839,24 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = 'LJ - Lennard-Jones potential'
         case(NB_MODE_EXP6)
             ffdev_topology_nb_mode_to_string = 'EXP6 - Exp-6 potential'
+        case(NB_MODE_TT)
+            ffdev_topology_nb_mode_to_string = 'TT - Tang–Toennis potential'
+        case(NB_MODE_PAULI_EXP2)
+            ffdev_topology_nb_mode_to_string = 'PEXP2 - Pauli Exp repulsion (two params A,B)'
+        case(NB_MODE_PAULI_EXP3)
+            ffdev_topology_nb_mode_to_string = 'PEXP3 - Pauli Exp repulsion (three params A,B,C)'
         case(NB_MODE_PAULI_DENS2)
             ffdev_topology_nb_mode_to_string = 'PDENS2 - Pauli via electron density overlap (two params A,B)'
         case(NB_MODE_PAULI_DENS3)
             ffdev_topology_nb_mode_to_string = 'PDENS3 - Pauli via electron density overlap (three params A,B,C)'
-        case(NB_MODE_PAULI_DENS5P)
-            ffdev_topology_nb_mode_to_string = 'PDENS5P - Pauli via electron density overlap (five params A,B,C,D,E - polynomial)'
         case(NB_MODE_PAULI_WAVE2)
             ffdev_topology_nb_mode_to_string = 'PWAVE2 - Pauli via wavefunction overlap (two params A,B)'
         case(NB_MODE_PAULI_WAVE3)
             ffdev_topology_nb_mode_to_string = 'PWAVE3 - Pauli via wavefunction overlap (three params A,B,C)'
+        case(NB_MODE_PAULI_LDA2)
+            ffdev_topology_nb_mode_to_string = 'PLDA2 - Pauli via LDA (two params A,B)'
+        case(NB_MODE_PAULI_LDA3)
+            ffdev_topology_nb_mode_to_string = 'PLDA3 - Pauli via LDA (three params A,B,C)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -872,16 +880,24 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_MODE_LJ
         case('EXP6')
             ffdev_topology_nb_mode_from_string = NB_MODE_EXP6
+        case('TT')
+            ffdev_topology_nb_mode_from_string = NB_MODE_TT
+        case('PEXP2')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_EXP2
+        case('PEXP3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_EXP3
         case('PDENS2')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS2
         case('PDENS3')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS3
-        case('PDENS5P')
-            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_DENS5P
         case('PWAVE2')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE2
         case('PWAVE3')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_WAVE3
+        case('PLDA2')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_LDA2
+        case('PLDA3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_LDA3
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -903,6 +919,7 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
     select case(comb_rules)
         case(COMB_RULE_IN)
             ffdev_topology_comb_rules_to_string = 'IN (input data)'
+        ! LJ potential
         case(COMB_RULE_LB)
             ffdev_topology_comb_rules_to_string = 'LB (Lorentz-Berthelot)'
         case(COMB_RULE_WH)
@@ -911,6 +928,11 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
             ffdev_topology_comb_rules_to_string = 'KG (Kong)'
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
+        ! Pauli repulsion
+        case(COMB_RULE_PA)
+            ffdev_topology_comb_rules_to_string = 'PA (Pauli A)'
+        case(COMB_RULE_PB)
+            ffdev_topology_comb_rules_to_string = 'PB (Pauli B)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
     end select
@@ -940,6 +962,10 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
+        case('PA')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PA
+        case('PB')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PB
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
     end select
@@ -1121,8 +1147,11 @@ subroutine ffdev_topology_info_types(top,mode)
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                                top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
                     end do
-                case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5P, &
-                     NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
+                case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
+                     NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
+                     NB_MODE_PAULI_EXP2,NB_MODE_PAULI_EXP3, &
+                     NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3, &
+                     NB_MODE_TT)
                     write(DEV_OUT,620)
                     write(DEV_OUT,630)
                     do i=1,top%nnb_types
@@ -1436,7 +1465,8 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
     select case(nb_mode)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2, &
              NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS5P)
+             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3, &
+             NB_MODE_PAULI_EXP2,NB_MODE_PAULI_EXP3)
             ! FIXME - maybe in the future, we can also consider nfragments > 0
             if( top%probe_size .eq. 0 ) then
                 call ffdev_utils_exit(DEV_OUT,1,'nb_mode "' // &
@@ -1456,7 +1486,9 @@ subroutine ffdev_topology_switch_nbmode(top,nb_mode)
             end do
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2, &
              NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_DENS5P)
+             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3, &
+             NB_MODE_PAULI_EXP2,NB_MODE_PAULI_EXP3, &
+             NB_MODE_TT)
             ! nothing to do, use old PA, PB, PC
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
@@ -1561,7 +1593,8 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     integer         :: comb_rules
     ! --------------------------------------------
     integer         :: i,nbii,nbjj
-    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l,aii,aij,ajj,bii,bij,bjj
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
+    real(DEVDP)     :: paii,paij,pajj,pbii,pbij,pbjj,pcii,pcjj,pcij
     logical         :: ok
     ! --------------------------------------------------------------------------
 
@@ -1570,6 +1603,11 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     select case(comb_rules)
         case(COMB_RULE_LB,COMB_RULE_KG,COMB_RULE_WH,COMB_RULE_FB)
             if( top%nb_mode .eq. NB_MODE_LJ ) ok = .true.
+        case(COMB_RULE_PA)
+            if( top%nb_mode .eq. NB_MODE_TT ) ok = .true.
+            if( top%nb_mode .eq. NB_MODE_PAULI_EXP2 ) ok = .true.
+        case(COMB_RULE_PB)
+            if( top%nb_mode .eq. NB_MODE_PAULI_EXP3 ) ok = .true.
         case default
             ok = .true.
     end select
@@ -1632,6 +1670,40 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
                     epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
                     top%nb_types(i)%eps = epsij
                     top%nb_types(i)%r0 = r0ij
+                case(COMB_RULE_PA)
+                    ! all Rg, exchange SAPT0/def2-QZVPP, absolute errors
+                    ! PB/PA  ari        geo         ari/pb
+                    ! ari    0.817951   1.61341
+                    ! geo    0.731841   1.58036     1.51074
+                    ! har    0.568727   1.16892     1.39466
+                    ! no comb rules: 0.103526
+                    paii = top%nb_types(nbii)%pa
+                    pbii = top%nb_types(nbii)%pb
+                    pajj = top%nb_types(nbjj)%pa
+                    pbjj = top%nb_types(nbjj)%pb
+                    paij = (paii+pajj)*0.5d0
+                    pbij = 2.0d0*(pbii*pbjj)/(pbii+pbjj)
+                    top%nb_types(i)%pa = paij
+                    top%nb_types(i)%pb = pbij
+                case(COMB_RULE_PB)
+                    ! all Rg, exchange SAPT0/def2-QZVPP, absolute errors
+                    ! no comb rules: 0.00377055
+                    ! comb rules:
+                    ! 0.308318 (2.0d0*(pcii+1.0d0)*(pcjj+1.0d0)/(pcii+pcjj+2.0d0) - 1.0d0)
+                    ! 0.269699 2.0d0*(pcii*pcjj)/(pcii+pcjj)
+                    ! 0.327250 (pcii+pcjj)*0.5d0
+                    paii = top%nb_types(nbii)%pa
+                    pbii = top%nb_types(nbii)%pb
+                    pcii = top%nb_types(nbii)%pc
+                    pajj = top%nb_types(nbjj)%pa
+                    pbjj = top%nb_types(nbjj)%pb
+                    pcjj = top%nb_types(nbjj)%pc
+                    paij = (paii+pajj)*0.5d0
+                    pbij = 2.0d0*(pbii*pbjj)/(pbii+pbjj)
+                    pcij = 2.0d0*(pcii*pcjj)/(pcii+pcjj)
+                    top%nb_types(i)%pa = paij
+                    top%nb_types(i)%pb = pbij
+                    top%nb_types(i)%pc = pcij
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules!')
             end select

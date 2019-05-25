@@ -22,7 +22,8 @@ use ffdev_constants
 
 private get_dens_overlap2
 private get_dens_overlap3
-private get_dens_overlap3p
+private get_dens_lda2
+private get_dens_lda3
 private get_wave_overlap2
 private get_wave_overlap3
 private grid_integrate
@@ -33,14 +34,16 @@ contains
 ! subroutine ffdevel_exchrep_gen_cache
 ! ==============================================================================
 
-subroutine ffdevel_exchrep_gen_cache(cache,z1,z2)
+subroutine ffdevel_exchrep_gen_cache(mode,cache,z1,z2)
 
     use, intrinsic :: iso_c_binding, only: c_ptr
     use numgrid
     use ffdev_timers
     use ffdev_utils
+    use ffdev_topology_dat
 
     implicit none
+    integer             :: mode
     type(GRID_CACHE)    :: cache
     integer             :: z1
     integer             :: z2
@@ -147,6 +150,65 @@ subroutine ffdevel_exchrep_gen_cache(cache,z1,z2)
                          cache%grid_2(:,1), cache%grid_2(:,2), cache%grid_2(:,3), cache%grid_2(:,4))
 
         call numgrid_free_atom_grid(gctx)
+
+! --------------------------
+        if( (mode .eq. NB_MODE_PAULI_LDA2) .or. (mode .eq. NB_MODE_PAULI_LDA3) ) then
+
+            nats = 1
+            cidx = 1
+
+            gctx = numgrid_new_atom_grid(radial_precision,       &
+                                       min_num_angular_points, &
+                                       max_num_angular_points, &
+                                       az(cidx),      &
+                                       alpha_max(cidx),              &
+                                       max_l_quantum_number(cidx),   &
+                                       alpha_min(:,cidx))
+
+            npts = numgrid_get_num_grid_points(gctx)
+
+            cache%npts3 = npts
+            allocate(cache%grid_3(npts,4), stat = alloc_stat)
+            if( alloc_stat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate grid buffers in ffdevel_exchrep_gen_cache!')
+            end if
+
+            call numgrid_get_grid(gctx, nats, 0,   &
+                             px, py, pz, az,            &
+                             cache%grid_3(:,1), cache%grid_3(:,2), cache%grid_3(:,3), cache%grid_3(:,4))
+
+            call numgrid_free_atom_grid(gctx)
+
+        ! --------------------
+
+            cidx = 2
+
+            gctx = numgrid_new_atom_grid(radial_precision,       &
+                                       min_num_angular_points, &
+                                       max_num_angular_points, &
+                                       az(cidx),      &
+                                       alpha_max(cidx),              &
+                                       max_l_quantum_number(cidx),   &
+                                       alpha_min(:,cidx))
+
+            npts = numgrid_get_num_grid_points(gctx)
+
+            cache%npts4 = npts
+            allocate(cache%grid_4(npts,4), stat = alloc_stat)
+            if( alloc_stat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate grid buffers in ffdevel_exchrep_gen_cache!')
+            end if
+
+            ! fake as the first atom
+            az(1) = az(2)
+
+            call numgrid_get_grid(gctx, nats, 0,   &
+                             px, py, pz, az,            &
+                             cache%grid_4(:,1), cache%grid_4(:,2), cache%grid_4(:,3), cache%grid_4(:,4))
+
+            call numgrid_free_atom_grid(gctx)
+
+        end if
 
     call ffdev_timers_stop_timer(FFDEV_POT_NB_GRID)
 
@@ -298,10 +360,10 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,z2,pa2,pb
     end do
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5P)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3)
             eexch = exp(pa1)*exp(pa2)*rsum**pauli_dens_power
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
-            eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
+            eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)           
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_nocache!')
     end select
@@ -343,15 +405,24 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pa2,pb2,pc
     lr = cache%r * DEV_A2AU
 
     rsum = grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
-                    cache%grid_1(:,3),cache%grid_1(:,4),pb1,pc1,pb2,pc2)
+                    cache%grid_1(:,3),cache%grid_1(:,4),pa1,pb1,pc1,pa2,pb2,pc2)
     rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
-                    cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pb2,pc2)
+                    cache%grid_2(:,3),cache%grid_2(:,4),pa1,pb1,pc1,pa2,pb2,pc2)
+
+    if( (mode .eq. NB_MODE_PAULI_LDA2) .or. (mode .eq. NB_MODE_PAULI_LDA3) ) then
+        rsum = rsum - grid_integrate_A(mode,cache%npts3,cache%grid_3(:,1),cache%grid_3(:,2), &
+                        cache%grid_3(:,3),cache%grid_3(:,4),pa1,pb1,pc1)
+        rsum = rsum - grid_integrate_A(mode,cache%npts4,cache%grid_4(:,1),cache%grid_4(:,2), &
+                        cache%grid_4(:,3),cache%grid_4(:,4),pa2,pb2,pc2)
+    end if
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5P)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3)
             eexch = exp(pa1)*exp(pa2)*rsum**pauli_dens_power
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/lr
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+            eexch = rsum
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
     end select
@@ -364,7 +435,7 @@ end function ffdevel_exchrep_ene_cache
 ! function grid_integrate
 ! ==============================================================================
 
-real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
+real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pa1,pb1,pc1,pa2,pb2,pc2)
 
     use ffdev_timers
     use ffdev_topology_dat
@@ -376,8 +447,8 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
     real(DEVDP) :: lr
     integer     :: npts
     real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
-    real(DEVDP) :: pb1,pc1
-    real(DEVDP) :: pb2,pc2
+    real(DEVDP) :: pa1,pb1,pc1
+    real(DEVDP) :: pa2,pb2,pc2
     ! --------------------------------------------
     integer     :: ipts
     real(DEVDP) :: rsum
@@ -415,7 +486,19 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
                     rsum = rsum + gw(ipts) * get_wave_overlap3(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
                 end do
-            case default
+            case(NB_MODE_PAULI_LDA2)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_lda2(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pa1,pb1,pa2,pb2)
+                end do
+            case(NB_MODE_PAULI_LDA3)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_lda3(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,pa1,pb1,pc1,pa2,pb2,pc2)
+                end do
+        case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
         end select
 
@@ -426,6 +509,59 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
     grid_integrate = rsum
 
 end function grid_integrate
+
+! ==============================================================================
+! function grid_integrate_A
+! ==============================================================================
+
+real(DEVDP) function grid_integrate_A(mode,npts,gx,gy,gz,gw,pa1,pb1,pc1)
+
+    use ffdev_timers
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: mode
+    real(DEVDP) :: eexch
+    integer     :: npts
+    real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
+    real(DEVDP) :: pa1,pb1,pc1
+    ! --------------------------------------------
+    integer     :: ipts
+    real(DEVDP) :: rsum
+    ! --------------------------------------------------------------------------
+
+    rsum =  0.0d0
+
+    call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
+
+!$omp parallel
+
+    ! calculate integral
+        select case(mode)
+            case(NB_MODE_PAULI_LDA2)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_lda2_A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   pa1,pb1)
+                end do
+            case(NB_MODE_PAULI_LDA3)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_dens_lda3_A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   pa1,pb1,pc1)
+                end do
+        case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
+        end select
+
+!$omp end parallel
+
+    call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
+
+    grid_integrate_A = rsum
+
+end function grid_integrate_A
 
 ! ------------------------------------------------------------------------------
 
@@ -544,6 +680,122 @@ real(DEVDP) function get_wave_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
     get_wave_overlap3 = w1*w2
 
 end function get_wave_overlap3
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_dens_lda2(x,y,z,r,pa1,pb1,pa2,pb2)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pa1,pb1,pa2,pb2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_dens_lda2 = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = exp(-2.0d0*pb1*r1)
+    w2 = exp(-2.0d0*pb2*r2)
+
+    get_dens_lda2 = (exp(pa1)*w1 + exp(pa2)*w2)**pauli_lda_power
+
+end function get_dens_lda2
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_dens_lda3(x,y,z,r,pa1,pb1,pc1,pa2,pb2,pc2)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pa1,pb1,pc1
+    real(DEVDP)     :: pa2,pb2,pc2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_dens_lda3 = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)
+    w2 = r2**(2.0d0*pc2)*exp(-2.0d0*pb2*r2)
+
+    get_dens_lda3 = (exp(pa1)*w1 + exp(pa2)*w2)**pauli_lda_power
+
+end function get_dens_lda3
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_dens_lda2_A(x,y,z,pa1,pb1)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: pa1,pb1
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, w1, dyz
+    ! --------------------------------------------------------------------------
+
+    get_dens_lda2_A = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+
+    r1 = sqrt(r1)
+
+    w1 = exp(-2.0d0*pb1*r1)
+
+    get_dens_lda2_A = (exp(pa1)*w1)**pauli_lda_power
+
+end function get_dens_lda2_A
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_dens_lda3_A(x,y,z,pa1,pb1,pc1)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: pa1,pb1,pc1
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, w1, dyz
+    ! --------------------------------------------------------------------------
+
+    get_dens_lda3_A = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+
+    r1 = sqrt(r1)
+
+    w1 = r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)
+    get_dens_lda3_A = (exp(pa1)*w1)**pauli_lda_power
+
+end function get_dens_lda3_A
 
 ! ------------------------------------------------------------------------------
 
