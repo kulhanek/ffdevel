@@ -156,7 +156,7 @@ end subroutine ffdevel_exchrep_gen_cache
 ! function ffdevel_exchrep_ene_nocache
 ! ==============================================================================
 
-real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pe1,z2,pa2,pb2,pc2,pd2,pe2)
+real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,z2,pa2,pb2,pc2)
 
     use numgrid
     use, intrinsic :: iso_c_binding, only: c_ptr
@@ -168,9 +168,9 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pe1,z
     integer     :: mode
     real(DEVDP) :: r
     integer     :: z1
-    real(DEVDP) :: pa1,pb1,pc1,pd1,pe1
+    real(DEVDP) :: pa1,pb1,pc1
     integer     :: z2
-    real(DEVDP) :: pa2,pb2,pc2,pd2,pe2
+    real(DEVDP) :: pa2,pb2,pc2
     ! --------------------------------------------
     integer                     :: xidx
     type(c_ptr)                 :: gctx
@@ -274,11 +274,6 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pe1,z
                         rsum = rsum + grid_w(ipts) * get_dens_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
                                                        px(2),pb1,pc1,pb2,pc2)
                     end do
-                case(NB_MODE_PAULI_DENS5P)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_overlap5p(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
-                    end do
                 case(NB_MODE_PAULI_WAVE2)
                     do ipts = 1, npts
                         rsum = rsum + grid_w(ipts) * get_wave_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
@@ -304,7 +299,7 @@ real(DEVDP) function ffdevel_exchrep_ene_nocache(mode,r,z1,pa1,pb1,pc1,pd1,pe1,z
 
     select case(mode)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5P)
-            eexch = rsum*exp(pa1)*exp(pa2)
+            eexch = exp(pa1)*exp(pa2)*rsum**pauli_dens_power
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/px(2)
         case default
@@ -319,7 +314,7 @@ end function ffdevel_exchrep_ene_nocache
 ! function ffdevel_exchrep_ene_cache
 ! ==============================================================================
 
-real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pe1,pa2,pb2,pc2,pd2,pe2)
+real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pa2,pb2,pc2)
 
     use numgrid
     use, intrinsic :: iso_c_binding, only: c_ptr
@@ -332,9 +327,9 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pe1,pa
     integer             :: mode
     real(DEVDP)         :: r
     integer             :: z1
-    real(DEVDP)         :: pa1,pb1,pc1,pd1,pe1
+    real(DEVDP)         :: pa1,pb1,pc1
     integer             :: z2
-    real(DEVDP)         :: pa2,pb2,pc2,pd2,pe2
+    real(DEVDP)         :: pa2,pb2,pc2
     ! --------------------------------------------
     real(DEVDP)         :: lr
     real(DEVDP)         :: rsum, eexch
@@ -348,13 +343,13 @@ real(DEVDP) function ffdevel_exchrep_ene_cache(cache,mode,pa1,pb1,pc1,pd1,pe1,pa
     lr = cache%r * DEV_A2AU
 
     rsum = grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
-                    cache%grid_1(:,3),cache%grid_1(:,4),pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
+                    cache%grid_1(:,3),cache%grid_1(:,4),pb1,pc1,pb2,pc2)
     rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
-                    cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
+                    cache%grid_2(:,3),cache%grid_2(:,4),pb1,pc1,pb2,pc2)
 
     select case(mode)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS5P)
-            eexch = rsum*exp(pa1)*exp(pa2)
+            eexch = exp(pa1)*exp(pa2)*rsum**pauli_dens_power
         case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
             eexch = exp(pa1)*exp(pa2)*rsum**2/lr
         case default
@@ -369,7 +364,7 @@ end function ffdevel_exchrep_ene_cache
 ! function grid_integrate
 ! ==============================================================================
 
-real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
+real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pb2,pc2)
 
     use ffdev_timers
     use ffdev_topology_dat
@@ -381,8 +376,8 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pe1,pb2
     real(DEVDP) :: lr
     integer     :: npts
     real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
-    real(DEVDP) :: pb1,pc1,pd1,pe1
-    real(DEVDP) :: pb2,pc2,pd2,pe2
+    real(DEVDP) :: pb1,pc1
+    real(DEVDP) :: pb2,pc2
     ! --------------------------------------------
     integer     :: ipts
     real(DEVDP) :: rsum
@@ -407,12 +402,6 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,pb1,pc1,pd1,pe1,pb2
                 do ipts = 1, npts
                     rsum = rsum + gw(ipts) * get_dens_overlap3(gx(ipts), gy(ipts), gz(ipts), &
                                                    lr,pb1,pc1,pb2,pc2)
-                end do
-            case(NB_MODE_PAULI_DENS5P)
-                !$omp do private(ipts), reduction(+:rsum)
-                do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_overlap5p(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
                 end do
             case(NB_MODE_PAULI_WAVE2)
                 !$omp do private(ipts), reduction(+:rsum)
@@ -496,36 +485,6 @@ real(DEVDP) function get_dens_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
     get_dens_overlap3 = w1*w2
 
 end function get_dens_overlap3
-
-! ------------------------------------------------------------------------------
-
-real(DEVDP) function get_dens_overlap5p(x,y,z,r,pb1,pc1,pd1,pe1,pb2,pc2,pd2,pe2)
-
-    implicit none
-    real(DEVDP)     :: x, y, z
-    real(DEVDP)     :: r
-    real(DEVDP)     :: pb1,pc1,pd1,pe1
-    real(DEVDP)     :: pb2,pc2,pd2,pe2
-    ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
-    ! --------------------------------------------------------------------------
-
-    get_dens_overlap5p = 0.0
-
-    ! geometry calculated here MUST follow grid construction (position of atom centers)
-    dyz = y**2 + z**2
-    r1 = x**2 + dyz
-    r2 = (x-r)**2 + dyz
-
-    r1 = sqrt(r1)
-    r2 = sqrt(r2)
-
-    w1 = exp(-2.0d0*pb1*r1)*(1.0 + pc1/r1 + pd1/r1**2 + pe1/r1**3)
-    w2 = exp(-2.0d0*pb2*r2)*(1.0 + pc2/r2 + pd2/r2**2 + pe2/r2**3)
-
-    get_dens_overlap5p = w1*w2
-
-end function get_dens_overlap5p
 
 ! ------------------------------------------------------------------------------
 

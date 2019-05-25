@@ -536,8 +536,6 @@ subroutine ffdev_topology_load(top,name)
         top%nb_types(i)%pa = 0.0d0
         top%nb_types(i)%pb = 0.0d0
         top%nb_types(i)%pc = 0.0d0
-        top%nb_types(i)%pd = 0.0d0
-        top%nb_types(i)%pe = 0.0d0
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if

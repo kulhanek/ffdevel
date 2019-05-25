@@ -69,7 +69,7 @@ subroutine ffdev_energy_all(top,geo)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
              NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
              NB_MODE_PAULI_DENS5P)
-            if( cache_grid ) then
+            if( pauli_cache_grid ) then
                 if( .not. geo%grid_cached ) then
                     call ffdev_energy_nb_exchrep_gen_cache(top,geo)
                     geo%grid_cached =  .true.
@@ -456,8 +456,8 @@ subroutine ffdev_energy_nb_exchrep_nocache(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip,i,j,nbi,nbj,z1,z2
-    real(DEVDP)     :: inv_scee,inv_scnb,pa1,pb1,pc1,pd1,pe1,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r,pa2,pb2,pc2,pd2,pe2
+    real(DEVDP)     :: inv_scee,inv_scnb,pa1,pb1,pc1,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r,pa2,pb2,pc2
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -473,15 +473,11 @@ subroutine ffdev_energy_nb_exchrep_nocache(top,geo)
         pa1 = top%nb_types(nbi)%pa
         pb1 = top%nb_types(nbi)%pb
         pc1 = top%nb_types(nbi)%pc
-        pd1 = top%nb_types(nbi)%pd
-        pe1 = top%nb_types(nbi)%pe
         nbj = top%nb_list(ip)%nbtjj
         z2  = top%atom_types(top%nb_types(nbj)%ti)%z
         pa2 = top%nb_types(nbj)%pa
         pb2 = top%nb_types(nbj)%pb
         pc2 = top%nb_types(nbj)%pc
-        pd2 = top%nb_types(nbj)%pd
-        pe2 = top%nb_types(nbj)%pe
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
@@ -494,14 +490,14 @@ subroutine ffdev_energy_nb_exchrep_nocache(top,geo)
 
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij/r
-            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1,pd1,pe1, &
-                                                                   z2,pa2,pb2,pc2,pd2,pe2)
+            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1, &
+                                                                   z2,pa2,pb2,pc2)
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
             geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1,pd2,pe2, &
-                                                                   z2,pa2,pb2,pc2,pd2,pe2)
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1, &
+                                                                   z2,pa2,pb2,pc2)
         end if
     end do
 
@@ -566,8 +562,8 @@ subroutine ffdev_energy_nb_exchrep_cache(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip,i,j,nbi,nbj,z1,z2
-    real(DEVDP)     :: inv_scee,inv_scnb,pa1,pb1,pc1,pd1,pe1,crgij
-    real(DEVDP)     :: r,pa2,pb2,pc2,pd2,pe2
+    real(DEVDP)     :: inv_scee,inv_scnb,pa1,pb1,pc1,crgij
+    real(DEVDP)     :: r,pa2,pb2,pc2
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -583,15 +579,11 @@ subroutine ffdev_energy_nb_exchrep_cache(top,geo)
         pa1 = top%nb_types(nbi)%pa
         pb1 = top%nb_types(nbi)%pb
         pc1 = top%nb_types(nbi)%pc
-        pd1 = top%nb_types(nbi)%pd
-        pe1 = top%nb_types(nbi)%pe
         nbj = top%nb_list(ip)%nbtjj
         z2  = top%atom_types(top%nb_types(nbj)%ti)%z
         pa2 = top%nb_types(nbj)%pa
         pb2 = top%nb_types(nbj)%pb
         pc2 = top%nb_types(nbj)%pc
-        pd2 = top%nb_types(nbj)%pd
-        pe2 = top%nb_types(nbj)%pe
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
@@ -600,13 +592,13 @@ subroutine ffdev_energy_nb_exchrep_cache(top,geo)
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij/r
             geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_cache(geo%grid_cache(ip), &
-                                            top%nb_mode,pa1,pb1,pc1,pd1,pe1,pa2,pb2,pc2,pd2,pe2)
+                                            top%nb_mode,pa1,pb1,pc1,pa2,pb2,pc2)
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
             geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
             geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_cache(geo%grid_cache(ip), &
-                                            top%nb_mode,pa1,pb1,pc1,pd1,pe1,pa2,pb2,pc2,pd2,pe2)
+                                            top%nb_mode,pa1,pb1,pc1,pa2,pb2,pc2)
         end if
     end do
 

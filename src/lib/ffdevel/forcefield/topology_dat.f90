@@ -127,7 +127,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA, PB, PC, PD, PE       ! Pauli repulsion data
+    real(DEVDP)         :: PA, PB, PC               ! Pauli repulsion data
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -183,11 +183,13 @@ logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
                                         ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
 
 ! possible values for lj2exp6_alpha
-! 12.0                           - identical long-range
-! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
+                                        ! 12.0                           - identical long-range
+                                        ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 
-logical     :: cache_grid = .true.     ! cache grid for Eexchrep calculation
+! Pauili repulsion
+logical     :: pauli_cache_grid = .true.    ! cache grid for Eexchrep calculation
+real(DEVDP) :: pauli_dens_power = 1.0       ! can be optimized via pauli_dp
 
 ! ------------------------------------------------------------------------------
 
