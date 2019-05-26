@@ -36,11 +36,6 @@ type GRID_CACHE
     real(DEVDP),pointer         :: grid_1(:,:)
     integer                     :: npts2
     real(DEVDP),pointer         :: grid_2(:,:)
-    ! for LDA
-    integer                     :: npts3
-    real(DEVDP),pointer         :: grid_3(:,:)
-    integer                     :: npts4
-    real(DEVDP),pointer         :: grid_4(:,:)
 end type GRID_CACHE
 
 ! ------------------------------------------------------------------------------

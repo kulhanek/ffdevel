@@ -73,8 +73,8 @@ subroutine ffdev_energy_all(top,geo)
         case(NB_MODE_PAULI_EXP3)
             call ffdev_energy_nb_pauli_exp3(top,geo)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
-             NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
-             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+             NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
+
             if( pauli_cache_grid ) then
                 if( .not. geo%grid_cached ) then
                     call ffdev_energy_nb_exchrep_gen_cache(top,geo)
@@ -84,6 +84,8 @@ subroutine ffdev_energy_all(top,geo)
             else
                 call ffdev_energy_nb_exchrep_nocache(top,geo)
             end if
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+            call ffdev_energy_nb_exchrep_lda(top,geo)
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_energy_all!')
     end select
@@ -693,10 +695,6 @@ subroutine ffdev_energy_nb_exchrep_gen_cache(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        nbi = top%nb_list(ip)%nbtii
-        z1  = top%atom_types(top%nb_types(nbi)%ti)%z
-        nbj = top%nb_list(ip)%nbtjj
-        z2  = top%atom_types(top%nb_types(nbj)%ti)%z
 
         ! calculate dx, r and r2
         dxa1 = geo%crd(1,i) - geo%crd(1,j)
@@ -705,7 +703,7 @@ subroutine ffdev_energy_nb_exchrep_gen_cache(top,geo)
 
         geo%grid_cache(ip)%r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
 
-        call ffdevel_exchrep_gen_cache(top%nb_mode,geo%grid_cache(ip),z1,z2)
+        call ffdevel_exchrep_gen_cache(geo%grid_cache(ip))
     end do
 
 end subroutine ffdev_energy_nb_exchrep_gen_cache
@@ -766,6 +764,69 @@ subroutine ffdev_energy_nb_exchrep_cache(top,geo)
     end do
 
 end subroutine ffdev_energy_nb_exchrep_cache
+
+!===============================================================================
+! subroutine ffdev_energy_nb_exchrep_lda
+!===============================================================================
+
+subroutine ffdev_energy_nb_exchrep_lda(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_exchrep
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip,i,j,nbi,nbj,z1,z2
+    real(DEVDP)     :: inv_scee,inv_scnb,pa1,pb1,pc1,crgij
+    real(DEVDP)     :: r,pa2,pb2,pc2
+    real(DEVDP)     :: dxa1,dxa2,dxa3
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbi = top%nb_list(ip)%nbtii
+        z1  = top%atom_types(top%nb_types(nbi)%ti)%z
+        pa1 = top%nb_types(nbi)%pa
+        pb1 = top%nb_types(nbi)%pb
+        pc1 = top%nb_types(nbi)%pc
+        nbj = top%nb_list(ip)%nbtjj
+        z2  = top%atom_types(top%nb_types(nbj)%ti)%z
+        pa2 = top%nb_types(nbj)%pa
+        pb2 = top%nb_types(nbj)%pb
+        pc2 = top%nb_types(nbj)%pc
+
+        crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + crgij/r
+            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_lda(top%nb_mode, &
+                                            r,pa1,pb1,pc1,pa2,pb2,pc2)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+            geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_lda(top%nb_mode, &
+                                            r,pa1,pb1,pc1,pa2,pb2,pc2)
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_exchrep_lda
 
 ! ------------------------------------------------------------------------------
 
