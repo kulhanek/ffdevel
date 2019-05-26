@@ -396,7 +396,7 @@ real(DEVDP) function ffdevel_exchrep_ene_lda(mode,r,pa1,pb1,pc1,pa2,pb2,pc2)
 !$omp parallel
 
     x = -5.0d0 * DEV_A2AU
-    !$omp do private(i), reduction(+:rsum)
+    !$omp do private(i,y,z,j,k,ssum,dyz,r1,r2,w1,w2), reduction(+:rsum)
     do i=1,100
         y = -3.0 * DEV_A2AU
         ssum = 0.0d0
