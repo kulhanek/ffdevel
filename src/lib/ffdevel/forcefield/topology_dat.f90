@@ -188,12 +188,13 @@ real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conver
                                         ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 
 ! Pauili repulsion
-logical     :: pauli_cache_grid = .true.    ! cache grid for Eexchrep calculation
-real(DEVDP) :: pauli_dens_power = 1.0       ! can be optimized via pauli_dp
-real(DEVDP) :: pauli_lda_power  = 2.0       ! can be optimized via pauli_lp
+logical     :: pauli_use_numgrid    = .true.    ! use numgrid for integration
+logical     :: pauli_cache_grid     = .true.    ! cache grid for Eexchrep calculation
+real(DEVDP) :: pauli_dens_power     = 1.0       ! can be optimized via pauli_dp
+real(DEVDP) :: pauli_lda_power      = 2.0       ! can be optimized via pauli_lp
 
 ! Tang–Toennis potential
-integer     :: tt_disp_order    = 16        ! highest Cn coefficient
+integer     :: tt_disp_order        = 16        ! highest Cn coefficient
 
 ! ------------------------------------------------------------------------------
 

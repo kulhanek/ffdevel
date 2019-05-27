@@ -73,19 +73,23 @@ subroutine ffdev_energy_all(top,geo)
         case(NB_MODE_PAULI_EXP3)
             call ffdev_energy_nb_pauli_exp3(top,geo)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3, &
-             NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3)
+             NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3, &
+             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
 
-            if( pauli_cache_grid ) then
-                if( .not. geo%grid_cached ) then
-                    call ffdev_energy_nb_exchrep_gen_cache(top,geo)
-                    geo%grid_cached =  .true.
+            if( pauli_use_numgrid ) then
+                ! via numgrid integration
+                if( pauli_cache_grid ) then
+                    if( .not. geo%grid_cached ) then
+                        call ffdev_energy_nb_exchrep_numgrid_gen_cache(top,geo)
+                        geo%grid_cached =  .true.
+                    end if
+                    call ffdev_energy_nb_exchrep_numgrid_cache(top,geo)
+                else
+                    call ffdev_energy_nb_exchrep_numgrid_nocache(top,geo)
                 end if
-                call ffdev_energy_nb_exchrep_cache(top,geo)
             else
-                call ffdev_energy_nb_exchrep_nocache(top,geo)
+                call ffdev_energy_nb_exchrep_simgrid(top,geo)
             end if
-        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
-            call ffdev_energy_nb_exchrep_lda(top,geo)
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_energy_all!')
     end select
@@ -607,10 +611,10 @@ subroutine ffdev_energy_nb_pauli_exp3(top,geo)
 end subroutine ffdev_energy_nb_pauli_exp3
 
 !===============================================================================
-! subroutine ffdev_energy_nb_exchrep_nocache
+! subroutine ffdev_energy_nb_exchrep_numgrid_nocache
 !===============================================================================
 
-subroutine ffdev_energy_nb_exchrep_nocache(top,geo)
+subroutine ffdev_energy_nb_exchrep_numgrid_nocache(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -655,24 +659,26 @@ subroutine ffdev_energy_nb_exchrep_nocache(top,geo)
 
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij/r
-            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1, &
+            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_numgrid_nocache(top%nb_mode,r, &
+                                                                   z1,pa1,pb1,pc1, &
                                                                    z2,pa2,pb2,pc2)
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
             geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_nocache(top%nb_mode,r,z1,pa1,pb1,pc1, &
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_numgrid_nocache(top%nb_mode,r, &
+                                                                   z1,pa1,pb1,pc1, &
                                                                    z2,pa2,pb2,pc2)
         end if
     end do
 
-end subroutine ffdev_energy_nb_exchrep_nocache
+end subroutine ffdev_energy_nb_exchrep_numgrid_nocache
 
 !===============================================================================
-! subroutine ffdev_energy_nb_exchrep_gen_cache
+! subroutine ffdev_energy_nb_exchrep_numgrid_gen_cache
 !===============================================================================
 
-subroutine ffdev_energy_nb_exchrep_gen_cache(top,geo)
+subroutine ffdev_energy_nb_exchrep_numgrid_gen_cache(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -703,16 +709,16 @@ subroutine ffdev_energy_nb_exchrep_gen_cache(top,geo)
 
         geo%grid_cache(ip)%r = sqrt(dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3)
 
-        call ffdevel_exchrep_gen_cache(geo%grid_cache(ip))
+        call ffdevel_exchrep_gen_numgrid_cache(geo%grid_cache(ip))
     end do
 
-end subroutine ffdev_energy_nb_exchrep_gen_cache
+end subroutine ffdev_energy_nb_exchrep_numgrid_gen_cache
 
 !===============================================================================
-! subroutine ffdev_energy_nb_exchrep_cache
+! subroutine ffdev_energy_nb_exchrep_numgrid_cache
 !===============================================================================
 
-subroutine ffdev_energy_nb_exchrep_cache(top,geo)
+subroutine ffdev_energy_nb_exchrep_numgrid_cache(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -752,24 +758,24 @@ subroutine ffdev_energy_nb_exchrep_cache(top,geo)
 
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij/r
-            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_cache(geo%grid_cache(ip), &
+            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_numgrid_cache(geo%grid_cache(ip), &
                                             top%nb_mode,pa1,pb1,pc1,pa2,pb2,pc2)
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
             geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_cache(geo%grid_cache(ip), &
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_numgrid_cache(geo%grid_cache(ip), &
                                             top%nb_mode,pa1,pb1,pc1,pa2,pb2,pc2)
         end if
     end do
 
-end subroutine ffdev_energy_nb_exchrep_cache
+end subroutine ffdev_energy_nb_exchrep_numgrid_cache
 
 !===============================================================================
-! subroutine ffdev_energy_nb_exchrep_lda
+! subroutine ffdev_energy_nb_exchrep_simgrid
 !===============================================================================
 
-subroutine ffdev_energy_nb_exchrep_lda(top,geo)
+subroutine ffdev_energy_nb_exchrep_simgrid(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -815,18 +821,18 @@ subroutine ffdev_energy_nb_exchrep_lda(top,geo)
 
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + crgij/r
-            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_lda(top%nb_mode, &
+            geo%nb_ene  = geo%nb_ene + ffdevel_exchrep_ene_simgrid(top%nb_mode, &
                                             r,pa1,pb1,pc1,pa2,pb2,pc2)
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
             geo%ele14_ene = geo%ele14_ene + inv_scee*crgij/r
-            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_lda(top%nb_mode, &
+            geo%nb14_ene  = geo%nb_ene + inv_scnb*ffdevel_exchrep_ene_simgrid(top%nb_mode, &
                                             r,pa1,pb1,pc1,pa2,pb2,pc2)
         end if
     end do
 
-end subroutine ffdev_energy_nb_exchrep_lda
+end subroutine ffdev_energy_nb_exchrep_simgrid
 
 ! ------------------------------------------------------------------------------
 
