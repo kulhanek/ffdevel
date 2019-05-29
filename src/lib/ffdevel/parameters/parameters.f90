@@ -62,7 +62,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 8*sets(i)%top%nnb_types       ! NB 3+5
+        maxnparams = maxnparams + 9*sets(i)%top%nnb_types       ! NB 3+6
     end do
     maxnparams = maxnparams + 2 ! dp + lp
 
@@ -116,7 +116,8 @@ subroutine ffdev_parameters_reinit()
     implicit none
     integer     :: i, j, k, parmid
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
-    logical     :: use_pauli_a, use_pauli_b, use_pauli_c, use_pauli_dp, use_pauli_lp
+    logical     :: use_pauli_a, use_pauli_b, use_pauli_c, use_pauli_d
+    logical     :: use_pauli_dp, use_pauli_lp
     ! --------------------------------------------------------------------------  
 
     nparams = 0
@@ -436,6 +437,7 @@ subroutine ffdev_parameters_reinit()
     use_pauli_a = .false.
     use_pauli_b = .false.
     use_pauli_c = .false.
+    use_pauli_d = .false.
     use_pauli_dp = .false.
     use_pauli_lp = .false.
 
@@ -462,6 +464,12 @@ subroutine ffdev_parameters_reinit()
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
+            use_pauli_dp = .true.
+        case(NB_MODE_PAULI_DENS4)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+            use_pauli_c = .true.
+            use_pauli_d = .true.
             use_pauli_dp = .true.
         case(NB_MODE_PAULI_LDA2)
             use_pauli_a = .true.
@@ -641,6 +649,32 @@ subroutine ffdev_parameters_reinit()
         end do                
     end if
 
+    if( use_pauli_d ) then
+        ! pauli D realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_D)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PD
+                    params(nparams)%realm = REALM_PAULI_D
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
     if( use_pauli_dp ) then
         ! pauli dp realm =====================
         nparams = nparams + 1
@@ -764,7 +798,7 @@ integer function find_parameter(top,id,pn,realm)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
         case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,&
-             REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C)
+             REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
     end select
@@ -800,7 +834,7 @@ integer function find_parameter(top,id,pn,realm)
                         find_parameter = i
                 end if
             case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,&
-                 REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C)
+                 REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C,REALM_PAULI_D)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -1617,6 +1651,9 @@ subroutine ffdev_parameters_print_parameters()
             case(REALM_PAULI_C)
                 tmp = 'pauli_c'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
+            case(REALM_PAULI_D)
+                tmp = 'pauli_d'
+                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
             case(REALM_PAULI_DP)
                 tmp = 'pauli_dp'
                 write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
@@ -1703,6 +1740,8 @@ subroutine ffdev_parameters_print_parameters()
                 tmp = 'pauli_b'
             case(REALM_PAULI_C)
                 tmp = 'pauli_c'
+            case(REALM_PAULI_D)
+                tmp = 'pauli_d'
             case(REALM_PAULI_DP)
                 tmp = 'pauli_dp'
             case(REALM_PAULI_LP)
@@ -1992,6 +2031,13 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+            case(REALM_PAULI_D)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%PD = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                    end if
+                end do
             case(REALM_PAULI_DP)
                 pauli_dens_power = params(i)%value
             case(REALM_PAULI_LP)
@@ -2080,6 +2126,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinPauliB
         case(REALM_PAULI_C)
             ffdev_params_get_lower_bound = MinPauliC
+        case(REALM_PAULI_D)
+            ffdev_params_get_lower_bound = MinPauliD
         case(REALM_PAULI_DP)
             ffdev_params_get_lower_bound = MinPauliDP
         case(REALM_PAULI_LP)
@@ -2167,6 +2215,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxPauliB
         case(REALM_PAULI_C)
             ffdev_params_get_upper_bound = MaxPauliC
+        case(REALM_PAULI_D)
+            ffdev_params_get_upper_bound = MaxPauliD
         case(REALM_PAULI_DP)
             ffdev_params_get_upper_bound = MaxPauliDP
         case(REALM_PAULI_LP)

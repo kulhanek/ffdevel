@@ -127,7 +127,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA, PB, PC               ! Pauli repulsion data
+    real(DEVDP)         :: PA, PB, PC, PD           ! Pauli repulsion data
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -208,10 +208,12 @@ integer,parameter   :: NB_MODE_PAULI_EXP2   = 4     ! exp (PA,PB)
 integer,parameter   :: NB_MODE_PAULI_EXP3   = 5     ! exp (PA,PB,PC)
 integer,parameter   :: NB_MODE_PAULI_DENS2  = 6     ! overlap of densities with two parameters (PA,PB)
 integer,parameter   :: NB_MODE_PAULI_DENS3  = 7     ! overlap of densities with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_WAVE2  = 8     ! overlap of wavefunctions with two parameters (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_WAVE3  = 9     ! overlap of wavefunctions with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_LDA2   = 10    ! local density approx. with two parameters (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_LDA3   = 11    ! local density approx. with two parameters (PA,PB)
+integer,parameter   :: NB_MODE_PAULI_DENS4  = 8     ! overlap of densities with four parameters (PA,PB,PC,PD)
+integer,parameter   :: NB_MODE_PAULI_WAVE2  = 9     ! overlap of wavefunctions with two parameters (PA,PB)
+integer,parameter   :: NB_MODE_PAULI_WAVE3  = 10    ! overlap of wavefunctions with three parameters (PA,PB,PC)
+integer,parameter   :: NB_MODE_PAULI_WAVE4  = 11    ! overlap of wavefunctions with four parameters (PA,PB,PC,PD)
+integer,parameter   :: NB_MODE_PAULI_LDA2   = 12    ! local density approx. with two parameters (PA,PB)
+integer,parameter   :: NB_MODE_PAULI_LDA3   = 13    ! local density approx. with two parameters (PA,PB)
 
 ! combining rules for nb_mode
 integer,parameter   :: COMB_RULE_IN = 05    ! input data

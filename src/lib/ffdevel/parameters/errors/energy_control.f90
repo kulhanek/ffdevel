@@ -49,7 +49,7 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,155) prmfile_onoff(EnableMaxFilter)
         write(DEV_OUT,165) MaxTargetEnergy
         write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
-        write(DEV_OUT,175) MinTargetEnergy
+        write(DEV_OUT,185) MinTargetEnergy
         errors_calc_ene = EnableEnergyError
         return
     end if
@@ -93,9 +93,9 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
     end if
     if( prmfile_get_real8_by_key(fin,'minvalue', MinTargetEnergy)) then
-        write(DEV_OUT,170) MinTargetEnergy
+        write(DEV_OUT,180) MinTargetEnergy
     else
-        write(DEV_OUT,175) MinTargetEnergy
+        write(DEV_OUT,185) MinTargetEnergy
     end if
 
     errors_calc_ene = EnableEnergyError
