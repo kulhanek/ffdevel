@@ -392,9 +392,9 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_cache(cache,mode,pa1,pb1,pc1,pd
     end select
 
     rsum = grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
-                    cache%grid_1(:,3),cache%grid_1(:,4),epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
+                    cache%grid_1(:,3),cache%grid_1(:,4),epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
     rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
-                    cache%grid_2(:,3),cache%grid_2(:,4),epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
+                    cache%grid_2(:,3),cache%grid_2(:,4),epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
 
     select case(mode)
         case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A,NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B)
