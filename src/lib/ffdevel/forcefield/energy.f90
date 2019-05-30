@@ -72,9 +72,15 @@ subroutine ffdev_energy_all(top,geo)
             call ffdev_energy_nb_pauli_exp2(top,geo)
         case(NB_MODE_PAULI_EXP3)
             call ffdev_energy_nb_pauli_exp3(top,geo)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS4, &
-             NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_WAVE4, &
-             NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+        case(NB_MODE_PAULI_DENS2, &
+             NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A, &
+             NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B, &
+             NB_MODE_PAULI_WAVE2, &
+             NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE4A, &
+             NB_MODE_PAULI_WAVE3B,NB_MODE_PAULI_WAVE4B, &
+             NB_MODE_PAULI_LDA2, &
+             NB_MODE_PAULI_LDA3A, NB_MODE_PAULI_LDA4A, &
+             NB_MODE_PAULI_LDA3B, NB_MODE_PAULI_LDA4B )
 
             if( pauli_use_numgrid ) then
                 ! via numgrid integration

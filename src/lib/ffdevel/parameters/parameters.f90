@@ -460,12 +460,12 @@ subroutine ffdev_parameters_reinit()
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_dp = .true.
-        case(NB_MODE_PAULI_DENS3)
+        case(NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS3B)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
             use_pauli_dp = .true.
-        case(NB_MODE_PAULI_DENS4)
+        case(NB_MODE_PAULI_DENS4A,NB_MODE_PAULI_DENS4B)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
@@ -475,18 +475,29 @@ subroutine ffdev_parameters_reinit()
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_lp = .true.
-        case(NB_MODE_PAULI_LDA3)
+        case(NB_MODE_PAULI_LDA3A,NB_MODE_PAULI_LDA3B)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
             use_pauli_lp = .true.
-        case(NB_MODE_PAULI_WAVE2)
-            use_pauli_a = .true.
-            use_pauli_b = .true.
-        case(NB_MODE_PAULI_WAVE3)
+        case(NB_MODE_PAULI_LDA4A,NB_MODE_PAULI_LDA4B)
             use_pauli_a = .true.
             use_pauli_b = .true.
             use_pauli_c = .true.
+            use_pauli_d = .true.
+            use_pauli_lp = .true.
+        case(NB_MODE_PAULI_WAVE2)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+        case(NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE3B)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+            use_pauli_c = .true.
+        case(NB_MODE_PAULI_WAVE4A,NB_MODE_PAULI_WAVE4B)
+            use_pauli_a = .true.
+            use_pauli_b = .true.
+            use_pauli_c = .true.
+            use_pauli_d = .true.
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in ffdev_parameters_reinit!')
     end select

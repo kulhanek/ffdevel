@@ -20,10 +20,17 @@ module ffdev_exchrep
 use ffdev_geometry_dat
 use ffdev_constants
 
-private get_dens_overlap2
-private get_dens_overlap3
-private get_wave_overlap2
-private get_wave_overlap3
+private get_overlap2
+private get_overlap3A
+private get_overlap3B
+private get_overlap4A
+private get_overlap4B
+private get_lda2
+private get_lda3A
+private get_lda3B
+private get_lda4A
+private get_lda4B
+
 private grid_integrate
 
 contains
@@ -187,7 +194,7 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_nocache(mode,r,z1,pa1,pb1,pc1,p
     real(DEVDP), allocatable    :: grid_w(:)
     integer                     :: nats, cidx, npts, ipts, alloc_stat
     real(DEVDP)                 :: rsum
-    real(DEVDP)                 :: epa1,epa2
+    real(DEVDP)                 :: epa1,epa2,epb1,epb2,epc1,epc2
     ! --------------------------------------------------------------------------
 
     ffdevel_exchrep_ene_numgrid_nocache = 0.0d0
@@ -233,6 +240,36 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_nocache(mode,r,z1,pa1,pb1,pc1,p
     epa1 = exp(pa1)
     epa2 = exp(pa2)
 
+    select case(mode)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B)
+            epb1 = 2.0d0*pb1
+            epc1 = pc1
+            epb2 = 2.0d0*pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A)
+            epb1 = 2.0d0*pb1
+            epc1 = 2.0d0*pc1
+            epb2 = 2.0d0*pb2
+            epc2 = 2.0d0*pc2
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE3B,NB_MODE_PAULI_WAVE4A,NB_MODE_PAULI_WAVE4B)
+            epb1 = pb1
+            epc1 = pc1
+            epb2 = pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3B,NB_MODE_PAULI_LDA4B)
+            epb1 = 2.0d0*pb1
+            epc1 = pc1
+            epb2 = 2.0d0*pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_LDA3A,NB_MODE_PAULI_LDA4A)
+            epb1 = 2.0d0*pb1
+            epc1 = 2.0d0*pc1
+            epb2 = 2.0d0*pb2
+            epc2 = 2.0d0*pc2
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_numgrid_nocache!')
+    end select
+
     rsum =  0.0d0
 
     ! we have two centers
@@ -266,50 +303,10 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_nocache(mode,r,z1,pa1,pb1,pc1,p
 
         ! calculate integral
         call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
-            select case(mode)
-                case(NB_MODE_PAULI_DENS2)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pb2)
-                    end do
-                case(NB_MODE_PAULI_DENS3)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pb2,pc2)
-                    end do
-                case(NB_MODE_PAULI_DENS4)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_overlap4(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pd1,pb2,pc2,pd2)
-                    end do
-                case(NB_MODE_PAULI_WAVE2)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_wave_overlap2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pb2)
-                    end do
-                case(NB_MODE_PAULI_WAVE3)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_wave_overlap3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pb2,pc2)
-                    end do
-                case(NB_MODE_PAULI_WAVE4)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_wave_overlap4(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),pb1,pc1,pd1,pb2,pc2,pd2)
-                    end do
-                case(NB_MODE_PAULI_LDA2)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_lda2(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),epa1,pb1,epa2,pb2)
-                    end do
-                case(NB_MODE_PAULI_LDA3)
-                    do ipts = 1, npts
-                        rsum = rsum + grid_w(ipts) * get_dens_lda3(grid_x(ipts), grid_y(ipts), grid_z(ipts), &
-                                                       px(2),epa1,pb1,pc1,epa2,pb2,pc2)
-                    end do
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_nocache!')
-            end select
+
+            rsum = rsum + grid_integrate(mode,px(2),npts,grid_x(:),grid_y(:), &
+                                                 grid_z(:),grid_w(:),epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
+
         call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
         ! destroy grid
@@ -321,11 +318,11 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_nocache(mode,r,z1,pa1,pb1,pc1,p
     end do
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS4)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A,NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B)
             ffdevel_exchrep_ene_numgrid_nocache = epa1*epa2*rsum**pauli_dens_power
-        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_WAVE4)
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE4A,NB_MODE_PAULI_WAVE3B,NB_MODE_PAULI_WAVE4B)
             ffdevel_exchrep_ene_numgrid_nocache = epa1*epa2*rsum**2/px(2)
-        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3A,NB_MODE_PAULI_LDA4A,NB_MODE_PAULI_LDA3B,NB_MODE_PAULI_LDA4B)
             ffdevel_exchrep_ene_numgrid_nocache = rsum
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_nocache!')
@@ -351,7 +348,7 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_cache(cache,mode,pa1,pb1,pc1,pd
     ! --------------------------------------------
     real(DEVDP)         :: lr
     real(DEVDP)         :: rsum, eexch
-    real(DEVDP)         :: epa1,epa2
+    real(DEVDP)         :: epa1,epa2,epb1,epb2,epc1,epc2
     ! --------------------------------------------------------------------------
 
     ffdevel_exchrep_ene_numgrid_cache = 0.0d0
@@ -364,17 +361,47 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_cache(cache,mode,pa1,pb1,pc1,pd
     epa1 = exp(pa1)
     epa2 = exp(pa2)
 
+    select case(mode)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B)
+            epb1 = 2.0d0*pb1
+            epc1 = pc1
+            epb2 = 2.0d0*pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A)
+            epb1 = 2.0d0*pb1
+            epc1 = 2.0d0*pc1
+            epb2 = 2.0d0*pb2
+            epc2 = 2.0d0*pc2
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE3B,NB_MODE_PAULI_WAVE4A,NB_MODE_PAULI_WAVE4B)
+            epb1 = pb1
+            epc1 = pc1
+            epb2 = pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3B,NB_MODE_PAULI_LDA4B)
+            epb1 = 2.0d0*pb1
+            epc1 = pc1
+            epb2 = 2.0d0*pb2
+            epc2 = pc2
+        case(NB_MODE_PAULI_LDA3A,NB_MODE_PAULI_LDA4A)
+            epb1 = 2.0d0*pb1
+            epc1 = 2.0d0*pc1
+            epb2 = 2.0d0*pb2
+            epc2 = 2.0d0*pc2
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
+    end select
+
     rsum = grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
                     cache%grid_1(:,3),cache%grid_1(:,4),epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
     rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
                     cache%grid_2(:,3),cache%grid_2(:,4),epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
 
     select case(mode)
-        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3,NB_MODE_PAULI_DENS4)
+        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_DENS4A,NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_DENS4B)
             ffdevel_exchrep_ene_numgrid_cache = epa1*epa2*rsum**pauli_dens_power
-        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3,NB_MODE_PAULI_WAVE4)
+        case(NB_MODE_PAULI_WAVE2,NB_MODE_PAULI_WAVE3A,NB_MODE_PAULI_WAVE4A,NB_MODE_PAULI_WAVE3B,NB_MODE_PAULI_WAVE4B)
             ffdevel_exchrep_ene_numgrid_cache = epa1*epa2*rsum**2/lr
-        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3)
+        case(NB_MODE_PAULI_LDA2,NB_MODE_PAULI_LDA3A,NB_MODE_PAULI_LDA4A,NB_MODE_PAULI_LDA3B,NB_MODE_PAULI_LDA4B)
             ffdevel_exchrep_ene_numgrid_cache = rsum
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
@@ -383,7 +410,8 @@ real(DEVDP) function ffdevel_exchrep_ene_numgrid_cache(cache,mode,pa1,pb1,pc1,pd
 end function ffdevel_exchrep_ene_numgrid_cache
 
 ! ==============================================================================
-! function ffdevel_exchrep_ene_lda
+! function ffdevel_exchrep_ene_simgrid
+! currently only LDA in for testing implemented ...
 ! ==============================================================================
 
 real(DEVDP) function ffdevel_exchrep_ene_simgrid(mode,r,pa1,pb1,pc1,pd1,pa2,pb2,pc2,pd2)
@@ -459,7 +487,7 @@ end function ffdevel_exchrep_ene_simgrid
 ! function grid_integrate
 ! ==============================================================================
 
-real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
+real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
 
     use ffdev_timers
     use ffdev_topology_dat
@@ -471,8 +499,8 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,epa1,pb1,pc1,pd1,ep
     real(DEVDP) :: lr
     integer     :: npts
     real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
-    real(DEVDP) :: epa1,pb1,pc1,pd1
-    real(DEVDP) :: epa2,pb2,pc2,pd2
+    real(DEVDP) :: epa1,epb1,epc1,pd1
+    real(DEVDP) :: epa2,epb2,epc2,pd2
     ! --------------------------------------------
     integer     :: ipts
     real(DEVDP) :: rsum
@@ -486,53 +514,65 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,epa1,pb1,pc1,pd1,ep
 
     ! calculate integral
         select case(mode)
-            case(NB_MODE_PAULI_DENS2)
+            case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_overlap2(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pb2)
+                    rsum = rsum + gw(ipts) * get_overlap2(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epb1,epb2)
                 end do
-            case(NB_MODE_PAULI_DENS3)
+            case(NB_MODE_PAULI_DENS3A,NB_MODE_PAULI_WAVE3A)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_overlap3(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pb2,pc2)
+                    rsum = rsum + gw(ipts) * get_overlap3A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epb1,epc1,epb2,epc2)
                 end do
-            case(NB_MODE_PAULI_DENS4)
+            case(NB_MODE_PAULI_DENS3B,NB_MODE_PAULI_WAVE3B)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_overlap4(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pd1,pb2,pc2,pd2)
+                    rsum = rsum + gw(ipts) * get_overlap3B(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epb1,epc1,epb2,epc2)
                 end do
-            case(NB_MODE_PAULI_WAVE2)
+            case(NB_MODE_PAULI_DENS4A,NB_MODE_PAULI_WAVE4A)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_wave_overlap2(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pb2)
+                    rsum = rsum + gw(ipts) * get_overlap4A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epb1,epc1,pd1,epb2,epc2,pd2)
                 end do
-            case(NB_MODE_PAULI_WAVE3)
+            case(NB_MODE_PAULI_DENS4B,NB_MODE_PAULI_WAVE4B)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_wave_overlap3(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pb2,pc2)
-                end do
-            case(NB_MODE_PAULI_WAVE4)
-                !$omp do private(ipts), reduction(+:rsum)
-                do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_wave_overlap4(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,pb1,pc1,pd1,pb2,pc2,pd2)
+                    rsum = rsum + gw(ipts) * get_overlap4B(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epb1,epc1,pd1,epb2,epc2,pd2)
                 end do
             case(NB_MODE_PAULI_LDA2)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_lda2(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,epa1,pb1,epa2,pb2)
+                    rsum = rsum + gw(ipts) * get_lda2(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epa1,epb1,epa2,epb2)
                 end do
-            case(NB_MODE_PAULI_LDA3)
+            case(NB_MODE_PAULI_LDA3A)
                 !$omp do private(ipts), reduction(+:rsum)
                 do ipts = 1, npts
-                    rsum = rsum + gw(ipts) * get_dens_lda3(gx(ipts), gy(ipts), gz(ipts), &
-                                                   lr,epa1,pb1,pc1,epa2,pb2,pc2)
+                    rsum = rsum + gw(ipts) * get_lda3A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epa1,epb1,epc1,epa2,epb2,epc2)
+                end do
+            case(NB_MODE_PAULI_LDA3B)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_lda3B(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epa1,epb1,epc1,epa2,epb2,epc2)
+                end do
+            case(NB_MODE_PAULI_LDA4A)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_lda4A(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
+                end do
+            case(NB_MODE_PAULI_LDA4B)
+                !$omp do private(ipts), reduction(+:rsum)
+                do ipts = 1, npts
+                    rsum = rsum + gw(ipts) * get_lda4B(gx(ipts), gy(ipts), gz(ipts), &
+                                                   lr,epa1,epb1,epc1,pd1,epa2,epb2,epc2,pd2)
                 end do
         case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdevel_exchrep_ene_cache!')
@@ -548,7 +588,7 @@ end function grid_integrate
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP)  function get_dens_overlap2(x,y,z,r,pb1,pb2)
+real(DEVDP)  function get_overlap2(x,y,z,r,pb1,pb2)
 
     implicit none
     real(DEVDP)     :: x, y, z
@@ -558,96 +598,7 @@ real(DEVDP)  function get_dens_overlap2(x,y,z,r,pb1,pb2)
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    get_dens_overlap2 = 0.0
-
-    ! geometry calculated here MUST follow grid construction (position of atom centers)
-    dyz = y**2 + z**2
-    r1 = x**2 + dyz
-    r2 = (x-r)**2 + dyz
-
-    r1 = sqrt(r1)
-    r2 = sqrt(r2)
-
-    w1 = exp(-2.0d0*pb1*r1)
-    w2 = exp(-2.0d0*pb2*r2)
-
-    get_dens_overlap2 = w1*w2
-
-end function get_dens_overlap2
-
-! ------------------------------------------------------------------------------
-
-real(DEVDP) function get_dens_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
-
-    implicit none
-    real(DEVDP)     :: x, y, z
-    real(DEVDP)     :: r
-    real(DEVDP)     :: pb1,pc1
-    real(DEVDP)     :: pb2,pc2
-    ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
-    ! --------------------------------------------------------------------------
-
-    get_dens_overlap3 = 0.0
-
-    ! geometry calculated here MUST follow grid construction (position of atom centers)
-    dyz = y**2 + z**2
-    r1 = x**2 + dyz
-    r2 = (x-r)**2 + dyz
-
-    r1 = sqrt(r1)
-    r2 = sqrt(r2)
-
-    w1 = r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)
-    w2 = r2**(2.0d0*pc2)*exp(-2.0d0*pb2*r2)
-
-    get_dens_overlap3 = w1*w2
-
-end function get_dens_overlap3
-
-! ------------------------------------------------------------------------------
-
-real(DEVDP) function get_dens_overlap4(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
-
-    implicit none
-    real(DEVDP)     :: x, y, z
-    real(DEVDP)     :: r
-    real(DEVDP)     :: pb1,pc1,pd1
-    real(DEVDP)     :: pb2,pc2,pd2
-    ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
-    ! --------------------------------------------------------------------------
-
-    get_dens_overlap4 = 0.0
-
-    ! geometry calculated here MUST follow grid construction (position of atom centers)
-    dyz = y**2 + z**2
-    r1 = x**2 + dyz
-    r2 = (x-r)**2 + dyz
-
-    r1 = sqrt(r1)
-    r2 = sqrt(r2)
-
-    w1 = r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)*(1.0 + pd1/r)
-    w2 = r2**(2.0d0*pc2)*exp(-2.0d0*pb2*r2)*(1.0 + pd2/r)
-
-    get_dens_overlap4 = w1*w2
-
-end function get_dens_overlap4
-
-! ------------------------------------------------------------------------------
-
-real(DEVDP) function get_wave_overlap2(x,y,z,r,pb1,pb2)
-
-    implicit none
-    real(DEVDP)     :: x, y, z
-    real(DEVDP)     :: r
-    real(DEVDP)     :: pb1,pb2
-    ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
-    ! --------------------------------------------------------------------------
-
-    get_wave_overlap2 = 0.0
+    get_overlap2 = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -660,13 +611,13 @@ real(DEVDP) function get_wave_overlap2(x,y,z,r,pb1,pb2)
     w1 = exp(-pb1*r1)
     w2 = exp(-pb2*r2)
 
-    get_wave_overlap2 = w1*w2
+    get_overlap2 = w1*w2
 
-end function get_wave_overlap2
+end function get_overlap2
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP) function get_wave_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
+real(DEVDP) function get_overlap3A(x,y,z,r,pb1,pc1,pb2,pc2)
 
     implicit none
     real(DEVDP)     :: x, y, z
@@ -677,7 +628,7 @@ real(DEVDP) function get_wave_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    get_wave_overlap3 = 0.0
+    get_overlap3A = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -690,13 +641,43 @@ real(DEVDP) function get_wave_overlap3(x,y,z,r,pb1,pc1,pb2,pc2)
     w1 = r1**(pc1)*exp(-pb1*r1)
     w2 = r2**(pc2)*exp(-pb2*r2)
 
-    get_wave_overlap3 = w1*w2
+    get_overlap3A = w1*w2
 
-end function get_wave_overlap3
+end function get_overlap3A
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP) function get_wave_overlap4(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
+real(DEVDP) function get_overlap3B(x,y,z,r,pb1,pc1,pb2,pc2)
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pc1
+    real(DEVDP)     :: pb2,pc2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_overlap3B = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = exp(-pb1*r1)*(1.0d0 + pc1/r1)
+    w2 = exp(-pb2*r2)*(1.0d0 + pc1/r2)
+
+    get_overlap3B = w1*w2
+
+end function get_overlap3B
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_overlap4A(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
 
     implicit none
     real(DEVDP)     :: x, y, z
@@ -707,7 +688,7 @@ real(DEVDP) function get_wave_overlap4(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    get_wave_overlap4 = 0.0
+    get_overlap4A = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -717,16 +698,46 @@ real(DEVDP) function get_wave_overlap4(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = r1**(pc1)*exp(-pb1*r1)*(1.0 + pd1/r)
-    w2 = r2**(pc2)*exp(-pb2*r2)*(1.0 + pd1/r)
+    w1 = r1**(pc1)*exp(-pb1*r1)*(1.0d0 + pd1/r1)
+    w2 = r2**(pc2)*exp(-pb2*r2)*(1.0d0 + pd2/r2)
 
-    get_wave_overlap4 = w1*w2
+    get_overlap4A = w1*w2
 
-end function get_wave_overlap4
+end function get_overlap4A
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP)  function get_dens_lda2(x,y,z,r,epa1,pb1,epa2,pb2)
+real(DEVDP) function get_overlap4B(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: pb1,pc1,pd1
+    real(DEVDP)     :: pb2,pc2,pd2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_overlap4B = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = exp(-pb1*r1)*(1.0d0 + pc1/r1 + pd1/(r1**2))
+    w2 = exp(-pb2*r2)*(1.0d0 + pc2/r2 + pd2/(r2**2))
+
+    get_overlap4B = w1*w2
+
+end function get_overlap4B
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_lda2(x,y,z,r,epa1,pb1,epa2,pb2)
 
     use ffdev_topology_dat
 
@@ -739,7 +750,7 @@ real(DEVDP)  function get_dens_lda2(x,y,z,r,epa1,pb1,epa2,pb2)
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    get_dens_lda2 = 0.0
+    get_lda2 = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -749,16 +760,16 @@ real(DEVDP)  function get_dens_lda2(x,y,z,r,epa1,pb1,epa2,pb2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = epa1*exp(-2.0d0*pb1*r1)
-    w2 = epa2*exp(-2.0d0*pb2*r2)
+    w1 = epa1*exp(-pb1*r1)
+    w2 = epa2*exp(-pb2*r2)
 
-    get_dens_lda2 = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
+    get_lda2 = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
 
-end function get_dens_lda2
+end function get_lda2
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP) function get_dens_lda3(x,y,z,r,epa1,pb1,pc1,epa2,pb2,pc2)
+real(DEVDP) function get_lda3A(x,y,z,r,epa1,pb1,pc1,epa2,pb2,pc2)
 
     use ffdev_topology_dat
 
@@ -771,7 +782,7 @@ real(DEVDP) function get_dens_lda3(x,y,z,r,epa1,pb1,pc1,epa2,pb2,pc2)
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     ! --------------------------------------------------------------------------
 
-    get_dens_lda3 = 0.0
+    get_lda3A = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -781,12 +792,108 @@ real(DEVDP) function get_dens_lda3(x,y,z,r,epa1,pb1,pc1,epa2,pb2,pc2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = epa1*r1**(2.0d0*pc1)*exp(-2.0d0*pb1*r1)
-    w2 = epa2*r2**(2.0d0*pc2)*exp(-2.0d0*pb2*r2)
+    w1 = epa1*(r1**pc1)*exp(-pb1*r1)
+    w2 = epa2*(r2**pc2)*exp(-pb2*r2)
 
-    get_dens_lda3 = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
+    get_lda3A = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
 
-end function get_dens_lda3
+end function get_lda3A
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_lda3B(x,y,z,r,epa1,pb1,pc1,epa2,pb2,pc2)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: epa1,pb1,pc1
+    real(DEVDP)     :: epa2,pb2,pc2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_lda3B = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = epa1*exp(-pb1*r1)*(1.0d0 + pc1/r1)
+    w2 = epa2*exp(-pb2*r2)*(1.0d0 + pc2/r2)
+
+    get_lda3B = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
+
+end function get_lda3B
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_lda4A(x,y,z,r,epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: epa1,pb1,pc1,pd1
+    real(DEVDP)     :: epa2,pb2,pc2,pd2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_lda4A = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = epa1*(r1**pc1)*exp(-pb1*r1)*(1.0d0 + pd1/r1)
+    w2 = epa2*(r2**pc2)*exp(-pb2*r2)*(1.0d0 + pd2/r2)
+
+    get_lda4A = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
+
+end function get_lda4A
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function get_lda4B(x,y,z,r,epa1,pb1,pc1,pd1,epa2,pb2,pc2,pd2)
+
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: r
+    real(DEVDP)     :: epa1,pb1,pc1,pd1
+    real(DEVDP)     :: epa2,pb2,pc2,pd2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    ! --------------------------------------------------------------------------
+
+    get_lda4B = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = x**2 + dyz
+    r2 = (x-r)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = epa1*exp(-pb1*r1)*(1.0d0 + pc1/r1 + pd1/(r1**2))
+    w2 = epa2*exp(-pb2*r2)*(1.0d0 + pc2/r2 + pd2/(r2**2))
+
+    get_lda4B = (w1+w2)**pauli_lda_power - w1**pauli_lda_power - w2**pauli_lda_power
+
+end function get_lda4B
 
 ! ------------------------------------------------------------------------------
 
