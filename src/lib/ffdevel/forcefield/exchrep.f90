@@ -638,8 +638,8 @@ real(DEVDP) function get_overlap3A(x,y,z,r,pb1,pc1,pb2,pc2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = r1**(pc1)*exp(-pb1*r1)
-    w2 = r2**(pc2)*exp(-pb2*r2)
+    w1 = (r1**pc1)*exp(-pb1*r1)
+    w2 = (r2**pc2)*exp(-pb2*r2)
 
     get_overlap3A = w1*w2
 
@@ -669,7 +669,7 @@ real(DEVDP) function get_overlap3B(x,y,z,r,pb1,pc1,pb2,pc2)
     r2 = sqrt(r2)
 
     w1 = exp(-pb1*r1)*(1.0d0 + pc1/r1)
-    w2 = exp(-pb2*r2)*(1.0d0 + pc1/r2)
+    w2 = exp(-pb2*r2)*(1.0d0 + pc2/r2)
 
     get_overlap3B = w1*w2
 
@@ -698,8 +698,8 @@ real(DEVDP) function get_overlap4A(x,y,z,r,pb1,pc1,pd1,pb2,pc2,pd2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = r1**(pc1)*exp(-pb1*r1)*(1.0d0 + pd1/r1)
-    w2 = r2**(pc2)*exp(-pb2*r2)*(1.0d0 + pd2/r2)
+    w1 = (r1**pc1)*exp(-pb1*r1)*(1.0d0 + pd1/r1)
+    w2 = (r2**pc2)*exp(-pb2*r2)*(1.0d0 + pd2/r2)
 
     get_overlap4A = w1*w2
 
