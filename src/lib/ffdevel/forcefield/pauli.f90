@@ -587,8 +587,8 @@ real(DEVDP)  function get_overlap_dz(x,y,z,hr,pa1,pb1,pa2,pb2)
     r1 = sqrt(r1)
     r2 = sqrt(r2)
 
-    w1 = pa1(1)*exp(-pb1(1)*r1) + pa1(2)*exp(-pb1(2)*r1)
-    w2 = pa2(1)*exp(-pb2(1)*r2) + pa2(2)*exp(-pb2(2)*r2)
+    w1 = pa1(1)*exp(-pb1(1)*r1) + r1*pa1(2)*exp(-pb1(2)*r1)
+    w2 = pa2(1)*exp(-pb2(1)*r2) + r2*pa2(2)*exp(-pb2(2)*r2)
 
     get_overlap_dz = w1*w2
 
