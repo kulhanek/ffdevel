@@ -161,17 +161,17 @@ real(DEVDP)     :: MaxPauliC    =       3.0d0
 real(DEVDP)     :: MinPauliA1   =       1.0d0
 real(DEVDP)     :: MaxPauliA1   =      15.0d0
 real(DEVDP)     :: MinPauliB1   =       0.1d0
-real(DEVDP)     :: MaxPauliB1   =       6.0d0
+real(DEVDP)     :: MaxPauliB1   =      20.0d0
 
 real(DEVDP)     :: MinPauliA2   =       1.0d0
 real(DEVDP)     :: MaxPauliA2   =      15.0d0
 real(DEVDP)     :: MinPauliB2   =       0.1d0
-real(DEVDP)     :: MaxPauliB2   =       6.0d0
+real(DEVDP)     :: MaxPauliB2   =      20.0d0
 
 real(DEVDP)     :: MinPauliA3   =       1.0d0
 real(DEVDP)     :: MaxPauliA3   =      15.0d0
 real(DEVDP)     :: MinPauliB3   =       0.1d0
-real(DEVDP)     :: MaxPauliB3   =       6.0d0
+real(DEVDP)     :: MaxPauliB3   =      20.0d0
 
 real(DEVDP)     :: MinPauliDP   =       0.5d0
 real(DEVDP)     :: MaxPauliDP   =       1.5d0
