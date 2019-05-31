@@ -1,4 +1,5 @@
-src/lib/ffdevel/forcefield/exchrep.f90
+src/lib/ffdevel/forcefield/pauli.f90
+src/lib/ffdevel/forcefield/pauli_dat.f90
 src/lib/ffdevel/parameters/xdm.f90
 src/lib/ffdevel/parameters/xdm_dat.f90
 src/lib/ffdevel/timers.f90

@@ -183,11 +183,23 @@ subroutine ffdev_targetset_reinit_nbparams()
                         case(REALM_VDW_ALPHA)
                             params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
                         case(REALM_PAULI_A)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA1
                         case(REALM_PAULI_B)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB1
                         case(REALM_PAULI_C)
-                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC1
+                        case(REALM_PAULI_A1)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA1
+                        case(REALM_PAULI_B1)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB1
+                        case(REALM_PAULI_A2)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA2
+                        case(REALM_PAULI_B2)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB2
+                        case(REALM_PAULI_A3)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA3
+                        case(REALM_PAULI_B3)
+                            params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB3
                     end select
                 end do
         end select

@@ -127,7 +127,9 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA, PB, PC, PD           ! Pauli repulsion data
+    real(DEVDP)         :: PA1, PA2, PA3            ! Pauli repulsion
+    real(DEVDP)         :: PB1, PB2, PB3
+    real(DEVDP)         :: PC1
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -187,12 +189,6 @@ real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conver
                                         ! 12.0                           - identical long-range
                                         ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 
-! Pauili repulsion
-logical     :: pauli_use_numgrid    = .true.    ! use numgrid for integration
-logical     :: pauli_cache_grid     = .true.    ! cache grid for Eexchrep calculation
-real(DEVDP) :: pauli_dens_power     = 1.0       ! can be optimized via pauli_dp
-real(DEVDP) :: pauli_lda_power      = 2.0       ! can be optimized via pauli_lp
-
 ! Tang–Toennis potential
 integer     :: tt_disp_order        = 16        ! highest Cn coefficient
 
@@ -203,24 +199,12 @@ integer,parameter   :: NB_MODE_LJ       = 1     ! Lennard-Jones potential (eps,r
 integer,parameter   :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
 integer,parameter   :: NB_MODE_TT       = 3     ! Tang–Toennis potential (PA,PB,+XDM)
 
-! exchange repulsion only (Pauli repulsion), gradient and hessian is not available
+! exchange repulsion only (Pauli repulsion), gradient and hessian are not available
 integer,parameter   :: NB_MODE_PAULI_EXP2   = 4     ! exp (PA,PB)
 integer,parameter   :: NB_MODE_PAULI_EXP3   = 5     ! exp (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_DENS2  = 6     ! overlap of densities with two parameters (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_DENS3A = 7     ! overlap of densities with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_DENS3B = 8     ! overlap of densities with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_DENS4A = 9     ! overlap of densities with four parameters (PA,PB,PC,PD)
-integer,parameter   :: NB_MODE_PAULI_DENS4B = 10    ! overlap of densities with four parameters (PA,PB,PC,PD)
-integer,parameter   :: NB_MODE_PAULI_WAVE2  = 11    ! overlap of wavefunctions with two parameters (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_WAVE3A = 12    ! overlap of wavefunctions with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_WAVE3B = 13    ! overlap of wavefunctions with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_WAVE4A = 14    ! overlap of wavefunctions with four parameters (PA,PB,PC,PD)
-integer,parameter   :: NB_MODE_PAULI_WAVE4B = 15    ! overlap of wavefunctions with four parameters (PA,PB,PC,PD)
-integer,parameter   :: NB_MODE_PAULI_LDA2   = 16    ! local density approx. with two parameters (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_LDA3A  = 17    ! local density approx. with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_LDA3B  = 18    ! local density approx. with three parameters (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_LDA4A  = 19    ! local density approx. with four parameters (PA,PB,PC,PD)
-integer,parameter   :: NB_MODE_PAULI_LDA4B  = 20    ! local density approx. with four parameters (PA,PB,PC,PD)
+integer,parameter   :: NB_MODE_PAULI_DENS   = 6     ! overlap of densities
+integer,parameter   :: NB_MODE_PAULI_WAVE   = 7     ! overlap of wavefunction
+integer,parameter   :: NB_MODE_PAULI_XFUN   = 8     ! exchange density functional
 
 ! combining rules for nb_mode
 integer,parameter   :: COMB_RULE_IN = 05    ! input data
