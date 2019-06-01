@@ -190,15 +190,16 @@ program ffdev_optimize_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Initialize', ':')
 
-    ! calculate initial data
-    errors_calc_ene = .true. ! we need at least energies for ffdev_targetset_save_initial_drvs
-    call ffdev_targetset_calc_all()
+    ! FIXME this must be done in FFOPT after all is setup, for exemple in FFMANIP
+!    ! calculate initial data
+!    errors_calc_ene = .true. ! we need at least energies for ffdev_targetset_save_initial_drvs
+!    call ffdev_targetset_calc_all()
 
-    ! save initial driving data if requested
-    ! FIXME - the geometry cannot be never optimized as default setup
-    ! set in ffdev_targetset_ctrl_optgeo_set_default, see above?
-    ! the only solution is to enable geometry optimization directly for the given [set]
-    call ffdev_targetset_save_initial_drvs()
+!    ! save initial driving data if requested
+!    ! FIXME - the geometry cannot be never optimized as default setup
+!    ! set in ffdev_targetset_ctrl_optgeo_set_default, see above?
+!    ! the only solution is to enable geometry optimization directly for the given [set]
+!    call ffdev_targetset_save_initial_drvs()
 
     ! process optimization programs
     rst = prmfile_first_group(fin)
