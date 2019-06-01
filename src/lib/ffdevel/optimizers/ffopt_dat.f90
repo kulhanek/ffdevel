@@ -67,6 +67,8 @@ real(DEVDP)     :: NLOpt_InitialStep
 integer         :: Shark_Method
 real(DEVDP)     :: Shark_InitialStep
 logical         :: Shark_EnableBoxing
+integer         :: Shart_NRuns
+logical         :: Shark_RandomizeParams
 
 ! ------------------------------------------------------------------------------
 integer, parameter      :: SHARK_CMA_ES = 1     ! CMA-ES

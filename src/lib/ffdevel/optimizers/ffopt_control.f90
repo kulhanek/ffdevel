@@ -461,6 +461,8 @@ subroutine read_shark_method(fin)
         end select
         write(DEV_OUT,35) Shark_InitialStep
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
+        write(DEV_OUT,65) Shart_NRuns
+        write(DEV_OUT,75) prmfile_onoff(Shark_RandomizeParams)
         return
     end if
 
@@ -493,6 +495,18 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
     end if
 
+    if( prmfile_get_integer_by_key(fin,'nruns', Shart_NRuns)) then
+        write(DEV_OUT,60) Shart_NRuns
+    else
+        write(DEV_OUT,65) Shart_NRuns
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'randomize', Shark_RandomizeParams)) then
+        write(DEV_OUT,70) prmfile_onoff(Shark_RandomizeParams)
+    else
+        write(DEV_OUT,75) prmfile_onoff(Shark_RandomizeParams)
+    end if
+
     return
 
  20  format ('Optmization algorithm (algorithm)      = ',A)
@@ -501,6 +515,10 @@ subroutine read_shark_method(fin)
  35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
  50  format ('Enable boxing (boxing)                 = ',a12)
  55  format ('Enable boxing (boxing)                 = ',a12,'                  (default)')
+ 60  format ('Number of runs (nruns)                 = ',i12)
+ 65  format ('Number of runs (nruns)                 = ',i12,'                  (default)')
+ 70  format ('Randomize parameters (randomize)       = ',a12)
+ 75  format ('Randomize parameters (randomize)       = ',a12,'                  (default)')
 
 end subroutine read_shark_method
 

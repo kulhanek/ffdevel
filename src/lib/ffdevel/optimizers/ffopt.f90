@@ -149,9 +149,11 @@ subroutine ffdev_ffopt_set_default()
     NLOpt_InitialStep   = 0.001d0
 
 ! === [Shark] ==================================================================
-    Shark_Method        = SHARK_CMA_ES
-    Shark_InitialStep   = 0.5d0
-    Shark_EnableBoxing  = .true.
+    Shark_Method            = SHARK_CMA_ES
+    Shark_InitialStep       = 0.5d0
+    Shark_EnableBoxing      = .true.
+    Shart_NRuns             = 1
+    Shark_RandomizeParams   = .false.
 
 end subroutine ffdev_ffopt_set_default
 

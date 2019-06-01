@@ -270,14 +270,45 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     rst = prmfile_first_line(fin)
     do while ( prmfile_get_line(fin,string) )
         read(string,*,err=555,end=555) key
+        nchanged = 0
         select case(key)
             case('enable')
                 read(string,*,err=556,end=556) key, realm
-                call change_realms(realm,.true.,string,nchanged)
+                select case(trim(realm))
+                    case('pauli_a')
+                        call change_realms('pauli_a1',.true.,string,nchanged)
+                        call change_realms('pauli_a2',.true.,string,nchanged)
+                        call change_realms('pauli_a3',.true.,string,nchanged)
+                        call change_realms('pauli_a4',.true.,string,nchanged)
+                        call change_realms(realm,.true.,string,nchanged)
+                    case('pauli_b')
+                        call change_realms('pauli_b1',.true.,string,nchanged)
+                        call change_realms('pauli_b2',.true.,string,nchanged)
+                        call change_realms('pauli_b3',.true.,string,nchanged)
+                        call change_realms('pauli_b4',.true.,string,nchanged)
+                        call change_realms(realm,.true.,string,nchanged)
+                    case default
+                        call change_realms(realm,.true.,string,nchanged)
+                end select
                 write(DEV_OUT,30) nchanged,trim(string)
             case('disable')
                 read(string,*,err=556,end=556) key, realm
-                call change_realms(realm,.false.,string,nchanged)
+                select case(trim(realm))
+                    case('pauli_a')
+                        call change_realms('pauli_a1',.false.,string,nchanged)
+                        call change_realms('pauli_a2',.false.,string,nchanged)
+                        call change_realms('pauli_a3',.false.,string,nchanged)
+                        call change_realms('pauli_a4',.false.,string,nchanged)
+                        call change_realms(realm,.false.,string,nchanged)
+                    case('pauli_b')
+                        call change_realms('pauli_b1',.false.,string,nchanged)
+                        call change_realms('pauli_b2',.false.,string,nchanged)
+                        call change_realms('pauli_b3',.false.,string,nchanged)
+                        call change_realms('pauli_b4',.false.,string,nchanged)
+                        call change_realms(realm,.false.,string,nchanged)
+                    case default
+                        call change_realms(realm,.false.,string,nchanged)
+                end select
                 write(DEV_OUT,30) nchanged,trim(string)
             case('randomize')
                 do i=1,nparams
@@ -537,8 +568,6 @@ subroutine change_realms(realm,enable,options,nchanged)
         ! we need at least two types
         if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) return
     end if
-
-    nchanged = 0
 
 444 do i=1,nparams
 
@@ -1047,9 +1076,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
 
         rst = prmfile_next_section(fin)
     end do
-
-    ! print final parameters
-    call ffdev_parameters_print_parameters()
 
 end subroutine ffdev_parameters_ctrl_ffmanip
 
