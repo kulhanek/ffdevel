@@ -19,7 +19,7 @@ module ffdev_pauli_dat
 
 use ffdev_sizes
 
-integer,parameter   :: PAULI_MAX_NSTO  = 3          ! max allowed number of STO orbitals
+integer,parameter   :: PAULI_MAX_NSTO  = 4          ! max allowed number of STO orbitals
 
 ! types of WF
 integer,parameter   :: PAULI_WF_SV     = 1          ! split valence 1s STO orbitals

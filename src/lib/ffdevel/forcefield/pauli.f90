@@ -483,18 +483,22 @@ subroutine preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
     pa1(1) = exp(t1%pa1)
     pa1(2) = exp(t1%pa2)
     pa1(3) = exp(t1%pa3)
+    pa1(4) = exp(t1%pa4)
 
     pa2(1) = exp(t2%pa1)
     pa2(2) = exp(t2%pa2)
     pa2(3) = exp(t2%pa3)
+    pa2(4) = exp(t2%pa4)
 
     pb1(1) = t1%pb1
     pb1(2) = t1%pb2
     pb1(3) = t1%pb3
+    pb1(4) = t1%pb4
 
     pb2(1) = t2%pb1
     pb2(2) = t2%pb2
     pb2(3) = t2%pb3
+    pb2(4) = t2%pb4
 
     ! WF series size
     n1 = pauli_wf_nsto
