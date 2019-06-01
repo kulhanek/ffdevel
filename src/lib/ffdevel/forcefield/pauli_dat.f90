@@ -36,8 +36,9 @@ logical     :: pauli_cache_grid     ! cache grid for integration
 ! WFN
 integer     :: pauli_wf_nsto        ! number of STO orbitals
 logical     :: pauli_wf_truncbyn    ! truncate nsto by n (main quantum number)
-integer     :: pauli_wf2rho_power   ! wf->rho transformation
+integer     :: pauli_wf2rho_power   ! wf->rho transformation (from setup)
 integer     :: pauli_wf_form        ! type of WF
+integer     :: used_wf2rho_power    ! actually used value, setup in preform_parameters
 
 ! PDENS
 real(DEVDP) :: pauli_dens_dpower    ! can be optimized via pauli_dp

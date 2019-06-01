@@ -46,7 +46,7 @@ subroutine ffdev_pauli_set_default
     ! WFN
     pauli_wf_nsto        = 2             ! number of STO orbitals
     pauli_wf_truncbyn    = .false.       ! truncate nsto by n (main quantum number)
-    pauli_wf2rho_power   = 1             ! wf->rho transformation
+    pauli_wf2rho_power   = 2             ! wf->rho transformation, only for PDENS and XFUN
     pauli_wf_form        = PAULI_WF_SV
 
     ! PDENS
@@ -475,6 +475,11 @@ subroutine preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
     real(DEVDP)     :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
     ! --------------------------------------------------------------------------
 
+    used_wf2rho_power = pauli_wf2rho_power
+    if( mode .eq. NB_MODE_PAULI_WAVE ) then
+        used_wf2rho_power = 1
+    end if
+
     pa1(1) = exp(t1%pa1)
     pa1(2) = exp(t1%pa2)
     pa1(3) = exp(t1%pa3)
@@ -629,7 +634,7 @@ real(DEVDP)  function get_overlap_sv(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
         w2 = w2 + pa2(i)*exp(-pb2(i)*r2)
     end do
 
-    get_overlap_sv = (w1**pauli_wf2rho_power)*(w2**pauli_wf2rho_power)
+    get_overlap_sv = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
 
 end function get_overlap_sv
 
@@ -670,7 +675,7 @@ real(DEVDP)  function get_overlap_sto(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
         w2 = w2 + r2**(i-1)*pa2(i)*exp(-pb2(i)*r2)
     end do
 
-    get_overlap_sto = (w1**pauli_wf2rho_power)*(w2**pauli_wf2rho_power)
+    get_overlap_sto = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
 
 end function get_overlap_sto
 
