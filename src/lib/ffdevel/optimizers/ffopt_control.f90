@@ -461,8 +461,19 @@ subroutine read_shark_method(fin)
         end select
         write(DEV_OUT,35) Shark_InitialStep
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
-        write(DEV_OUT,65) Shart_NRuns
-        write(DEV_OUT,75) prmfile_onoff(Shark_RandomizeParams)
+        write(DEV_OUT,65) Shark_NRuns
+        select case(Shark_ParameterGuess)
+            case(SHARK_GUESS_INPUT)
+                write(DEV_OUT,75) 'input'
+            case(SHARK_GUESS_RANDOMIZE)
+                write(DEV_OUT,75) 'randomize'
+            case(SHARK_GUESS_KEEP)
+                write(DEV_OUT,75) 'keep'
+            case(SHARK_GUESS_MIX)
+                write(DEV_OUT,75) 'mix'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+        end select
         return
     end if
 
@@ -472,14 +483,14 @@ subroutine read_shark_method(fin)
                 Shark_Method = SHARK_CMA_ES
                 write(DEV_OUT,20) trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported method in read_shark_method!')
         end select
     else
         select case(Shark_Method)
             case(SHARK_CMA_ES)
                 write(DEV_OUT,25) 'CMA-ES'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported method in read_shark_method!')
         end select
     end if
 
@@ -495,16 +506,42 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
     end if
 
-    if( prmfile_get_integer_by_key(fin,'nruns', Shart_NRuns)) then
-        write(DEV_OUT,60) Shart_NRuns
+    if( prmfile_get_integer_by_key(fin,'nruns', Shark_NRuns)) then
+        write(DEV_OUT,60) Shark_NRuns
     else
-        write(DEV_OUT,65) Shart_NRuns
+        write(DEV_OUT,65) Shark_NRuns
     end if
 
-    if( prmfile_get_logical_by_key(fin,'randomize', Shark_RandomizeParams)) then
-        write(DEV_OUT,70) prmfile_onoff(Shark_RandomizeParams)
+    if( prmfile_get_string_by_key(fin,'guess', string)) then
+        select case(trim(string))
+            case('input')
+                Shark_ParameterGuess = SHARK_GUESS_INPUT
+                write(DEV_OUT,70) trim(string)
+            case('randomize')
+                Shark_ParameterGuess = SHARK_GUESS_RANDOMIZE
+                write(DEV_OUT,70) trim(string)
+            case('keep')
+                Shark_ParameterGuess = SHARK_GUESS_KEEP
+                write(DEV_OUT,70) trim(string)
+            case('mix')
+                Shark_ParameterGuess = SHARK_GUESS_MIX
+                write(DEV_OUT,70) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+        end select
     else
-        write(DEV_OUT,75) prmfile_onoff(Shark_RandomizeParams)
+        select case(Shark_ParameterGuess)
+            case(SHARK_GUESS_INPUT)
+                write(DEV_OUT,75) 'input'
+            case(SHARK_GUESS_RANDOMIZE)
+                write(DEV_OUT,75) 'randomize'
+            case(SHARK_GUESS_KEEP)
+                write(DEV_OUT,75) 'keep'
+            case(SHARK_GUESS_MIX)
+                write(DEV_OUT,75) 'mix'
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+        end select
     end if
 
     return
@@ -517,8 +554,8 @@ subroutine read_shark_method(fin)
  55  format ('Enable boxing (boxing)                 = ',a12,'                  (default)')
  60  format ('Number of runs (nruns)                 = ',i12)
  65  format ('Number of runs (nruns)                 = ',i12,'                  (default)')
- 70  format ('Randomize parameters (randomize)       = ',a12)
- 75  format ('Randomize parameters (randomize)       = ',a12,'                  (default)')
+ 70  format ('Initial guess parameters (guess)       = ',a12)
+ 75  format ('Initial guess parameters (guess)       = ',a12,'                  (default)')
 
 end subroutine read_shark_method
 

@@ -93,7 +93,7 @@ subroutine ffdev_parameters_init()
         write(DEV_OUT,50)
     end if
 
-    call ffdev_parameters_print_parameters()
+    call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
  10 format('=== [topology] #',I2.2,' =============================================================')
  20 format('Estimated number of parameters (maximum) = ',I6)
@@ -1922,13 +1922,14 @@ end subroutine ffdev_parameters_print_types
 ! subroutine ffdev_parameters_print_parameters
 ! ==============================================================================
 
-subroutine ffdev_parameters_print_parameters()
+subroutine ffdev_parameters_print_parameters(mode)
 
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
 
     implicit none
+    integer             :: mode
     integer             :: i,j,count,free,act,tot
     character(len=11)   :: tmp
     character(len=4)    :: sti,stj,stk,stl
@@ -1936,7 +1937,16 @@ subroutine ffdev_parameters_print_parameters()
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'Parameter Summary', ':')
+    select case(mode)
+        case(PARAMS_SUMMARY_INITIAL)
+            call ffdev_utils_heading(DEV_OUT,'Input Parameter Summary', ':')
+        case(PARAMS_SUMMARY_OPTIMIZED)
+            call ffdev_utils_heading(DEV_OUT,'Optimized Parameter Summary', ':')
+        case(PARAMS_SUMMARY_MODIFIED)
+            call ffdev_utils_heading(DEV_OUT,'Modified Parameter Summary', ':')
+        case(PARAMS_SUMMARY_FULL)
+            call ffdev_utils_heading(DEV_OUT,'Parameter Summary', ':')
+    end select
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -2078,6 +2088,8 @@ subroutine ffdev_parameters_print_parameters()
         end do
         write(DEV_OUT,*)
     end do
+
+    if( mode .ne. PARAMS_SUMMARY_FULL ) return
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)

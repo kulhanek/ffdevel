@@ -23,6 +23,7 @@ program ffdev_params_program
     use prmfile
     use ffdev_targetset_control
     use ffdev_parameters
+    use ffdev_parameters_dat
     use ffdev_parameters_control
 
     implicit none
@@ -69,7 +70,7 @@ program ffdev_params_program
     rst = prmfile_open_group(fin,'MAIN')
     if( rst ) then
         call ffdev_parameters_ctrl_identities(fin)
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
     end if
 
     ! release the file

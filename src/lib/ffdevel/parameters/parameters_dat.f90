@@ -117,6 +117,12 @@ integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1     ! only like nb_t
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2     ! only_like nb_types including probes
 integer,parameter       :: NB_PARAMS_MODE_ALL           = 3     ! all nb types
 
+! ffdev_parameters_print_parameters modes
+integer,parameter       :: PARAMS_SUMMARY_INITIAL       = 1
+integer,parameter       :: PARAMS_SUMMARY_OPTIMIZED     = 2
+integer,parameter       :: PARAMS_SUMMARY_MODIFIED      = 3
+integer,parameter       :: PARAMS_SUMMARY_FULL          = 4
+
 ! === [control] ================================================================
 integer         :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
 integer         :: NBCombRules                  = COMB_RULE_LB

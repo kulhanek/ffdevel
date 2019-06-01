@@ -152,8 +152,8 @@ subroutine ffdev_ffopt_set_default()
     Shark_Method            = SHARK_CMA_ES
     Shark_InitialStep       = 0.5d0
     Shark_EnableBoxing      = .true.
-    Shart_NRuns             = 1
-    Shark_RandomizeParams   = .false.
+    Shark_NRuns             = 1
+    Shark_ParameterGuess    = SHARK_GUESS_RANDOMIZE
 
 end subroutine ffdev_ffopt_set_default
 
@@ -236,8 +236,7 @@ subroutine ffdev_ffopt_run()
     use ffdev_errors
 
     implicit none
-    integer             :: alloc_stat, i
-    type(FFERROR_TYPE)  :: error
+    integer :: alloc_stat, i
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -251,9 +250,12 @@ subroutine ffdev_ffopt_run()
     ! get initial parameters
     call ffdev_parameters_gather(FFParams)
 
-    ! initial statistics
-    call ffdev_parameters_error_only(FFParams,error)
-    call ffdev_errors_summary(.false.)
+    if( (OptimizationMethod .ne. MINIMIZATION_SHARK) .or. &
+        ( (OptimizationMethod .eq. MINIMIZATION_SHARK) .and. (Shark_NRuns .eq. 1))  ) then
+        ! initial statistics
+        call ffdev_parameters_error_only(FFParams,FFError)
+        call ffdev_errors_summary(.false.)
+    end if
 
     write(DEV_OUT,*)
     write(DEV_OUT,1)
@@ -273,14 +275,19 @@ subroutine ffdev_ffopt_run()
             call write_header(.true.)
             call opt_nlopt
         case(MINIMIZATION_SHARK)
-            ! it has own header
-            call opt_shark
+            if( Shark_NRuns .eq. 1 ) then
+                ! it has own header
+                call opt_shark
+            else
+                call opt_shark_nruns
+            end if
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'OptimizationMethod not implemented in ffdev_ffopt_run!')
     end select
 
     ! return finial statistics
-    call ffdev_parameters_scatter(FFParams)
-    call ffdev_parameters_to_tops()
-    call ffdev_targetset_calc_all()
+    ! wee need to recalculate error due to nrun shark mode
+    call ffdev_parameters_error_only(FFParams,FFError)
     call ffdev_errors_summary(.true.)
 
     deallocate(FFParams,FFParamsGrd)
@@ -664,6 +671,135 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     end if
 
 end subroutine opt_nlopt_fce
+
+!===============================================================================
+! subroutine opt_shark_nruns
+!===============================================================================
+
+subroutine opt_shark_nruns
+
+    use ffdev_ffopt_dat
+    use ffdev_utils
+    use ffdev_errors_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_targetset_dat
+    use ffdev_topology
+
+    implicit none
+    integer     :: istep, i, k, alloc_status, bestid
+    real(DEVDP) :: besterr, maxv, minv, rnd
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Multiple-run SHARK', '+')
+
+    ! allocate working array
+    allocate(tmp_InitialParams(nactparms), &
+             tmp_FinalParams(nactparms,Shark_NRuns), &
+             tmp_FinalError(Shark_NRuns), stat=alloc_status)
+    if( alloc_status .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for opt_shark_nruns!')
+    end if
+
+    ! save initial params
+    tmp_InitialParams = FFParams
+
+    do istep=1,Shark_NRuns
+
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'+', '-')
+        write(DEV_OUT,5) istep, Shark_NRuns
+        call ffdev_utils_heading(DEV_OUT,'+', '-')
+
+! initial guess
+        select case(Shark_ParameterGuess)
+            case(SHARK_GUESS_INPUT)
+                FFParams = tmp_InitialParams
+            case(SHARK_GUESS_KEEP)
+                ! nothing to do
+            case(SHARK_GUESS_RANDOMIZE)
+                k = 1
+                do i=1,nparams
+                    if( .not. params(i)%enabled ) cycle
+                    call random_number(rnd)
+                    minv = ffdev_params_get_lower_bound(params(i)%realm)
+                    maxv = ffdev_params_get_upper_bound(params(i)%realm)
+                    FFParams(k) = minv + (maxv - minv)*rnd
+                    k = k + 1
+                end do
+            case(SHARK_GUESS_MIX)
+                if( istep .eq. 1 ) then
+                    ! use input parameteres
+                    FFParams(:) = tmp_InitialParams(:)
+                else if ( istep .eq. 2 ) then
+                    ! damp with input
+                    FFParams(:) = 0.5d0*(tmp_InitialParams(:) + tmp_FinalParams(:,1))
+                else
+                    ! use last two
+                    FFParams(:) = 0.5d0*(tmp_FinalParams(:,istep-1) + tmp_FinalParams(:,istep-2))
+                end if
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported Shark_ParameterGuess in opt_shark_nruns!')
+            end select
+
+! print input parameters
+        call ffdev_parameters_scatter(FFParams)
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
+
+! optimize
+        write(DEV_OUT,*)
+        call opt_shark
+
+        ! save results
+        tmp_FinalParams(:,istep) = FFParams(:)
+        tmp_FinalError(istep)    = FFError%total
+
+! print final parameters
+
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
+
+        if( istep .ne. Shark_NRuns ) then
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Next run', '#')
+        end if
+    end do
+
+! print summary and select the best parameters
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Final summary', '+')
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+    write(DEV_OUT,20)
+
+    bestid  = 1
+    besterr = tmp_FinalError(bestid)
+
+    do istep=1,Shark_NRuns
+        write(DEV_OUT,30) istep,tmp_FinalError(istep)
+        if( tmp_FinalError(istep) .lt. besterr ) then
+            bestid = istep
+            besterr = tmp_FinalError(istep)
+        end if
+    end do
+    write(DEV_OUT,20)
+    write(DEV_OUT,*)
+    write(DEV_OUT,40) bestid,tmp_FinalError(bestid)
+
+    ! set best parameters
+    FFParams(:) = tmp_FinalParams(:,bestid)
+
+    deallocate(tmp_InitialParams,tmp_FinalParams,tmp_FinalError)
+
+  5 format('# Shark run: ',I5,'/',I5)
+
+ 10 format('# Run          Error')
+ 20 format('# --- --------------')
+ 30 format(I5,1X,E14.6)
+ 40 format('Best run is ',I5,' with error ',E14.6)
+
+end subroutine opt_shark_nruns
 
 !===============================================================================
 ! subroutine opt_shark

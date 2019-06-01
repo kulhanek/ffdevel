@@ -348,13 +348,13 @@ subroutine execute_ffopt(grpin,exec)
 
     if( exec ) then
         ! print final parameter list
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
 
         ! optimize
         call ffdev_ffopt_run
 
         ! final results
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
     end if
 
     return
@@ -383,7 +383,7 @@ subroutine execute_ffeval(grpin,exec)
 
     if( exec ) then
         ! print final parameter list
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
         ! get single point error
         call ffdev_ffopt_single_point
@@ -432,14 +432,14 @@ subroutine execute_ffmanip(grpin,exec)
     ! --------------------------------------------------------------------------
 
     if( exec ) then
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
     end if
 
     ! load and execute setup
     call ffdev_parameters_ctrl_ffmanip(grpin,exec)
 
     if( exec ) then
-        call ffdev_parameters_print_parameters()
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_MODIFIED)
     end if
 
     return
