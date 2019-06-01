@@ -127,8 +127,8 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA1, PA2, PA3            ! Pauli repulsion
-    real(DEVDP)         :: PB1, PB2, PB3
+    real(DEVDP)         :: PA1, PA2, PA3, PA4       ! Pauli repulsion
+    real(DEVDP)         :: PB1, PB2, PB3, PB4
     real(DEVDP)         :: PC1
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
@@ -195,16 +195,17 @@ integer     :: tt_disp_order        = 16        ! highest Cn coefficient
 ! ------------------------------------------------------------------------------
 
 ! full mode
-integer,parameter   :: NB_MODE_LJ       = 1     ! Lennard-Jones potential (eps,r0)
-integer,parameter   :: NB_MODE_EXP6     = 2     ! Exp-6 potential (eps,r0,alpha)
-integer,parameter   :: NB_MODE_TT       = 3     ! Tang–Toennis potential (PA,PB,+XDM)
+integer,parameter   :: NB_MODE_LJ           = 1     ! Lennard-Jones potential (eps,r0)
+integer,parameter   :: NB_MODE_EXP6         = 2     ! Exp-6 potential (eps,r0,alpha)
+integer,parameter   :: NB_MODE_TT2          = 3     ! Tang–Toennis potential (PA,PB,+XDM)
+integer,parameter   :: NB_MODE_TT3          = 4     ! Tang–Toennis potential (PA,PB,PC,+XDM)
 
 ! exchange repulsion only (Pauli repulsion), gradient and hessian are not available
-integer,parameter   :: NB_MODE_PAULI_EXP2   = 4     ! exp (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_EXP3   = 5     ! exp (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_DENS   = 6     ! overlap of densities
-integer,parameter   :: NB_MODE_PAULI_WAVE   = 7     ! overlap of wavefunction
-integer,parameter   :: NB_MODE_PAULI_XFUN   = 8     ! exchange density functional
+integer,parameter   :: NB_MODE_PAULI_EXP2   = 5     ! exp (PA,PB)
+integer,parameter   :: NB_MODE_PAULI_EXP3   = 6     ! exp (PA,PB,PC)
+integer,parameter   :: NB_MODE_PAULI_DENS   = 7     ! overlap of densities
+integer,parameter   :: NB_MODE_PAULI_WAVE   = 8     ! overlap of wavefunction
+integer,parameter   :: NB_MODE_PAULI_XFUN   = 9     ! exchange-repulsion density functional
 
 ! combining rules for nb_mode
 integer,parameter   :: COMB_RULE_IN = 05    ! input data

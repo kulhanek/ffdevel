@@ -124,8 +124,11 @@ subroutine ffdev_err_energy_summary(set,printsum)
     type(TARGETSET)     :: set
     logical             :: printsum
     ! --------------------------------------------
-    real(DEVDP)         :: err,serr
-    integer             :: j,num
+    real(DEVDP)         :: aerr,aserr
+    real(DEVDP)         :: rerr,rserr
+    real(DEVDP)         :: lerr,lserr
+    integer             :: anum,rnum,lnum
+    integer             :: j
     ! --------------------------------------------------------------------------
 
     if( set%isref ) return ! ignore reference sets
@@ -144,30 +147,56 @@ subroutine ffdev_err_energy_summary(set,printsum)
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
-    serr = 0.0d0
-    num = 0
+    aserr = 0.0d0
+    anum = 0
+    rserr = 0.0d0
+    rnum = 0
+    lserr = 0.0d0
+    lnum = 0
 
     do j=1,set%ngeos
         if( set%geo(j)%trg_ene_loaded ) then
-            err = set%geo(j)%total_ene - set%offset - set%geo(j)%trg_energy
-            serr = serr + set%geo(j)%weight * err**2
-            num = num + 1
+            ! absolute
+            aerr  = set%geo(j)%total_ene - set%offset - set%geo(j)%trg_energy
+            aserr = aserr + set%geo(j)%weight * aerr**2
+            anum  = anum + 1
+            ! relative
+            rerr  = 0.0
+            if( set%geo(j)%trg_energy .ne. 0 ) then
+                rerr  = (set%geo(j)%total_ene - set%offset - set%geo(j)%trg_energy)/set%geo(j)%trg_energy
+                rserr = rserr + set%geo(j)%weight * rerr**2
+                rnum  = rnum + 1
+            end if
+            ! log
+            lerr  = 0.0
+            if( (set%geo(j)%trg_energy .gt. 0) .and.  (set%geo(j)%total_ene - set%offset .gt. 0) ) then
+                lerr  = log(set%geo(j)%total_ene - set%offset) - log(set%geo(j)%trg_energy)
+                lserr = lserr + set%geo(j)%weight * lerr**2
+                lnum  = lnum + 1
+            end if
+
             write(DEV_OUT,30) j, set%geo(j)%weight,set%offset, &
-                              set%geo(j)%trg_energy, set%geo(j)%total_ene, err
+                              set%geo(j)%trg_energy, set%geo(j)%total_ene, aerr, rerr*100.0d0, lerr
         end if
     end do
 
-    if( num .gt. 0 ) then
-        serr = sqrt(serr / real(num))
+    if( anum .gt. 0 ) then
+        aserr = sqrt(aserr / real(anum))
+    end if
+    if( rnum .gt. 0 ) then
+        rserr = sqrt(rserr / real(rnum))
+    end if
+    if( lnum .gt. 0 ) then
+        lserr = sqrt(lserr / real(lnum))
     end if
 
     write(DEV_OUT,20)
-    write(DEV_OUT,40)  serr
+    write(DEV_OUT,40)  aserr,rserr*100.0d0,lserr
 
-10 format('# ID   Weight  E(offset)     E(TGR)      E(MM)     E(Err)')
-20 format('# ---- ------ ---------- ---------- ---------- ----------')
-30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
-40 format('# Final weighted error                       = ',F10.3)
+10 format('# ID   Weight  E(offset)     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)')
+20 format('# ---- ------ ---------- ---------- ---------- ---------- ---------- ----------')
+30 format(I6,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+40 format('# Final weighted error                       = ',F10.3,1X,F10.3,1X,F10.3)
 
 end subroutine ffdev_err_energy_summary
 

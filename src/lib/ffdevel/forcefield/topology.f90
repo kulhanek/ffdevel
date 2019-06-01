@@ -540,6 +540,8 @@ subroutine ffdev_topology_load(top,name)
         top%nb_types(i)%pb2 = 0.0d0
         top%nb_types(i)%pa3 = 0.0d0
         top%nb_types(i)%pb3 = 0.0d0
+        top%nb_types(i)%pa4 = 0.0d0
+        top%nb_types(i)%pb4 = 0.0d0
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
@@ -843,8 +845,10 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = 'LJ - Lennard-Jones potential'
         case(NB_MODE_EXP6)
             ffdev_topology_nb_mode_to_string = 'EXP6 - Exp-6 potential'
-        case(NB_MODE_TT)
-            ffdev_topology_nb_mode_to_string = 'TT - Tang–Toennis potential'
+        case(NB_MODE_TT2)
+            ffdev_topology_nb_mode_to_string = 'TT2 - Tang–Toennis potential'
+        case(NB_MODE_TT3)
+            ffdev_topology_nb_mode_to_string = 'TT3 - Tang–Toennis potential'
         case(NB_MODE_PAULI_EXP2)
             ffdev_topology_nb_mode_to_string = 'PEXP2 - Pauli Exp repulsion'
         case(NB_MODE_PAULI_EXP3)
@@ -878,8 +882,10 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_MODE_LJ
         case('EXP6')
             ffdev_topology_nb_mode_from_string = NB_MODE_EXP6
-        case('TT')
-            ffdev_topology_nb_mode_from_string = NB_MODE_TT
+        case('TT2')
+            ffdev_topology_nb_mode_from_string = NB_MODE_TT2
+        case('TT3')
+            ffdev_topology_nb_mode_from_string = NB_MODE_TT3
         case('PEXP2')
             ffdev_topology_nb_mode_from_string = NB_MODE_PAULI_EXP2
         case('PEXP3')
@@ -1139,7 +1145,7 @@ subroutine ffdev_topology_info_types(top,mode)
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
                                                top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
                     end do
-                case(NB_MODE_TT, &
+                case(NB_MODE_TT2,NB_MODE_TT3, &
                      NB_MODE_PAULI_EXP2,NB_MODE_PAULI_EXP3)
                     write(DEV_OUT,620)
                     write(DEV_OUT,630)
@@ -1597,9 +1603,10 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
         case(COMB_RULE_LB,COMB_RULE_KG,COMB_RULE_WH,COMB_RULE_FB)
             if( top%nb_mode .eq. NB_MODE_LJ ) ok = .true.
         case(COMB_RULE_PA)
-            if( top%nb_mode .eq. NB_MODE_TT ) ok = .true.
+            if( top%nb_mode .eq. NB_MODE_TT2 ) ok = .true.
             if( top%nb_mode .eq. NB_MODE_PAULI_EXP2 ) ok = .true.
         case(COMB_RULE_PB)
+            if( top%nb_mode .eq. NB_MODE_TT3 ) ok = .true.
             if( top%nb_mode .eq. NB_MODE_PAULI_EXP3 ) ok = .true.
         case default
             ok = .true.
@@ -1829,11 +1836,59 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
                 top%nb_types(i)%pb2   = 0.0d0
                 top%nb_types(i)%pa3   = 0.0d0
                 top%nb_types(i)%pb3   = 0.0d0
+                top%nb_types(i)%pa4   = 0.0d0
+                top%nb_types(i)%pb4   = 0.0d0
             end do
         end if
     end if
 
 end subroutine ffdev_topology_switch_to_probe_mode
+
+! ==============================================================================
+! function ffdev_topology_z2n
+! ==============================================================================
+
+integer function ffdev_topology_z2n(z)
+
+    use ffdev_utils
+
+    implicit none
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    if( (z .ge. 1) .and. (z .le. 2) ) then
+        ffdev_topology_z2n = 1
+        return
+    end if
+
+    if( (z .ge. 3) .and. (z .le. 10) ) then
+        ffdev_topology_z2n = 2
+        return
+    end if
+
+    if( (z .ge. 11) .and. (z .le. 18) ) then
+        ffdev_topology_z2n = 3
+        return
+    end if
+
+    if( (z .ge. 19) .and. (z .le. 36) ) then
+        ffdev_topology_z2n = 4
+        return
+    end if
+
+    if( (z .ge. 37) .and. (z .le. 54) ) then
+        ffdev_topology_z2n = 5
+        return
+    end if
+
+    if( (z .ge. 55) .and. (z .le. 86) ) then
+        ffdev_topology_z2n = 6
+        return
+    end if
+
+    call ffdev_utils_exit(DEV_OUT,1,'Z out-of-range in ffdev_topology_z2n')
+
+end function ffdev_topology_z2n
 
 ! ------------------------------------------------------------------------------
 

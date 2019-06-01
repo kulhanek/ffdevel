@@ -32,6 +32,8 @@ program ffdev_optimize_program
     use ffdev_errors_dat
     use ffdev_xdm
     use ffdev_timers
+    use ffdev_pauli
+    use ffdev_pauli_control
 !$ use omp_lib
 
     implicit none
@@ -64,6 +66,9 @@ program ffdev_optimize_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
     call execute_mmopt(tmpfin,.false.)
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Pauli repulsion', ':')
+    call ffdev_pauli_ctrl(tmpfin)
 
     ! process control file -----------------------------------------------------
     write(DEV_OUT,*)
@@ -176,6 +181,7 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
+    call ffdev_pauli_set_default()
 
     ! run XDM stat if data available
     call ffdev_xdm_run_stat()

@@ -38,20 +38,33 @@ integer,parameter       :: REALM_DIH_C      = 12
 integer,parameter       :: REALM_VDW_EPS    = 13
 integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
+
 integer,parameter       :: REALM_PAULI_A    = 16
 integer,parameter       :: REALM_PAULI_B    = 17
 integer,parameter       :: REALM_PAULI_C    = 18
+
+! WF
 integer,parameter       :: REALM_PAULI_A1   = 19
 integer,parameter       :: REALM_PAULI_B1   = 20
 integer,parameter       :: REALM_PAULI_A2   = 21
 integer,parameter       :: REALM_PAULI_B2   = 22
 integer,parameter       :: REALM_PAULI_A3   = 23
 integer,parameter       :: REALM_PAULI_B3   = 24
-integer,parameter       :: REALM_PAULI_DP   = 25
-integer,parameter       :: REALM_PAULI_LP   = 26
+integer,parameter       :: REALM_PAULI_A4   = 25
+integer,parameter       :: REALM_PAULI_B4   = 26
+
+! PDENS
+integer,parameter       :: REALM_PAULI_DP   = 27
+integer,parameter       :: REALM_PAULI_RP   = 28
+
+! XFUN
+integer,parameter       :: REALM_PAULI_XD   = 29
+integer,parameter       :: REALM_PAULI_XK   = 30
+integer,parameter       :: REALM_PAULI_XX   = 31
+integer,parameter       :: REALM_PAULI_XF   = 32
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_PAULI_LP
+integer,parameter       :: REALM_LAST    = REALM_PAULI_XF
 
 ! ------------------------------------------------------------------------------
 
@@ -173,10 +186,24 @@ real(DEVDP)     :: MaxPauliA3   =      15.0d0
 real(DEVDP)     :: MinPauliB3   =       0.1d0
 real(DEVDP)     :: MaxPauliB3   =      20.0d0
 
-real(DEVDP)     :: MinPauliDP   =       0.5d0
-real(DEVDP)     :: MaxPauliDP   =       1.5d0
-real(DEVDP)     :: MinPauliLP   =       1.0d0
-real(DEVDP)     :: MaxPauliLP   =       3.0d0
+real(DEVDP)     :: MinPauliA4   =       1.0d0
+real(DEVDP)     :: MaxPauliA4   =      15.0d0
+real(DEVDP)     :: MinPauliB4   =       0.1d0
+real(DEVDP)     :: MaxPauliB4   =      20.0d0
+
+real(DEVDP)     :: MinPauliDP   =       0.1d0
+real(DEVDP)     :: MaxPauliDP   =       3.0d0
+real(DEVDP)     :: MinPauliRP   =       0.0d0
+real(DEVDP)     :: MaxPauliRP   =       3.0d0
+
+real(DEVDP)     :: MinPauliXD   =       0.1d0
+real(DEVDP)     :: MaxPauliXD   =       3.0d0
+real(DEVDP)     :: MinPauliXK   =       0.1d0
+real(DEVDP)     :: MaxPauliXK   =       3.0d0
+real(DEVDP)     :: MinPauliXX   =       0.1d0
+real(DEVDP)     :: MaxPauliXX   =       3.0d0
+real(DEVDP)     :: MinPauliXF   =       1.0d0
+real(DEVDP)     :: MaxPauliXF   =      10.0d0
 
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters

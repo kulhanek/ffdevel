@@ -19,15 +19,35 @@ module ffdev_pauli_dat
 
 use ffdev_sizes
 
-! spli-valence modes
-integer,parameter   :: PAULI_SZ   = 1
-integer,parameter   :: PAULI_DZ   = 2
+integer,parameter   :: PAULI_MAX_NSTO  = 3          ! max allowed number of STO orbitals
 
-! Pauili repulsion
-logical     :: pauli_use_numgrid    = .true.    ! use numgrid for integration
-logical     :: pauli_cache_grid     = .true.    ! cache grid for Eexchrep calculation
-real(DEVDP) :: pauli_dens_power     = 1.0       ! can be optimized via pauli_dp
-real(DEVDP) :: pauli_lda_power      = 2.0       ! can be optimized via pauli_lp
-integer     :: pauli_split_valence  = PAULI_DZ
+! types of WF
+integer,parameter   :: PAULI_WF_SV     = 1          ! split valence 1s STO orbitals
+integer,parameter   :: PAULI_WF_STO    = 2          ! STO type orbitals 1s,2s,3s,...
+
+! types of XFUN
+integer,parameter   :: PAULI_XFUN_RHOP = 1          ! power of density
+integer,parameter   :: PAULI_XFUN_KXEG  = 2         ! kinetic-exchange for electron gas
+
+! numgrid setup
+logical     :: pauli_use_numgrid    ! use numgrid for integration
+logical     :: pauli_cache_grid     ! cache grid for integration
+
+! WFN
+integer     :: pauli_wf_nsto        ! number of STO orbitals
+logical     :: pauli_wf_truncbyn    ! truncate nsto by n (main quantum number)
+integer     :: pauli_wf2rho_power   ! wf->rho transformation
+integer     :: pauli_wf_form        ! type of WF
+
+! PDENS
+real(DEVDP) :: pauli_dens_dpower    ! can be optimized via pauli_dp
+real(DEVDP) :: pauli_dens_rpower    ! can be optimized via pauli_rp
+
+! XFUN
+integer     :: pauli_xfun           ! type of xr functional
+real(DEVDP) :: pauli_xfun_dpower    ! can be optimized via pauli_xd
+real(DEVDP) :: pauli_xfun_kpower    ! can be optimized via pauli_xk
+real(DEVDP) :: pauli_xfun_xpower    ! can be optimized via pauli_xx
+real(DEVDP) :: pauli_xfun_xfac      ! can be optimized via pauli_xf
 
 end module ffdev_pauli_dat
