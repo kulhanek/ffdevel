@@ -22,14 +22,14 @@ use ffdev_sizes
 ! ------------------------------------------------------------------------------
 
 type ATOM
-    real(DEVDP)         :: charge
-    character(len=4)    :: name
-    integer             :: residx
-    character(len=4)    :: resname
-    integer             :: typeid
-    integer             :: nbonds
-    integer,pointer     :: bonded(:)
-    integer             :: frgid        ! fragment ID for NB error function
+    real(DEVDP)             :: charge
+    character(MAX_TNAME)    :: name
+    integer                 :: residx
+    character(MAX_RNAME)    :: resname
+    integer                 :: typeid
+    integer                 :: nbonds
+    integer,pointer         :: bonded(:)
+    integer                 :: frgid        ! fragment ID for NB error function
 end type ATOM
 
 ! ------------------------------------------------------------------------------
@@ -115,21 +115,23 @@ end type NB_PAIR
 ! ------------------------------------------------------------------------------
 
 type ATOM_TYPE
-    character(len=4)    :: name
-    real(DEVDP)         :: mass
-    integer             :: z
-    logical             :: probe            ! probe
-    integer             :: glbtypeid        ! global type id
+    character(MAX_TNAME)    :: name
+    real(DEVDP)             :: mass
+    integer                 :: z
+    logical                 :: probe            ! probe
+    integer                 :: glbtypeid        ! global type id
 end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------
 
+integer,parameter   :: PAULI_MAX_NSTO   = 3     ! max allowed number of STO orbitals
+
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
     real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA1, PA2, PA3, PA4       ! Pauli repulsion
-    real(DEVDP)         :: PB1, PB2, PB3, PB4
-    real(DEVDP)         :: PC1
+    real(DEVDP)         :: PA(PAULI_MAX_NSTO)       ! Pauli repulsion
+    real(DEVDP)         :: PB(PAULI_MAX_NSTO)
+    real(DEVDP)         :: PC(PAULI_MAX_NSTO)
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 

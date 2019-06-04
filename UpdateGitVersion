@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Run with 'activate' argument!"
+    exit
+fi
+
+GITREVS=`git rev-list --count HEAD`
+GITHASH=`git rev-parse --short HEAD`
+DATE=`date +"%Y-%m-%d %H:%M"`
+
+cat > src/lib/ffdevel/ver.f90 << EOF
+module ffdev_ver
+use ffdev_sizes
+use ffdev_constants
+implicit none
+!-------------------------------------------------------------------------------
+character(80),parameter   :: FFDEV_LIBVER  = 'FFDevel 1.${GITREVS}.${GITHASH} (${DATE})'
+!-------------------------------------------------------------------------------
+end module ffdev_ver
+EOF
+
+echo ""
+echo "FFDEvel Revision: 5.$GITREVS.$GITHASH ($DATE)"
+

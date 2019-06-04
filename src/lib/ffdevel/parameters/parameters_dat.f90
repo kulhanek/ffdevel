@@ -39,29 +39,26 @@ integer,parameter       :: REALM_VDW_EPS    = 13
 integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_ALPHA  = 15
 
-integer,parameter       :: REALM_PAULI_A    = 16
-integer,parameter       :: REALM_PAULI_B    = 17
-integer,parameter       :: REALM_PAULI_C    = 18
-
 ! WF
-integer,parameter       :: REALM_PAULI_A1   = 19
-integer,parameter       :: REALM_PAULI_B1   = 20
-integer,parameter       :: REALM_PAULI_A2   = 21
-integer,parameter       :: REALM_PAULI_B2   = 22
-integer,parameter       :: REALM_PAULI_A3   = 23
-integer,parameter       :: REALM_PAULI_B3   = 24
-integer,parameter       :: REALM_PAULI_A4   = 25
-integer,parameter       :: REALM_PAULI_B4   = 26
+integer,parameter       :: REALM_PAULI_A1   = 16
+integer,parameter       :: REALM_PAULI_B1   = 17
+integer,parameter       :: REALM_PAULI_C1   = 18
+integer,parameter       :: REALM_PAULI_A2   = 19
+integer,parameter       :: REALM_PAULI_B2   = 20
+integer,parameter       :: REALM_PAULI_C2   = 21
+integer,parameter       :: REALM_PAULI_A3   = 22
+integer,parameter       :: REALM_PAULI_B3   = 23
+integer,parameter       :: REALM_PAULI_C3   = 24
 
 ! PDENS
-integer,parameter       :: REALM_PAULI_DP   = 27
-integer,parameter       :: REALM_PAULI_RP   = 28
+integer,parameter       :: REALM_PAULI_DP   = 25
+integer,parameter       :: REALM_PAULI_RP   = 26
 
 ! XFUN
-integer,parameter       :: REALM_PAULI_XD   = 29
-integer,parameter       :: REALM_PAULI_XK   = 30
-integer,parameter       :: REALM_PAULI_XX   = 31
-integer,parameter       :: REALM_PAULI_XF   = 32
+integer,parameter       :: REALM_PAULI_XD   = 27
+integer,parameter       :: REALM_PAULI_XK   = 28
+integer,parameter       :: REALM_PAULI_XX   = 29
+integer,parameter       :: REALM_PAULI_XF   = 30
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
 integer,parameter       :: REALM_LAST    = REALM_PAULI_XF
@@ -89,15 +86,15 @@ integer                             :: nactparms    ! number of active parameter
 
 ! parameter type
 type PARM_TYPE
-    character(len=4)    :: name
-    integer             :: z
-    real(DEVDP)         :: mass
-    integer,pointer     :: ids(:)
-    logical             :: probe
+    character(MAX_TNAME)    :: name
+    integer                 :: z
+    real(DEVDP)             :: mass
+    integer,pointer         :: ids(:)
+    logical                 :: probe
     ! derived LJ parameters
-    logical             :: print_nb
-    real(DEVDP)         :: eps
-    real(DEVDP)         :: r0  
+    logical                 :: print_nb
+    real(DEVDP)             :: eps
+    real(DEVDP)             :: r0
 end type PARM_TYPE
 
 integer                     :: ntypes    ! number of types
@@ -170,39 +167,33 @@ real(DEVDP)     :: MaxVdwR0     =       5.0d0
 real(DEVDP)     :: MinVdwAlpha  =      10.0
 real(DEVDP)     :: MaxVdwAlpha  =      25.0
 
-real(DEVDP)     :: MinPauliA    =       1.0d0
-real(DEVDP)     :: MaxPauliA    =      15.0d0
-real(DEVDP)     :: MinPauliB    =       0.1d0
-real(DEVDP)     :: MaxPauliB    =       6.0d0
-real(DEVDP)     :: MinPauliC    =      -3.0d0
-real(DEVDP)     :: MaxPauliC    =       3.0d0
-
-real(DEVDP)     :: MinPauliA1   =       1.0d0
-real(DEVDP)     :: MaxPauliA1   =      15.0d0
+real(DEVDP)     :: MinPauliA1   =       0.0d0
+real(DEVDP)     :: MaxPauliA1   =      50.0d0
 real(DEVDP)     :: MinPauliB1   =       0.1d0
-real(DEVDP)     :: MaxPauliB1   =       6.0d0
+real(DEVDP)     :: MaxPauliB1   =       5.0d0
+real(DEVDP)     :: MinPauliC1   =       0.0d0
+real(DEVDP)     :: MaxPauliC1   =       3.0d0
 
-real(DEVDP)     :: MinPauliA2   =       1.0d0
-real(DEVDP)     :: MaxPauliA2   =      15.0d0
+real(DEVDP)     :: MinPauliA2   =     -50.0d0
+real(DEVDP)     :: MaxPauliA2   =      50.0d0
 real(DEVDP)     :: MinPauliB2   =       0.1d0
-real(DEVDP)     :: MaxPauliB2   =       6.0d0
+real(DEVDP)     :: MaxPauliB2   =       5.0d0
+real(DEVDP)     :: MinPauliC2   =       0.0d0
+real(DEVDP)     :: MaxPauliC2   =       3.0d0
 
-real(DEVDP)     :: MinPauliA3   =       1.0d0
-real(DEVDP)     :: MaxPauliA3   =      15.0d0
+real(DEVDP)     :: MinPauliA3   =     -50.0d0
+real(DEVDP)     :: MaxPauliA3   =      50.0d0
 real(DEVDP)     :: MinPauliB3   =       0.1d0
-real(DEVDP)     :: MaxPauliB3   =       6.0d0
-
-real(DEVDP)     :: MinPauliA4   =       1.0d0
-real(DEVDP)     :: MaxPauliA4   =      15.0d0
-real(DEVDP)     :: MinPauliB4   =       0.1d0
-real(DEVDP)     :: MaxPauliB4   =       6.0d0
+real(DEVDP)     :: MaxPauliB3   =       5.0d0
+real(DEVDP)     :: MinPauliC3   =       0.0d0
+real(DEVDP)     :: MaxPauliC3   =       3.0d0
 
 real(DEVDP)     :: MinPauliDP   =       0.1d0
 real(DEVDP)     :: MaxPauliDP   =       3.0d0
 real(DEVDP)     :: MinPauliRP   =       0.0d0
 real(DEVDP)     :: MaxPauliRP   =       3.0d0
 
-real(DEVDP)     :: MinPauliXD   =       0.1d0
+real(DEVDP)     :: MinPauliXD   =       1.0d0
 real(DEVDP)     :: MaxPauliXD   =       3.0d0
 real(DEVDP)     :: MinPauliXK   =       0.1d0
 real(DEVDP)     :: MaxPauliXK   =       3.0d0
@@ -212,9 +203,8 @@ real(DEVDP)     :: MinPauliXF   =       1.0d0
 real(DEVDP)     :: MaxPauliXF   =      10.0d0
 
 ! === [files] ==================================================================
-character(len=MAX_PATH) :: InpParamFileName     = '-none-'          ! input parameters
-character(len=MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
-character(len=MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
+character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
+character(MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
 
 ! ------------------------------------------------------------------------------
 

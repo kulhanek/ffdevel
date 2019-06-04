@@ -533,15 +533,9 @@ subroutine ffdev_topology_load(top,name)
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_types] section!')
         end if
-        top%nb_types(i)%pa1 = 0.0d0
-        top%nb_types(i)%pb1 = 0.0d0
-        top%nb_types(i)%pc1 = 0.0d0
-        top%nb_types(i)%pa2 = 0.0d0
-        top%nb_types(i)%pb2 = 0.0d0
-        top%nb_types(i)%pa3 = 0.0d0
-        top%nb_types(i)%pb3 = 0.0d0
-        top%nb_types(i)%pa4 = 0.0d0
-        top%nb_types(i)%pb4 = 0.0d0
+        top%nb_types(i)%pa(:) = 0.0d0
+        top%nb_types(i)%pb(:) = 0.0d0
+        top%nb_types(i)%pc(:) = 0.0d0
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
@@ -1152,7 +1146,8 @@ subroutine ffdev_topology_info_types(top,mode)
                     do i=1,top%nnb_types
                         write(DEV_OUT,640)   i, adjustl(top%atom_types(top%nb_types(i)%ti)%name), &
                                                adjustl(top%atom_types(top%nb_types(i)%tj)%name), &
-                                               top%nb_types(i)%PA1, top%nb_types(i)%PB1, top%nb_types(i)%PC1
+                                               top%nb_types(i)%PA(1), top%nb_types(i)%PB(1), &
+                                               top%nb_types(i)%PC(1)
                     end do
                 ! FIXME
                     case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
@@ -1677,14 +1672,14 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
                     ! geo    0.731841   1.58036     1.51074
                     ! har    0.568727   1.16892     1.39466
                     ! no comb rules: 0.103526
-                    paii = top%nb_types(nbii)%pa1
-                    pbii = top%nb_types(nbii)%pb1
-                    pajj = top%nb_types(nbjj)%pa1
-                    pbjj = top%nb_types(nbjj)%pb1
+                    paii = top%nb_types(nbii)%pa(1)
+                    pbii = top%nb_types(nbii)%pb(1)
+                    pajj = top%nb_types(nbjj)%pa(1)
+                    pbjj = top%nb_types(nbjj)%pb(1)
                     paij = (paii+pajj)*0.5d0
                     pbij = 2.0d0*(pbii*pbjj)/(pbii+pbjj)
-                    top%nb_types(i)%pa1 = paij
-                    top%nb_types(i)%pb1 = pbij
+                    top%nb_types(i)%pa(1) = paij
+                    top%nb_types(i)%pb(1) = pbij
                 case(COMB_RULE_PB)
                     ! all Rg, exchange SAPT0/def2-QZVPP, absolute errors
                     ! no comb rules: 0.00377055
@@ -1692,18 +1687,18 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
                     ! 0.308318 (2.0d0*(pcii+1.0d0)*(pcjj+1.0d0)/(pcii+pcjj+2.0d0) - 1.0d0)
                     ! 0.269699 2.0d0*(pcii*pcjj)/(pcii+pcjj)
                     ! 0.327250 (pcii+pcjj)*0.5d0
-                    paii = top%nb_types(nbii)%pa1
-                    pbii = top%nb_types(nbii)%pb1
-                    pcii = top%nb_types(nbii)%pc1
-                    pajj = top%nb_types(nbjj)%pa1
-                    pbjj = top%nb_types(nbjj)%pb1
-                    pcjj = top%nb_types(nbjj)%pc1
+                    paii = top%nb_types(nbii)%pa(1)
+                    pbii = top%nb_types(nbii)%pb(1)
+                    pcii = top%nb_types(nbii)%pc(1)
+                    pajj = top%nb_types(nbjj)%pa(1)
+                    pbjj = top%nb_types(nbjj)%pb(1)
+                    pcjj = top%nb_types(nbjj)%pc(1)
                     paij = (paii+pajj)*0.5d0
                     pbij = 2.0d0*(pbii*pbjj)/(pbii+pbjj)
                     pcij = 2.0d0*(pcii*pcjj)/(pcii+pcjj)
-                    top%nb_types(i)%pa1 = paij
-                    top%nb_types(i)%pb1 = pbij
-                    top%nb_types(i)%pc1 = pcij
+                    top%nb_types(i)%pa(1) = paij
+                    top%nb_types(i)%pb(1) = pbij
+                    top%nb_types(i)%pc(1) = pcij
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules!')
             end select
@@ -1829,15 +1824,9 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
                 top%nb_types(i)%eps   = 0.0d0
                 top%nb_types(i)%r0    = 0.0d0
                 top%nb_types(i)%alpha = 0.0d0
-                top%nb_types(i)%pa1   = 0.0d0
-                top%nb_types(i)%pb1   = 0.0d0
-                top%nb_types(i)%pc1   = 0.0d0
-                top%nb_types(i)%pa2   = 0.0d0
-                top%nb_types(i)%pb2   = 0.0d0
-                top%nb_types(i)%pa3   = 0.0d0
-                top%nb_types(i)%pb3   = 0.0d0
-                top%nb_types(i)%pa4   = 0.0d0
-                top%nb_types(i)%pb4   = 0.0d0
+                top%nb_types(i)%pa(:) = 0.0d0
+                top%nb_types(i)%pb(:) = 0.0d0
+                top%nb_types(i)%pc(:) = 0.0d0
             end do
         end if
     end if

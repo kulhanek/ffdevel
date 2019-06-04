@@ -84,21 +84,13 @@ subroutine ffdev_parameters_init()
     call ffdev_parameters_reinit()
 
     write(DEV_OUT,30) nparams
-
-    ! load parameters from file
-    if( (len_trim(InpParamFileName) .gt. 0) .and. (trim(InpParamFileName) .ne. '-none-') ) then
-        write(DEV_OUT,40) trim(InpParamFileName)
-        call ffdev_parameters_load(InpParamFileName)
-    else
-        write(DEV_OUT,50)
-    end if
+    write(DEV_OUT,50)
 
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
  10 format('=== [topology] #',I2.2,' =============================================================')
  20 format('Estimated number of parameters (maximum) = ',I6)
  30 format('Final number of parameters               = ',I6)
- 40 format('Loading input parameters from file       = ',A)
  50 format('Input parameters taken from topologies ... ')
 
 end subroutine ffdev_parameters_init
@@ -117,9 +109,9 @@ subroutine ffdev_parameters_reinit()
     implicit none
     integer     :: i, j, k, parmid, ti, tj, n1
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
-    logical     :: use_pauli_a, use_pauli_b, use_pauli_c
-    logical     :: use_pauli_a1, use_pauli_a2, use_pauli_a3, use_pauli_a4
-    logical     :: use_pauli_b1, use_pauli_b2, use_pauli_b3, use_pauli_b4
+    logical     :: use_pauli_a1, use_pauli_a2, use_pauli_a3
+    logical     :: use_pauli_b1, use_pauli_b2, use_pauli_b3
+    logical     :: use_pauli_c1, use_pauli_c2, use_pauli_c3
     logical     :: use_pauli_dp, use_pauli_rp
     logical     :: use_pauli_xd, use_pauli_xk, use_pauli_xx, use_pauli_xf
     ! --------------------------------------------------------------------------  
@@ -438,18 +430,16 @@ subroutine ffdev_parameters_reinit()
     use_vdw_eps = .false.
     use_vdw_r0 = .false.
     use_vdw_alpha = .false.
-    use_pauli_a = .false.
-    use_pauli_b = .false.
-    use_pauli_c = .false.
 
     use_pauli_a1 = .false.
     use_pauli_b1 = .false.
+    use_pauli_c1 = .false.
     use_pauli_a2 = .false.
     use_pauli_b2 = .false.
+    use_pauli_c2 = .false.
     use_pauli_a3 = .false.
     use_pauli_b3 = .false.
-    use_pauli_a4 = .false.
-    use_pauli_b4 = .false.
+    use_pauli_c3 = .false.
 
     use_pauli_dp = .false.
     use_pauli_rp = .false.
@@ -468,41 +458,64 @@ subroutine ffdev_parameters_reinit()
             use_vdw_r0 = .true.
             use_vdw_alpha = .true.
         case(NB_MODE_TT2,NB_MODE_PAULI_EXP2)
-            use_pauli_a = .true.
-            use_pauli_b = .true.
+            use_pauli_a1 = .true.
+            use_pauli_b1 = .true.
         case(NB_MODE_TT3,NB_MODE_PAULI_EXP3)
-            use_pauli_a = .true.
-            use_pauli_b = .true.
-            use_pauli_c = .true.
+            use_pauli_a1 = .true.
+            use_pauli_b1 = .true.
+            use_pauli_c1 = .true.
         case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-            ! it must be consistent with PAULI_MAX_NSTO
-            select case(pauli_wf_nsto)
-                case(1)
-                    use_pauli_a1 = .true.
-                    use_pauli_b1 = .true.
-                case(2)
-                    use_pauli_a1 = .true.
-                    use_pauli_b1 = .true.
-                    use_pauli_a2 = .true.
-                    use_pauli_b2 = .true.
-                case(3)
-                    use_pauli_a1 = .true.
-                    use_pauli_b1 = .true.
-                    use_pauli_a2 = .true.
-                    use_pauli_b2 = .true.
-                    use_pauli_a3 = .true.
-                    use_pauli_b3 = .true.
-                case(4)
-                    use_pauli_a1 = .true.
-                    use_pauli_b1 = .true.
-                    use_pauli_a2 = .true.
-                    use_pauli_b2 = .true.
-                    use_pauli_a3 = .true.
-                    use_pauli_b3 = .true.
-                    use_pauli_a4 = .true.
-                    use_pauli_b4 = .true.
+            select case(pauli_wf_form)
+                case(PAULI_WF_SV)
+                    ! it must be consistent with PAULI_MAX_NSTO
+                    select case(pauli_wf_nsto)
+                        case(1)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                        case(2)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                            use_pauli_a2 = .true.
+                            use_pauli_b2 = .true.
+                        case(3)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                            use_pauli_a2 = .true.
+                            use_pauli_b2 = .true.
+                            use_pauli_a3 = .true.
+                            use_pauli_b3 = .true.
+                        case default
+                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit Iq!')
+                    end select
+                case(PAULI_WF_RSV)
+                    ! it must be consistent with PAULI_MAX_NSTO
+                    select case(pauli_wf_nsto)
+                        case(1)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                            use_pauli_c1 = .true.
+                        case(2)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                            use_pauli_c1 = .true.
+                            use_pauli_a2 = .true.
+                            use_pauli_b2 = .true.
+                            use_pauli_c2 = .true.
+                        case(3)
+                            use_pauli_a1 = .true.
+                            use_pauli_b1 = .true.
+                            use_pauli_c1 = .true.
+                            use_pauli_a2 = .true.
+                            use_pauli_b2 = .true.
+                            use_pauli_c2 = .true.
+                            use_pauli_a3 = .true.
+                            use_pauli_b3 = .true.
+                            use_pauli_c3 = .true.
+                        case default
+                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit Iw!')
+                    end select
                 case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit I!')
+                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit UU!')
             end select
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit II!')
@@ -606,84 +619,6 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_pauli_a ) then
-        ! pauli A realm =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PA1
-                    params(nparams)%realm = REALM_PAULI_A
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do
-    end if
-
-    if( use_pauli_b ) then
-        ! pauli B realm =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PB1
-                    params(nparams)%realm = REALM_PAULI_B
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do
-    end if
-        
-    if( use_pauli_c ) then
-        ! pauli C realm =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_C)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PC1
-                    params(nparams)%realm = REALM_PAULI_C
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do                
-    end if
-
     if( use_pauli_a1 ) then
         ! pauli A realm =====================
         do i=1,nsets
@@ -692,8 +627,62 @@ subroutine ffdev_parameters_reinit()
                 parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A1)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PA1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PA(1)
                     params(nparams)%realm = REALM_PAULI_A1
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_pauli_a2 ) then
+        ! pauli A realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A2)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    ! add new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PA(2)
+                    params(nparams)%realm = REALM_PAULI_A2
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_pauli_a3 ) then
+        ! pauli A realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A3)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    ! add new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PA(3)
+                    params(nparams)%realm = REALM_PAULI_A3
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -718,46 +707,8 @@ subroutine ffdev_parameters_reinit()
                 parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B1)
                 if( parmid .eq. 0 ) then    ! new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PB1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PB(1)
                     params(nparams)%realm = REALM_PAULI_B1
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do
-    end if
-
-    if( use_pauli_a2 ) then
-        ! pauli A realm =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A2)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 2 ) cycle
-                    ! add new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PA2
-                    params(nparams)%realm = REALM_PAULI_A2
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -781,59 +732,10 @@ subroutine ffdev_parameters_reinit()
                 if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
                 parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B2)
                 if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 2 ) cycle
                     ! add new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PB2
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PB(2)
                     params(nparams)%realm = REALM_PAULI_B2
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do
-    end if
-
-    if( use_pauli_a3 ) then
-        ! pauli A realm =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%nnb_types
-                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A3)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 3 ) cycle
-                    ! add new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PA3
-                    params(nparams)%realm = REALM_PAULI_A3
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -857,20 +759,9 @@ subroutine ffdev_parameters_reinit()
                 if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
                 parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B3)
                 if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 3 ) cycle
                     ! add new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PB3
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PB(3)
                     params(nparams)%realm = REALM_PAULI_B3
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
@@ -888,28 +779,16 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_pauli_a4 ) then
-        ! pauli A realm =====================
+    if( use_pauli_c1 ) then
+        ! pauli c realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
                 if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_A4)
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_C1)
                 if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 4 ) cycle
-                    ! add new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PA4
-                    params(nparams)%realm = REALM_PAULI_A4
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PC(1)
+                    params(nparams)%realm = REALM_PAULI_C1
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -926,28 +805,42 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_pauli_b4 ) then
-        ! pauli B realm =====================
+    if( use_pauli_c2 ) then
+        ! pauli c realm =====================
         do i=1,nsets
             do j=1,sets(i)%top%nnb_types
                 if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_B4)
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_C2)
                 if( parmid .eq. 0 ) then    ! new parameter
-                    ! should it be truncated?
-                    ti = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
-                    tj = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
-                    if( ti .ne. tj ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'ti .ne. tj for pauli parameter in ffdev_parameters_reinit!')
-                    end if
-                    n1 = pauli_wf_nsto
-                    if( pauli_wf_truncbyn ) then
-                        n1 = min(n1,ffdev_topology_z2n(types(ti)%z))
-                    end if
-                    if( n1 .lt. 4 ) cycle
-                    ! add new parameter
                     nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%nb_types(j)%PB4
-                    params(nparams)%realm = REALM_PAULI_B4
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PC(2)
+                    params(nparams)%realm = REALM_PAULI_C2
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_pauli_c3 ) then
+        ! pauli c realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_PAULI_C3)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%PC(3)
+                    params(nparams)%realm = REALM_PAULI_C3
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -1151,13 +1044,16 @@ integer function find_parameter(top,id,pn,realm)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
         case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA, &
-             REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C, &
-             REALM_PAULI_A1,REALM_PAULI_B1, &
-             REALM_PAULI_A2,REALM_PAULI_B2, &
-             REALM_PAULI_A3,REALM_PAULI_B3, &
-             REALM_PAULI_A4,REALM_PAULI_B4)
+             REALM_PAULI_A1,REALM_PAULI_B1,REALM_PAULI_C1, &
+             REALM_PAULI_A2,REALM_PAULI_B2,REALM_PAULI_C2, &
+             REALM_PAULI_A3,REALM_PAULI_B3,REALM_PAULI_C3)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
+        case(REALM_EOFFSET,REALM_PAULI_DP,REALM_PAULI_RP,REALM_PAULI_XD,REALM_PAULI_XK, &
+             REALM_PAULI_XX,REALM_PAULI_XF)
+            call ffdev_utils_exit(DEV_OUT,1,'Illegal branch in find_parameter I!')
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter I!')
     end select
 
     ! is parameter defined?
@@ -1191,19 +1087,96 @@ integer function find_parameter(top,id,pn,realm)
                         find_parameter = i
                 end if
             case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA, &
-                 REALM_PAULI_A,REALM_PAULI_B,REALM_PAULI_C, &
-                 REALM_PAULI_A1,REALM_PAULI_B1, &
-                 REALM_PAULI_A2,REALM_PAULI_B2, &
-                 REALM_PAULI_A3,REALM_PAULI_B3, &
-                 REALM_PAULI_A4,REALM_PAULI_B4)
+                REALM_PAULI_A1,REALM_PAULI_B1,REALM_PAULI_C1, &
+                REALM_PAULI_A2,REALM_PAULI_B2,REALM_PAULI_C2, &
+                REALM_PAULI_A3,REALM_PAULI_B3,REALM_PAULI_C3)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
                 end if
+            case(REALM_EOFFSET,REALM_PAULI_DP,REALM_PAULI_RP,REALM_PAULI_XD,REALM_PAULI_XK, &
+                 REALM_PAULI_XX,REALM_PAULI_XF)
+                call ffdev_utils_exit(DEV_OUT,1,'Illegal branch in find_parameter II!')
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter II!')
         end select
     end do
 
 end function find_parameter
+
+! ------------------------------------------------------------------------------
+
+integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    integer         :: realm
+    integer         :: pn
+    integer         :: ti,tj,tk,tl
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    find_parameter_by_ids = 0
+
+    ! is parameter defined?
+    do i=1,nparams
+        if( params(i)%realm .ne. realm ) cycle
+        if( params(i)%pn .ne. pn ) cycle
+
+        select case(realm)
+            case(REALM_BOND_D0,REALM_BOND_K)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
+                    ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
+            case(REALM_ANGLE_A0,REALM_ANGLE_K)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. (params(i)%tk .eq. tk)) .or. &
+                    ((params(i)%ti .eq. tk) .and. (params(i)%tj .eq. tj) .and. (params(i)%tk .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
+                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
+                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
+                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
+            case(REALM_IMPR_V,REALM_IMPR_G)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
+                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
+                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
+                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA, &
+                REALM_PAULI_A1,REALM_PAULI_B1,REALM_PAULI_C1, &
+                REALM_PAULI_A2,REALM_PAULI_B2,REALM_PAULI_C2, &
+                REALM_PAULI_A3,REALM_PAULI_B3,REALM_PAULI_C3)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
+                    ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
+            case(REALM_EOFFSET,REALM_PAULI_DP,REALM_PAULI_RP,REALM_PAULI_XD,REALM_PAULI_XK, &
+                 REALM_PAULI_XX,REALM_PAULI_XF)
+                 find_parameter_by_ids = i
+                 return
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter_by_ids!')
+        end select
+    end do
+
+    ! not found
+
+end function find_parameter_by_ids
 
 ! ------------------------------------------------------------------------------
 
@@ -1230,6 +1203,30 @@ integer function get_common_type_id(top,typeid)
     end do
 
 end function get_common_type_id
+! ------------------------------------------------------------------------------
+
+integer function get_common_type_from_name(name)
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    character(MAX_TNAME)    :: name
+    ! --------------------------------------------
+    integer                 :: i
+    ! --------------------------------------------------------------------------
+
+    get_common_type_from_name = 0
+
+    do i=1,ntypes
+        if(trim(types(i)%name) .eq. trim(name) ) then
+            get_common_type_from_name = i
+            return
+        end if
+    end do
+
+end function get_common_type_from_name
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_gen_unique_types
@@ -1242,10 +1239,10 @@ subroutine ffdev_parameters_gen_unique_types()
     use ffdev_utils
 
     implicit none
-    integer                         :: maxnparams, i, j, k, alloc_stat
-    character(len=4),allocatable    :: ltypes(:)
-    character(len=4)                :: tmp
-    logical                         :: changed
+    integer                             :: maxnparams, i, j, k, alloc_stat
+    character(MAX_TNAME),allocatable    :: ltypes(:)
+    character(MAX_TNAME)                :: tmp
+    logical                             :: changed
     ! --------------------------------------------------------------------------
 
     ! generate list --------------------
@@ -1336,41 +1333,53 @@ end subroutine ffdev_parameters_gen_unique_types
 ! subroutine ffdev_parameters_load
 ! ==============================================================================
 
-subroutine ffdev_parameters_load(name)
+subroutine ffdev_parameters_load(name,loaded,ignored)
 
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
 
     implicit none
-    character(*)    :: name
+    character(*)            :: name
+    integer                 :: loaded, ignored
     ! --------------------------------------------
-    integer                 :: i, count, j, ri, rcount, rrealm, rpn, nlp
-    character(len=MAX_PATH) :: tmp    
+    integer                 :: nlp,idx,realm,ti,tj,tk,tl,parmid,pn
+    character(MAX_PATH)     :: tmp
+    character(MAX_TNAME)    :: sti,stj,stk,stl
+    real(DEVDP)             :: value
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'O')
 
-    read(DEV_PRMS,*) tmp,nlp
-    if( nlp .ne. nparams ) then
-        write(tmp,*) 'nparams = ',nlp, ' should be ', nparams
-        call ffdev_utils_exit(DEV_OUT,1,'Data mismatch between parameter file and gathered parameters from topologies - 1 (' &
-             // trim(tmp) // ')!')
+    read(DEV_PRMS,*) tmp ! skip the first line
+    read(DEV_PRMS,*) tmp, nlp  ! nlp is read but ignored
+    if( trim(tmp) .ne. 'v1' ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unsupported file format version, it should be v1!')
     end if
 
-    do i=1,nparams
-        count = 0
-        do j=1,nsets
-            if( params(i)%ids(j) .gt. 0 ) count = count + 1
-        end do
-        read(DEV_PRMS,*) ri, rcount, rrealm, rpn, params(i)%value
-        if( (ri .ne. i) .or. (rcount .ne. count) .or. &
-            (rrealm .ne. params(i)%realm) .or.  (rpn .ne. params(i)%pn) ) then
-             call ffdev_utils_exit(DEV_OUT,1,'Data mismatch between parameter file and gathered parameters from topologies - 2!')
+    ! read file by lines
+    do while(.true.)
+        read(DEV_PRMS,*,end=100,err=110) idx, tmp, sti, stj, stk, stl, pn, value
+        realm = ffdev_parameters_get_realmid(tmp)
+        ti = get_common_type_from_name(sti)
+        tj = get_common_type_from_name(stj)
+        tl = get_common_type_from_name(stl)
+        tk = get_common_type_from_name(stk)
+
+        parmid = find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
+        if( parmid .ne. 0 ) then
+            params(parmid)%value = value
+            loaded = loaded + 1
+        else
+            ignored = ignored + 1
         end if
     end do
 
-    close(DEV_PRMS)
+100    close(DEV_PRMS)
+
+    return
+
+110 call ffdev_utils_exit(DEV_OUT,1,'Unable to read data from FFDevel parameter file!')
 
 end subroutine ffdev_parameters_load
 
@@ -1383,29 +1392,38 @@ subroutine ffdev_parameters_save(name)
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
+    use ffdev_ver
 
     implicit none
-    character(*)    :: name
+    character(*)            :: name
     ! --------------------------------------------
-    integer         :: i, count, j
+    integer                 :: i
+    character(MAX_TNAME)    :: sti,stj,stk,stl
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'U')
 
+    write(DEV_PRMS,5)  trim(FFDEV_LIBVER)
     write(DEV_PRMS,10) nparams
 
     do i=1,nparams
-        count = 0
-        do j=1,nsets
-            if( params(i)%ids(j) .gt. 0 ) count = count + 1
-        end do
-        write(DEV_PRMS,20) i, count, params(i)%realm, params(i)%pn, params(i)%value
+        sti = '--'
+        stj = '--'
+        stk = '--'
+        stl = '--'
+        if( params(i)%ti .ne. 0 ) sti = types(params(i)%ti)%name
+        if( params(i)%tj .ne. 0 ) stj = types(params(i)%tj)%name
+        if( params(i)%tk .ne. 0 ) stk = types(params(i)%tk)%name
+        if( params(i)%tl .ne. 0 ) stl = types(params(i)%tl)%name
+        write(DEV_PRMS,20) i, ffdev_parameters_get_realm_name(params(i)%realm), &
+                           sti,stj,stk,stl,params(i)%pn, params(i)%value
     end do
 
     close(DEV_PRMS)
 
- 10 format('FFDEVEL_PARAMETERS',1X,I6)
- 20 format(I6,1X,I3,1X,I2,1X,I2,F20.6)
+  5 format('# parameters created by ffdevel version : ',A66)
+ 10 format('v1',1X,I6)
+ 20 format(I3,1X,A20,1X,A4,1X,A4,1X,A4,1X,A4,1X,I2,1X,E22.16)
 
 end subroutine ffdev_parameters_save
 
@@ -1881,7 +1899,7 @@ subroutine ffdev_parameters_print_types()
     use ffdev_utils
 
     implicit none
-    integer     :: i,j,count
+    integer     :: i,j,icount
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -1893,11 +1911,11 @@ subroutine ffdev_parameters_print_types()
     write(DEV_OUT,20)
 
     do i=1,ntypes
-        count = 0
+        icount = 0
         do j=1,nsets
-            if( types(i)%ids(j) .gt. 0 ) count = count + 1
+            if( types(i)%ids(j) .gt. 0 ) icount = icount + 1
         end do
-        write(DEV_OUT,30,ADVANCE='NO') i, types(i)%name, count
+        write(DEV_OUT,30,ADVANCE='NO') i, types(i)%name, icount
         do j=1,nsets
             if( types(i)%ids(j) .gt. 0 ) then
                 write(DEV_OUT,40,ADVANCE='NO') types(i)%ids(j)
@@ -1919,6 +1937,220 @@ subroutine ffdev_parameters_print_types()
 end subroutine ffdev_parameters_print_types
 
 ! ==============================================================================
+! subroutine ffdev_parameters_get_realmid
+! ==============================================================================
+
+integer function ffdev_parameters_get_realmid(realm)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    character(MAX_PATH) :: realm
+    ! --------------------------------------------------------------------------
+
+    select case(trim(realm))
+        case('E_offset')
+            ffdev_parameters_get_realmid = REALM_EOFFSET
+        case('bond_r0')
+            ffdev_parameters_get_realmid = REALM_BOND_D0
+        case('bond_k')
+            ffdev_parameters_get_realmid = REALM_BOND_K
+        case('angle_a0')
+            ffdev_parameters_get_realmid = REALM_ANGLE_A0
+        case('angle_k')
+            ffdev_parameters_get_realmid = REALM_ANGLE_K
+        case('dih_v')
+            ffdev_parameters_get_realmid = REALM_DIH_V
+        case('dih_c')
+            ffdev_parameters_get_realmid = REALM_DIH_C
+        case('dih_gamma')
+            ffdev_parameters_get_realmid = REALM_DIH_G
+        case('dih_scee')
+            ffdev_parameters_get_realmid = REALM_DIH_SCEE
+        case('dih_scnb')
+            ffdev_parameters_get_realmid = REALM_DIH_SCNB
+        case('impr_v')
+            ffdev_parameters_get_realmid = REALM_IMPR_V
+        case('impr_gamma')
+            ffdev_parameters_get_realmid = REALM_IMPR_G
+        case('vdW_eps')
+            ffdev_parameters_get_realmid = REALM_VDW_EPS
+        case('vdW_r0')
+            ffdev_parameters_get_realmid = REALM_VDW_R0
+        case('vdW_alpha')
+            ffdev_parameters_get_realmid = REALM_VDW_ALPHA
+
+        case('pauli_a1')
+            ffdev_parameters_get_realmid = REALM_PAULI_A1
+        case('pauli_b1')
+            ffdev_parameters_get_realmid = REALM_PAULI_B1
+        case('pauli_c1')
+            ffdev_parameters_get_realmid = REALM_PAULI_C1
+
+        case('pauli_a2')
+            ffdev_parameters_get_realmid = REALM_PAULI_A2
+        case('pauli_b2')
+            ffdev_parameters_get_realmid = REALM_PAULI_B2
+        case('pauli_c2')
+            ffdev_parameters_get_realmid = REALM_PAULI_C2
+
+        case('pauli_a3')
+            ffdev_parameters_get_realmid = REALM_PAULI_A3
+        case('pauli_b3')
+            ffdev_parameters_get_realmid = REALM_PAULI_B3
+        case('pauli_c3')
+            ffdev_parameters_get_realmid = REALM_PAULI_C3
+
+        case('pauli_dp')
+            ffdev_parameters_get_realmid = REALM_PAULI_DP
+        case('pauli_rp')
+            ffdev_parameters_get_realmid = REALM_PAULI_RP
+        case('pauli_xd')
+            ffdev_parameters_get_realmid = REALM_PAULI_XD
+        case('pauli_xk')
+            ffdev_parameters_get_realmid = REALM_PAULI_XK
+        case('pauli_xx')
+            ffdev_parameters_get_realmid = REALM_PAULI_XX
+        case('pauli_xf')
+            ffdev_parameters_get_realmid = REALM_PAULI_XF
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realmid!')
+    end select
+
+end function ffdev_parameters_get_realmid
+
+! ==============================================================================
+! subroutine ffdev_parameters_get_realm_name
+! ==============================================================================
+
+character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer             :: realmid
+    ! --------------------------------------------------------------------------
+
+    select case(realmid)
+        case(REALM_EOFFSET)
+            ffdev_parameters_get_realm_name = 'E_offset'
+        case(REALM_BOND_D0)
+            ffdev_parameters_get_realm_name = 'bond_r0'
+        case(REALM_BOND_K)
+            ffdev_parameters_get_realm_name = 'bond_k'
+        case(REALM_ANGLE_A0)
+            ffdev_parameters_get_realm_name = 'angle_a0'
+        case(REALM_ANGLE_K)
+            ffdev_parameters_get_realm_name = 'angle_k'
+        case(REALM_DIH_V)
+            ffdev_parameters_get_realm_name = 'dih_v'
+        case(REALM_DIH_C)
+            ffdev_parameters_get_realm_name = 'dih_c'
+        case(REALM_DIH_G)
+            ffdev_parameters_get_realm_name = 'dih_gamma'
+        case(REALM_DIH_SCEE)
+            ffdev_parameters_get_realm_name = 'dih_scee'
+        case(REALM_DIH_SCNB)
+            ffdev_parameters_get_realm_name = 'dih_scnb'
+        case(REALM_IMPR_V)
+            ffdev_parameters_get_realm_name = 'impr_v'
+        case(REALM_IMPR_G)
+            ffdev_parameters_get_realm_name = 'impr_gamma'
+        case(REALM_VDW_EPS)
+            ffdev_parameters_get_realm_name = 'vdW_eps'
+        case(REALM_VDW_R0)
+            ffdev_parameters_get_realm_name = 'vdW_r0'
+        case(REALM_VDW_ALPHA)
+            ffdev_parameters_get_realm_name = 'vdW_alpha'
+
+        case(REALM_PAULI_A1)
+            ffdev_parameters_get_realm_name = 'pauli_a1'
+        case(REALM_PAULI_B1)
+            ffdev_parameters_get_realm_name = 'pauli_b1'
+        case(REALM_PAULI_C1)
+            ffdev_parameters_get_realm_name = 'pauli_c1'
+
+        case(REALM_PAULI_A2)
+            ffdev_parameters_get_realm_name = 'pauli_a2'
+        case(REALM_PAULI_B2)
+            ffdev_parameters_get_realm_name = 'pauli_b2'
+        case(REALM_PAULI_C2)
+            ffdev_parameters_get_realm_name = 'pauli_c2'
+
+        case(REALM_PAULI_A3)
+            ffdev_parameters_get_realm_name = 'pauli_a3'
+        case(REALM_PAULI_B3)
+            ffdev_parameters_get_realm_name = 'pauli_b3'
+        case(REALM_PAULI_C3)
+            ffdev_parameters_get_realm_name = 'pauli_c3'
+
+        case(REALM_PAULI_DP)
+            ffdev_parameters_get_realm_name = 'pauli_dp'
+        case(REALM_PAULI_RP)
+            ffdev_parameters_get_realm_name = 'pauli_rp'
+        case(REALM_PAULI_XD)
+            ffdev_parameters_get_realm_name = 'pauli_xd'
+        case(REALM_PAULI_XK)
+            ffdev_parameters_get_realm_name = 'pauli_xk'
+        case(REALM_PAULI_XX)
+            ffdev_parameters_get_realm_name = 'pauli_xx'
+        case(REALM_PAULI_XF)
+            ffdev_parameters_get_realm_name = 'pauli_xf'
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realm_name!')
+    end select
+
+end function ffdev_parameters_get_realm_name
+
+! ==============================================================================
+! subroutine ffdev_parameters_get_realm_scaling
+! ==============================================================================
+
+real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer             :: realmid
+    ! --------------------------------------------------------------------------
+
+    ffdev_parameters_get_realm_scaling = 1.0d0
+
+    select case(realmid)
+        case(REALM_EOFFSET,REALM_BOND_D0,REALM_BOND_K)
+            ! nothing to do
+        case(REALM_ANGLE_A0)
+            ffdev_parameters_get_realm_scaling = DEV_R2D
+        case(REALM_ANGLE_K,REALM_DIH_V,REALM_DIH_C)
+            ! nothing to do
+        case(REALM_DIH_G)
+            ffdev_parameters_get_realm_scaling = DEV_R2D
+        case(REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_IMPR_V)
+            ! nothing to do
+        case(REALM_IMPR_G)
+            ffdev_parameters_get_realm_scaling = DEV_R2D
+        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
+            ! nothing to do
+        case(REALM_PAULI_A1,REALM_PAULI_B1,REALM_PAULI_C1)
+            ! nothing to do
+        case(REALM_PAULI_A2,REALM_PAULI_B2,REALM_PAULI_C2)
+            ! nothing to do
+        case(REALM_PAULI_A3,REALM_PAULI_B3,REALM_PAULI_C3)
+            ! nothing to do
+        case(REALM_PAULI_DP,REALM_PAULI_RP)
+            ! nothing to do
+        case(REALM_PAULI_XD,REALM_PAULI_XK,REALM_PAULI_XX,REALM_PAULI_XF)
+            ! nothing to do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
+    end select
+
+end function ffdev_parameters_get_realm_scaling
+
+! ==============================================================================
 ! subroutine ffdev_parameters_print_parameters
 ! ==============================================================================
 
@@ -1929,11 +2161,11 @@ subroutine ffdev_parameters_print_parameters(mode)
     use ffdev_utils
 
     implicit none
-    integer             :: mode
-    integer             :: i,j,count,free,act,tot
-    character(len=11)   :: tmp
-    character(len=4)    :: sti,stj,stk,stl
-    real(DEVDP)         :: scaling
+    integer                 :: mode
+    integer                 :: i,j,count,free,act,tot
+    character(MAX_PATH)     :: tmp
+    character(MAX_TNAME)    :: sti,stj,stk,stl
+    real(DEVDP)             :: scaling
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -1946,6 +2178,8 @@ subroutine ffdev_parameters_print_parameters(mode)
             call ffdev_utils_heading(DEV_OUT,'Modified Parameter Summary', ':')
         case(PARAMS_SUMMARY_FULL)
             call ffdev_utils_heading(DEV_OUT,'Parameter Summary', ':')
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
     end select
 
     write(DEV_OUT,*)
@@ -1964,109 +2198,9 @@ subroutine ffdev_parameters_print_parameters(mode)
             write(DEV_OUT,31,ADVANCE='NO') i, params(i)%enabled
         end if
 
-        select case(params(i)%realm)
-            case(REALM_EOFFSET)
-                tmp = 'E_offset'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_BOND_D0)
-                tmp = 'bond_r0'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_BOND_K)
-                tmp = 'bond_k'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_ANGLE_A0)
-                tmp = 'angle_a0'
-                scaling = DEV_R2D
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_ANGLE_K)
-                tmp = 'angle_k'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_DIH_V)
-                tmp = 'dih_v'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_DIH_C)
-                tmp = 'dih_c'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_DIH_G)
-                tmp = 'dih_gamma'
-                scaling = DEV_R2D
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_DIH_SCEE)
-                tmp = 'dih_scee'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_DIH_SCNB)
-                tmp = 'dih_scnb'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_IMPR_V)
-                tmp = 'impr_v'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_IMPR_G)
-                tmp = 'impr_gamma'
-                scaling = DEV_R2D
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_EPS)
-                tmp = 'vdw_eps'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_R0)
-                tmp = 'vdw_r0'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_VDW_ALPHA)
-                tmp = 'vdw_alpha'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_A)
-                tmp = 'pauli_a'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_B)
-                tmp = 'pauli_b'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_C)
-                tmp = 'pauli_c'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_A1)
-                tmp = 'pauli_a1'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_B1)
-                tmp = 'pauli_b1'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_A2)
-                tmp = 'pauli_a2'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_B2)
-                tmp = 'pauli_b2'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_A3)
-                tmp = 'pauli_a3'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_B3)
-                tmp = 'pauli_b3'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_A4)
-                tmp = 'pauli_a4'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_B4)
-                tmp = 'pauli_b4'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_DP)
-                tmp = 'pauli_dp'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_RP)
-                tmp = 'pauli_rp'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_XD)
-                tmp = 'pauli_xd'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_XK)
-                tmp = 'pauli_xk'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_XX)
-                tmp = 'pauli_xx'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case(REALM_PAULI_XF)
-                tmp = 'pauli_xf'
-                write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters I!')
-        end select
+        tmp = ffdev_parameters_get_realm_name(params(i)%realm)
+        scaling = ffdev_parameters_get_realm_scaling(params(i)%realm)
+        write(DEV_OUT,32,ADVANCE='NO') adjustl(tmp)
 
         sti = '--'
         if( params(i)%ti .ne. 0 ) sti = types(params(i)%ti)%name
@@ -2107,77 +2241,8 @@ subroutine ffdev_parameters_print_parameters(mode)
             if( params(i)%enabled ) act = act + 1
         end do
 
-        select case(j)
-            case(REALM_EOFFSET)
-                tmp = 'E_offset'
-            case(REALM_BOND_D0)
-                tmp = 'bond_r0'
-            case(REALM_BOND_K)
-                tmp = 'bond_k'
-            case(REALM_ANGLE_A0)
-                tmp = 'angle_a0'
-            case(REALM_ANGLE_K)
-                tmp = 'angle_k'
-            case(REALM_DIH_V)
-                tmp = 'dih_v'
-            case(REALM_DIH_C)
-                tmp = 'dih_c'
-            case(REALM_DIH_G)
-                tmp = 'dih_gamma'
-            case(REALM_DIH_SCEE)
-                tmp = 'dih_scee'
-            case(REALM_DIH_SCNB)
-                tmp = 'dih_scnb'
-            case(REALM_IMPR_V)
-                tmp = 'impr_v'
-            case(REALM_IMPR_G)
-                tmp = 'impr_gamma'
-            case(REALM_VDW_EPS)
-                tmp = 'vdW_eps'
-            case(REALM_VDW_R0)
-                tmp = 'vdW_r0'
-            case(REALM_VDW_ALPHA)
-                tmp = 'vdW_alpha'
-            case(REALM_PAULI_A)
-                tmp = 'pauli_a'
-            case(REALM_PAULI_B)
-                tmp = 'pauli_b'
-            case(REALM_PAULI_C)
-                tmp = 'pauli_c'
-            case(REALM_PAULI_A1)
-                tmp = 'pauli_a1'
-            case(REALM_PAULI_B1)
-                tmp = 'pauli_b1'
-            case(REALM_PAULI_A2)
-                tmp = 'pauli_a2'
-            case(REALM_PAULI_B2)
-                tmp = 'pauli_b2'
-            case(REALM_PAULI_A3)
-                tmp = 'pauli_a3'
-            case(REALM_PAULI_B3)
-                tmp = 'pauli_b3'
-            case(REALM_PAULI_A4)
-                tmp = 'pauli_a4'
-            case(REALM_PAULI_B4)
-                tmp = 'pauli_b4'
-            case(REALM_PAULI_DP)
-                tmp = 'pauli_dp'
-            case(REALM_PAULI_RP)
-                tmp = 'pauli_rp'
-            case(REALM_PAULI_XD)
-                tmp = 'pauli_xd'
-            case(REALM_PAULI_XK)
-                tmp = 'pauli_xk'
-            case(REALM_PAULI_XX)
-                tmp = 'pauli_xx'
-            case(REALM_PAULI_XF)
-                tmp = 'pauli_xf'
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters II!')
-        end select
-
+        tmp = ffdev_parameters_get_realm_name(j)
         write(DEV_OUT,120) adjustl(tmp), tot, free, tot-free, act
-
     end do
 
     free = 0
@@ -2297,6 +2362,7 @@ subroutine ffdev_parameters_to_tops
     use ffdev_targetset_dat
     use ffdev_topology
     use ffdev_pauli_dat
+    use ffdev_utils
 
     implicit none
     integer         :: i,j
@@ -2437,80 +2503,66 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_PAULI_A)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PA1 = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
-                    end if
-                end do
-            case(REALM_PAULI_B)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PB1 = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
-                    end if
-                end do
-            case(REALM_PAULI_C)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PC1 = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
-                    end if
-                end do
             case(REALM_PAULI_A1)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PA1 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PA(1) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_PAULI_B1)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PB1 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PB(1) = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                    end if
+                end do
+            case(REALM_PAULI_C1)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%PC(1) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_PAULI_A2)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PA2 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PA(2) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_PAULI_B2)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PB2 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PB(2) = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                    end if
+                end do
+            case(REALM_PAULI_C2)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%PC(2) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_PAULI_A3)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PA3 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PA(3) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
             case(REALM_PAULI_B3)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PB3 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PB(3) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_PAULI_A4)
+            case(REALM_PAULI_C3)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PA4 = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
-                    end if
-                end do
-            case(REALM_PAULI_B4)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%nb_types(params(i)%ids(j))%PB4 = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%PC(3) = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
@@ -2526,6 +2578,8 @@ subroutine ffdev_parameters_to_tops
                 pauli_xfun_xpower = params(i)%value
             case(REALM_PAULI_XF)
                 pauli_xfun_xfac = params(i)%value
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_to_tops!')
         end select
     end do
 
@@ -2604,28 +2658,28 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinVdwR0
         case(REALM_VDW_ALPHA)
             ffdev_params_get_lower_bound = MinVdwAlpha
-        case(REALM_PAULI_A)
-            ffdev_params_get_lower_bound = MinPauliA
-        case(REALM_PAULI_B)
-            ffdev_params_get_lower_bound = MinPauliB
-        case(REALM_PAULI_C)
-            ffdev_params_get_lower_bound = MinPauliC
+
         case(REALM_PAULI_A1)
             ffdev_params_get_lower_bound = MinPauliA1
         case(REALM_PAULI_B1)
             ffdev_params_get_lower_bound = MinPauliB1
+        case(REALM_PAULI_C1)
+            ffdev_params_get_lower_bound = MinPauliC1
+
         case(REALM_PAULI_A2)
             ffdev_params_get_lower_bound = MinPauliA2
         case(REALM_PAULI_B2)
             ffdev_params_get_lower_bound = MinPauliB2
+        case(REALM_PAULI_C2)
+            ffdev_params_get_lower_bound = MinPauliC2
+
         case(REALM_PAULI_A3)
             ffdev_params_get_lower_bound = MinPauliA3
         case(REALM_PAULI_B3)
             ffdev_params_get_lower_bound = MinPauliB3
-        case(REALM_PAULI_A4)
-            ffdev_params_get_lower_bound = MinPauliA4
-        case(REALM_PAULI_B4)
-            ffdev_params_get_lower_bound = MinPauliB4
+        case(REALM_PAULI_C3)
+            ffdev_params_get_lower_bound = MinPauliC3
+
         case(REALM_PAULI_DP)
             ffdev_params_get_lower_bound = MinPauliDP
         case(REALM_PAULI_RP)
@@ -2715,28 +2769,28 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxVdwR0
         case(REALM_VDW_ALPHA)
             ffdev_params_get_upper_bound = MaxVdwAlpha
-        case(REALM_PAULI_A)
-            ffdev_params_get_upper_bound = MaxPauliA
-        case(REALM_PAULI_B)
-            ffdev_params_get_upper_bound = MaxPauliB
-        case(REALM_PAULI_C)
-            ffdev_params_get_upper_bound = MaxPauliC
+
         case(REALM_PAULI_A1)
             ffdev_params_get_upper_bound = MaxPauliA1
         case(REALM_PAULI_B1)
             ffdev_params_get_upper_bound = MaxPauliB1
+        case(REALM_PAULI_C1)
+            ffdev_params_get_upper_bound = MaxPauliC1
+
         case(REALM_PAULI_A2)
             ffdev_params_get_upper_bound = MaxPauliA2
         case(REALM_PAULI_B2)
             ffdev_params_get_upper_bound = MaxPauliB2
+        case(REALM_PAULI_C2)
+            ffdev_params_get_upper_bound = MaxPauliC2
+
         case(REALM_PAULI_A3)
             ffdev_params_get_upper_bound = MaxPauliA3
         case(REALM_PAULI_B3)
             ffdev_params_get_upper_bound = MaxPauliB3
-        case(REALM_PAULI_A4)
-            ffdev_params_get_upper_bound = MaxPauliA4
-        case(REALM_PAULI_B4)
-            ffdev_params_get_upper_bound = MaxPauliB4
+        case(REALM_PAULI_C3)
+            ffdev_params_get_upper_bound = MaxPauliC3
+
         case(REALM_PAULI_DP)
             ffdev_params_get_upper_bound = MaxPauliDP
         case(REALM_PAULI_RP)

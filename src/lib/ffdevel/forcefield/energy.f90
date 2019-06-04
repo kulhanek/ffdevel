@@ -481,8 +481,8 @@ subroutine ffdev_energy_nb_tt2(top,geo)
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
-        pa  = top%nb_types(nbt)%pa1
-        pb  = top%nb_types(nbt)%pb1
+        pa  = top%nb_types(nbt)%pa(1)
+        pb  = top%nb_types(nbt)%pb(1)
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
@@ -533,8 +533,8 @@ subroutine ffdev_energy_nb_tt3(top,geo)
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
-        pa  = top%nb_types(nbt)%pa1
-        pb  = top%nb_types(nbt)%pb1
+        pa  = top%nb_types(nbt)%pa(1)
+        pb  = top%nb_types(nbt)%pb(1)
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
@@ -585,8 +585,8 @@ subroutine ffdev_energy_nb_pauli_exp2(top,geo)
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
-        pa  = top%nb_types(nbt)%pa1
-        pb  = top%nb_types(nbt)%pb1
+        pa  = top%nb_types(nbt)%pa(1)
+        pb  = top%nb_types(nbt)%pb(1)
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 
@@ -637,9 +637,9 @@ subroutine ffdev_energy_nb_pauli_exp3(top,geo)
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
-        pa  = top%nb_types(nbt)%pa1
-        pb  = top%nb_types(nbt)%pb1
-        pc  = top%nb_types(nbt)%pc1
+        pa  = top%nb_types(nbt)%pa(1)
+        pb  = top%nb_types(nbt)%pb(1)
+        pc  = top%nb_types(nbt)%pc(1)
 
         crgij =  top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
 

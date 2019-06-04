@@ -71,7 +71,10 @@ integer         :: Shark_NRuns
 integer         :: Shark_ParameterGuess
 
 ! ------------------------------------------------------------------------------
-integer, parameter      :: SHARK_CMA_ES     = 1     ! CMA-ES
+integer, parameter      :: SHARK_MIN_ENE_TRESHOLD   = 10
+
+! methods
+integer, parameter      :: SHARK_CMA_ES             = 1     ! CMA-ES
 
 ! possible values for initial parameters
 integer, parameter      :: SHARK_GUESS_INPUT        = 1 ! use the same input

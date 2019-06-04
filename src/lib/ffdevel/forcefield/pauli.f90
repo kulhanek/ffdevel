@@ -23,8 +23,15 @@ use ffdev_constants
 private preform_parameters
 private finalize_rsum
 private grid_integrate
-private get_overlap_sto
+
 private get_overlap_sv
+private get_overlap_rsv
+
+private get_rhop_sv
+private get_rhop_rsv
+
+private get_kxeg_sv
+private get_kxeg_rsv
 
 contains
 
@@ -44,10 +51,9 @@ subroutine ffdev_pauli_set_default
     pauli_cache_grid     = .true.        ! cache grid for integration
 
     ! WFN
-    pauli_wf_nsto        = 2             ! number of STO orbitals
-    pauli_wf_truncbyn    = .false.       ! truncate nsto by n (main quantum number)
-    pauli_wf2rho_power   = 2             ! wf->rho transformation, only for PDENS and XFUN
     pauli_wf_form        = PAULI_WF_SV
+    pauli_wf_nsto        = 1             ! number of STO orbitals
+    pauli_wf2rho_power   = 2             ! wf->rho transformation, only for PDENS and XFUN
 
     ! PDENS
     pauli_dens_dpower    = 1.0           ! can be optimized via pauli_dp
@@ -92,28 +98,26 @@ subroutine ffdevel_pauli_gen_numgrid_cache(cache)
     ! numgrid setup
     radial_precision = 1.0d-12
     min_num_angular_points = 86
-    max_num_angular_points = 302
+    max_num_angular_points = 350
 
-    ! ne/ne - def2-QZVPD
-    alpha_max(1) =  160676.2795500
-    alpha_max(2) =  160676.2795500
-    max_l_quantum_number(1) = 4
-    max_l_quantum_number(2) = 4
+    ! Kr/Kr - def2-TZVPP
+    alpha_max(1) =  600250.9757500
+    alpha_max(2) =  600250.9757500
+    max_l_quantum_number(1) = 3
+    max_l_quantum_number(2) = 3
 
-    alpha_min(1,1) = 0.30548672205
-    alpha_min(2,1) = 0.16889708453
-    alpha_min(3,1) = 0.74700000
-    alpha_min(4,1) = 1.52400000
-    alpha_min(5,1) = 2.98300000
+    alpha_min(1,1) = 0.19332399511
+    alpha_min(2,1) = 0.11569704458
+    alpha_min(3,1) = 0.2510000
+    alpha_min(4,1) = 0.6280000
 
-    alpha_min(1,2) = 0.30548672205
-    alpha_min(2,2) = 0.16889708453
-    alpha_min(3,2) = 0.74700000
-    alpha_min(4,2) = 1.52400000
-    alpha_min(5,2) = 2.98300000
+    alpha_min(1,2) = 0.19332399511
+    alpha_min(2,2) = 0.11569704458
+    alpha_min(3,2) = 0.2510000
+    alpha_min(4,2) = 0.6280000
 
-    az(1) = 10 ! Ne
-    az(2) = 10 ! Ne
+    az(1) = 18 ! Kr
+    az(2) = 18 ! Kr
 
     lr = cache%r * DEV_A2AU
     hr = 0.5d0 * lr
@@ -222,8 +226,6 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_nocache(mode,r,z1,t1,z2,t2)
     integer                     :: nats, cidx, npts, ipts, alloc_stat
     real(DEVDP)                 :: lr,hr,rsum
     integer                     :: n1, n2
-    real(DEVDP)                 :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)                 :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
     ! --------------------------------------------------------------------------
 
     ffdevel_pauli_ene_numgrid_nocache = 0.0d0
@@ -231,28 +233,26 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_nocache(mode,r,z1,t1,z2,t2)
     ! numgrid setup
     radial_precision = 1.0d-12
     min_num_angular_points = 86
-    max_num_angular_points = 302
+    max_num_angular_points = 350
 
-    ! ne/ne - def2-QZVPD
-    alpha_max(1) =  160676.2795500
-    alpha_max(2) =  160676.2795500
-    max_l_quantum_number(1) = 4
-    max_l_quantum_number(2) = 4
+    ! Kr/Kr - def2-TZVPP
+    alpha_max(1) =  600250.9757500
+    alpha_max(2) =  600250.9757500
+    max_l_quantum_number(1) = 3
+    max_l_quantum_number(2) = 3
 
-    alpha_min(1,1) = 0.30548672205
-    alpha_min(2,1) = 0.16889708453
-    alpha_min(3,1) = 0.74700000
-    alpha_min(4,1) = 1.52400000
-    alpha_min(5,1) = 2.98300000
+    alpha_min(1,1) = 0.19332399511
+    alpha_min(2,1) = 0.11569704458
+    alpha_min(3,1) = 0.2510000
+    alpha_min(4,1) = 0.6280000
 
-    alpha_min(1,2) = 0.30548672205
-    alpha_min(2,2) = 0.16889708453
-    alpha_min(3,2) = 0.74700000
-    alpha_min(4,2) = 1.52400000
-    alpha_min(5,2) = 2.98300000
+    alpha_min(1,2) = 0.19332399511
+    alpha_min(2,2) = 0.11569704458
+    alpha_min(3,2) = 0.2510000
+    alpha_min(4,2) = 0.6280000
 
-    az(1) = 10  ! Ne
-    az(2) = 10  ! Ne
+    az(1) = 18 ! Kr
+    az(2) = 18 ! Kr
 
     ! coordinates are in a.u.
     lr    = r * DEV_A2AU
@@ -267,7 +267,7 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_nocache(mode,r,z1,t1,z2,t2)
     pz(2) = 0.0d0
 
 ! setup parameters
-    call preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
+    call preform_parameters(mode,n1,n2)
 
 ! integrate
     rsum =  0.0d0
@@ -304,7 +304,7 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_nocache(mode,r,z1,t1,z2,t2)
     ! integrate
         call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
             rsum = rsum + grid_integrate(mode,lr,npts,grid_x,grid_y,grid_z,grid_w, &
-                                         n1,pa1,pb1,n2,pa2,pb2)
+                                         n1,t1,n2,t2)
         call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
         ! destroy grid
@@ -340,8 +340,6 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_cache(cache,mode,z1,t1,z2,t2)
     real(DEVDP)         :: lr
     real(DEVDP)         :: rsum
     integer             :: n1,n2
-    real(DEVDP)         :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)         :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
     ! --------------------------------------------------------------------------
 
     ffdevel_pauli_ene_numgrid_cache = 0.0d0
@@ -349,15 +347,15 @@ real(DEVDP) function ffdevel_pauli_ene_numgrid_cache(cache,mode,z1,t1,z2,t2)
     lr = cache%r * DEV_A2AU
 
 ! setup parameters
-    call preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
+    call preform_parameters(mode,n1,n2)
 
 ! integrate
     rsum = 0.0d0
     call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
         rsum = rsum + grid_integrate(mode,lr,cache%npts1,cache%grid_1(:,1),cache%grid_1(:,2), &
-                                    cache%grid_1(:,3),cache%grid_1(:,4),n1,pa1,pb1,n2,pa2,pb2)
+                                    cache%grid_1(:,3),cache%grid_1(:,4),n1,t1,n2,t2)
         rsum = rsum + grid_integrate(mode,lr,cache%npts2,cache%grid_2(:,1),cache%grid_2(:,2), &
-                                     cache%grid_2(:,3),cache%grid_2(:,4),n1,pa1,pb1,n2,pa2,pb2)
+                                     cache%grid_2(:,3),cache%grid_2(:,4),n1,t1,n2,t2)
     call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
 ! final processing
@@ -388,8 +386,6 @@ real(DEVDP) function ffdevel_pauli_ene_simgrid(mode,r,z1,t1,z2,t2)
     integer                     :: i, j, k, nx, ny, nz, npts, pts
     real(DEVDP)                 :: x,y,z
     integer                     :: n1,n2,alloc_stat
-    real(DEVDP)                 :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)                 :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
     real(DEVDP), allocatable    :: grid_x(:)
     real(DEVDP), allocatable    :: grid_y(:)
     real(DEVDP), allocatable    :: grid_z(:)
@@ -401,7 +397,7 @@ real(DEVDP) function ffdevel_pauli_ene_simgrid(mode,r,z1,t1,z2,t2)
     lr = r * DEV_A2AU
 
 ! setup parameters
-    call preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
+    call preform_parameters(mode,n1,n2)
 
 ! grid parameters
     nx = 100
@@ -444,7 +440,7 @@ real(DEVDP) function ffdevel_pauli_ene_simgrid(mode,r,z1,t1,z2,t2)
     rsum = 0.0d0
     call ffdev_timers_start_timer(FFDEV_POT_NB_INT)
         rsum = rsum + grid_integrate(mode,lr,npts,grid_x,grid_y,grid_z,grid_w, &
-                                     n1,pa1,pb1,n2,pa2,pb2)
+                                     n1,t1,n2,t2)
     call ffdev_timers_stop_timer(FFDEV_POT_NB_INT)
 
 ! release grid
@@ -459,7 +455,7 @@ end function ffdevel_pauli_ene_simgrid
 ! function finalize_rsum
 ! ==============================================================================
 
-subroutine preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
+subroutine preform_parameters(mode,n1,n2)
 
     use ffdev_pauli_dat
     use ffdev_utils
@@ -468,11 +464,7 @@ subroutine preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
 
     implicit none
     integer         :: mode
-    integer         :: z1, z2
-    type(NB_TYPE)   :: t1, t2
     integer         :: n1,n2
-    real(DEVDP)     :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)     :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
     ! --------------------------------------------------------------------------
 
     used_wf2rho_power = pauli_wf2rho_power
@@ -480,38 +472,8 @@ subroutine preform_parameters(mode,z1,t1,z2,t2,n1,pa1,pb1,n2,pa2,pb2)
         used_wf2rho_power = 1
     end if
 
-    pa1(1) = exp(t1%pa1)
-    pa1(2) = exp(t1%pa2)
-    pa1(3) = exp(t1%pa3)
-    pa1(4) = exp(t1%pa4)
-
-    pa2(1) = exp(t2%pa1)
-    pa2(2) = exp(t2%pa2)
-    pa2(3) = exp(t2%pa3)
-    pa2(4) = exp(t2%pa4)
-
-    pb1(1) = t1%pb1
-    pb1(2) = t1%pb2
-    pb1(3) = t1%pb3
-    pb1(4) = t1%pb4
-
-    pb2(1) = t2%pb1
-    pb2(2) = t2%pb2
-    pb2(3) = t2%pb3
-    pb2(4) = t2%pb4
-
-    ! WF series size
     n1 = pauli_wf_nsto
     n2 = pauli_wf_nsto
-
-    if( pauli_wf_truncbyn ) then
-        n1 = min(n1,ffdev_topology_z2n(z1))
-        n2 = min(n2,ffdev_topology_z2n(z2))
-    end if
-
-    if( (n1 .gt. PAULI_MAX_NSTO) .or. (n2 .gt. PAULI_MAX_NSTO) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'PAULI_MAX_NSTO overflow in preform_parameters!')
-    end if
 
 end subroutine preform_parameters
 
@@ -548,7 +510,7 @@ end function finalize_rsum
 ! function grid_integrate
 ! ==============================================================================
 
-real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,pa1,pb1,n2,pa2,pb2)
+real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,t1,n2,t2)
 
     use ffdev_timers
     use ffdev_topology_dat
@@ -556,16 +518,15 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,pa1,pb1,n2,pa2,p
     use ffdev_utils
 
     implicit none
-    integer     :: mode
-    real(DEVDP) :: lr
-    integer     :: npts
-    real(DEVDP) :: gx(:),gy(:),gz(:),gw(:)
-    integer     :: n1,n2
-    real(DEVDP) :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP) :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
+    integer         :: mode
+    real(DEVDP)     :: lr
+    integer         :: npts
+    real(DEVDP)     :: gx(:),gy(:),gz(:),gw(:)
+    integer         :: n1,n2
+    type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
-    integer     :: ipts
-    real(DEVDP) :: rsum, hr
+    integer         :: ipts
+    real(DEVDP)     :: rsum, hr
     ! --------------------------------------------------------------------------
 
     rsum =  0.0d0
@@ -573,27 +534,70 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,pa1,pb1,n2,pa2,p
 
     !$omp parallel
 
-        select case(mode)
-            case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE)
-                select case(pauli_wf_form)
-                    case(PAULI_WF_SV)
-                        !$omp do private(ipts), reduction(+:rsum)
-                        do ipts = 1, npts
-                            rsum = rsum + gw(ipts) * get_overlap_sv(gx(ipts),gy(ipts),gz(ipts), &
-                                                           hr,n1,pa1,pb1,n2,pa2,pb2)
-                        end do
-                    case(PAULI_WF_STO)
-                        !$omp do private(ipts), reduction(+:rsum)
-                        do ipts = 1, npts
-                            rsum = rsum + gw(ipts) * get_overlap_sto(gx(ipts),gy(ipts),gz(ipts), &
-                                                           hr,n1,pa1,pb1,n2,pa2,pb2)
-                        end do
-                end select
-            case(NB_MODE_PAULI_XFUN)
-                        ! FIXME
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate!')
-        end select
+    select case(mode)
+        case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE)
+! ------------------------------------------------------
+            select case(pauli_wf_form)
+                case(PAULI_WF_SV)
+                    !$omp do private(ipts), reduction(+:rsum)
+                    do ipts = 1, npts
+                        rsum = rsum + gw(ipts) * get_overlap_sv(gx(ipts),gy(ipts),gz(ipts), &
+                                                       hr,n1,t1,n2,t2)
+                    end do
+                case(PAULI_WF_RSV)
+                    !$omp do private(ipts), reduction(+:rsum)
+                    do ipts = 1, npts
+                        rsum = rsum + gw(ipts) * get_overlap_rsv(gx(ipts),gy(ipts),gz(ipts), &
+                                                       hr,n1,t1,n2,t2)
+                    end do
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate Ia!')
+            end select
+! ------------------------------------------------------
+        case(NB_MODE_PAULI_XFUN)
+            select case(pauli_xfun)
+            ! ------------------------------------------------------
+                case(PAULI_XFUN_RHOP)
+                    select case(pauli_wf_form)
+                        case(PAULI_WF_SV)
+                            !$omp do private(ipts), reduction(+:rsum)
+                            do ipts = 1, npts
+                                rsum = rsum + gw(ipts) * get_rhop_sv(gx(ipts),gy(ipts),gz(ipts), &
+                                                               hr,n1,t1,n2,t2)
+                            end do
+                        case(PAULI_WF_RSV)
+                            !$omp do private(ipts), reduction(+:rsum)
+                            do ipts = 1, npts
+                                rsum = rsum + gw(ipts) * get_rhop_rsv(gx(ipts),gy(ipts),gz(ipts), &
+                                                               hr,n1,t1,n2,t2)
+                            end do
+                        case default
+                            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate Ib!')
+                    end select
+            ! ------------------------------------------------------
+                case(PAULI_XFUN_KXEG)
+                    select case(pauli_wf_form)
+                        case(PAULI_WF_SV)
+                            !$omp do private(ipts), reduction(+:rsum)
+                            do ipts = 1, npts
+                                rsum = rsum + gw(ipts) * get_kxeg_sv(gx(ipts),gy(ipts),gz(ipts), &
+                                                               hr,n1,t1,n2,t2)
+                            end do
+                        case(PAULI_WF_RSV)
+                            !$omp do private(ipts), reduction(+:rsum)
+                            do ipts = 1, npts
+                                rsum = rsum + gw(ipts) * get_kxeg_rsv(gx(ipts),gy(ipts),gz(ipts), &
+                                                               hr,n1,t1,n2,t2)
+                            end do
+                        case default
+                            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate Ic!')
+                    end select
+                case default
+                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate III!')
+            end select
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in grid_integrate II!')
+    end select
 
     !$omp end parallel
 
@@ -603,16 +607,16 @@ end function grid_integrate
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP)  function get_overlap_sv(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
+real(DEVDP)  function get_overlap_sv(x,y,z,hr,n1,t1,n2,t2)
 
     use ffdev_pauli_dat
+    use ffdev_topology_dat
 
     implicit none
     real(DEVDP)     :: x, y, z
     real(DEVDP)     :: hr           ! half of the distance !!!!
     integer         :: n1,n2
-    real(DEVDP)     :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)     :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
+    type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
     real(DEVDP)     :: r1, r2, w1, w2, dyz
     integer         :: i
@@ -632,10 +636,10 @@ real(DEVDP)  function get_overlap_sv(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
     w2 = 0.0d0
 
     do i=1,n1
-        w1 = w1 + pa1(i)*exp(-pb1(i)*r1)
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)
     end do
     do i=1,n2
-        w2 = w2 + pa2(i)*exp(-pb2(i)*r2)
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)
     end do
 
     get_overlap_sv = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
@@ -644,22 +648,22 @@ end function get_overlap_sv
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP)  function get_overlap_sto(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
+real(DEVDP)  function get_rhop_sv(x,y,z,hr,n1,t1,n2,t2)
 
     use ffdev_pauli_dat
+    use ffdev_topology_dat
 
     implicit none
     real(DEVDP)     :: x, y, z
     real(DEVDP)     :: hr           ! half of the distance !!!!
     integer         :: n1,n2
-    real(DEVDP)     :: pa1(PAULI_MAX_NSTO),pa2(PAULI_MAX_NSTO)
-    real(DEVDP)     :: pb1(PAULI_MAX_NSTO),pb2(PAULI_MAX_NSTO)
+    type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2
     integer         :: i
     ! --------------------------------------------------------------------------
 
-    get_overlap_sto = 0.0
+    get_rhop_sv = 0.0
 
     ! geometry calculated here MUST follow grid construction (position of atom centers)
     dyz = y**2 + z**2
@@ -673,15 +677,197 @@ real(DEVDP)  function get_overlap_sto(x,y,z,hr,n1,pa1,pb1,n2,pa2,pb2)
     w2 = 0.0d0
 
     do i=1,n1
-        w1 = w1 + r1**(i-1)*pa1(i)*exp(-pb1(i)*r1)
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)
     end do
     do i=1,n2
-        w2 = w2 + r2**(i-1)*pa2(i)*exp(-pb2(i)*r2)
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)
     end do
 
-    get_overlap_sto = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
+    d1 = w1**used_wf2rho_power
+    d2 = w2**used_wf2rho_power
 
-end function get_overlap_sto
+    get_rhop_sv = (d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+
+end function get_rhop_sv
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_kxeg_sv(x,y,z,hr,n1,t1,n2,t2)
+
+    use ffdev_pauli_dat
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: hr           ! half of the distance !!!!
+    integer         :: n1,n2
+    type(NB_TYPE)   :: t1, t2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2, ke, ee
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    get_kxeg_sv = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = (x+hr)**2 + dyz
+    r2 = (x-hr)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = 0.0d0
+    w2 = 0.0d0
+
+    do i=1,n1
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)
+    end do
+    do i=1,n2
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)
+    end do
+
+    d1 = w1**used_wf2rho_power
+    d2 = w2**used_wf2rho_power
+
+    ke = (d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
+    ee = (d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
+
+    get_kxeg_sv = ke - ee*pauli_xfun_xfac
+
+end function get_kxeg_sv
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_overlap_rsv(x,y,z,hr,n1,t1,n2,t2)
+
+    use ffdev_pauli_dat
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: hr           ! half of the distance !!!!
+    integer         :: n1,n2
+    type(NB_TYPE)   :: t1, t2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    get_overlap_rsv = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = (x+hr)**2 + dyz
+    r2 = (x-hr)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = 0.0d0
+    w2 = 0.0d0
+
+    do i=1,n1
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+    end do
+    do i=1,n2
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+    end do
+
+    get_overlap_rsv = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
+
+end function get_overlap_rsv
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_rhop_rsv(x,y,z,hr,n1,t1,n2,t2)
+
+    use ffdev_pauli_dat
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: hr           ! half of the distance !!!!
+    integer         :: n1,n2
+    type(NB_TYPE)   :: t1, t2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    get_rhop_rsv = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = (x+hr)**2 + dyz
+    r2 = (x-hr)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = 0.0d0
+    w2 = 0.0d0
+
+    do i=1,n1
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+    end do
+    do i=1,n2
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+    end do
+
+    d1 = w1**used_wf2rho_power
+    d2 = w2**used_wf2rho_power
+
+    get_rhop_rsv = (d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+
+end function get_rhop_rsv
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP)  function get_kxeg_rsv(x,y,z,hr,n1,t1,n2,t2)
+
+    use ffdev_pauli_dat
+    use ffdev_topology_dat
+
+    implicit none
+    real(DEVDP)     :: x, y, z
+    real(DEVDP)     :: hr           ! half of the distance !!!!
+    integer         :: n1,n2
+    type(NB_TYPE)   :: t1, t2
+    ! --------------------------------------------
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2, ke, ee
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    get_kxeg_rsv = 0.0
+
+    ! geometry calculated here MUST follow grid construction (position of atom centers)
+    dyz = y**2 + z**2
+    r1 = (x+hr)**2 + dyz
+    r2 = (x-hr)**2 + dyz
+
+    r1 = sqrt(r1)
+    r2 = sqrt(r2)
+
+    w1 = 0.0d0
+    w2 = 0.0d0
+
+    do i=1,n1
+        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+    end do
+    do i=1,n2
+        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+    end do
+
+    d1 = w1**used_wf2rho_power
+    d2 = w2**used_wf2rho_power
+
+    ke = (d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
+    ee = (d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
+
+    get_kxeg_rsv = ke - ee*pauli_xfun_xfac
+
+end function get_kxeg_rsv
 
 ! ------------------------------------------------------------------------------
 

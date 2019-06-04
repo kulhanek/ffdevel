@@ -819,7 +819,10 @@ subroutine opt_shark
 
     integer     :: istep, alloc_status
     real(DEVDP) :: error, lasterror
+    integer     :: mineneattempts
     ! --------------------------------------------------------------------------
+
+    mineneattempts = SHARK_MIN_ENE_TRESHOLD
 
     ! allocate working array
     allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
@@ -857,12 +860,19 @@ subroutine opt_shark
         write(DEV_OUT,40) istep,FFOptFceEvals,error
 
         if( istep .ne. 1 .and. abs(error - lasterror) .le. MinErrorChange ) then
+            mineneattempts = mineneattempts - 1
+        else
+            mineneattempts = SHARK_MIN_ENE_TRESHOLD
+        end if
+
+        if( mineneattempts .eq. 0 ) then
             write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change     : ', abs(error - lasterror)
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change treshold : ', MinErrorChange
             write(DEV_OUT,'(a)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
             exit
         end if
-        lasterror = error
+
+lasterror = error
     end do
 
     if( istep .le. NOptSteps ) then

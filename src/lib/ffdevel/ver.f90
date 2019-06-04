@@ -23,8 +23,7 @@ use ffdev_constants
 implicit none
 !-------------------------------------------------------------------------------
 
-character(80),parameter   :: FFDEV_LIBVER   = 'FFDevel 1.0.SVNVERSION (DATE)'
-
+character(80),parameter   :: FFDEV_LIBVER  = 'FFDevel 1.${GITREVS}.${GITHASH} (${DATE})'
 !-------------------------------------------------------------------------------
 
 end module ffdev_ver

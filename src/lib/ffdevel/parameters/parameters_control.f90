@@ -240,10 +240,9 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     integer                     :: i,nchanged
     character(PRMFILE_MAX_PATH) :: string,realm
     logical                     :: rst
-    character(10)               :: key
+    character(MAX_PATH)         :: key
     real(DEVDP)                 :: rnd, minv, maxv
     ! --------------------------------------------------------------------------
-
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -279,14 +278,14 @@ subroutine ffdev_parameters_ctrl_realms(fin)
                         call change_realms('pauli_a1',.true.,string,nchanged)
                         call change_realms('pauli_a2',.true.,string,nchanged)
                         call change_realms('pauli_a3',.true.,string,nchanged)
-                        call change_realms('pauli_a4',.true.,string,nchanged)
-                        call change_realms(realm,.true.,string,nchanged)
                     case('pauli_b')
                         call change_realms('pauli_b1',.true.,string,nchanged)
                         call change_realms('pauli_b2',.true.,string,nchanged)
                         call change_realms('pauli_b3',.true.,string,nchanged)
-                        call change_realms('pauli_b4',.true.,string,nchanged)
-                        call change_realms(realm,.true.,string,nchanged)
+                    case('pauli_c')
+                        call change_realms('pauli_c1',.true.,string,nchanged)
+                        call change_realms('pauli_c2',.true.,string,nchanged)
+                        call change_realms('pauli_c3',.true.,string,nchanged)
                     case default
                         call change_realms(realm,.true.,string,nchanged)
                 end select
@@ -298,14 +297,14 @@ subroutine ffdev_parameters_ctrl_realms(fin)
                         call change_realms('pauli_a1',.false.,string,nchanged)
                         call change_realms('pauli_a2',.false.,string,nchanged)
                         call change_realms('pauli_a3',.false.,string,nchanged)
-                        call change_realms('pauli_a4',.false.,string,nchanged)
-                        call change_realms(realm,.false.,string,nchanged)
                     case('pauli_b')
                         call change_realms('pauli_b1',.false.,string,nchanged)
                         call change_realms('pauli_b2',.false.,string,nchanged)
                         call change_realms('pauli_b3',.false.,string,nchanged)
-                        call change_realms('pauli_b4',.false.,string,nchanged)
-                        call change_realms(realm,.false.,string,nchanged)
+                    case('pauli_c')
+                        call change_realms('pauli_c1',.false.,string,nchanged)
+                        call change_realms('pauli_c2',.false.,string,nchanged)
+                        call change_realms('pauli_c3',.false.,string,nchanged)
                     case default
                         call change_realms(realm,.false.,string,nchanged)
                 end select
@@ -502,28 +501,24 @@ subroutine change_realms(realm,enable,options,nchanged)
             realmid = REALM_VDW_R0
         case('vdw_alpha')
             realmid = REALM_VDW_ALPHA
-        case('pauli_a')
-            realmid = REALM_PAULI_A
-        case('pauli_b')
-            realmid = REALM_PAULI_B
-        case('pauli_c')
-            realmid = REALM_PAULI_C
         case('pauli_a1')
             realmid = REALM_PAULI_A1
         case('pauli_a2')
             realmid = REALM_PAULI_A2
         case('pauli_a3')
             realmid = REALM_PAULI_A3
-        case('pauli_a4')
-            realmid = REALM_PAULI_A4
         case('pauli_b1')
             realmid = REALM_PAULI_B1
         case('pauli_b2')
             realmid = REALM_PAULI_B2
         case('pauli_b3')
             realmid = REALM_PAULI_B3
-        case('pauli_b4')
-            realmid = REALM_PAULI_B4
+        case('pauli_c1')
+            realmid = REALM_PAULI_C1
+        case('pauli_c2')
+            realmid = REALM_PAULI_C2
+        case('pauli_c3')
+            realmid = REALM_PAULI_C3
         case('pauli_dp')
             realmid = REALM_PAULI_DP
         case('pauli_rp')
@@ -610,61 +605,50 @@ subroutine change_realms(realm,enable,options,nchanged)
                 select case(LastNBMode)
                     case(NB_MODE_LJ)
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A4 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B4 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
                     case(NB_MODE_EXP6)
-                        if( params(i)%realm .eq. REALM_PAULI_A ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A4 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B4 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
                     case(NB_MODE_TT2,NB_MODE_PAULI_EXP2)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A4 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B4 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
                     case(NB_MODE_TT3,NB_MODE_PAULI_EXP3)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A4 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B4 ) lenable = .false.
+                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
                     case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
                         if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
                         if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C ) lenable = .false.
                         ! FIXME
                     case default
                         call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in change_realms!')
@@ -945,17 +929,13 @@ subroutine ffdev_parameters_ctrl_files(fin)
 
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
 
+    ! input file cannot be setup here
+    ! the correct parametr data can be loaded only after parameters are properly setup
+
     if(.not. prmfile_open_section(fin,'files')) then
-        write (DEV_OUT,15) trim(InpParamFileName)
         write (DEV_OUT,25) trim(OutParamFileName)
         write (DEV_OUT,35) trim(OutAmberPrmsFileName)
         return
-    end if
-
-    if(.not. prmfile_get_string_by_key(fin,'input', InpParamFileName)) then
-        write (DEV_OUT,15) trim(InpParamFileName)
-    else
-        write (DEV_OUT,10) trim(InpParamFileName)
     end if
 
     if(.not. prmfile_get_string_by_key(fin,'final', OutParamFileName)) then
@@ -972,14 +952,92 @@ subroutine ffdev_parameters_ctrl_files(fin)
 
     return
 
-10 format('Input parameters (input)               = ',a)
-15 format('Input parameters (input)               = ',a12,'                  (default)')
 20 format('Final parameters file (final)          = ',a)
 25 format('Final parameters file (final)          = ',a12,'                  (default)')
 30 format('Final AMBER parameters (amber)         = ',a)
 35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_files
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
+
+    use prmfile
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)      :: fin
+    logical                 :: exec
+    ! ---------------------------------------------
+    logical                 :: rst
+    character(MAX_PATH)     :: key
+    character(MAX_PATH)     :: name
+    integer                 :: loaded,ignored
+    ! -----------------------------------------------------------------------------
+
+    if(.not. prmfile_open_section(fin,'files')) then
+        return
+    end if
+
+    write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
+
+    loaded = 0
+    ignored = 0
+
+    rst = prmfile_first_line(fin)
+    do while( rst )
+        rst = prmfile_get_field_on_line(fin,key)
+        select case(trim(key))
+            case('load')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with FFDevel parameters to be loaded is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_load(name,loaded,ignored)
+                end if
+            case('save')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with FFDevel parameters to be saved is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_save(name)
+                end if
+            case('amber')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with AMBER parameters to be saved is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_save_amber(name)
+                end if
+            case default
+                ! do nothing
+        end select
+        rst = prmfile_next_line(fin)
+    end do
+
+    write(DEV_OUT,12) loaded
+    write(DEV_OUT,14) ignored
+
+    return
+
+10 format('Load parameters file (load)       = ',a)
+12 format('     Number of loaded parameters  = ',I6)
+14 format('     Number of ignored parameters = ',I6)
+20 format('Save parameters file (save)       = ',a)
+30 format('Save AMBER parameters (amber)     = ',a)
+
+end subroutine ffdev_parameters_ctrl_files_exec
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_grbf2cos
@@ -1070,8 +1128,12 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_nbmanip(fin,exec)
             case('pauli')
                 call ffdev_parameters_ctrl_pauli(fin,exec)
+            case('parameters')
+                call ffdev_parameters_ctrl_realms(fin)
             case('nbload')
                 call ffdev_parameters_ctrl_nbload(fin,exec)
+            case('files')
+                call ffdev_parameters_ctrl_files_exec(fin,exec)
         end select
 
         rst = prmfile_next_section(fin)
@@ -1240,6 +1302,7 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
     use ffdev_utils
     use ffdev_topology_dat
     use ffdev_xdm
+    use ffdev_pauli_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -1262,17 +1325,35 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
             case('comb_rules')
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing comb_rules rule!')
                 end if
             case('nb_mode')
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing nb_mode mode!')
+                end if
+            case('gen_ax_from_a1')
+                if( prmfile_get_current_line(fin,string) ) then
+                    call ffdev_pauli_control_gen_ax_from_a1(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_ax_from_a1 parameter!')
+                end if
+            case('gen_bx_from_b1')
+                if( prmfile_get_current_line(fin,string) ) then
+                    call ffdev_pauli_control_gen_bx_from_b1(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_bx_from_b1 parameter!')
                 end if
             case('xdm')
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_xdm_control_nbmanip(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing xdm parameter!')
                 end if
             case default
-                ! do nothing
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nbmanip action '//trim(string)//'!')
         end select
         rst = prmfile_next_line(fin)
     end do
@@ -1483,7 +1564,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     logical                     :: exec
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
-    real(DEVDP)                 :: a, b, c, d, e, f, g, h
+    real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
     integer                     :: i,j,nbt,nb_mode
     ! --------------------------------------------------------------------------
 
@@ -1514,6 +1595,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
         f = 0.0d0
         g = 0.0d0
         h = 0.0d0
+        u = 0.0d0
 
         ! read the entire record
         select case(nb_mode)
@@ -1522,7 +1604,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
             case(NB_MODE_EXP6,NB_MODE_TT3,NB_MODE_PAULI_EXP3)
                 read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
             case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-                     read(line,*,err=100,end=100) snb_mode, sti, stj, a,b,c,d,e,f,g,h
+                     read(line,*,err=100,end=100) snb_mode, sti, stj, a,b,c,d,e,f,g,h,u
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
         end select
@@ -1544,21 +1626,22 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
                             sets(j)%top%nb_types(nbt)%r0 = b
                             sets(j)%top%nb_types(nbt)%alpha = c
                         case(NB_MODE_TT2,NB_MODE_PAULI_EXP2)
-                            sets(j)%top%nb_types(nbt)%pa1 = a
-                            sets(j)%top%nb_types(nbt)%pb1 = b
+                            sets(j)%top%nb_types(nbt)%pa(1) = a
+                            sets(j)%top%nb_types(nbt)%pb(1) = b
                         case(NB_MODE_TT3,NB_MODE_PAULI_EXP3)
-                            sets(j)%top%nb_types(nbt)%pa1 = a
-                            sets(j)%top%nb_types(nbt)%pb1 = b
-                            sets(j)%top%nb_types(nbt)%pc1 = c
+                            sets(j)%top%nb_types(nbt)%pa(1) = a
+                            sets(j)%top%nb_types(nbt)%pb(1) = b
+                            sets(j)%top%nb_types(nbt)%pc(1) = c
                         case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-                            sets(j)%top%nb_types(nbt)%pa1 = a
-                            sets(j)%top%nb_types(nbt)%pb1 = b
-                            sets(j)%top%nb_types(nbt)%pa2 = c
-                            sets(j)%top%nb_types(nbt)%pb2 = d
-                            sets(j)%top%nb_types(nbt)%pa3 = e
-                            sets(j)%top%nb_types(nbt)%pb3 = f
-                            sets(j)%top%nb_types(nbt)%pa4 = g
-                            sets(j)%top%nb_types(nbt)%pb4 = h
+                            sets(j)%top%nb_types(nbt)%pa(1) = a
+                            sets(j)%top%nb_types(nbt)%pb(1) = b
+                            sets(j)%top%nb_types(nbt)%pc(1) = c
+                            sets(j)%top%nb_types(nbt)%pa(2) = d
+                            sets(j)%top%nb_types(nbt)%pb(2) = e
+                            sets(j)%top%nb_types(nbt)%pc(2) = f
+                            sets(j)%top%nb_types(nbt)%pa(3) = g
+                            sets(j)%top%nb_types(nbt)%pb(3) = h
+                            sets(j)%top%nb_types(nbt)%pc(3) = u
                         case default
                             call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
                     end select
