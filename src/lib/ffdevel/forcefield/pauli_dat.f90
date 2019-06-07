@@ -20,8 +20,8 @@ module ffdev_pauli_dat
 use ffdev_sizes
 
 ! types of WF
-integer,parameter   :: PAULI_WF_SV      = 1     ! split valence an*exp(-bn*r)
-integer,parameter   :: PAULI_WF_RSV     = 2     ! split valence an*exp(-bn*r)*r**cn
+integer,parameter   :: PAULI_WF_EXP     = 1     ! an*exp(-bn*r)
+integer,parameter   :: PAULI_WF_REXP    = 2     ! n*exp(-bn*r)*r**cn
 
 ! types of XFUN
 integer,parameter   :: PAULI_XFUN_RHOP  = 1     ! power of density

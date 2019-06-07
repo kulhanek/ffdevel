@@ -466,7 +466,7 @@ subroutine ffdev_parameters_reinit()
             use_pauli_c1 = .true.
         case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
             select case(pauli_wf_form)
-                case(PAULI_WF_SV)
+                case(PAULI_WF_EXP)
                     ! it must be consistent with PAULI_MAX_NSTO
                     select case(pauli_wf_nsto)
                         case(1)
@@ -487,7 +487,7 @@ subroutine ffdev_parameters_reinit()
                         case default
                             call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit Iq!')
                     end select
-                case(PAULI_WF_RSV)
+                case(PAULI_WF_REXP)
                     ! it must be consistent with PAULI_MAX_NSTO
                     select case(pauli_wf_nsto)
                         case(1)

@@ -1346,6 +1346,12 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
                 else
                     call ffdev_utils_exit(DEV_OUT,1,'Missing gen_bx_from_b1 parameter!')
                 end if
+            case('gen_cx')
+                if( prmfile_get_current_line(fin,string) ) then
+                    call ffdev_pauli_control_gen_cx(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_cx parameter!')
+                end if
             case('xdm')
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_xdm_control_nbmanip(string,exec)

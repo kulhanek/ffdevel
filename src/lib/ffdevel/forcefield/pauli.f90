@@ -51,7 +51,7 @@ subroutine ffdev_pauli_set_default
     pauli_cache_grid     = .true.        ! cache grid for integration
 
     ! WFN
-    pauli_wf_form        = PAULI_WF_SV
+    pauli_wf_form        = PAULI_WF_EXP
     pauli_wf_nsto        = 1             ! number of STO orbitals
     pauli_wf2rho_power   = 2             ! wf->rho transformation, only for PDENS and XFUN
 
@@ -538,13 +538,13 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,t1,n2,t2)
         case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE)
 ! ------------------------------------------------------
             select case(pauli_wf_form)
-                case(PAULI_WF_SV)
+                case(PAULI_WF_EXP)
                     !$omp do private(ipts), reduction(+:rsum)
                     do ipts = 1, npts
                         rsum = rsum + gw(ipts) * get_overlap_sv(gx(ipts),gy(ipts),gz(ipts), &
                                                        hr,n1,t1,n2,t2)
                     end do
-                case(PAULI_WF_RSV)
+                case(PAULI_WF_REXP)
                     !$omp do private(ipts), reduction(+:rsum)
                     do ipts = 1, npts
                         rsum = rsum + gw(ipts) * get_overlap_rsv(gx(ipts),gy(ipts),gz(ipts), &
@@ -559,13 +559,13 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,t1,n2,t2)
             ! ------------------------------------------------------
                 case(PAULI_XFUN_RHOP)
                     select case(pauli_wf_form)
-                        case(PAULI_WF_SV)
+                        case(PAULI_WF_EXP)
                             !$omp do private(ipts), reduction(+:rsum)
                             do ipts = 1, npts
                                 rsum = rsum + gw(ipts) * get_rhop_sv(gx(ipts),gy(ipts),gz(ipts), &
                                                                hr,n1,t1,n2,t2)
                             end do
-                        case(PAULI_WF_RSV)
+                        case(PAULI_WF_REXP)
                             !$omp do private(ipts), reduction(+:rsum)
                             do ipts = 1, npts
                                 rsum = rsum + gw(ipts) * get_rhop_rsv(gx(ipts),gy(ipts),gz(ipts), &
@@ -577,13 +577,13 @@ real(DEVDP) function grid_integrate(mode,lr,npts,gx,gy,gz,gw,n1,t1,n2,t2)
             ! ------------------------------------------------------
                 case(PAULI_XFUN_KXEG)
                     select case(pauli_wf_form)
-                        case(PAULI_WF_SV)
+                        case(PAULI_WF_EXP)
                             !$omp do private(ipts), reduction(+:rsum)
                             do ipts = 1, npts
                                 rsum = rsum + gw(ipts) * get_kxeg_sv(gx(ipts),gy(ipts),gz(ipts), &
                                                                hr,n1,t1,n2,t2)
                             end do
-                        case(PAULI_WF_RSV)
+                        case(PAULI_WF_REXP)
                             !$omp do private(ipts), reduction(+:rsum)
                             do ipts = 1, npts
                                 rsum = rsum + gw(ipts) * get_kxeg_rsv(gx(ipts),gy(ipts),gz(ipts), &

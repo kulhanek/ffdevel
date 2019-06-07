@@ -49,10 +49,10 @@ subroutine ffdev_pauli_ctrl(fin)
         write(DEV_OUT,15) prmfile_onoff(pauli_use_numgrid)
         write(DEV_OUT,25) prmfile_onoff(pauli_cache_grid)
         select case(pauli_wf_form)
-            case(PAULI_WF_SV)
-                write(DEV_OUT,65) 'SV'
-            case(PAULI_WF_RSV)
-                write(DEV_OUT,65) 'RSV'
+            case(PAULI_WF_EXP)
+                write(DEV_OUT,65) 'EXP'
+            case(PAULI_WF_REXP)
+                write(DEV_OUT,65) 'REXP'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unknown wf_type!')
         end select
@@ -92,21 +92,21 @@ subroutine ffdev_pauli_ctrl(fin)
 
     if( prmfile_get_string_by_key(fin,'wf_type', string)) then
         select case(string)
-            case('SV')
-                pauli_wf_form=PAULI_WF_SV
+            case('EXP')
+                pauli_wf_form=PAULI_WF_EXP
                 write(DEV_OUT,60) trim(string)
-            case('RSV')
-                pauli_wf_form=PAULI_WF_RSV
+            case('REXP')
+                pauli_wf_form=PAULI_WF_REXP
                 write(DEV_OUT,60) trim(string)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unknown wf_type!')
         end select
     else
         select case(pauli_wf_form)
-            case(PAULI_WF_SV)
-                write(DEV_OUT,65) 'SV'
-            case(PAULI_WF_RSV)
-                write(DEV_OUT,65) 'RSV'
+            case(PAULI_WF_EXP)
+                write(DEV_OUT,65) 'EXP'
+            case(PAULI_WF_REXP)
+                write(DEV_OUT,65) 'REXP'
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unknown wf_type!')
         end select
@@ -318,6 +318,65 @@ subroutine ffdev_pauli_control_gen_bx_from_b1(string,exec)
 100 call ffdev_utils_exit(DEV_OUT,1,'Unable to parse down/up offsets in ffdev_pauli_control_gen_bx_from_b1!')
 
 end subroutine ffdev_pauli_control_gen_bx_from_b1
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine ffdev_pauli_control_gen_cx(string,exec)
+
+    use ffdev_pauli_dat
+    use ffdev_pauli
+    use prmfile
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    character(80)   :: string
+    logical         :: exec
+    ! ------------------------------------------------------
+    integer                     :: i, j
+    character(PRMFILE_MAX_PATH) :: key, plan
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Generate Cx', '%')
+
+    ! read nb_mode and types first
+    read(string,*,err=100,end=100) key, plan
+
+    write(DEV_OUT,10) trim(plan)
+
+    ! set by plan
+    select case(trim(plan))
+        case('n-order')
+            do i=1,nparams
+                if( params(i)%realm .eq. REALM_PAULI_C1 ) then
+                    if( params(i)%enabled ) params(i)%value = 0.0d0
+                    do j=1,nparams
+                        if( (params(j)%ti .eq. params(i)%ti) .and. &
+                            (params(j)%tj .eq. params(i)%tj) ) then
+                            if( (params(j)%realm .eq. REALM_PAULI_C2) .and. params(j)%enabled ) then
+                                params(j)%value = 1.0d0
+                            end if
+                            if( (params(j)%realm .eq. REALM_PAULI_C3) .and. params(j)%enabled ) then
+                                params(j)%value = 2.0d0
+                            end if
+                        end if
+                    end do
+                end if
+            end do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported gen_cx plan '//trim(plan)//'!')
+    end select
+
+    return
+
+ 10 format('Plan for Cx generation = ',A)
+
+100 call ffdev_utils_exit(DEV_OUT,1,'Unable to parse down/up offsets in ffdev_pauli_control_gen_bx_from_b1!')
+
+end subroutine ffdev_pauli_control_gen_cx
 
 !===============================================================================
 !-------------------------------------------------------------------------------
