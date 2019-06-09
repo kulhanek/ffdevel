@@ -141,6 +141,8 @@ character(80) function ffdev_err_energy_ctrl_scale_to_string(iscale)
             ffdev_err_energy_ctrl_scale_to_string = 'rel (relative)'
         case(EE_LOG)
             ffdev_err_energy_ctrl_scale_to_string = 'log (logarithimic)'
+        case(EE_ABSLOG)
+            ffdev_err_energy_ctrl_scale_to_string = 'abs+log (absolute+logarithimic)'
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_err_energy_ctrl_scale_to_string!')
     end select
@@ -167,6 +169,8 @@ integer function ffdev_err_energy_ctrl_get_scale_from_string(string)
             ffdev_err_energy_ctrl_get_scale_from_string = EE_REL
         case('log')
             ffdev_err_energy_ctrl_get_scale_from_string = EE_LOG
+        case('abs+log')
+            ffdev_err_energy_ctrl_get_scale_from_string = EE_ABSLOG
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) // &
                                             '" in ffdev_err_energy_ctrl_get_scale_from_string!')

@@ -101,6 +101,18 @@ subroutine ffdev_err_energy_error(error)
                         err = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
                     end if
+                case(EE_ABSLOG)
+                    ! log
+                    if( ((sets(i)%geo(j)%total_ene - sets(i)%offset) .gt. 0) .and. &
+                        (sets(i)%geo(j)%trg_energy .gt. 0) ) then
+                        nene = nene + 1
+                        err = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
+                        seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                    end if
+                    ! and abs
+                    nene = nene + 1
+                    err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                    seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end select
 
         end do

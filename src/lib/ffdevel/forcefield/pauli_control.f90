@@ -330,6 +330,7 @@ subroutine ffdev_pauli_control_gen_cx(string,exec)
     use prmfile
     use ffdev_utils
     use ffdev_parameters_dat
+    use ffdev_topology
 
     implicit none
     character(80)   :: string
@@ -361,6 +362,23 @@ subroutine ffdev_pauli_control_gen_cx(string,exec)
                             end if
                             if( (params(j)%realm .eq. REALM_PAULI_C3) .and. params(j)%enabled ) then
                                 params(j)%value = 2.0d0
+                            end if
+                        end if
+                    end do
+                end if
+            end do
+        case('by-pqn')
+            do i=1,nparams
+                if( params(i)%realm .eq. REALM_PAULI_C1 ) then
+                    if( params(i)%enabled ) params(i)%value = 0.0d0
+                    do j=1,nparams
+                        if( (params(j)%ti .eq. params(i)%ti) .and. &
+                            (params(j)%tj .eq. params(i)%tj) ) then
+                            if( (params(j)%realm .eq. REALM_PAULI_C2) .and. params(j)%enabled ) then
+                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z)
+                            end if
+                            if( (params(j)%realm .eq. REALM_PAULI_C3) .and. params(j)%enabled ) then
+                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z) - 1.0d0
                             end if
                         end if
                     end do
