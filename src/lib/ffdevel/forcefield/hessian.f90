@@ -86,6 +86,59 @@ subroutine ffdev_hessian_all(top,geo)
 end subroutine ffdev_hessian_all
 
 ! ==============================================================================
+! subroutine ffdev_hessian_skipnb
+! ==============================================================================
+
+subroutine ffdev_hessian_skipnb(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_timers
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------------------------------------
+
+    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN)
+
+    ! reset energy
+    geo%bond_ene = 0.0d0
+    geo%angle_ene = 0.0d0
+    geo%dih_ene = 0.0d0
+    geo%impropr_ene = 0.0d0
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+    geo%total_ene = 0.0d0
+    geo%rst_energy = 0.0d0
+
+    ! reset gradient
+    geo%grd(:,:) = 0.0d0
+
+    ! reset hessian
+    geo%hess(:,:,:,:) = 0.0d0
+
+    stop 'incorrect hessian for dihedrals'
+
+    ! bonded terms
+    if( top%probe_size .eq. 0 ) then
+        call ffdev_hessian_bonds(top,geo)
+        call ffdev_hessian_angles(top,geo)
+        call ffdev_hessian_dihedrals(top,geo)
+        call ffdev_hessian_impropers(top,geo)
+    end if
+
+    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
+                  + geo%impropr_ene
+
+    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN)
+
+end subroutine ffdev_hessian_skipnb
+
+! ==============================================================================
 ! subroutine ffdev_hessian_num_all
 ! ==============================================================================
 

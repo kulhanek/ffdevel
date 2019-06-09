@@ -12,3 +12,4 @@ src/lib/ffdevel/optimizers
 src/lib/numgrid
 src/lib/ffdevel/parameters
 src/lib/ffdevel
+src/bin/ptsihessian

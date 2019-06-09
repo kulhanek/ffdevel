@@ -1,3 +1,5 @@
+src/bin/ptsihessian/CMakeLists.txt
+src/bin/ptsihessian/ptsihessian.f90
 src/lib/ffdevel/forcefield/jacobian.f90
 src/lib/ffdevel/forcefield/pauli.f90
 src/lib/ffdevel/forcefield/pauli_control.f90

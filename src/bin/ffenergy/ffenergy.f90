@@ -120,7 +120,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffenergy <stopology> <xyzcoordinates>  [write]')
+10 format('    ffenergy <stopology> <point>  [write]')
 
 end subroutine print_usage
 

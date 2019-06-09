@@ -175,7 +175,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffgradient <stopology> <xyzcoordinates> [test] [write] [numerical]')
+10 format('    ffgradient <stopology> <point> [test] [write] [numerical]')
 
 end subroutine print_usage
 

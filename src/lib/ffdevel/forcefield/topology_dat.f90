@@ -183,16 +183,16 @@ end type TOPOLOGY
 ! ------------------------------------------------------------------------------
 ! global options
 
-logical     :: dih_cos_only = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
-                                        ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
+logical     :: dih_cos_only     = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
+                                            ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
 
 ! possible values for lj2exp6_alpha
-real(DEVDP) :: lj2exp6_alpha = 12.0d0   ! alpha for lj to exp-6 potential conversion
-                                        ! 12.0                           - identical long-range
-                                        ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
+real(DEVDP) :: lj2exp6_alpha    = 12.0d0    ! alpha for lj to exp-6 potential conversion
+                                            ! 12.0                           - identical long-range
+                                            ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 
 ! Tang–Toennis potential
-integer     :: tt_disp_order        = 16        ! highest Cn coefficient
+integer     :: tt_disp_order    = 16        ! highest Cn coefficient
 
 ! ------------------------------------------------------------------------------
 

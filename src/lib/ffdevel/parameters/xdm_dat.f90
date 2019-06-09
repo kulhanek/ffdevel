@@ -32,6 +32,7 @@ type XDM_PAIR_TYPE
     integer             :: num
     real(DEVDP)         :: eps      ! LJ eps = C6/Rvdw**6
     real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
+    real(DEVDP)         :: Cn(20)
 end type XDM_PAIR_TYPE
 
 ! XDM atom

@@ -15,41 +15,75 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-program ffdev_ptsfreq_program
+program ffdev_ptsihessian_program
 
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_topology
     use ffdev_geometry
     use ffdev_hessian_utils
     use ffdev_gradient_utils
 
     implicit none
-    character(len=MAX_PATH) :: geoname  ! input point file name
+    character(len=MAX_PATH) :: topname
+    character(len=MAX_PATH) :: geoname
+    character(len=MAX_PATH) :: arg
+    type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo
+    logical                 :: excludenb
+    integer                 :: i
     ! --------------------------------------------------------------------------
 
-    call ffdev_utils_header('Point Frequencies')
+    call ffdev_utils_header('Hessian in Internal Coordinates')
 
     ! test number of input arguments
-    if( command_argument_count() .ne. 1 ) then
+    if( command_argument_count() .lt. 2 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least two expected)!')
     end if
 
-    call get_command_argument(1, geoname)
+    call get_command_argument(1, topname)
+    call get_command_argument(2, geoname)
 
-    ! process input file -------------------------------------------------------
+    excludenb = .false.
+
+    do i=3,command_argument_count()
+        call get_command_argument(i, arg)
+        select case(trim(arg))
+            case('excludenb')
+                excludenb = .true.
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unrecognized argument ('//trim(arg)//')')
+        end select
+    end do
+
+    ! paths
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'Reading point file', ':')
-    write(DEV_OUT,'(a,a)') 'Point file name : ',trim(geoname)
+    write(DEV_OUT,100) trim(topname)
+    write(DEV_OUT,110) trim(geoname)
+
+    ! load topology
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Simplified Topology','=')
+
+    call ffdev_topology_init(top)
+    call ffdev_topology_load(top,topname)
+    call ffdev_topology_info(top)
+
+    ! load coordinates
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Input Coordinates','=')
 
     call ffdev_geometry_init(geo)
     call ffdev_geometry_load_point(geo,geoname)
+    call ffdev_geometry_info_input(geo)
 
-    write(DEV_OUT,*)
-    call ffdev_geometry_info_point_header()
-    call ffdev_geometry_info_point(geo)
+    ! check coordinates and topology
+    call ffdev_geometry_check_z(top,geo)
+
+    ! finalize topology setup and calculate energy
+    call ffdev_topology_finalize_setup(top)
 
     if( .not. geo%trg_hess_loaded ) then
         call ffdev_utils_exit(DEV_OUT,1,'Point does not contain Hessian!')
@@ -97,14 +131,17 @@ program ffdev_ptsfreq_program
     if( geo%trg_grd_loaded ) then
         if( ffdev_gradient_rmsg_only(geo) .gt. 0.1d0 ) then
             write(DEV_OUT,*)
-            write(DEV_OUT,120)
+            write(DEV_OUT,130)
         end if
     end if
 
     ! end
-    call ffdev_utils_footer('Point Frequencies')
+    call ffdev_utils_footer('Hessian in Internal Coordinates')
 
-120 format('  !!!!! WARNING !!!!! Frequencies might be inaccurate due to high gradient.')
+100 format('Simplified topology : ',A)
+110 format('Input coordinates   : ',A)
+
+130 format('  !!!!! WARNING !!!!! Frequencies might be inaccurate due to high gradient.')
 
 contains
 
@@ -124,10 +161,10 @@ subroutine print_usage()
 
     return
 
-10 format('    ptfreq <point>')
+10 format('    ptfreq <stop> <point> [excludenb]')
 
 end subroutine print_usage
 
 !===============================================================================
 
-end program ffdev_ptsfreq_program
+end program ffdev_ptsihessian_program
