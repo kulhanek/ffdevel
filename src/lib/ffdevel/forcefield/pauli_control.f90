@@ -375,10 +375,10 @@ subroutine ffdev_pauli_control_gen_cx(string,exec)
                         if( (params(j)%ti .eq. params(i)%ti) .and. &
                             (params(j)%tj .eq. params(i)%tj) ) then
                             if( (params(j)%realm .eq. REALM_PAULI_C2) .and. params(j)%enabled ) then
-                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z)
+                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z) - 1.0d0
                             end if
                             if( (params(j)%realm .eq. REALM_PAULI_C3) .and. params(j)%enabled ) then
-                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z) - 1.0d0
+                                params(j)%value = ffdev_topology_z2n(types(params(j)%ti)%z) - 2.0d0
                             end if
                         end if
                     end do
