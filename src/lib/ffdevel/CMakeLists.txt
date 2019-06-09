@@ -23,6 +23,7 @@ SET(FFDEVEL_SRC
         forcefield/gradient_utils.f90
         forcefield/hessian.f90
         forcefield/hessian_utils.f90
+        forcefield/jacobian.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90

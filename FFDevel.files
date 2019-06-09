@@ -1,3 +1,4 @@
+src/lib/ffdevel/forcefield/jacobian.f90
 src/lib/ffdevel/forcefield/pauli.f90
 src/lib/ffdevel/forcefield/pauli_control.f90
 src/lib/ffdevel/forcefield/pauli_dat.f90
