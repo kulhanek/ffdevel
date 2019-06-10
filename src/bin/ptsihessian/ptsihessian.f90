@@ -24,6 +24,7 @@ program ffdev_ptsihessian_program
     use ffdev_geometry
     use ffdev_hessian_utils
     use ffdev_gradient_utils
+    use ffdev_hessian
 
     implicit none
     character(len=MAX_PATH) :: topname
@@ -134,6 +135,22 @@ program ffdev_ptsihessian_program
             write(DEV_OUT,130)
         end if
     end if
+
+    ! hessian in internal coordinates
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Final Frequencies', ':')
+
+    if( excludenb ) then
+        geo%hess = geo%trg_hess
+        ! remove LJ + electrostatics
+        call ffdev_hessian_nb_lj(top,geo,-1.0d0)
+        geo%trg_hess = geo%hess
+    end if
+
+    ! allocate ihess
+    call ffdev_hessian_calc_ihess(top,geo)
+
+    !
 
     ! end
     call ffdev_utils_footer('Hessian in Internal Coordinates')

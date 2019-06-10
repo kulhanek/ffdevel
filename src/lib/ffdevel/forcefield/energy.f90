@@ -26,7 +26,7 @@ contains
 ! subroutine ffdev_energy_all
 ! ==============================================================================
 
-subroutine ffdev_energy_all(top,geo)
+subroutine ffdev_energy_all(top,geo,skipnb)
 
     use ffdev_topology
     use ffdev_geometry
@@ -35,9 +35,17 @@ subroutine ffdev_energy_all(top,geo)
     use ffdev_pauli_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical,optional    :: skipnb
+    ! -------------------------------------------
+    logical             :: calcnb
     ! --------------------------------------------------------------------------
+
+    calcnb = .true.
+    if( present(skipnb) ) then
+        calcnb = .not. skipnb
+    end if
 
     call ffdev_timers_start_timer(FFDEV_POT_ENERGY)
 
@@ -61,39 +69,41 @@ subroutine ffdev_energy_all(top,geo)
         call ffdev_energy_impropers(top,geo)
     end if
 
-    ! non-bonded terms
-    select case(top%nb_mode)
-        case(NB_MODE_LJ)
-            call ffdev_energy_nb_lj(top,geo)
-        case(NB_MODE_EXP6)
-            call ffdev_energy_nb_exp6(top,geo)
-        case(NB_MODE_TT2)
-            call ffdev_energy_nb_tt2(top,geo)
-        case(NB_MODE_TT3)
-            call ffdev_energy_nb_tt3(top,geo)
-        case(NB_MODE_PAULI_EXP2)
-            call ffdev_energy_nb_pauli_exp2(top,geo)
-        case(NB_MODE_PAULI_EXP3)
-            call ffdev_energy_nb_pauli_exp3(top,geo)
-        case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN )
+    if( calcnb ) then
+        ! non-bonded terms
+        select case(top%nb_mode)
+            case(NB_MODE_LJ)
+                call ffdev_energy_nb_lj(top,geo)
+            case(NB_MODE_EXP6)
+                call ffdev_energy_nb_exp6(top,geo)
+            case(NB_MODE_TT2)
+                call ffdev_energy_nb_tt2(top,geo)
+            case(NB_MODE_TT3)
+                call ffdev_energy_nb_tt3(top,geo)
+            case(NB_MODE_PAULI_EXP2)
+                call ffdev_energy_nb_pauli_exp2(top,geo)
+            case(NB_MODE_PAULI_EXP3)
+                call ffdev_energy_nb_pauli_exp3(top,geo)
+            case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN )
 
-            if( pauli_use_numgrid ) then
-                ! via numgrid integration
-                if( pauli_cache_grid ) then
-                    if( .not. geo%grid_cached ) then
-                        call ffdev_energy_nb_pauli_numgrid_gen_cache(top,geo)
-                        geo%grid_cached =  .true.
+                if( pauli_use_numgrid ) then
+                    ! via numgrid integration
+                    if( pauli_cache_grid ) then
+                        if( .not. geo%grid_cached ) then
+                            call ffdev_energy_nb_pauli_numgrid_gen_cache(top,geo)
+                            geo%grid_cached =  .true.
+                        end if
+                        call ffdev_energy_nb_pauli_numgrid_cache(top,geo)
+                    else
+                        call ffdev_energy_nb_pauli_numgrid_nocache(top,geo)
                     end if
-                    call ffdev_energy_nb_pauli_numgrid_cache(top,geo)
                 else
-                    call ffdev_energy_nb_pauli_numgrid_nocache(top,geo)
+                    call ffdev_energy_nb_pauli_simgrid(top,geo)
                 end if
-            else
-                call ffdev_energy_nb_pauli_simgrid(top,geo)
-            end if
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_energy_all!')
-    end select
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_energy_all!')
+        end select
+    end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &

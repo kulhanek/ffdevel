@@ -26,7 +26,7 @@ contains
 ! subroutine ffdev_hessian_all
 ! ==============================================================================
 
-subroutine ffdev_hessian_all(top,geo)
+subroutine ffdev_hessian_all(top,geo,skipnb)
 
     use ffdev_topology
     use ffdev_geometry
@@ -34,9 +34,17 @@ subroutine ffdev_hessian_all(top,geo)
     use ffdev_timers
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical,optional    :: skipnb
+    ! -------------------------------------------
+    logical             :: calcnb
     ! --------------------------------------------------------------------------
+
+    calcnb = .true.
+    if( present(skipnb) ) then
+        calcnb = .not. skipnb
+    end if
 
     call ffdev_timers_start_timer(FFDEV_POT_HESSIAN)
 
@@ -68,13 +76,15 @@ subroutine ffdev_hessian_all(top,geo)
         call ffdev_hessian_impropers(top,geo)
     end if
 
-    ! non-bonded terms
-    select case(top%nb_mode)
-        case(NB_MODE_LJ)
-            call ffdev_hessian_nb_lj(top,geo)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_hessian_all!')
-    end select
+    if( calcnb ) then
+        ! non-bonded terms
+        select case(top%nb_mode)
+            case(NB_MODE_LJ)
+                call ffdev_hessian_nb_lj(top,geo,+1.0d0)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_hessian_all!')
+        end select
+    end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
@@ -86,10 +96,10 @@ subroutine ffdev_hessian_all(top,geo)
 end subroutine ffdev_hessian_all
 
 ! ==============================================================================
-! subroutine ffdev_hessian_skipnb
+! subroutine ffdev_hessian_ihess_bonded
 ! ==============================================================================
 
-subroutine ffdev_hessian_skipnb(top,geo)
+subroutine ffdev_hessian_ihess_bonded(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -136,34 +146,44 @@ subroutine ffdev_hessian_skipnb(top,geo)
 
     call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN)
 
-end subroutine ffdev_hessian_skipnb
+end subroutine ffdev_hessian_ihess_bonded
 
 ! ==============================================================================
 ! subroutine ffdev_hessian_num_all
 ! ==============================================================================
 
-subroutine ffdev_hessian_num_all(top,geo)
+subroutine ffdev_hessian_num_all(top,geo,skipnb)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_energy
     use ffdev_gradient
     use ffdev_utils
+    use ffdev_timers
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical,optional    :: skipnb
+    ! -------------------------------------------
+    logical             :: lskipnb
+    type(GEOMETRY)      :: tmp_geo
+    real(DEVDP)         :: d,ene1,ene2,d2inv,eb
+    integer             :: i,j,k,l
     ! --------------------------------------------------------------------------
-    type(GEOMETRY)  :: tmp_geo
-    real(DEVDP)     :: d,ene1,ene2,d2inv,eb
-    integer         :: i,j,k,l
-    ! --------------------------------------------------------------------------
+
+    lskipnb = .false.
+    if( present(skipnb) ) then
+        lskipnb = skipnb
+    end if
+
+    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN)
 
     d = 1.0d-5  ! differentiation parameter
     d2inv = 1.0d0/d**2
 
     ! calculate base energy
-    call ffdev_gradient_all(top,geo)
+    call ffdev_gradient_all(top,geo,lskipnb)
 
     ! base energy
     eb = geo%total_ene
@@ -177,12 +197,12 @@ subroutine ffdev_hessian_num_all(top,geo)
         do j=1,3
             ! left
             tmp_geo%crd(j,i) = geo%crd(j,i) + d
-            call ffdev_energy_all(top,tmp_geo)
+            call ffdev_energy_all(top,tmp_geo,lskipnb)
             ene1 = tmp_geo%total_ene
 
             ! right
             tmp_geo%crd(j,i) = geo%crd(j,i) - d
-            call ffdev_energy_all(top,tmp_geo)
+            call ffdev_energy_all(top,tmp_geo,lskipnb)
             ene2 = tmp_geo%total_ene
 
             ! hessian
@@ -202,13 +222,13 @@ subroutine ffdev_hessian_num_all(top,geo)
                     ! left
                     tmp_geo%crd(j,i) = geo%crd(j,i) + d
                     tmp_geo%crd(l,k) = geo%crd(l,k) + d
-                    call ffdev_energy_all(top,tmp_geo)
+                    call ffdev_energy_all(top,tmp_geo,lskipnb)
                     ene1 = tmp_geo%total_ene
 
                     ! right
                     tmp_geo%crd(j,i) = geo%crd(j,i) - d
                     tmp_geo%crd(l,k) = geo%crd(l,k) - d
-                    call ffdev_energy_all(top,tmp_geo)
+                    call ffdev_energy_all(top,tmp_geo,lskipnb)
                     ene2 = tmp_geo%total_ene
 
                     ! hessian
@@ -227,13 +247,15 @@ subroutine ffdev_hessian_num_all(top,geo)
     ! release temporary geometry object
     deallocate(tmp_geo%crd)
 
+    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN)
+
 end subroutine ffdev_hessian_num_all
 
 ! ==============================================================================
 ! subroutine ffdev_hessian_num_by_grds_all
 ! ==============================================================================
 
-subroutine ffdev_hessian_num_by_grds_all(top,geo)
+subroutine ffdev_hessian_num_by_grds_all(top,geo,skipnb)
 
     use ffdev_topology
     use ffdev_geometry
@@ -241,20 +263,30 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo)
     use ffdev_gradient
     use ffdev_gradient_utils
     use ffdev_utils
+    use ffdev_timers
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------------------------------------
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical,optional    :: skipnb
+    ! -------------------------------------------
+    logical                     :: lskipnb
     type(GEOMETRY),allocatable  :: tmp_geo1(:,:),tmp_geo2(:,:)
     real(DEVDP)                 :: d
     integer                     :: i,j,k,l
     ! --------------------------------------------------------------------------
 
+    lskipnb = .false.
+    if( present(skipnb) ) then
+        lskipnb = skipnb
+    end if
+
+    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN)
+
     d = 1.0d-6  ! differentiation parameter
 
     ! calculate base energy and gradient
-    call ffdev_gradient_all(top,geo)
+    call ffdev_gradient_all(top,geo,lskipnb)
 
     ! allocate temporary geometry objects and calculate perturbed gradients
     allocate( tmp_geo1(3,geo%natoms), tmp_geo2(3,geo%natoms))
@@ -264,13 +296,13 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo)
             call ffdev_gradient_allocate(tmp_geo1(j,i))
             tmp_geo1(j,i)%crd(:,:) = geo%crd(:,:)
             tmp_geo1(j,i)%crd(j,i) = tmp_geo1(j,i)%crd(j,i) + d
-            call ffdev_gradient_all(top,tmp_geo1(j,i))
+            call ffdev_gradient_all(top,tmp_geo1(j,i),lskipnb)
 
             call ffdev_geometry_allocate(tmp_geo2(j,i),geo%natoms)
             call ffdev_gradient_allocate(tmp_geo2(j,i))
             tmp_geo2(j,i)%crd(:,:) = geo%crd(:,:)
             tmp_geo2(j,i)%crd(j,i) = tmp_geo2(j,i)%crd(j,i) - d
-            call ffdev_gradient_all(top,tmp_geo2(j,i))
+            call ffdev_gradient_all(top,tmp_geo2(j,i),lskipnb)
         end do
     end do
 
@@ -293,6 +325,8 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo)
         end do
     end do
     deallocate(tmp_geo1,tmp_geo2)
+
+    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN)
 
 end subroutine ffdev_hessian_num_by_grds_all
 
@@ -2755,7 +2789,7 @@ end subroutine ffdev_hessian_impropers
 ! subroutine ffdev_hessian_nb_lj
 !===============================================================================
 
-subroutine ffdev_hessian_nb_lj(top,geo)
+subroutine ffdev_hessian_nb_lj(top,geo,fac)
 
     use ffdev_topology
     use ffdev_geometry
@@ -2763,6 +2797,7 @@ subroutine ffdev_hessian_nb_lj(top,geo)
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
+    real(DEVDP)     :: fac
     ! --------------------------------------------
     integer         :: ip, i, j, nbt
     real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,rij(3)
@@ -2832,34 +2867,34 @@ subroutine ffdev_hessian_nb_lj(top,geo)
         h22 = hxx*rij(2)**2 - hyy
         h33 = hxx*rij(3)**2 - hyy
 
-        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + h11
-        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + h22
-        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + h33
+        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + fac*h11
+        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + fac*h22
+        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + fac*h33
 
-        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + h11
-        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + h22
-        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + h33
+        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + fac*h11
+        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + fac*h22
+        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + fac*h33
 
         ! calculate hessian - off-diagonals - common
         h12 = hxx*rij(1)*rij(2)
         h13 = hxx*rij(1)*rij(3)
         h23 = hxx*rij(2)*rij(3)
 
-        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + h12
-        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + h13
-        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + h23
+        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + fac*h12
+        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + fac*h13
+        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + fac*h23
 
-        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + h12
-        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + h13
-        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + h23
+        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + fac*h12
+        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + fac*h13
+        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + fac*h23
 
-        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + h12
-        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + h13
-        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + h23
+        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + fac*h12
+        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + fac*h13
+        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + fac*h23
 
-        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + h12
-        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + h13
-        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + h23
+        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + fac*h12
+        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + fac*h13
+        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + fac*h23
 
        ! calculate hessian - off-diagonals - cross
         h11 = hyy - hxx*rij(1)*rij(1)
@@ -2874,29 +2909,29 @@ subroutine ffdev_hessian_nb_lj(top,geo)
         h32 =     - hxx*rij(3)*rij(2)
         h33 = hyy - hxx*rij(3)*rij(3)
 
-        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + h11
-        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + h12
-        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + h13
+        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + fac*h11
+        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + fac*h12
+        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + fac*h13
 
-        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + h21
-        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + h22
-        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + h23
+        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + fac*h21
+        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + fac*h22
+        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + fac*h23
 
-        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + h31
-        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + h32
-        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + h33
+        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + fac*h31
+        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + fac*h32
+        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + fac*h33
 
-        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + h11
-        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + h21
-        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + h31
+        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + fac*h11
+        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + fac*h21
+        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + fac*h31
 
-        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + h12
-        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + h22
-        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + h32
+        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + fac*h12
+        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + fac*h22
+        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + fac*h32
 
-        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + h13
-        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + h23
-        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + h33
+        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + fac*h13
+        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + fac*h23
+        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + fac*h33
     end do
 
 end subroutine ffdev_hessian_nb_lj

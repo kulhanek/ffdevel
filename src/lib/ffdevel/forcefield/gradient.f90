@@ -26,7 +26,7 @@ contains
 ! subroutine ffdev_gradient_all
 ! ==============================================================================
 
-subroutine ffdev_gradient_all(top,geo)
+subroutine ffdev_gradient_all(top,geo,skipnb)
 
     use ffdev_topology
     use ffdev_geometry
@@ -34,9 +34,17 @@ subroutine ffdev_gradient_all(top,geo)
     use ffdev_timers
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical,optional    :: skipnb
+    ! -------------------------------------------
+    logical             :: calcnb
     ! --------------------------------------------------------------------------
+
+    calcnb = .true.
+    if( present(skipnb) ) then
+        calcnb = .not. skipnb
+    end if
 
     call ffdev_timers_start_timer(FFDEV_POT_GRADIENT)
 
@@ -63,13 +71,15 @@ subroutine ffdev_gradient_all(top,geo)
         call ffdev_gradient_impropers(top,geo)
     end if
 
-    ! non-bonded terms
-    select case(top%nb_mode)
-        case(NB_MODE_LJ)
-            call ffdev_gradient_nb_lj(top,geo)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_gradient_all!')
-    end select
+    if( calcnb ) then
+        ! non-bonded terms
+        select case(top%nb_mode)
+            case(NB_MODE_LJ)
+                call ffdev_gradient_nb_lj(top,geo)
+            case default
+                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_gradient_all!')
+        end select
+    end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &

@@ -22,25 +22,6 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
-! subroutine ffdev_jacobian_allocate(top,jac,trans)
-! ==============================================================================
-
-subroutine ffdev_jacobian_allocate(top,jac,trans)
-
-    use ffdev_topology_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    real(DEVDP)     :: jac(:,:)
-    logical         :: trans
-    ! --------------------------------------------
-    integer         :: ib
-    ! --------------------------------------------------------------------------
-
-
-end subroutine ffdev_jacobian_allocate
-
-! ==============================================================================
 ! subroutine ffdev_jacobian_calc_all(top,crd,jac)
 ! ==============================================================================
 
@@ -71,22 +52,84 @@ subroutine ffdev_jacobian_calc_all(top,crd,jac)
 end subroutine ffdev_jacobian_calc_all
 
 ! ==============================================================================
-! subroutine ffdev_jacobian_inverse(top,jac,ijac)
+! subroutine ffdev_jacobian_inverse(jac,ijac,fac)
 ! ==============================================================================
 
-subroutine ffdev_jacobian_inverse(top,jac,ijac,fac)
+subroutine ffdev_jacobian_inverse(jac,ijac)
 
     use ffdev_topology_dat
+    use ffdev_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
     real(DEVDP)     :: jac(:,:)
     real(DEVDP)     :: ijac(:,:)
-    real(DEVDP)     :: fac
     ! --------------------------------------------
-
+    integer                 :: i, m, n, k, alloc_stat, info, lwork
+    real(DEVDP),allocatable :: u(:,:), vt(:,:), sig(:), sig_plus(:,:)
+    real(DEVDP),allocatable :: temp_mat(:,:), work(:)
+    integer,allocatable     :: iwork(:)
+    real(DEVDP)             :: fac
     ! --------------------------------------------------------------------------
 
+    fac = 1d-5
+
+    m = size(jac,1)
+    n = size(jac,2)
+    k = min(m,n)
+
+    allocate(u(m,m),vt(n,n),sig(k),sig_plus(n,m),iwork(8*k),work(1),temp_mat(n,m), &
+             stat = alloc_stat)
+    if( alloc_stat .ne. 0) then
+       call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays I in ffdev_jacobian_inverse!')
+    end if
+
+    u(:,:)          = 0.0d0
+    vt(:,:)         = 0.0d0
+    sig(:)          = 0.0d0
+    sig_plus(:,:)   = 0.0d0
+    work(:)         = 0.0d0
+
+    ! work size query
+    lwork = -1
+    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
+                lwork, iwork(1), info)
+
+    if( info .ne. 0) then
+       call ffdev_utils_exit(DEV_OUT,1,'Unable to get size of working array in ffdev_jacobian_inverse!')
+    end if
+
+    ! reinit working array
+    deallocate(work)
+    lwork = int(work(1))
+    allocate(work(lwork), stat = alloc_stat)
+
+    if( alloc_stat .ne. 0) then
+       call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays II in ffdev_jacobian_inverse!')
+    end if
+
+    ! do SVD
+    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
+                lwork, iwork(1), info)
+
+    if( info .ne. 0) then
+       call ffdev_utils_exit(DEV_OUT,1,'SVD failed in ffdev_jacobian_inverse!')
+    end if
+
+    ! set singular values that are too small to zero
+    do i = 1, k
+       if( sig(i) > fac*maxval(sig) ) then
+          sig_plus(i,i) = 1.0d0/sig(i)
+       else
+          sig_plus(i,i) = 0.0d0
+       end if
+    end do
+
+    ! build pseudoinverse: V*sig_plus*UT
+    CALL dgemm('N', 'T', n, m, m, 1.0d0, sig_plus, n, u, m, 0.0d0, temp_mat, n)
+    CALL dgemm('T', 'N', n, m, n, 1.0d0, vt, n, temp_mat, n, 0.0d0, ijac, n)
+
+    ! clean data
+    deallocate(u, vt, sig, iwork, work, sig_plus, temp_mat)
 
 end subroutine ffdev_jacobian_inverse
 

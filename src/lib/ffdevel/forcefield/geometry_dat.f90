@@ -58,6 +58,7 @@ type GEOMETRY
     real(DEVDP)             :: total_ene        ! total energy from MM
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer     :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
+    real(DEVDP),pointer     :: ihess(:)         ! hessian in internal coordinates (na+nb+nd+ni)
     real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
     real(DEVDP)             :: weight           ! contribution to all data
@@ -65,6 +66,7 @@ type GEOMETRY
     logical                 :: trg_crd_loaded
     logical                 :: trg_grd_loaded
     logical                 :: trg_hess_loaded
+    logical                 :: trg_ihess_loaded
     logical                 :: trg_freq_loaded
     logical                 :: trg_esp_loaded
     logical                 :: trg_crd_optimized
@@ -72,6 +74,7 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_crd(:,:)         ! target geometry (3,natoms)
     real(DEVDP),pointer     :: trg_grd(:,:)         ! target gradient (3,natoms)
     real(DEVDP),pointer     :: trg_hess(:,:,:,:)    ! target hessian (3,natoms,3,natoms)
+    real(DEVDP),pointer     :: trg_ihess(:)         ! target hessian in internal coordinates (nb+na+nd+ni)
     real(DEVDP),pointer     :: trg_nmodes(:,:,:,:)  ! target normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer,pointer         :: freq_t2s_map(:)      ! trg_map(trg) = freq; map to freq by angle between normal vectors

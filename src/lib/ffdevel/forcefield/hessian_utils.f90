@@ -346,6 +346,64 @@ subroutine ffdev_hessian_calc_freqs(geo)
 end subroutine ffdev_hessian_calc_freqs
 
 ! ==============================================================================
+! subroutine ffdev_hessian_calc_ihess
+! ==============================================================================
+
+subroutine ffdev_hessian_calc_ihess(top,geo)
+
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_topology
+    use ffdev_jacobian
+
+    implicit none
+    type(TOPOLOGY)          :: top
+    type(GEOMETRY)          :: geo
+    ! --------------------------------------------
+    integer                 :: alloc_stat, n, i, m
+    real(DEVDP),allocatable :: jac(:,:), ijac(:,:), ihess(:,:)
+    ! --------------------------------------------------------------------------
+
+    if( geo%natoms .le. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for ffdev_hessian_calc_ihess!')
+    end if
+
+    m = top%natoms * 3
+    n = top%nbonds + top%nangles + top%ndihedrals + top%nimpropers
+
+    allocate(ihess(n,n), jac(m,n), ijac(n,m) , stat = alloc_stat)
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
+    end if
+
+    if( .not. associated(geo%ihess) ) then
+        allocate(geo%ihess(n), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
+        end if
+    end if
+
+    geo%ihess(:) = 0.0d0
+    ihess(:,:) = 0.0d0
+    jac(:,:) = 0.0d0
+    ijac(:,:) = 0.0d0
+
+    ! calculate jacobian
+    call ffdev_jacobian_calc_all(top,geo%crd,jac)
+    call ffdev_jacobian_inverse(jac,ijac)
+   ! call ffdev_jacobian_get_ihess(ihess,ijac,geo%hess)
+
+    ! copy results to geo%ihess, only diagonal items
+    do i=1,n
+        geo%ihess(i) = ihess(i,i)
+    end do
+
+    ! release working arrays
+    deallocate(ijac,jac,ihess)
+
+end subroutine ffdev_hessian_calc_ihess
+
+! ==============================================================================
 ! subroutine ffdev_hessian_calc_trg_freqs
 ! ==============================================================================
 
