@@ -36,6 +36,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_energy
     use ffdev_err_rmsd
     use ffdev_err_freqs
+    use ffdev_err_ihess
     use ffdev_errors_dat
     use ffdev_utils
 
@@ -83,6 +84,9 @@ subroutine ffdev_errors_error_only(error)
 
     use ffdev_err_freqs_dat
     use ffdev_err_freqs
+
+    use ffdev_err_ihess_dat
+    use ffdev_err_ihess
 
     use ffdev_err_impropers_dat
     use ffdev_err_impropers
@@ -160,6 +164,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
     use ffdev_err_freqs_dat
+    use ffdev_err_ihess_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
 

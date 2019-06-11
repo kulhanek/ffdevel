@@ -4,6 +4,9 @@ src/lib/ffdevel/forcefield/jacobian.f90
 src/lib/ffdevel/forcefield/pauli.f90
 src/lib/ffdevel/forcefield/pauli_control.f90
 src/lib/ffdevel/forcefield/pauli_dat.f90
+src/lib/ffdevel/parameters/errors/ihess.f90
+src/lib/ffdevel/parameters/errors/ihess_control.f90
+src/lib/ffdevel/parameters/errors/ihess_dat.f90
 src/lib/ffdevel/parameters/xdm.f90
 src/lib/ffdevel/parameters/xdm_dat.f90
 src/lib/ffdevel/timers.f90

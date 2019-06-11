@@ -32,6 +32,10 @@ type FFERROR_TYPE
     real(DEVDP)         :: rmsd
     real(DEVDP)         :: nbdists
     real(DEVDP)         :: freqs
+    real(DEVDP)         :: ihess_bonds
+    real(DEVDP)         :: ihess_angles
+    real(DEVDP)         :: ihess_dihedrals
+    real(DEVDP)         :: ihess_impropers
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError

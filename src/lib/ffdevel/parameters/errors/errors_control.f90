@@ -35,6 +35,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_energy_control
     use ffdev_err_rmsd_control
     use ffdev_err_freqs_control
+    use ffdev_err_ihess_control
     use ffdev_err_bonds
     use ffdev_err_angles
     use ffdev_err_dihedrals
@@ -43,6 +44,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_energy
     use ffdev_err_rmsd
     use ffdev_err_freqs
+    use ffdev_err_ihess
     use ffdev_errors_dat
     use ffdev_utils
     use prmfile
@@ -76,6 +78,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_impropers_ctrl(fin)
     call ffdev_err_nbdists_ctrl(fin)
     call ffdev_err_freqs_ctrl(fin)
+    call ffdev_err_ihess_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
 
 end subroutine ffdev_errors_ctrl
