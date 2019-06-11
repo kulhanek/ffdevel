@@ -694,7 +694,8 @@ real(DEVDP)  function get_rhop_sv(x,y,z,hr,n1,t1,n2,t2)
     d1 = w1**used_wf2rho_power
     d2 = w2**used_wf2rho_power
 
-    get_rhop_sv = 0.5d0*(d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+    get_rhop_sv = (d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+    get_rhop_sv = get_rhop_sv*0.5d0
 
 end function get_rhop_sv
 
@@ -742,8 +743,8 @@ real(DEVDP)  function get_kxeg_sv(x,y,z,hr,n1,t1,n2,t2)
     d1 = w1**used_wf2rho_power
     d2 = w2**used_wf2rho_power
 
-    ke = 0.5d0*(d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
-    ee = 0.5d0*(d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
+    ke = (d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
+    ee = (d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
 
     get_kxeg_sv = ke - ee*pauli_xfun_xfac
 
@@ -838,7 +839,8 @@ real(DEVDP)  function get_rhop_rsv(x,y,z,hr,n1,t1,n2,t2)
     d1 = w1**used_wf2rho_power
     d2 = w2**used_wf2rho_power
 
-    get_rhop_rsv = 0.5d0*(d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+    get_rhop_rsv =(d1 + d2)**pauli_xfun_dpower - d1**pauli_xfun_dpower - d2**pauli_xfun_dpower
+    get_rhop_rsv = 0.5d0*get_rhop_rsv
 
 end function get_rhop_rsv
 
@@ -886,8 +888,8 @@ real(DEVDP)  function get_kxeg_rsv(x,y,z,hr,n1,t1,n2,t2)
     d1 = w1**used_wf2rho_power
     d2 = w2**used_wf2rho_power
 
-    ke = 0.5d0*(d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
-    ee = 0.5d0*(d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
+    ke = (d1 + d2)**pauli_xfun_kpower - d1**pauli_xfun_kpower - d2**pauli_xfun_kpower
+    ee = (d1 + d2)**pauli_xfun_xpower - d1**pauli_xfun_xpower - d2**pauli_xfun_xpower
 
     get_kxeg_rsv = ke - ee*pauli_xfun_xfac
 
