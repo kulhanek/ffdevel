@@ -762,7 +762,7 @@ real(DEVDP)  function get_overlap_rsv(x,y,z,hr,n1,t1,n2,t2)
     integer         :: n1,n2
     type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, b1, b2
     integer         :: i
     ! --------------------------------------------------------------------------
 
@@ -779,11 +779,15 @@ real(DEVDP)  function get_overlap_rsv(x,y,z,hr,n1,t1,n2,t2)
     w1 = 0.0d0
     w2 = 0.0d0
 
+    b1 = 0.0d0
     do i=1,n1
-        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+        b1 = b1 + t1%pb(i)
+        w1 = w1 + t1%pa(i)*exp(-b1*r1)*(r1**t1%pc(i))
     end do
+    b2 = 0.0d0
     do i=1,n2
-        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+        b2 = b2 + t2%pb(i)
+        w2 = w2 + t2%pa(i)*exp(-b2*r2)*(r2**t2%pc(i))
     end do
 
     get_overlap_rsv = (w1**used_wf2rho_power)*(w2**used_wf2rho_power)
@@ -803,7 +807,7 @@ real(DEVDP)  function get_rhop_rsv(x,y,z,hr,n1,t1,n2,t2)
     integer         :: n1,n2
     type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2, b1, b2
     integer         :: i
     ! --------------------------------------------------------------------------
 
@@ -820,11 +824,15 @@ real(DEVDP)  function get_rhop_rsv(x,y,z,hr,n1,t1,n2,t2)
     w1 = 0.0d0
     w2 = 0.0d0
 
+    b1 = 0.0d0
     do i=1,n1
-        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+        b1 = b1 + t1%pb(i)
+        w1 = w1 + t1%pa(i)*exp(-b1*r1)*(r1**t1%pc(i))
     end do
+    b2 = 0.0d0
     do i=1,n2
-        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+        b2 = b2 + t2%pb(i)
+        w2 = w2 + t2%pa(i)*exp(-b2*r2)*(r2**t2%pc(i))
     end do
 
     d1 = w1**used_wf2rho_power
@@ -847,7 +855,7 @@ real(DEVDP)  function get_kxeg_rsv(x,y,z,hr,n1,t1,n2,t2)
     integer         :: n1,n2
     type(NB_TYPE)   :: t1, t2
     ! --------------------------------------------
-    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2, ke, ee
+    real(DEVDP)     :: r1, r2, w1, w2, dyz, d1, d2, ke, ee, b1, b2
     integer         :: i
     ! --------------------------------------------------------------------------
 
@@ -864,11 +872,15 @@ real(DEVDP)  function get_kxeg_rsv(x,y,z,hr,n1,t1,n2,t2)
     w1 = 0.0d0
     w2 = 0.0d0
 
+    b1 = 0.0d0
     do i=1,n1
-        w1 = w1 + t1%pa(i)*exp(-t1%pb(i)*r1)*(r1**t1%pc(i))
+        b1 = b1 + t1%pb(i)
+        w1 = w1 + t1%pa(i)*exp(-b1*r1)*(r1**t1%pc(i))
     end do
+    b2 = 0.0d0
     do i=1,n2
-        w2 = w2 + t2%pa(i)*exp(-t2%pb(i)*r2)*(r2**t2%pc(i))
+        b2 = b2 + t2%pb(i)
+        w2 = w2 + t2%pa(i)*exp(-b2*r2)*(r2**t2%pc(i))
     end do
 
     d1 = w1**used_wf2rho_power
