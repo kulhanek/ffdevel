@@ -199,7 +199,7 @@ real(DEVDP)     :: MinPauliXK   =       0.1d0
 real(DEVDP)     :: MaxPauliXK   =       3.0d0
 real(DEVDP)     :: MinPauliXX   =       0.1d0
 real(DEVDP)     :: MaxPauliXX   =       3.0d0
-real(DEVDP)     :: MinPauliXF   =       1.0d0
+real(DEVDP)     :: MinPauliXF   =       0.0d0
 real(DEVDP)     :: MaxPauliXF   =     100.0d0
 
 ! === [files] ==================================================================
