@@ -64,7 +64,7 @@ subroutine ffdev_pauli_set_default
     pauli_xfun_dpower    = 2.0           ! can be optimized via pauli_xd
     pauli_xfun_kpower    = 2.0d0/3.0d0   ! can be optimized via pauli_xk
     pauli_xfun_xpower    = 1.0d0/3.0d0   ! can be optimized via pauli_xx
-    pauli_xfun_xfac      = 1.0           ! can be optimized via pauli_xf
+    pauli_xfun_xfac      = 0.1           ! can be optimized via pauli_xf
 
 end subroutine ffdev_pauli_set_default
 
