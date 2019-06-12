@@ -200,7 +200,7 @@ real(DEVDP)     :: MaxPauliXK   =       3.0d0
 real(DEVDP)     :: MinPauliXX   =       0.1d0
 real(DEVDP)     :: MaxPauliXX   =       3.0d0
 real(DEVDP)     :: MinPauliXF   =       1.0d0
-real(DEVDP)     :: MaxPauliXF   =      10.0d0
+real(DEVDP)     :: MaxPauliXF   =     100.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
