@@ -62,10 +62,10 @@ subroutine ffdev_pauli_set_default
     ! XFUN
     pauli_xfun           = PAULI_XFUN_RHOP
     pauli_xfun_dpower    = 2.0           ! can be optimized via pauli_xd
-    ! FIXME - 1.0 added as test
-    pauli_xfun_kpower    = 2.0d0/3.0d0 +1.0d0   ! can be optimized via pauli_xk
-    pauli_xfun_xpower    = 1.0d0/3.0d0 +1.0d0  ! can be optimized via pauli_xx
-    pauli_xfun_xfac      = 0.1           ! can be optimized via pauli_xf
+    !
+    pauli_xfun_kpower    = 5.0d0/3.0d0   ! can be optimized via pauli_xk - kinetic energy HEG
+    pauli_xfun_xpower    = 4.0d0/3.0d0   ! can be optimized via pauli_xx - exchange energy HEG
+    pauli_xfun_xfac      = 0.3           ! can be optimized via pauli_xf
 
 end subroutine ffdev_pauli_set_default
 
