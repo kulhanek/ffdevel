@@ -18,7 +18,7 @@
 #include "MMTypes.hpp"
 #include <math.h>
 #include <SimpleVector.hpp>
-#include <Lapack.hpp>
+#include <SciLapack.hpp>
 
 //==============================================================================
 //------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ void CDihedralType::Cos2GRBF(int dih_samp_freq)
     }
     
     // solv equations
-    if( CLapack::solvle(A,rhs) != 0 ){
+    if( CSciLapack::solvleLU(A,rhs) != 0 ){
         RUNTIME_ERROR("unable to solve transformation");
     }
 

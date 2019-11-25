@@ -27,6 +27,7 @@ program ffdev_external_program
     use ffdev_gradient_utils
     use ffdev_hessian
     use ffdev_hessian_utils
+    use ffdev_timers
 
     implicit none
 
@@ -42,6 +43,9 @@ program ffdev_external_program
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF External')
+
+    call ffdev_timers_init_top
+    call ffdev_timers_init
 
     ! test number of input arguments
     if( command_argument_count() .lt. 5  ) then
@@ -134,6 +138,8 @@ program ffdev_external_program
     call ffdev_geometry_info_ene(geo)
 
     call ffdev_geometry_save_gout(geo,outname,mode)
+
+    call ffdev_timers_finalize(.true.)
 
     call ffdev_utils_footer('FF External')
 

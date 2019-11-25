@@ -26,7 +26,7 @@
 #include <locale>
 #include <FortranMatrix.hpp>
 #include <Vector.hpp>
-#include <Lapack.hpp>
+#include <SciLapack.hpp>
 #include <boost/algorithm/string.hpp>
 
 //------------------------------------------------------------------------------
