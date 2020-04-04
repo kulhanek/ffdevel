@@ -23,6 +23,7 @@ program ffdev_energy_program
     use ffdev_topology
     use ffdev_geometry
     use ffdev_energy
+    use ffdev_timers
 
     implicit none
     character(len=MAX_PATH) :: topname      ! input topology name
@@ -35,6 +36,9 @@ program ffdev_energy_program
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Energy')
+
+    call ffdev_timers_init_top
+    call ffdev_timers_init
 
     ! test number of input arguments
     if( command_argument_count() .lt. 2 ) then
@@ -96,6 +100,8 @@ program ffdev_energy_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'FF Energies','=')
     call ffdev_geometry_info_ene(geo)
+
+    call ffdev_timers_finalize(.true.)
 
     call ffdev_utils_footer('FF Energy')
 

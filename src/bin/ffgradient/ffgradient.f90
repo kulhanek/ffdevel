@@ -24,6 +24,7 @@ program ffdev_gradient_program
     use ffdev_geometry
     use ffdev_gradient
     use ffdev_gradient_utils
+    use ffdev_timers
 
     implicit none
 
@@ -38,6 +39,9 @@ program ffdev_gradient_program
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Gradient')
+
+    call ffdev_timers_init_top
+    call ffdev_timers_init
 
     ! test number of input arguments
     if( command_argument_count() .lt. 2  ) then
@@ -151,6 +155,8 @@ program ffdev_gradient_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'FF Gradient','=')
     call ffdev_gradient_print(DEV_OUT,top,geo)
+
+    call ffdev_timers_finalize(.true.)
 
     call ffdev_utils_footer('FF Gradient')
 

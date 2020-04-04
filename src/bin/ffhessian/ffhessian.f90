@@ -27,6 +27,7 @@ program ffdev_hessian_program
     use ffdev_gradient_utils
     use ffdev_hessian
     use ffdev_hessian_utils
+    use ffdev_timers
 
     implicit none
 
@@ -41,6 +42,9 @@ program ffdev_hessian_program
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Hessian')
+
+    call ffdev_timers_init_top
+    call ffdev_timers_init
 
     ! test number of input arguments
     if( command_argument_count() .lt. 2 ) then
@@ -204,6 +208,8 @@ program ffdev_hessian_program
         write(DEV_OUT,*)
         write(DEV_OUT,120)
     end if
+
+    call ffdev_timers_finalize(.true.)
 
     call ffdev_utils_footer('FF Hessian')
 

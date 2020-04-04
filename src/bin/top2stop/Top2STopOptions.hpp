@@ -96,7 +96,7 @@ public:
                 false,                          /* is option mandatory */
                 'f',                           /* short option name */
                 "dihfilters",                      /* long option name */
-                NULL,                           /* parametr name */
+                "NAME",                           /* parametr name */
                 "name of file with atoms types defining dihedrals for grbf transformation, multiple filters can be specified each on a line, "
                 "either two atom types for central bond or four atom types for exact dihedaral type")   /* option description */
     //----------------------------------------------------------------------

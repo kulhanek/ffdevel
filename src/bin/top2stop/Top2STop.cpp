@@ -200,9 +200,9 @@ bool CTop2STop::LoadDihFilters(void)
         stringstream sfs(line);
         CDihedralTypeFilter filter;
         sfs >> filter.t1 >> filter.t2 >> filter.t3 >> filter.t4;
-        vout << setw(4) << right << "X" << " " << setw(4) << right << filter.t1 << " ";
-        vout << setw(4) << right << filter.t2 << " " << setw(4) << right << "X";
         if( filter.t3.empty() &&  filter.t3.empty() ){
+            vout << setw(4) << right << "X" << " " << setw(4) << right << filter.t1 << " ";
+            vout << setw(4) << right << filter.t2 << " " << setw(4) << right << "X";
             filter.full = false;
         } else {
             vout        << setw(4) << right << filter.t1 << " " << setw(4) << right << filter.t2;
