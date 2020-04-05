@@ -28,6 +28,7 @@ public:
     std::string name;
     double      mass;
     int         z;
+    int         IAC;
 public:
     CAtomType(void);
     bool operator != (const CAtomType& right);

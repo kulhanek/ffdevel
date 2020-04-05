@@ -47,9 +47,6 @@ SET(FFDEVEL_SRC
         parameters/errors/rmsd_dat.f90
         parameters/errors/rmsd.f90
         parameters/errors/rmsd_control.f90
-        parameters/errors/freqs_dat.f90
-        parameters/errors/freqs.f90
-        parameters/errors/freqs_control.f90
         parameters/errors/ihess_dat.f90
         parameters/errors/ihess.f90
         parameters/errors/ihess_control.f90

@@ -311,6 +311,7 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
         CAtomType mmtype;
         mmtype.name = p_atom->GetType();
         mmtype.mass = p_atom->GetMass();
+        mmtype.IAC = p_atom->GetIAC();
         if( p_atom->GetAtomicNumber() > 0 ){
             mmtype.z = p_atom->GetAtomicNumber();
         } else {
@@ -357,7 +358,6 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
 
     natom_types = AtomTypes.size();
 }
-
 
 //------------------------------------------------------------------------------
 
@@ -1074,24 +1074,26 @@ void CTop2STop::WriteImpropers(ostream& sout)
 
 void CTop2STop::WriteNBTypes(ostream& sout)
 {
-    map<int,int> Types;
+    // Topology.NonBondedList.GetNumberOfTypes() - contains only unique NB types not all!!!
+    // thus we must rebuild the list ...
 
-    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
-        CAmberAtom* p_atom = Topology.AtomList.GetAtom(i);
-        Types[p_atom->GetIAC()-1] = FindAtomTypeIdx(i);
-    }
+    NBTypes.clear();
 
     sout << "[nb_types]" << endl;
     sout << "! Index TypA TypB           eps            r0         alpha ! TypeA TypeB" << endl;
 
     int idx = 1;
-    for(int i=0; i < Topology.NonBondedList.GetNumberOfTypes(); i++){
-        for(int j=i; j < Topology.NonBondedList.GetNumberOfTypes(); j++){
+    for(int i=1; i <= natom_types; i++){
+        for(int j=i; j <= natom_types; j++){
+
+            int iac_a = AtomTypes[i].IAC-1;
+            int iac_b = AtomTypes[j].IAC-1;
 
             // ij parameters
-            int icoij = Topology.NonBondedList.GetICOIndex(Topology.NonBondedList.GetNumberOfTypes()*i + j);
+            int icoij = Topology.NonBondedList.GetICOIndex(Topology.NonBondedList.GetNumberOfTypes()*iac_a + iac_b);
 
-            NBTypes[icoij] = idx;
+            NBTypes[(i-1)*natom_types+j] = idx;
+            NBTypes[(j-1)*natom_types+i] = idx;
 
             double aij,bij,epsij,rij;
 
@@ -1105,8 +1107,8 @@ void CTop2STop::WriteNBTypes(ostream& sout)
                 rij = pow(2*aij/bij,1.0/6.0) * 0.5;
             }
 
-            int it = Types[i];
-            int jt = Types[j];
+            int it = AtomTypes[i].idx;
+            int jt = AtomTypes[j].idx;
 
             sout << right << setw(7) << idx << " ";
             sout << left << setw(4) << it << " ";
@@ -1144,8 +1146,9 @@ void CTop2STop::WriteNBListKeep(ostream& sout)
             // is exluded
             if( Topology.IsNBPairExcluded(i,j) == true ) continue;
 
-            int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
-            int nbidx = NBTypes[ico];
+            int ati = FindAtomTypeIdx(i);
+            int atj = FindAtomTypeIdx(j);
+            int nbidx = NBTypes[(ati-1)*natom_types+atj];
 
             sout << right << setw(7) << idx << " ";
             sout << right << setw(5) << i+1 << " ";
@@ -1228,8 +1231,9 @@ void CTop2STop::WriteNBListKeep(ostream& sout)
         CAmberAtom* p_atom1 = Topology.AtomList.GetAtom(ip);
         CAmberAtom* p_atom2 = Topology.AtomList.GetAtom(lp);
 
-        int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
-        int nbidx = NBTypes[ico];
+        int ati = FindAtomTypeIdx(ip);
+        int atj = FindAtomTypeIdx(lp);
+        int nbidx = NBTypes[(ati-1)*natom_types+atj];
 
         sout << right << setw(7) << idx << " ";
         sout << right << setw(5) << ip+1 << " ";
@@ -1320,8 +1324,9 @@ void CTop2STop::WriteNBListRebuild(ostream& sout)
                 nb_sizeij++;
             }
 
-            int ico = Topology.NonBondedList.GetICOIndex(p_atom1,p_atom2);
-            int nbidx = NBTypes[ico];
+            int ati = FindAtomTypeIdx(i);
+            int atj = FindAtomTypeIdx(j);
+            int nbidx = NBTypes[(ati-1)*natom_types+atj];
 
             sout << right << setw(7) << idx << " ";
             sout << right << setw(5) << i+1 << " ";

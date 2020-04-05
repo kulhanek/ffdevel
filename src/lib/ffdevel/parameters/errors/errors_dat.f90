@@ -31,7 +31,6 @@ type FFERROR_TYPE
     real(DEVDP)         :: impropers
     real(DEVDP)         :: rmsd
     real(DEVDP)         :: nbdists
-    real(DEVDP)         :: freqs
     real(DEVDP)         :: ihess_bonds
     real(DEVDP)         :: ihess_angles
     real(DEVDP)         :: ihess_dihedrals
@@ -45,7 +44,6 @@ type(FFERROR_TYPE)      :: FFError
 logical                 :: errors_calc_ene      = .false.
 logical                 :: errors_calc_grad     = .false.
 logical                 :: errors_calc_hess     = .false.
-logical                 :: errors_calc_freq     = .false.
 
 ! ------------------------------------------------------------------------------
 

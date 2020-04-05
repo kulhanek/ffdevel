@@ -73,7 +73,7 @@ public:
                 NULL,                           /* default value */
                 true,                           /* is argument mandatory */
                 "FILTERS",                           /* parametr name */
-                "Applied filters (slash separated): langles - remove all straight angles, ldihedrals - remove all straight dihedrals")   /* argument description */
+                "Applied filters (slash separated): langles - remove all straight angles, znagles - remove all zero angles, ldihedrals - remove all straight angle dihedrals, zdihedrals - remove all zero angle dihedrals")   /* argument description */
     //----------------------------------------------------------------------
     CSO_MAP_ARG(CSmallString,                   /* argument type */
                 OutTopologyName,                          /* argument name */

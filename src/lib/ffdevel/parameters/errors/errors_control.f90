@@ -34,7 +34,6 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_nbdists_control
     use ffdev_err_energy_control
     use ffdev_err_rmsd_control
-    use ffdev_err_freqs_control
     use ffdev_err_ihess_control
     use ffdev_err_bonds
     use ffdev_err_angles
@@ -43,7 +42,6 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_nbdists
     use ffdev_err_energy
     use ffdev_err_rmsd
-    use ffdev_err_freqs
     use ffdev_err_ihess
     use ffdev_errors_dat
     use ffdev_utils
@@ -59,7 +57,6 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_utils_heading(DEV_OUT,'FFERROR', ':')
 
     ! clear what should be calculated
-    errors_calc_freq = .false.
     errors_calc_hess = .false.
     errors_calc_grad = .false.
     errors_calc_ene  = .false.
@@ -77,7 +74,6 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_dihedrals_ctrl(fin)
     call ffdev_err_impropers_ctrl(fin)
     call ffdev_err_nbdists_ctrl(fin)
-    call ffdev_err_freqs_ctrl(fin)
     call ffdev_err_ihess_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
 

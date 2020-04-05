@@ -59,7 +59,9 @@ private:
 
     /// filters
     bool FilterLAngles(void);
+    bool FilterZAngles(void);
     bool FilterLDihedrals(void);
+    bool FilterZDihedrals(void);
 };
 
 //------------------------------------------------------------------------------

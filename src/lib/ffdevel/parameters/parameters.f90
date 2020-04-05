@@ -1762,9 +1762,9 @@ subroutine ffdev_parameters_save_amber(name)
  20 format(A)
  30 format(A4,10X,F16.6,1X,F16.6)
  40 format(A2,'-',A2,9X,F16.6,1X,F16.6)
- 50 format(A2,'-',A2,'-',A2,6X,F16.6,1X,F16.6)
- 60 format(A2,'-',A2,'-',A2,'-',A2,1X,'1',1X,F16.6,1X,F16.6,1X,I4,1X,'SCEE=',F4.2,1X,'SCNB=',F4.2)
- 70 format(A2,'-',A2,'-',A2,'-',A2,3X,F16.6,1X,F16.6,1X,I4)
+ 50 format(A2,'-',A2,'-',A2,6X,F16.6,1X,F16.3)
+ 60 format(A2,'-',A2,'-',A2,'-',A2,1X,'1',1X,F16.6,1X,F16.3,1X,I4,1X,'SCEE=',F4.2,1X,'SCNB=',F4.2)
+ 70 format(A2,'-',A2,'-',A2,'-',A2,3X,F16.6,1X,F16.3,1X,I4)
  80 format(A4,10X,F16.6,1X,F16.6)
 
 end subroutine ffdev_parameters_save_amber

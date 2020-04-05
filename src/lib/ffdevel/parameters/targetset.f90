@@ -119,14 +119,9 @@ subroutine ffdev_targetset_calc_all
     ! calculate all energies, gradients, hessians    
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_hess_loaded .and. (errors_calc_hess .or. errors_calc_freq) ) then
+            if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
                 ! calculate hessian
                 call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
-                ! calculate frequencies
-                if( sets(i)%geo(j)%trg_freq_loaded .and. errors_calc_freq ) then
-                    call ffdev_hessian_allocate_freq(sets(i)%geo(j))
-                    call ffdev_hessian_calc_freqs(sets(i)%geo(j))
-                end if
             else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
                 call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
             else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
