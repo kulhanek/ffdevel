@@ -63,6 +63,9 @@ integer(8)      :: NLoptID
 integer         :: NLOpt_Method
 real(DEVDP)     :: NLOpt_InitialStep
 
+! FIXME - need to implement setup via control file
+integer         :: NLOPT_NRuns
+
 ! === [Shark] ==================================================================
 integer         :: Shark_Method
 real(DEVDP)     :: Shark_InitialStep

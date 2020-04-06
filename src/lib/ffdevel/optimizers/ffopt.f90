@@ -147,6 +147,7 @@ subroutine ffdev_ffopt_set_default()
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
     NLOpt_InitialStep   = 0.001d0
+    NLOPT_NRuns         = 1
 
 ! === [Shark] ==================================================================
     Shark_Method            = SHARK_CMA_ES
@@ -236,7 +237,7 @@ subroutine ffdev_ffopt_run()
     use ffdev_errors
 
     implicit none
-    integer :: alloc_stat, i
+    integer :: alloc_stat, i, istep
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -273,7 +274,9 @@ subroutine ffdev_ffopt_run()
             call opt_lbfgs
         case(MINIMIZATION_NLOPT)
             call write_header(.true.)
-            call opt_nlopt
+            do istep=1,NLOPt_NRuns
+                call opt_nlopt
+            end do
         case(MINIMIZATION_SHARK)
             if( Shark_NRuns .eq. 1 ) then
                 ! it has own header

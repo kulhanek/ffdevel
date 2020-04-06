@@ -241,7 +241,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     character(PRMFILE_MAX_PATH) :: string,realm
     logical                     :: rst
     character(MAX_PATH)         :: key
-    real(DEVDP)                 :: rnd, minv, maxv
+    real(DEVDP)                 :: rnd, minv, maxv, rfact
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -310,13 +310,30 @@ subroutine ffdev_parameters_ctrl_realms(fin)
                 end select
                 write(DEV_OUT,30) nchanged,trim(string)
             case('randomize')
+                nchanged = 0
                 do i=1,nparams
                     if( .not. params(i)%enabled ) cycle
                     call random_number(rnd)
                     minv = ffdev_params_get_lower_bound(params(i)%realm)
                     maxv = ffdev_params_get_upper_bound(params(i)%realm)
                     params(i)%value = minv + (maxv - minv)*rnd
+                    nchanged = nchanged + 1
                 end do
+                write(DEV_OUT,30) nchanged,trim(string)
+            case('randomize-small')
+                rfact = 0.01
+                nchanged = 0
+                do i=1,nparams
+                    if( .not. params(i)%enabled ) cycle
+                    call random_number(rnd)
+                    minv = ffdev_params_get_lower_bound(params(i)%realm)
+                    maxv = ffdev_params_get_upper_bound(params(i)%realm)
+                    params(i)%value = params(i)%value + rfact*rnd - rfact*0.5d0
+                    if( params(i)%value .lt. minv ) params(i)%value = minv
+                    if( params(i)%value .gt. maxv ) params(i)%value = maxv
+                    nchanged = nchanged + 1
+                end do
+                write(DEV_OUT,30) nchanged,trim(string)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported action key '''//trim(key)//'''!')
         end select

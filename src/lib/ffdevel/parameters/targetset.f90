@@ -73,9 +73,12 @@ subroutine ffdev_targetset_calc_all
     implicit none
     integer         :: i,j,k
     integer,save    :: evalcounter = 0      ! global counter
+    integer         :: georeseted
     ! --------------------------------------------------------------------------
 
     evalcounter = evalcounter + 1
+
+    georeseted = 0
 
     ! apply combination rules
     if( ApplyCombinationRules ) then
@@ -100,7 +103,7 @@ subroutine ffdev_targetset_calc_all
                     if( ResetKeptOptGeoAt .gt. 0 ) then
                         if( mod(evalcounter,ResetKeptOptGeoAt) .eq. 0 ) then
                             sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
-                            write(DEV_OUT,*) '>>> Geometry reset ... ', evalcounter
+                            georeseted = georeseted + 1
                         end if
                     end if
                 end if
@@ -115,6 +118,10 @@ subroutine ffdev_targetset_calc_all
             end if
         end do
     end do
+
+    if( georeseted .gt. 0 ) then
+        write(DEV_OUT,*) '>>> Geometries (',georeseted,') reseted at ', evalcounter
+    end if
     
     ! calculate all energies, gradients, hessians    
     do i=1,nsets
