@@ -26,8 +26,6 @@ program ffdev_optimize_program
     use ffdev_parameters_dat
     use ffdev_parameters_control
     use ffdev_targetset
-    use ffdev_mmd3
-    use ffdev_mmd3_dontrol
     use ffdev_errors
     use ffdev_errors_dat
     use ffdev_xdm

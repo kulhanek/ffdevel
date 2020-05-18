@@ -88,7 +88,6 @@ IF(LIBS_SHARED)
                             VERSION ${FFDEVEL_VERSION})
     TARGET_LINK_LIBRARIES(ffdevel_shared
             ${SHARK_LIB_NAME}
-            numgrid
             ${FFTW_LIB_NAME}
             ${NLOPT_LIB_NAME}
             ${LBFGS_LIB_NAME}

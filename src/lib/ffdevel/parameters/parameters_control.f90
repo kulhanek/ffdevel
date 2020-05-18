@@ -1317,7 +1317,6 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     use ffdev_topology_dat
     use prmfile
     use ffdev_utils
-    use ffdev_mmd3
 
     implicit none
     character(PRMFILE_MAX_PATH) :: string
