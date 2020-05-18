@@ -88,9 +88,13 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_rmsd_dat
     use ffdev_err_rmsd
 
+    use ffdev_timers
+
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------------------------------------
+
+    call ffdev_timers_start_timer(FFDEV_ERRORS_TIMER)
 
     error%total = 0.0d0
     error%energy = 0.0d0
@@ -137,6 +141,8 @@ subroutine ffdev_errors_error_only(error)
         call ffdev_err_rmsd_error(error)
         error%total = error%total + error%rmsd*RMSDErrorWeight
     end if
+
+    call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
 

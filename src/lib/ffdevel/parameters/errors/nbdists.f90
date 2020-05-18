@@ -48,7 +48,7 @@ end subroutine ffdev_err_nbdists_init
 subroutine ffdev_err_nbdists_error(error)
 
     use ffdev_targetset_dat
-    use ffdev_utils   
+    use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
     use ffdev_err_nbdists_dat
@@ -95,7 +95,7 @@ subroutine ffdev_err_nbdists_error(error)
 
     if( swsum .gt. 0 ) then
         error%nbdists = sqrt(seterrnbdists/swsum)
-    end if 
+    end if
 
 end subroutine ffdev_err_nbdists_error
 
@@ -181,7 +181,7 @@ subroutine ffdev_err_nbdists_summary(top,geo,printsum)
     110 format('# --------------------------- = ----------------------------- -------------------------------------------------')
     125 format('# Indx Name Type  RIdx  RName    Indx  Name Type  RIdx  RName  d#TRG(1)   d#MM(2) diff(2-1)  sw fce    err(2-1)')
     130 format('# ---- ---- ---- ------ ----- = ------ ---- ---- ------ ----- --------- --------- --------- --------- ---------')
-    140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.4,1X,F9.4,1X,F9.4)
+    140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4)
     150 format('# Minimum unsigned difference (SUD)  = ',F9.4)
     160 format('# Largest unsigned difference (MUD)  = ',F9.4)
     170 format('# Average usigned difference (AD)    = ',F9.4)

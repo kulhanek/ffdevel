@@ -85,12 +85,15 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     use ffdev_geoopt_dat
     use ffdev_topology
     use ffdev_geometry
+    use ffdev_timers
 
     implicit none
     integer         :: fout
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
+
+    call ffdev_timers_start_timer(FFDEV_GEOOPT_TIMER)
 
     if( PrintRSTSummary ) then
         ! print summary about RSTs
@@ -107,6 +110,8 @@ subroutine ffdev_geoopt_run(fout,top,geo)
         case(MINIMIZATION_LBFGS)
             call opt_lbfgs(fout,top,geo)
     end select
+
+    call ffdev_timers_stop_timer(FFDEV_GEOOPT_TIMER)
 
 end subroutine ffdev_geoopt_run
 

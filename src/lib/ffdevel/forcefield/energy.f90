@@ -46,7 +46,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
         calcnb = .not. skipnb
     end if
 
-    call ffdev_timers_start_timer(FFDEV_POT_ENERGY)
+    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
 
     ! reset energy
     geo%bond_ene = 0.0d0
@@ -69,7 +69,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     end if
 
     if( calcnb ) then
-
+        call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
         select case(nb_mode)
             case(NB_VDW_LJ)
                 if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
@@ -87,14 +87,14 @@ subroutine ffdev_energy_all(top,geo,skipnb)
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_energy_all!')
         end select
-
+        call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
                   + geo%ele_ene + geo%nb_ene
 
-    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY)
+    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
 end subroutine ffdev_energy_all
 

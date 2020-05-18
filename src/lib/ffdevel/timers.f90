@@ -28,13 +28,16 @@ use ffdev_constants
 
 implicit none
 
-    integer     :: FFDEV_POT_TIMER                  = -30
-        integer     :: FFDEV_POT_ENERGY             = -40
-            integer     :: FFDEV_POT_NB_ENERGY      = -41
-                integer     :: FFDEV_POT_NB_GRID    = -42
-                integer     :: FFDEV_POT_NB_INT     = -43
-        integer     :: FFDEV_POT_GRADIENT           = -50
-        integer     :: FFDEV_POT_HESSIAN            = -60
+    integer     :: FFDEV_POT_TIMER                              = -30
+        integer     :: FFDEV_INITIALIZATION_TIMER               = -31
+        integer     :: FFDEV_FFOPT_TIMER                        = -32
+            integer     :: FFDEV_ERRORS_TIMER                   = -35
+            integer     :: FFDEV_POT_ENERGY_TIMER               = -40
+                integer     :: FFDEV_POT_NB_ENERGY_TIMER        = -41
+            integer     :: FFDEV_GEOOPT_TIMER                   = -43
+                integer     :: FFDEV_POT_GRADIENT_TIMER         = -50
+                    integer     :: FFDEV_POT_NB_GRADIENT_TIMER  = -51
+            integer     :: FFDEV_POT_HESSIAN_TIMER              = -60
 
 contains
 
@@ -67,12 +70,15 @@ subroutine ffdev_timers_init
  ! -----------------------------------------------------------------------------
 
  ! add standard timers --------------------------------
-    FFDEV_POT_ENERGY        = add_timer(TOTAL_TIMER,'MM Energy')
-        FFDEV_POT_NB_ENERGY         = add_timer(FFDEV_POT_ENERGY,'NB energy')
-            FFDEV_POT_NB_GRID               = add_timer(FFDEV_POT_NB_ENERGY,'Grid')
-            FFDEV_POT_NB_INT                = add_timer(FFDEV_POT_NB_ENERGY,'Integration')
-    FFDEV_POT_GRADIENT      = add_timer(TOTAL_TIMER,'MM Gradient')
-    FFDEV_POT_HESSIAN       = add_timer(TOTAL_TIMER,'MM Hessian')
+    FFDEV_INITIALIZATION_TIMER    = add_timer(TOTAL_TIMER,'Initialization')
+    FFDEV_FFOPT_TIMER             = add_timer(TOTAL_TIMER,'FFOpt')
+        FFDEV_ERRORS_TIMER            = add_timer(FFDEV_FFOPT_TIMER,'Errors')
+        FFDEV_POT_ENERGY_TIMER        = add_timer(FFDEV_FFOPT_TIMER,'MM Energy')
+            FFDEV_POT_NB_ENERGY_TIMER         = add_timer(FFDEV_POT_ENERGY_TIMER,'NB energy')
+        FFDEV_GEOOPT_TIMER            = add_timer(FFDEV_FFOPT_TIMER,'GeoOpt')
+            FFDEV_POT_GRADIENT_TIMER      = add_timer(FFDEV_GEOOPT_TIMER,'MM Gradient')
+                FFDEV_POT_NB_GRADIENT_TIMER       = add_timer(FFDEV_POT_GRADIENT_TIMER,'NB gradient')
+        FFDEV_POT_HESSIAN_TIMER       = add_timer(FFDEV_FFOPT_TIMER,'MM Hessian')
 
 end subroutine ffdev_timers_init
 

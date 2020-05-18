@@ -46,6 +46,8 @@ program ffdev_optimize_program
     call ffdev_timers_init_top
     call ffdev_timers_init
 
+    call ffdev_timers_start_timer(FFDEV_INITIALIZATION_TIMER)
+
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
         call print_usage()
@@ -151,6 +153,8 @@ program ffdev_optimize_program
 
         rst = prmfile_next_group(fin)
     end do
+
+    call ffdev_timers_stop_timer(FFDEV_INITIALIZATION_TIMER)
 
     ! check if everything was read
     if( prmfile_count_ulines(fin) .ne. 0 ) then

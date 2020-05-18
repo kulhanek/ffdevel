@@ -235,10 +235,13 @@ subroutine ffdev_ffopt_run()
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_errors
+    use ffdev_timers
 
     implicit none
     integer :: alloc_stat, i, istep
     ! --------------------------------------------------------------------------
+
+    call ffdev_timers_start_timer(FFDEV_FFOPT_TIMER)
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'FF Parameter Optimization', ':')
@@ -294,6 +297,8 @@ subroutine ffdev_ffopt_run()
     call ffdev_errors_summary(.true.)
 
     deallocate(FFParams,FFParamsGrd)
+
+    call ffdev_timers_stop_timer(FFDEV_FFOPT_TIMER)
 
  1 format('# ==============================================================================')
 
@@ -592,7 +597,7 @@ subroutine opt_nlopt
 
     call write_header(.false.)
     call write_results(istep,FFError,0.0d0,0.0d0,.true.)
-    
+
     write(DEV_OUT,*)
     select case(ires)
         case(NLOPT_SUCCESS)
@@ -955,7 +960,7 @@ subroutine write_header(printmethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,60)
         case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
-            write(DEV_OUT,*) 
+            write(DEV_OUT,*)
     end select
 
     write(DEV_OUT,25,ADVANCE='NO')
@@ -965,9 +970,9 @@ subroutine write_header(printmethod)
         case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
             write(DEV_OUT,65)
         case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
-            write(DEV_OUT,*) 
-    end select    
-   
+            write(DEV_OUT,*)
+    end select
+
   5 format('# Mode = Single Point')
  10 format('# Mode = Steepest Descent')
  15 format('# Mode = L-BFGS')
@@ -976,7 +981,7 @@ subroutine write_header(printmethod)
 
  20 format('# STEP        Error')
  25 format('#----- ------------')
-  
+
  60 format('         RMSG         maxG')
  65 format(' ------------ ------------')
 
@@ -1010,8 +1015,8 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
             case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
                 write(DEV_OUT,20) rmsg,maxgrad
             case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK,MINIMIZATION_SINGLE_POINT)
-                write(DEV_OUT,*) 
-        end select  
+                write(DEV_OUT,*)
+        end select
         flush(DEV_OUT)
     end if
 
