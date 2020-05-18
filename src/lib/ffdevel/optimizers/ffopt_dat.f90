@@ -42,7 +42,7 @@ integer         :: OptimizationMethod
 integer         :: NOptSteps            ! max number of steps
 integer         :: OutSamples           ! how often write results
 
-! maximum number of steps is nsteps - this is becuase of change of restraints etc 
+! maximum number of steps is nsteps - this is becuase of change of restraints etc
 real(DEVDP)     :: MaxRMSG
 real(DEVDP)     :: MaxG
 real(DEVDP)     :: MinErrorChange      ! negative number - this test is switched off by default

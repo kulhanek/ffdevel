@@ -76,15 +76,16 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
         call ffdev_hessian_impropers(top,geo)
     end if
 
-    if( calcnb ) then
-        ! non-bonded terms
-        select case(top%nb_mode)
-            case(NB_MODE_LJ)
-                call ffdev_hessian_nb_lj(top,geo,+1.0d0)
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_hessian_all!')
-        end select
-    end if
+    ! FIXME
+!    if( calcnb ) then
+!        ! non-bonded terms
+!        select case(top%nb_mode)
+!            case(NB_MODE_LJ)
+!                call ffdev_hessian_nb_lj(top,geo,+1.0d0)
+!            case default
+!                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_hessian_all!')
+!        end select
+!    end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
@@ -511,7 +512,7 @@ subroutine ffdev_hessian_angles(top,geo)
             f0 = 1.0d3
         else
             f0 = 1.0d0 / f0
-        end if        
+        end if
         f1 = - top%angle_types(ic)%k*f0*da
 
         dn1 = usi*tsi

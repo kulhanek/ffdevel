@@ -39,7 +39,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
-    integer                     :: i,j,k,l,alloc_status,minj,probesize,nb_mode,comb_rules,npoints
+    integer                     :: i,j,k,l,alloc_status,minj,probesize,comb_rules,npoints
     logical                     :: data_avail,rst,shift2zero,stream
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
@@ -52,7 +52,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     if( .not. prmfile_open_group(fin,'TARGETS') ) then
         call ffdev_utils_exit(DEV_OUT,1,'Unable to open {TARGETS} group!')
     end if
-    
+
     ! load [setup] configuration
     call ffdev_targetset_ctrl_setup(fin)
 
@@ -70,7 +70,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
         rst = prmfile_next_section(fin)
     end do
-        
+
     if( nsets .lt. 0 ) then
         call ffdev_utils_exit(DEV_OUT,1,'At least one target set must be defined!')
     end if
@@ -100,9 +100,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             rst = prmfile_next_section(fin)
             cycle
         end if
-        
+
         write(DEV_OUT,*)
-        write(DEV_OUT,1) i        
+        write(DEV_OUT,1) i
 
 !----------------------
 ! topology
@@ -119,8 +119,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get topology name (topology) for [SET]!')
         end if
         write(DEV_OUT,12) trim(topin)
-        
-        probesize = 0        
+
+        probesize = 0
         if( prmfile_get_integer_by_key(fin,'probesize',probesize) ) then
             write(DEV_OUT,20) probesize
         else
@@ -210,14 +210,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             ! we cannot manipulate with energy in reference mode
             write(DEV_OUT,65) prmfile_onoff(shift2zero)
         end if
-              
+
         sets(i)%optgeo = .false.
         if( prmfile_get_logical_by_key(fin,'optgeo', sets(i)%optgeo)) then
             write(DEV_OUT,40) prmfile_onoff(sets(i)%optgeo)
         else
             write(DEV_OUT,45) prmfile_onoff(sets(i)%optgeo)
-        end if 
-        
+        end if
+
         sets(i)%keepoptgeo = .false.
         if( prmfile_get_logical_by_key(fin,'keepoptgeo', sets(i)%keepoptgeo)) then
             write(DEV_OUT,50) prmfile_onoff(sets(i)%keepoptgeo)
@@ -231,7 +231,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         else
             write(DEV_OUT,115) prmfile_onoff(sets(i)%nofreq)
         end if
-        
+
         sets(i)%savepts  = SavePts
         sets(i)%savexyzr = SaveXYZR
         if( prmfile_get_logical_by_key(fin,'savepts', sets(i)%savepts)) then
@@ -244,7 +244,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         else
             write(DEV_OUT,125) prmfile_onoff(sets(i)%savexyzr)
         end if
-        
+
         wmode = 'auto'
         if( prmfile_get_string_by_key(fin,'wmode', wmode)) then
             write(DEV_OUT,90) trim(wmode)
@@ -291,7 +291,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         else
             write(DEV_OUT,17) trim(sets(i)%final_drvxyz)
         end if
-        
+
 !----------------------
 ! points
 !----------------------
@@ -321,7 +321,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 call ffdev_utils_exit(DEV_OUT,1,'No points for current set!')
             end if
         end if
-        
+
         if( sets(i)%isref .and. (sets(i)%ngeos .ne. 1) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Reference set can contain only one point!')
         end if
@@ -504,46 +504,46 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     end do
 
   1 format('=== [SET] #',I2.2,' ==================================================================')
-  5 format('Set name (name)                         = ',A) 
+  5 format('Set name (name)                         = ',A)
  12 format('Input topology name (topology)          = ',A)
  15 format('Final topology name (final_topology)    = ',A)
  16 format('Final driving profile (final_drvene)    = ',A)
  17 format('Final driving structures (final_drvxyz) = ',A)
  18 format('Initial drv profile (initial_drvene)    = ',A)
  19 format('Initial drv structures (initial_drvxyz) = ',A)
- 
+
  20 format('Probe size (probesize)                  = ',I12)
  25 format('Probe size (probesize)                  = ',I12,'                  (default)')
- 
+
  30 format('Unique probe (unique_probe_types)       = ',A12)
  35 format('Unique probe (unique_probe_types)       = ',A12,'                  (default)')
- 
+
  40 format('Optimize geometry (optgeo)              = ',A12)
- 45 format('Optimize geometry (optgeo)              = ',A12,'                  (default)') 
- 
+ 45 format('Optimize geometry (optgeo)              = ',A12,'                  (default)')
+
  50 format('Keep optimized geometry (keepoptgeo)    = ',A12)
  55 format('Keep optimized geometry (keepoptgeo)    = ',A12,'                  (default)')
- 
- 60 format('Shift minimum to zero (shift2zero)      = ',A12) 
+
+ 60 format('Shift minimum to zero (shift2zero)      = ',A12)
  65 format('Shift minimum to zero (shift2zero)      = ',A12,'                  (default)')
-  
+
  71 format('Set as reference set (isreference)      = ',A12)
  75 format('Set as reference set (isreference)      = ',A12,'                  (default)')
 
  70 format('Reference sets (references)             = ',A)
- 
+
  80 format('Save final point geometry (savepst)     = ',a12)
  85 format('Save final point geometry (savepst)     = ',a12,'                  (default)')
 
 120 format('Save final xyzr geometry (savexyzr)     = ',a12)
 125 format('Save final xyzr geometry (savexyzr)     = ',a12,'                  (default)')
- 
+
  90 format('Point weights mode (wmode)              = ',a12)
- 95 format('Point weights mode (wmode)              = ',a12,'                  (default)') 
+ 95 format('Point weights mode (wmode)              = ',a12,'                  (default)')
 
 110 format('Do not calculate frequencies (nofreq)   = ',a12)
 115 format('Do not calculate frequencies (nofreq)   = ',a12,'                  (default)')
- 
+
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
 305 format('Substracting energy of reference states ...')
@@ -602,7 +602,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     else
         write(DEV_OUT,145) prmfile_onoff(KeepPtsNames)
     end if
-    
+
     if( prmfile_get_logical_by_key(fin,'savepts', SavePts)) then
         write(DEV_OUT,80) prmfile_onoff(SavePts)
     else
@@ -632,7 +632,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     if( SaveXYZR ) then
         call execute_command_line('mkdir -p ' // trim(SaveXYZRPath) )
     end if
-      
+
  10 format('=== [setup] ====================================================================')
 
 100  format ('Do not calculate frequencies (nofreqs) = ',a12)
@@ -655,7 +655,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 
 120  format ('Save xyzr path (savexyzrpath)          = ',a25)
 125  format ('Save xyzr path (savexyzrpath)          = ',a25,'     (default)')
-  
+
 end subroutine ffdev_targetset_ctrl_setup
 
 ! ==============================================================================

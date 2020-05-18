@@ -255,7 +255,6 @@ subroutine ffdev_mmd3_print_params(top)
 
     implicit none
     type(TOPOLOGY)  :: top
-    integer         :: nb_mode
     ! --------------------------------------------
     integer         :: i, za, zb
     real(DEVDP)     :: cna, cnb, r0ab, c6, c8

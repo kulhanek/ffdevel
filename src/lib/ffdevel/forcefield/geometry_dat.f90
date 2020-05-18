@@ -45,6 +45,7 @@ type GEOMETRY
     integer                 :: natoms           ! number of atoms
     character(len=MAX_PATH) :: name
     character(len=MAX_PATH) :: title
+! geometry data
     integer,pointer         :: z(:)             ! proton numbers
     real(DEVDP),pointer     :: crd(:,:)         ! geometry (3,natoms)
     real(DEVDP)             :: bond_ene         ! bond energy
@@ -62,6 +63,8 @@ type GEOMETRY
     real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
     real(DEVDP)             :: weight           ! contribution to all data
+! target data
+    logical                 :: trg_crd_optimized    ! indicates that the goemtry was optimized
     logical                 :: trg_ene_loaded
     logical                 :: trg_crd_loaded
     logical                 :: trg_grd_loaded
@@ -69,7 +72,6 @@ type GEOMETRY
     logical                 :: trg_ihess_loaded
     logical                 :: trg_freq_loaded
     logical                 :: trg_esp_loaded
-    logical                 :: trg_crd_optimized
     real(DEVDP)             :: trg_energy           ! target energy
     real(DEVDP),pointer     :: trg_crd(:,:)         ! target geometry (3,natoms)
     real(DEVDP),pointer     :: trg_grd(:,:)         ! target gradient (3,natoms)
@@ -77,28 +79,26 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_ihess(:)         ! target hessian in internal coordinates (nb+na+nd+ni)
     real(DEVDP),pointer     :: trg_nmodes(:,:,:,:)  ! target normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
-    integer,pointer         :: freq_t2s_map(:)      ! trg_map(trg) = freq; map to freq by angle between normal vectors
-    real(DEVDP),pointer     :: freq_t2s_angles(:)   ! trg_map(trg) = angle; corresponding angles
-    real(DEVDP),pointer     :: freq_t2s_rmsd(:)     ! trg_map(trg) = rmsd; corresponding rmsd
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
+! restraints
     integer                 :: nrst                 ! number of restraints
     type(RESTRAINT),pointer :: rst(:)               ! restraints
     real(DEVDP)             :: rst_energy           ! colvar energy penalty
-    ! supplemental data
-    logical                 :: trg_xdm_loaded       ! all in a.u.
-    real(DEVDP),pointer     :: trg_xdm_c6(:,:)      ! XDM C6 dispersion coefficients
-    real(DEVDP),pointer     :: trg_xdm_c8(:,:)
-    real(DEVDP),pointer     :: trg_xdm_c10(:,:)
-    real(DEVDP),pointer     :: trg_xdm_vol(:)       ! atom volume
-    real(DEVDP),pointer     :: trg_xdm_vol0(:)      ! atom free volume
-    real(DEVDP),pointer     :: trg_xdm_pol0(:)      ! atom free polarizability
-    logical                 :: trg_surf_loaded
-    real(DEVDP),pointer     :: trg_surf_r0(:)       ! atomic radii for molecular surface
-    real(DEVDP),pointer     :: trg_surf_a0(:)       ! atomic surface contribution
-    ! integration grid cache
-    logical                     :: grid_cached
-    type(GRID_CACHE),pointer    :: grid_cache(:)    ! length - nb_size
+! supplemental data
+    logical                 :: sup_xdm_loaded       ! all in a.u.
+    real(DEVDP),pointer     :: sup_xdm_c6(:,:)      ! XDM C6 dispersion coefficients
+    real(DEVDP),pointer     :: sup_xdm_c8(:,:)
+    real(DEVDP),pointer     :: sup_xdm_c10(:,:)
+    real(DEVDP),pointer     :: sup_xdm_vol(:)       ! atom volume
+    real(DEVDP),pointer     :: sup_xdm_vol0(:)      ! atom free volume
+    real(DEVDP),pointer     :: sup_xdm_pol0(:)      ! atom free polarizability
+    logical                 :: sup_surf_loaded
+    real(DEVDP),pointer     :: sup_surf_ses(:)      ! atomic radii for molecular surface
+    real(DEVDP),pointer     :: sup_surf_sas(:)      ! atomic surface contribution
+    logical                 :: sup_chrg_loaded
+    character(len=MAX_PATH) :: sup_chrg_type
+    real(DEVDP),pointer     :: sup_chrg(:)          ! partial atomic charges
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------

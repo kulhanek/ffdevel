@@ -595,9 +595,9 @@ CDihedralType CTop2STop::FindImproperByTypes(int ia,int ib,int ic,int id)
 
 void CTop2STop::WriteDihedralTypes(ostream& sout)
 {
-    
+
     ndihedral_seq_size = Options.GetOptDihedralSeriesSize();
-    
+
     // generate list of dihedral types
     int idx = 1;
     for(int i=0; i < Topology.DihedralList.GetNumberOfDihedrals(); i++) {
@@ -806,7 +806,7 @@ void CTop2STop::SolveTransformation(int type)
     // transform
     DihedralTypes[type].DihCOffset = Options.GetOptDihCOffset();
     DihedralTypes[type].Cos2GRBF(dih_samp_freq);
-    
+
     // calculate rmse
     double rmse = DihedralTypes[type].RMSECos2GRBF(dih_samp_freq);
 
@@ -1080,7 +1080,7 @@ void CTop2STop::WriteNBTypes(ostream& sout)
     NBTypes.clear();
 
     sout << "[nb_types]" << endl;
-    sout << "! Index TypA TypB           eps            r0         alpha ! TypeA TypeB" << endl;
+    sout << "! Index TypA TypB           eps            r0! TypeA TypeB" << endl;
 
     int idx = 1;
     for(int i=1; i <= natom_types; i++){
@@ -1115,7 +1115,6 @@ void CTop2STop::WriteNBTypes(ostream& sout)
             sout << left << setw(4) << jt << " ";
             sout << right << fixed << setw(13) << setprecision(7) << epsij << " ";
             sout << right << fixed << setw(13) << setprecision(7) << rij*2.0 << " ";
-            sout << right << fixed << setw(13) << setprecision(7) << 0.0 << " ! ";
             sout << left << setw(5) << AtomTypes[it].name << " ";
             sout << left << setw(5) << AtomTypes[jt].name << endl;
             idx++;
@@ -1348,7 +1347,7 @@ void CTop2STop::WriteNBListRebuild(ostream& sout)
 void CTop2STop::WriteDimensions(std::ostream& sout)
 {
     sout << "[dimensions]" << endl;
-    sout << "! Scope           Size" << endl;   
+    sout << "! Scope           Size" << endl;
     sout << "atoms             " << natoms << endl;
     sout << "atom_types        " << natom_types << endl;
     sout << "bonds             " << nbonds << endl;
@@ -1364,10 +1363,6 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "nb_size14         " << nb_size14 << endl;
     sout << "nb_size           " << nb_size << endl;
     sout << "nb_types          " << nnb_types << endl;
-
-//    integer,parameter               :: NB_MODE_LJ = 1   ! Lennard-Jones potential
-
-    sout << "nb_mode           " << 1 << endl;
 }
 
 //==============================================================================

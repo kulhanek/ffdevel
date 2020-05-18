@@ -30,8 +30,6 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c10ave
     real(DEVDP)         :: c10sig
     integer             :: num
-    real(DEVDP)         :: eps      ! LJ eps = C6/Rvdw**6
-    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
     real(DEVDP)         :: Cn(20)
 end type XDM_PAIR_TYPE
 
@@ -52,20 +50,15 @@ logical                         :: xdm_data_loaded = .false.
 type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
 type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
 
-! possible apply modes for LJ parameters from XDM data
-integer,parameter       :: APPLY_XDM_NULL = 0
-integer,parameter       :: APPLY_XDM_EPS  = 1
-integer,parameter       :: APPLY_XDM_R0   = 2
+! ------------------------------------------------------------------------------
 
-! keep C6 constant modes
-integer,parameter       :: LEFT_XDM_C6              = 0
-integer,parameter       :: KEEP_XDM_C6_VIA_R0       = 1
-integer,parameter       :: KEEP_XDM_C6_VIA_EPS      = 2
+! https://en.wikipedia.org/wiki/Ionization_energies_of_the_elements_(data_page)
+! CRC data in eV
 
-! === [xdm] ====================================================================
-real(DEVDP)     :: xdm_rvdw_fac     =  2.54d0   ! FIXME -
-real(DEVDP)     :: xdm_C6Scale      =  2.119    ! FIXME - LJ(C6)vsPotMinima
-integer         :: xdm_C6Mode       = LEFT_XDM_C6
+real(DEVDP)     :: xdm_ip(10) = (/  &
+13.59844, 24.58741, &
+5.39172, 9.3227, 8.29803, 11.26030, 14.53414, 13.61806, 17.42282, 21.5646 &
+/)
 
 ! ------------------------------------------------------------------------------
 

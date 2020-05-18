@@ -16,9 +16,6 @@ SET(FFDEVEL_SRC
         forcefield/geometry.f90
         forcefield/geometry_utils.f90
         forcefield/energy.f90
-        forcefield/pauli_dat.f90
-        forcefield/pauli_control.f90
-        forcefield/pauli.f90
         forcefield/gradient.f90
         forcefield/gradient_utils.f90
         forcefield/hessian.f90

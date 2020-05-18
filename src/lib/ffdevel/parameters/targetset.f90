@@ -47,7 +47,7 @@ subroutine ffdev_targetset_init_pts
             ! allocate hessian as needed
             if( sets(i)%geo(j)%trg_hess_loaded ) then
                 call ffdev_hessian_allocate(sets(i)%geo(j))
-                call ffdev_gradient_allocate(sets(i)%geo(j))                
+                call ffdev_gradient_allocate(sets(i)%geo(j))
             end if
         end do
     end do
@@ -69,6 +69,7 @@ subroutine ffdev_targetset_calc_all
     use ffdev_errors_dat
     use ffdev_hessian_utils
     use ffdev_parameters_dat
+    use ffdev_utils
 
     implicit none
     integer         :: i,j,k
@@ -83,15 +84,10 @@ subroutine ffdev_targetset_calc_all
     ! apply combination rules
     if( ApplyCombinationRules ) then
         do i=1,nsets
-            if( sets(i)%top%assumed_comb_rules .eq. COMB_RULE_IN ) then
-                call ffdev_topology_apply_NB_comb_rules(sets(i)%top,NBCombRules)
-            else
-                call ffdev_topology_apply_NB_comb_rules(sets(i)%top,sets(i)%top%assumed_comb_rules)
-            end if
+            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,NBCombRules)
         end do
-        call ffdev_targetset_reinit_nbparams()
-    end if    
-    
+    end if
+
     ! optimize geometry
     do i=1,nsets
         do j=1,sets(i)%ngeos
@@ -122,8 +118,8 @@ subroutine ffdev_targetset_calc_all
     if( georeseted .gt. 0 ) then
         write(DEV_OUT,*) '>>> Geometries (',georeseted,') reseted at ', evalcounter
     end if
-    
-    ! calculate all energies, gradients, hessians    
+
+    ! calculate all energies, gradients, hessians
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
@@ -136,8 +132,8 @@ subroutine ffdev_targetset_calc_all
             end if
         end do
     end do
-    
-   ! update energies 
+
+   ! update energies
     do i=1,nsets
         if( sets(i)%nrefs .gt. 0 ) then
             do j=1,sets(i)%ngeos
@@ -150,7 +146,7 @@ subroutine ffdev_targetset_calc_all
                     sets(i)%geo(j)%nb14_ene     = sets(i)%geo(j)%nb14_ene - sets( sets(i)%refs(k) )%geo(1)%nb14_ene
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
                     sets(i)%geo(j)%nb_ene       = sets(i)%geo(j)%nb_ene - sets( sets(i)%refs(k) )%geo(1)%nb_ene
-                    sets(i)%geo(j)%total_ene    = sets(i)%geo(j)%total_ene - sets( sets(i)%refs(k) )%geo(1)%total_ene  
+                    sets(i)%geo(j)%total_ene    = sets(i)%geo(j)%total_ene - sets( sets(i)%refs(k) )%geo(1)%total_ene
                 end do
             end do
         end if
@@ -188,26 +184,12 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
                 case(REALM_VDW_ALPHA)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
-                case(REALM_PAULI_A1)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA(1)
-                case(REALM_PAULI_B1)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB(1)
-                case(REALM_PAULI_C1)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC(1)
-                case(REALM_PAULI_A2)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA(2)
-                case(REALM_PAULI_B2)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB(2)
-                case(REALM_PAULI_C2)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC(2)
-                case(REALM_PAULI_A3)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA(3)
-                case(REALM_PAULI_B3)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB(3)
-                case(REALM_PAULI_C3)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PC(3)
-                case(REALM_PAULI_DP,REALM_PAULI_RP, &
-                     REALM_PAULI_XD,REALM_PAULI_XK,REALM_PAULI_XX,REALM_PAULI_XF)
+                case(REALM_VDW_PA)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
+                case(REALM_VDW_PB)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
+                case(REALM_VDW_C6)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
                     ! nothing to be here
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
@@ -352,8 +334,8 @@ subroutine ffdev_targetset_save_final_xyzr
         end do
     end do
 
- 10 format('Saving final xyzr geometries ... using MM optimized coordinates')
- 15 format('Saving final xyzr geometries ... using target coordinates')
+ 10 format('Saving final xyzr geometries  ... using MM optimized coordinates')
+ 15 format('Saving final xyzr geometries  ... using target coordinates')
  20 format('S',I2.2,'P',I6.6,'.xyzr')
  25 format(A,'.xyzr')
  30 format(7X,A)

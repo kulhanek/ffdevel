@@ -48,7 +48,7 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_energy = 0
     geo%total_ene = 0
     geo%weight = 1.0
-    
+
     geo%trg_ene_loaded = .false.
     geo%trg_crd_loaded = .false.
     geo%trg_grd_loaded = .false.
@@ -58,8 +58,9 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_optimized = .false.
     geo%esp_npoints = 0
 
-    geo%trg_xdm_loaded = .false.
-    geo%trg_surf_loaded = .false.
+    geo%sup_xdm_loaded = .false.
+    geo%sup_surf_loaded = .false.
+    geo%sup_chrg_loaded = .false.
 
     geo%nrst        = 0
     geo%rst_energy  = 0.0
@@ -77,25 +78,21 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_hess        => null()
     geo%trg_nmodes      => null()
     geo%trg_freq        => null()
-    geo%freq_t2s_map    => null()
-    geo%freq_t2s_angles => null()
-    geo%freq_t2s_rmsd   => null()
     geo%trg_esp         => null()
 
-    geo%trg_xdm_c6      => null()
-    geo%trg_xdm_c8      => null()
-    geo%trg_xdm_c10     => null()
-    geo%trg_xdm_vol     => null()
-    geo%trg_xdm_vol0    => null()
-    geo%trg_xdm_pol0    => null()
+    geo%sup_xdm_c6      => null()
+    geo%sup_xdm_c8      => null()
+    geo%sup_xdm_c10     => null()
+    geo%sup_xdm_vol     => null()
+    geo%sup_xdm_vol0    => null()
+    geo%sup_xdm_pol0    => null()
 
-    geo%trg_surf_r0     => null()
-    geo%trg_surf_a0     => null()
+    geo%sup_surf_ses    => null()
+    geo%sup_surf_sas    => null()
 
-    geo%rst         => null()
+    geo%sup_chrg        => null()
 
-    geo%grid_cached = .false.
-    geo%grid_cache  => null()
+    geo%rst             => null()
 
 end subroutine ffdev_geometry_init
 
@@ -141,18 +138,44 @@ subroutine ffdev_geometry_destroy(geo)
         deallocate(geo%trg_freq)
     end if
 
-    if( associated(geo%freq_t2s_map) ) then
-        deallocate(geo%freq_t2s_map)
-    end if
-    if( associated(geo%freq_t2s_angles) ) then
-        deallocate(geo%freq_t2s_angles)
-    end if
-    if( associated(geo%freq_t2s_rmsd) ) then
-        deallocate(geo%freq_t2s_rmsd)
-    end if
-
     if( associated(geo%trg_esp) ) then
         deallocate(geo%trg_esp)
+    end if
+
+    if( associated(geo%sup_xdm_c6) ) then
+        deallocate(geo%sup_xdm_c6)
+    end if
+
+    if( associated(geo%sup_xdm_c8) ) then
+        deallocate(geo%sup_xdm_c8)
+    end if
+
+    if( associated(geo%sup_xdm_c10) ) then
+        deallocate(geo%sup_xdm_c10)
+    end if
+
+    if( associated(geo%sup_xdm_vol) ) then
+        deallocate(geo%sup_xdm_vol)
+    end if
+
+    if( associated(geo%sup_xdm_vol0) ) then
+        deallocate(geo%sup_xdm_vol0)
+    end if
+
+    if( associated(geo%sup_xdm_pol0) ) then
+        deallocate(geo%sup_xdm_pol0)
+    end if
+
+    if( associated(geo%sup_surf_ses) ) then
+        deallocate(geo%sup_surf_ses)
+    end if
+
+    if( associated(geo%sup_surf_sas) ) then
+        deallocate(geo%sup_surf_sas)
+    end if
+
+    if( associated(geo%sup_chrg) ) then
+        deallocate(geo%sup_chrg)
     end if
 
     if( associated(geo%rst) ) then
@@ -161,6 +184,8 @@ subroutine ffdev_geometry_destroy(geo)
         end do
         deallocate(geo%rst)
     end if
+
+    call ffdev_geometry_init(geo)
 
 end subroutine ffdev_geometry_destroy
 
@@ -408,7 +433,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
     type(GEOMETRY)      :: geo
     logical             :: stream
     ! --------------------------------------------
-    integer             :: i,j,k,l,alloc_stat,read_stat,ri,rj
+    integer             :: i,j,k,l,alloc_stat,read_stat,ri,rj,xdm_mode
     character(len=255)  :: line,buffer
     character(len=80)   :: key,sym
     ! --------------------------------------------------------------------------
@@ -457,7 +482,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
         end if
         geo%trg_crd = geo%crd
     end if
-    
+
     ! extra data - optional
     do while( .true. )
         ! read key line
@@ -542,55 +567,108 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 end do
                 geo%trg_esp_loaded = .true.
             case('XDM')
-                allocate( geo%trg_xdm_c6(geo%natoms,geo%natoms),  &
-                          geo%trg_xdm_c8(geo%natoms,geo%natoms),  &
-                          geo%trg_xdm_c10(geo%natoms,geo%natoms), &
-                          geo%trg_xdm_vol(geo%natoms), &
-                          geo%trg_xdm_vol0(geo%natoms), &
-                          geo%trg_xdm_pol0(geo%natoms), stat = alloc_stat )
+                ! xdm_mode is reserved for future use
+                read(DEV_GEO,*,iostat = read_stat) xdm_mode
+                if( read_stat .ne. 0 ) then
+                    write(buffer,'(A,I3)') 'Unable to read XDM mode entry! XDM line = ',i
+                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                end if
+                if( xdm_mode .ne. 1 ) then
+                    write(buffer,'(A,I3)') 'Unsupported XMD mode:',xdm_mode
+                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                end if
+                allocate( geo%sup_xdm_c6(geo%natoms,geo%natoms),  &
+                          geo%sup_xdm_c8(geo%natoms,geo%natoms),  &
+                          geo%sup_xdm_c10(geo%natoms,geo%natoms), &
+                          geo%sup_xdm_vol(geo%natoms), &
+                          geo%sup_xdm_vol0(geo%natoms), &
+                          geo%sup_xdm_pol0(geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
                     call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for XDM!')
                 end if
-                geo%trg_xdm_c6(:,:) = 0.0d0
-                geo%trg_xdm_c8(:,:) = 0.0d0
-                geo%trg_xdm_c10(:,:) = 0.0d0
-                geo%trg_xdm_vol(:) = 0.0d0
-                geo%trg_xdm_vol0(:) = 0.0d0
-                geo%trg_xdm_pol0(:) = 0.0d0
+                geo%sup_xdm_c6(:,:) = 0.0d0
+                geo%sup_xdm_c8(:,:) = 0.0d0
+                geo%sup_xdm_c10(:,:) = 0.0d0
+                geo%sup_xdm_vol(:) = 0.0d0
+                geo%sup_xdm_vol0(:) = 0.0d0
+                geo%sup_xdm_pol0(:) = 0.0d0
                 ! first volumes and polarizabilities
                 do i=1,geo%natoms
-                    read(DEV_GEO,*,iostat = read_stat) ri, geo%trg_xdm_vol(i), &
-                                                       geo%trg_xdm_vol0(i), geo%trg_xdm_pol0(i)
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_xdm_vol(i), &
+                                                       geo%sup_xdm_vol0(i), geo%sup_xdm_pol0(i)
                     if( read_stat .ne. 0 ) then
-                        write(buffer,'(A,I3,1X,I3)') 'Unable to read XDM pol entry! XDM line = ',i
+                        write(buffer,'(A,I3)') 'Unable to read XDM pol entry! XDM line = ',i
                         call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                     end if
                     if( ri .ne. i ) then
-                        write(buffer,'(A,I3,1X,I3)') 'Missaligned XDM pol entry! XDM line = ',i
+                        write(buffer,'(A,I3)') 'Miss-aligned XDM pol entry! XDM line = ',i
                         call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                     end if
                 end do
                 ! then dispersion coefficients
                 do i=1,geo%natoms
                     do j=i,geo%natoms
-                        read(DEV_GEO,*,iostat = read_stat) ri, rj, geo%trg_xdm_c6(i,j), &
-                                                           geo%trg_xdm_c8(i,j), geo%trg_xdm_c10(i,j)
+                        read(DEV_GEO,*,iostat = read_stat) ri, rj, geo%sup_xdm_c6(i,j), &
+                                                           geo%sup_xdm_c8(i,j), geo%sup_xdm_c10(i,j)
                         if( read_stat .ne. 0 ) then
                             write(buffer,'(A,I3,1X,I3)') 'Unable to read XDM Cx entry! XDM line = ',i,j
                             call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                         end if
                         if( (ri .ne. i) .or. (rj .ne. j) ) then
-                            write(buffer,'(A,I3,1X,I3)') 'Missaligned XDM Cx entry! XDM line = ',i,j
+                            write(buffer,'(A,I3,1X,I3)') 'Miss-aligned XDM Cx entry! XDM line = ',i,j
                             call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
                         end if
                         if( i .ne. j ) then
-                            geo%trg_xdm_c6(j,i) = geo%trg_xdm_c6(i,j)
-                            geo%trg_xdm_c8(j,i) = geo%trg_xdm_c8(i,j)
-                            geo%trg_xdm_c10(j,i) = geo%trg_xdm_c10(i,j)
+                            geo%sup_xdm_c6(j,i) = geo%sup_xdm_c6(i,j)
+                            geo%sup_xdm_c8(j,i) = geo%sup_xdm_c8(i,j)
+                            geo%sup_xdm_c10(j,i) = geo%sup_xdm_c10(i,j)
                         end if
                     end do
                 end do
-                geo%trg_xdm_loaded = .true.
+                geo%sup_xdm_loaded = .true.
+           case('SURF')
+                allocate( geo%sup_surf_ses(geo%natoms), &
+                          geo%sup_surf_sas(geo%natoms), stat = alloc_stat )
+                if( alloc_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for SURF!')
+                end if
+                geo%sup_surf_ses(:) = 0.0d0
+                geo%sup_surf_sas(:) = 0.0d0
+                do i=1,geo%natoms
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_surf_ses(i), geo%sup_surf_sas(i)
+                    if( read_stat .ne. 0 ) then
+                        write(buffer,'(A,I3)') 'Unable to read SURF pol entry! SURF line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                    if( ri .ne. i ) then
+                        write(buffer,'(A,I3)') 'Miss-aligned SURF pol entry! SURF line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                end do
+                geo%sup_surf_loaded = .true.
+          case('CHARGES')
+                read(DEV_GEO,*,iostat = read_stat) geo%sup_chrg_type
+                if( read_stat .ne. 0 ) then
+                    write(buffer,'(A,I3)') 'Unable to read CHARGES type entry! CHARGES line = ',i
+                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                end if
+                allocate( geo%sup_chrg(geo%natoms), stat = alloc_stat )
+                if( alloc_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for CHARGES!')
+                end if
+                geo%sup_chrg(:) = 0.0d0
+                do i=1,geo%natoms
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_chrg(i)
+                    if( read_stat .ne. 0 ) then
+                        write(buffer,'(A,I3)') 'Unable to read CHARGES pol entry! CHARGES line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                    if( ri .ne. i ) then
+                        write(buffer,'(A,I3)') 'Miss-aligned CHARGES pol entry! CHARGES line = ',i
+                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    end if
+                end do
+                geo%sup_chrg_loaded = .true.
             case('RST')
                 read(DEV_GEO,*,iostat = read_stat) geo%nrst
                 if( read_stat .ne. 0 ) then
@@ -1046,7 +1124,7 @@ subroutine ffdev_geometry_info_point_ext(geo)
     lname = trim(geo%name)
     write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%trg_xdm_loaded, geo%trg_surf_loaded
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded
 
 ! '# ---- -------------------- ------ - - - -'
   10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
@@ -1444,11 +1522,11 @@ real(DEVDP) function ffdev_geometry_get_dihedral_deviation(value1,value2)
         vec = vec - (maxv-minv)*floor((vec-minv)/(maxv-minv))
         ! return vector back
         ffdev_geometry_get_dihedral_deviation = vec - 0.5d0*(maxv+minv)
-        
+
         ! debug
         ! write(PMF_DEBUG,*) 'get_deviation:',value1,value2,get_deviation
     end if
-        
+
 end function ffdev_geometry_get_dihedral_deviation
 
 ! ==============================================================================
@@ -1831,7 +1909,7 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
     geo%grd(:,l) = geo%grd(:,l) + dv*( gv/b2*b(:) )
 
 end subroutine ffdev_geometry_get_torsion_penalty
-        
+
 ! ------------------------------------------------------------------------------
 
 end module ffdev_geometry

@@ -18,6 +18,7 @@
 module ffdev_topology_dat
 
 use ffdev_sizes
+use ffdev_constants
 
 ! ------------------------------------------------------------------------------
 
@@ -124,14 +125,10 @@ end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter   :: PAULI_MAX_NSTO   = 3     ! max allowed number of STO orbitals
-
 type NB_TYPE
     integer             :: ti,tj                    ! atom types
-    real(DEVDP)         :: eps, r0, alpha           ! LJ/EXP6 vdW parameters
-    real(DEVDP)         :: PA(PAULI_MAX_NSTO)       ! Pauli repulsion
-    real(DEVDP)         :: PB(PAULI_MAX_NSTO)
-    real(DEVDP)         :: PC(PAULI_MAX_NSTO)
+    real(DEVDP)         :: eps, r0, alpha           ! ERA - non-bonded parameters (LJ/EXP6 vdW parameters)
+    real(DEVDP)         :: PA, PB, C6               ! ABC - non-bonded parameters
     logical             :: ffoptactive              ! this type is subject of ffopt
 end type NB_TYPE
 
@@ -167,7 +164,7 @@ type TOPOLOGY
 
 ! non-bonded terms
     integer                     :: nb_size
-    integer                     :: nb_mode
+    ! integer                     :: nb_mode
     type(NB_PAIR),pointer       :: nb_list(:)
     integer                     :: natom_types
     type(ATOM_TYPE),pointer     :: atom_types(:)
@@ -175,50 +172,97 @@ type TOPOLOGY
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size           ! number of atoms in probe
     integer                     :: nfragments
-    ! assumed combination rules, depending on parameter optimization strategy
-    ! these rules can be easily broken !!!!
-    integer                     :: assumed_comb_rules
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
-! global options
+! global options in
+! [force-field]? FIXME
 
-logical     :: dih_cos_only     = .false.   ! .true. -> SUM Vn*cos(n*phi-gamma)
-                                            ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
+logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gamma)
+                                                ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
+! ==== electrostatics
+integer,parameter   :: NB_ELE_QTOP   = 1        ! charges from topology
+integer,parameter   :: NB_ELE_QGEO   = 2        ! charges from geometries
 
-! possible values for lj2exp6_alpha
-real(DEVDP) :: lj2exp6_alpha    = 12.0d0    ! alpha for lj to exp-6 potential conversion
-                                            ! 12.0                           - identical long-range
-                                            ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
+integer     :: ele_mode     = NB_ELE_QGEO
+real(DEVDP) :: ele_qscale   = 1.0d0             ! scaling factor for charges
 
-! Tang–Toennis potential
-integer     :: tt_disp_order    = 16        ! highest Cn coefficient
+! ==============================================================================
+! ==== vdW modes
+! ==============================================================================
 
-! ------------------------------------------------------------------------------
+! ####################################################################
+integer,parameter   :: NB_VDW_LJ        = 1
+! Lenard-Jones
+! Form: Enb = eps*( (ro/r)^12 - 2*(r0/r)^6 )
+! Parameters: eps, r0
+! Provides: energy, gradient, Hessian
 
-! full mode
-integer,parameter   :: NB_MODE_LJ           = 1     ! Lennard-Jones potential (eps,r0)
-integer,parameter   :: NB_MODE_EXP6         = 2     ! Exp-6 potential (eps,r0,alpha)
-integer,parameter   :: NB_MODE_TT2          = 3     ! Tang–Toennis potential (PA,PB,+XDM)
-integer,parameter   :: NB_MODE_TT3          = 4     ! Tang–Toennis potential (PA,PB,PC,+XDM)
-
-! exchange repulsion only (Pauli repulsion), gradient and hessian are not available
-integer,parameter   :: NB_MODE_PAULI_EXP2   = 5     ! exp (PA,PB)
-integer,parameter   :: NB_MODE_PAULI_EXP3   = 6     ! exp (PA,PB,PC)
-integer,parameter   :: NB_MODE_PAULI_DENS   = 7     ! overlap of densities
-integer,parameter   :: NB_MODE_PAULI_WAVE   = 8     ! overlap of wavefunction
-integer,parameter   :: NB_MODE_PAULI_XFUN   = 9     ! exchange-repulsion density functional
-
-! combining rules for nb_mode
-integer,parameter   :: COMB_RULE_IN = 05    ! input data
-! applicable for NB_MODE_LJ
+! combining rules - applicable for NB_MODE_LJ
 integer,parameter   :: COMB_RULE_LB = 11    ! LB (Lorentz-Berthelot)
 integer,parameter   :: COMB_RULE_WH = 12    ! WH (Waldman-Hagler)
 integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
 integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
-! applicable for NB_MODE_TT, NB_MODE_PAULI_EXP
-integer,parameter   :: COMB_RULE_PA = 21    ! Pauli - A
-integer,parameter   :: COMB_RULE_PB = 22    ! Pauli - B
+
+! ####################################################################
+integer,parameter   :: NB_VDW_12_XDMC6  = 2
+! Lenard-Jones
+! Form: Enb = PA/r^12 - disp_c6scale*XDM_C6/r^6
+! XDM_C6 is taken from geo files
+! Parameters: PA, disp_c6scale
+! Provides: energy
+
+! for C6 constant mode
+real(DEVDP) :: disp_c6scale = 1.0d0             ! scaling factor for C6
+
+! combining rules - applicable for NB_VDW_12_XDMC6
+integer,parameter   :: COMB_RULE_PA_GEO_AVE = 15   ! geometric mean sqrt(paii*pajj) - This can be physically justify
+integer,parameter   :: COMB_RULE_PA_ARI_AVE = 16   ! arithmetic mean (paii+pajj)/2
+
+! ####################################################################
+integer,parameter   :: NB_VDW_12_XDMBJ  = 3
+! Lenard-Jones
+! Form: Enb = PA/r^12 - (XDM_C6/(r^6 + rvdw^6) + XDM_C8/(r^8 + rvdw^8) + XDM_C10/(r^10 + rvdw^10))
+! XDM_C6, XDM_C8, XDM_C10 are taken from geo files
+! rvdw = BJA*Rc + BJB
+! Parameters: PA, BJA, BJB
+! Provides: energy
+
+! combining rules - applicable for NB_VDW_12_XDMBJ
+! = COMB_RULE_PA_ARI_AVE
+! = COMB_RULE_PA_GEO_AVE
+
+! ####################################################################
+integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennis + XDM
+
+! combining rules - applicable for NB_VDW_TT_XDM
+integer,parameter   :: COMB_RULE_TT  = 17  ! PAIJ=SQRT(PAII*PAJJ); PBIJ=(PBII+PBJJ)/2
+integer,parameter   :: COMB_RULE_TT2 = 18  ! PAIJ=SQRT(PAII*PAJJ); PBIJ=2*PBII*PBJJ/(PBII+PBJJ)
+
+! ####################################################################
+integer,parameter   :: NB_VDW_TT_XDM_2  = 5     ! Tang–Toennis + XDM
+
+! combining rules - applicable for NB_VDW_TT_XDM_2
+! = COMB_RULE_PA_ARI_AVE
+! = COMB_RULE_PA_GEO_AVE
+
+! ==============================================================================
+
+integer     :: nb_mode = NB_VDW_TT_XDM_2
+
+! parameters
+real(DEVDP) :: disp_fa  = DEV_AU2A
+real(DEVDP) :: disp_fb  = 0.0
+
+! possible values for lj2exp6_alpha
+real(DEVDP) :: lj2exp6_alpha    = 12.0d0        ! alpha for lj to exp-6 potential conversion
+                                                ! 12.0                           - identical long-range
+                                                ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
+
+! ------------------------------------------------------------------------------
+
+! combining rules for nb_mode
+integer,parameter   :: COMB_RULE_NONE = 05    ! input data
 
 ! ------------------------------------------------------------------------------
 

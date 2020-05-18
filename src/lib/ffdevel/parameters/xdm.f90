@@ -23,154 +23,6 @@ use ffdev_constants
 contains
 
 ! ==============================================================================
-! subroutine ffdev_xdm_control_nbmanip
-! ==============================================================================
-
-subroutine ffdev_xdm_control_nbmanip(string,exec)
-
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,mode
-    ! --------------------------------------------------------------------------
-
-    mode = APPLY_XDM_NULL
-    if( trim(string) .eq. 'r0' )  mode = APPLY_XDM_R0
-    if( trim(string) .eq. 'eps' ) mode = APPLY_XDM_EPS
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'XDM parameters', '%')
-    write(DEV_OUT,10)  trim(string)
-
-    if( mode .eq. APPLY_XDM_NULL ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unsupported XDM mode '//trim(string)//'!')
-    end if
-
-    if( .not. exec ) return ! do not execute
-
-    do i=1,nsets
-        if( DebugFFManip ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! remix parameters
-        call ffdev_xdm_apply_parameters(sets(i)%top,mode)
-
-        if( DebugFFManip ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! update nb parameters
-    call ffdev_targetset_reinit_nbparams
-
-10 format('Apply XDM parameters (xdm) = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_xdm_control_nbmanip
-
-! ==============================================================================
-! function ffdev_xdm_apply_parameters
-! ==============================================================================
-
-subroutine ffdev_xdm_apply_parameters(top,xdm_mode)
-
-    use ffdev_utils
-    use ffdev_topology
-    use ffdev_parameters_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: xdm_mode
-    ! --------------------------------------------
-    integer         :: i, glbti, glbtj
-    ! --------------------------------------------------------------------------
-
-    do i=1,top%nnb_types
-        glbti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
-        glbtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
-
-        select case(xdm_mode)
-            case(APPLY_XDM_EPS)
-                top%nb_types(i)%eps = xdm_pairs(glbti,glbtj)%eps
-            case(APPLY_XDM_R0)
-                top%nb_types(i)%r0  = xdm_pairs(glbti,glbtj)%Rvdw
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported xdm_mode in ffdev_xdm_apply_parameters!')
-        end select
-    end do
-
-end subroutine ffdev_xdm_apply_parameters
-
-! ==============================================================================
-! subroutine ffdev_xdm_keep_c6
-! ==============================================================================
-
-subroutine ffdev_xdm_keep_c6()
-
-    use ffdev_parameters_dat
-    use ffdev_xdm_dat
-
-    implicit none
-    integer             :: i, j
-    real(DEVDP)         :: C6
-    ! --------------------------------------------------------------------------
-
-    select case(xdm_C6Mode)
-        case(KEEP_XDM_C6_VIA_EPS)
-            do i=1,nparams
-                if( params(i)%realm .ne. REALM_VDW_R0 ) cycle
-                if( params(i)%value .eq. 0.0d0 ) cycle
-                ! get C6
-                C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                     xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
-                do j=1,nparams
-                    if( params(j)%realm .ne. REALM_VDW_EPS ) cycle
-                    if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
-                        params(j)%value = 0.5d0 * C6 / params(i)%value**6
-                        exit
-                    end if
-                end do
-            end do
-            case(KEEP_XDM_C6_VIA_R0)
-                do i=1,nparams
-                    if( params(i)%realm .ne. REALM_VDW_EPS ) cycle
-                    if( params(i)%value .eq. 0.0d0 ) cycle
-                    ! get C6
-                    C6 = xdm_C6Scale * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                         xdm_pairs(params(i)%ti,params(i)%tj)%c6ave
-                    do j=1,nparams
-                        if( params(j)%realm .ne. REALM_VDW_R0 ) cycle
-                        if( (params(i)%ti .eq. params(j)%ti) .and. (params(i)%tj .eq. params(j)%tj) ) then
-                            params(j)%value = (0.5d0 * C6 / params(i)%value)**(1.0d0/6.0d0)
-                            exit
-                        end if
-                    end do
-                end do
-        case(LEFT_XDM_C6)
-            ! nothing to do
-        case default
-            ! nothing to do
-    end select
-
-end subroutine ffdev_xdm_keep_c6
-
-! ==============================================================================
 ! subroutine ffdev_xdm_run_stat
 ! ==============================================================================
 
@@ -194,7 +46,7 @@ subroutine ffdev_xdm_run_stat()
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_xdm_loaded ) then
+            if( sets(i)%geo(j)%sup_xdm_loaded ) then
                 xdm_data_loaded = .true.
                 exit
             end if
@@ -237,19 +89,19 @@ subroutine ffdev_xdm_run_stat()
     do i=1,nsets
         do j=1,sets(i)%ngeos
             ! do we have data?
-            if( .not. sets(i)%geo(j)%trg_xdm_loaded ) cycle
+            if( .not. sets(i)%geo(j)%sup_xdm_loaded ) cycle
 
             do ai=1,sets(i)%geo(j)%natoms
                 ! get types
                 ti = sets(i)%top%atom_types(sets(i)%top%atoms(ai)%typeid)%glbtypeid
 
                 ! accumulate data
-                xdm_atoms(ti)%vave  = xdm_atoms(ti)%vave + sets(i)%geo(j)%trg_xdm_vol(ai)
-                xdm_atoms(ti)%vsig  = xdm_atoms(ti)%vsig + sets(i)%geo(j)%trg_xdm_vol(ai)**2
-                xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave + sets(i)%geo(j)%trg_xdm_vol0(ai)
-                xdm_atoms(ti)%v0sig = xdm_atoms(ti)%v0sig + sets(i)%geo(j)%trg_xdm_vol0(ai)**2
-                xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave + sets(i)%geo(j)%trg_xdm_pol0(ai)
-                xdm_atoms(ti)%p0sig = xdm_atoms(ti)%p0sig + sets(i)%geo(j)%trg_xdm_pol0(ai)**2
+                xdm_atoms(ti)%vave  = xdm_atoms(ti)%vave + sets(i)%geo(j)%sup_xdm_vol(ai)
+                xdm_atoms(ti)%vsig  = xdm_atoms(ti)%vsig + sets(i)%geo(j)%sup_xdm_vol(ai)**2
+                xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave + sets(i)%geo(j)%sup_xdm_vol0(ai)
+                xdm_atoms(ti)%v0sig = xdm_atoms(ti)%v0sig + sets(i)%geo(j)%sup_xdm_vol0(ai)**2
+                xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave + sets(i)%geo(j)%sup_xdm_pol0(ai)
+                xdm_atoms(ti)%p0sig = xdm_atoms(ti)%p0sig + sets(i)%geo(j)%sup_xdm_pol0(ai)**2
                 xdm_atoms(ti)%num   = xdm_atoms(ti)%num + 1
 
                 do aj=ai,sets(i)%geo(j)%natoms
@@ -258,12 +110,12 @@ subroutine ffdev_xdm_run_stat()
                     tj = sets(i)%top%atom_types(sets(i)%top%atoms(aj)%typeid)%glbtypeid
 
                     ! accumulate data
-                    xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave + sets(i)%geo(j)%trg_xdm_c6(ai,aj)
-                    xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + sets(i)%geo(j)%trg_xdm_c6(ai,aj)**2
-                    xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + sets(i)%geo(j)%trg_xdm_c8(ai,aj)
-                    xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + sets(i)%geo(j)%trg_xdm_c8(ai,aj)**2
-                    xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + sets(i)%geo(j)%trg_xdm_c10(ai,aj)
-                    xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + sets(i)%geo(j)%trg_xdm_c10(ai,aj)**2
+                    xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave + sets(i)%geo(j)%sup_xdm_c6(ai,aj)
+                    xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + sets(i)%geo(j)%sup_xdm_c6(ai,aj)**2
+                    xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + sets(i)%geo(j)%sup_xdm_c8(ai,aj)
+                    xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + sets(i)%geo(j)%sup_xdm_c8(ai,aj)**2
+                    xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + sets(i)%geo(j)%sup_xdm_c10(ai,aj)
+                    xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + sets(i)%geo(j)%sup_xdm_c10(ai,aj)**2
                     xdm_pairs(ti,tj)%num = xdm_pairs(ti,tj)%num + 1
 
                     ! complete matrix
@@ -313,10 +165,8 @@ subroutine ffdev_xdm_run_stat()
             xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave / real(xdm_atoms(ti)%num)
 
             ! final polarizability
-            xdm_atoms(ti)%pol = xdm_atoms(ti)%vave*xdm_atoms(ti)%p0ave / xdm_atoms(ti)%v0ave
+            xdm_atoms(ti)%pol = xdm_atoms(ti)%vave * xdm_atoms(ti)%p0ave / xdm_atoms(ti)%v0ave
 
-            ! rvdw
-            xdm_atoms(ti)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*xdm_atoms(ti)%pol**(1.0d0/7.0d0)
         end if
 
     end do
@@ -353,17 +203,6 @@ subroutine ffdev_xdm_run_stat()
                 xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave / real(xdm_pairs(ti,tj)%num)
             end if
 
-            ! rvdw
-            pol = 0.5d0 * (xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)
-            xdm_pairs(ti,tj)%Rvdw = 2.0d0 * DEV_AU2A * xdm_rvdw_fac*pol**(1.0d0/7.0d0)
-
-            ! eps
-            if( xdm_pairs(ti,tj)%Rvdw .gt. 0 ) then
-                xdm_pairs(ti,tj)%eps = xdm_C6Scale * 0.5d0 * DEV_HARTREE2KCL * DEV_AU2A**6 * &
-                                       xdm_pairs(ti,tj)%c6ave / xdm_pairs(ti,tj)%Rvdw**6
-            else
-                xdm_pairs(ti,tj)%eps = 0.0d0
-            end if
         end do
     end do
 
@@ -408,27 +247,6 @@ subroutine ffdev_xdm_run_stat()
                           xdm_atoms(ti)%pol, xdm_atoms(ti)%Rvdw
     end do
 
-
-    ! LJ data ----------------------------
-    write(DEV_OUT,*)
-    write(DEV_OUT,220)
-    write(DEV_OUT,*)
-
-    write(DEV_OUT,230)
-    write(DEV_OUT,240)
-    do ti=1,ntypes
-        tj = ti
-        write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
-                           xdm_pairs(ti,tj)%Rvdw
-    end do
-    write(DEV_OUT,240)
-    do ti=1,ntypes
-        do tj=ti+1,ntypes
-            write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%eps, &
-                               xdm_pairs(ti,tj)%Rvdw
-        end do
-    end do
-    write(DEV_OUT,240)
 
  10 format('>>> No XDM data available ....')
 

@@ -35,7 +35,7 @@ program ffdev_enefilter_program
     character(PRMFILE_MAX_PATH) :: string, fmethod
     integer                     :: i, probe_size, snap, kept, removed, nbins, nstrperbin, idx
     real(DEVDP)                 :: enemin,enemax, ene, binsize
-    integer,allocatable         :: bins(:) 
+    integer,allocatable         :: bins(:)
     type(TOPOLOGY)              :: top
     type(GEOMETRY)              :: geo
     type(XYZFILE_TYPE)          :: fin
@@ -66,51 +66,51 @@ program ffdev_enefilter_program
     write(DEV_OUT,140) trim(otrjname)
 
     call get_command_argument(5, fmethod)
-    write(DEV_OUT,141) trim(fmethod)  
-    
+    write(DEV_OUT,141) trim(fmethod)
+
     select case(trim(fmethod))
-        case('lj')   
+        case('lj')
             if( command_argument_count() .ne. 6 ) then
                 call print_usage()
                 call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the lj mode (six expected)!')
-            end if        
+            end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemax
-            write(DEV_OUT,146) enemax            
+            write(DEV_OUT,146) enemax
         case('exp')
             if( command_argument_count() .ne. 7 ) then
                 call print_usage()
                 call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (seven expected)!')
-            end if        
+            end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemin
-            write(DEV_OUT,142) enemin 
-            
+            write(DEV_OUT,142) enemin
+
             call get_command_argument(7, string)
             read(string,*,end=210,err=210) enemax
-            write(DEV_OUT,146) enemax  
+            write(DEV_OUT,146) enemax
         case('exp-bin')
             if( command_argument_count() .ne. 8 ) then
                 call print_usage()
                 call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (eight expected)!')
-            end if        
+            end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) binsize
-            write(DEV_OUT,147) binsize 
-            
+            write(DEV_OUT,147) binsize
+
             call get_command_argument(7, string)
             read(string,*,end=210,err=210) enemax
-            write(DEV_OUT,146) enemax  
-            
+            write(DEV_OUT,146) enemax
+
             call get_command_argument(8, string)
             read(string,*,end=210,err=210) nstrperbin
-            write(DEV_OUT,148) nstrperbin             
+            write(DEV_OUT,148) nstrperbin
         case default
             call print_usage()
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
     end select
-    
-    
+
+
     ! load topology
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Simplified Topology','=')
@@ -118,18 +118,19 @@ program ffdev_enefilter_program
     call ffdev_topology_init(top)
     call ffdev_topology_load(top,trim(topname))
 
-    ! switch to probe mode and finalizae topology 
+    ! switch to probe mode and finalizae topology
     call ffdev_topology_switch_to_probe_mode(top,probe_size,.false.)
-    
-    select case(trim(fmethod))
-        case('lj')   
-            call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)         
-            nbins = enemax / binsize
-            allocate(bins(nbins))
-            bins(:) = 0
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
-    end select    
+
+    ! FIXME
+!    select case(trim(fmethod))
+!        case('lj')
+!            call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)
+!            nbins = enemax / binsize
+!            allocate(bins(nbins))
+!            bins(:) = 0
+!        case default
+!            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+!    end select
 
     call ffdev_topology_finalize_setup(top)
     call ffdev_topology_info(top)
@@ -163,7 +164,7 @@ program ffdev_enefilter_program
         call ffdev_energy_all(top,geo)
         ene = geo%total_ene
         select case(trim(fmethod))
-            case('lj')   
+            case('lj')
                 if( ene .le. enemax ) then
                     write(DEV_OUT,170) snap, ene, 'OK'
                     ! save snapshot
@@ -174,7 +175,7 @@ program ffdev_enefilter_program
                     write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
                     ! skip snapshot
                     removed = removed + 1
-                end if          
+                end if
             case('exp')
                 if( (ene .gt. enemin) .and. (ene .le. enemax) ) then
                     write(DEV_OUT,170) snap, ene, 'OK'
@@ -186,7 +187,7 @@ program ffdev_enefilter_program
                     write(DEV_OUT,170) snap, ene, ' OUT-OF-RANGE'
                     ! skip snapshot
                     removed = removed + 1
-                end if  
+                end if
             case('exp-bin')
                 ! determine bin position
                 idx = floor(ene / binsize) + 1
@@ -218,13 +219,13 @@ program ffdev_enefilter_program
     ! close all streams
     call close_xyz(DEV_TRAJ,fin)
     call close_xyz(DEV_OTRAJ,fout)
-    
-    
+
+
     select case(trim(fmethod))
-        case('lj')   
-            ! nothing        
+        case('lj')
+            ! nothing
         case('exp')
-            ! nothing 
+            ! nothing
         case('exp-bin')
             write(DEV_OUT,*)
             write(DEV_OUT,'(A)') '# Histogram stat'
@@ -232,13 +233,13 @@ program ffdev_enefilter_program
                 if( bins(i) .ge. nstrperbin ) then
                     write(DEV_OUT,'(F6.3,1X,I6,1X,A)') i*binsize - binsize*0.5d0,bins(i),'OK'
                 else
-                    write(DEV_OUT,'(F6.3,1X,I6,1X,A)') i*binsize - binsize*0.5d0,bins(i),' NOT SAMPLED'                
+                    write(DEV_OUT,'(F6.3,1X,I6,1X,A)') i*binsize - binsize*0.5d0,bins(i),' NOT SAMPLED'
                 end if
             end do
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
-    end select        
-    
+    end select
+
 
     write(DEV_OUT,*)
     write(DEV_OUT,180) removed
@@ -282,7 +283,7 @@ subroutine print_usage()
     write(DEV_OUT,'(/,a,/)') '=== [usage] ===================================================================='
     write(DEV_OUT,10)
     write(DEV_OUT,20)
-    write(DEV_OUT,30)      
+    write(DEV_OUT,30)
     write(DEV_OUT,*)
 
     return

@@ -409,15 +409,15 @@ subroutine change_realms(realm,enable,options,nchanged)
 
     pid = 0
 
-    ! decode realm
-    select case(realm)
-        case('E_offset')
-            realmid = REALM_EOFFSET
-        case('bond_r0')
-            realmid = REALM_BOND_D0
-        case('bond_k')
-            realmid = REALM_BOND_K
+    if( realm .ne. 'all' ) then
+        realmid = ffdev_parameters_get_realmid(realm)
+    else
+        realmid = -1
+    end if
 
+    ! process extra options
+    select case(realmid)
+        case(REALM_BOND_K)
             if( is_realm_option(options,'zero') ) then
                 do i=1,nparams
                     if( params(i)%realm .eq. realmid ) then
@@ -439,11 +439,7 @@ subroutine change_realms(realm,enable,options,nchanged)
             end if
             return
 
-        case('angle_a0')
-            realmid = REALM_ANGLE_A0
-        case('angle_k')
-            realmid = REALM_ANGLE_K
-
+        case(REALM_ANGLE_K)
             if( is_realm_option(options,'zero') ) then
                 do i=1,nparams
                     if( params(i)%realm .eq. realmid ) then
@@ -465,9 +461,7 @@ subroutine change_realms(realm,enable,options,nchanged)
             end if
             return
 
-        case('dih_v')
-            realmid = REALM_DIH_V
-
+        case(REALM_DIH_V)
             if( is_realm_option(options,'bond') ) then
                 call change_dih_realm_bond(realmid,enable,options)
                 return
@@ -478,9 +472,7 @@ subroutine change_realms(realm,enable,options,nchanged)
                 return
             end if
 
-        case('dih_c')
-            realmid = REALM_DIH_C
-
+        case(REALM_DIH_C)
             if( is_realm_option(options,'bond') ) then
                 call change_dih_realm_bond(realmid,enable,options)
                 return
@@ -491,9 +483,7 @@ subroutine change_realms(realm,enable,options,nchanged)
                 return
             end if
 
-        case('dih_gamma')
-            realmid = REALM_DIH_G
-
+        case(REALM_DIH_G)
             if( is_realm_option(options,'bond') ) then
                 call change_dih_realm_bond(realmid,enable,options)
                 return
@@ -504,58 +494,8 @@ subroutine change_realms(realm,enable,options,nchanged)
                 return
             end if
 
-        case('dih_scee')
-            realmid = REALM_DIH_SCEE
-        case('dih_scnb')
-            realmid = REALM_DIH_SCNB
-        case('impr_v')
-            realmid = REALM_IMPR_V
-        case('impr_gamma')
-            realmid = REALM_IMPR_G
-        case('vdw_eps')
-            realmid = REALM_VDW_EPS
-        case('vdw_r0')
-            realmid = REALM_VDW_R0
-        case('vdw_alpha')
-            realmid = REALM_VDW_ALPHA
-        case('pauli_a1')
-            realmid = REALM_PAULI_A1
-        case('pauli_a2')
-            realmid = REALM_PAULI_A2
-        case('pauli_a3')
-            realmid = REALM_PAULI_A3
-        case('pauli_b1')
-            realmid = REALM_PAULI_B1
-        case('pauli_b2')
-            realmid = REALM_PAULI_B2
-        case('pauli_b3')
-            realmid = REALM_PAULI_B3
-        case('pauli_c1')
-            realmid = REALM_PAULI_C1
-        case('pauli_c2')
-            realmid = REALM_PAULI_C2
-        case('pauli_c3')
-            realmid = REALM_PAULI_C3
-        case('pauli_dp')
-            realmid = REALM_PAULI_DP
-        case('pauli_rp')
-            realmid = REALM_PAULI_RP
-        case('pauli_xd')
-            realmid = REALM_PAULI_XD
-        case('pauli_xk')
-            realmid = REALM_PAULI_XK
-        case('pauli_xx')
-            realmid = REALM_PAULI_XX
-        case('pauli_xf')
-            realmid = REALM_PAULI_XF
-        case('all')
-            realmid = -1
         case default
-            ! is it integer
-            read(realm,*,end=333,err=333) pid
-            goto 444
-
-333         call ffdev_utils_exit(DEV_OUT,1,'Unsupported realm key '''//trim(realm)//'''!')
+            ! do nothing
     end select
 
     ti = 0
@@ -619,57 +559,16 @@ subroutine change_realms(realm,enable,options,nchanged)
         if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) .or. (pid .eq. i) ) then
             if( params(i)%identity .eq. 0 ) then
                 lenable = enable
-                select case(LastNBMode)
-                    case(NB_MODE_LJ)
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
-                    case(NB_MODE_EXP6)
-                        if( params(i)%realm .eq. REALM_PAULI_A1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
-                    case(NB_MODE_TT2,NB_MODE_PAULI_EXP2)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C1 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
-                    case(NB_MODE_TT3,NB_MODE_PAULI_EXP3)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C2 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_A3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_B3 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_PAULI_C3 ) lenable = .false.
-                    case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-                        if( params(i)%realm .eq. REALM_VDW_EPS ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_R0 ) lenable = .false.
-                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-                        ! FIXME
-                    case default
-                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in change_realms!')
-                end select
+                ! FIXME
+!                select case(LastNBMode)
+!                    case(NB_MODE_LJ)
+!                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
+!                        ! FIXME
+!                    case(NB_MODE_EXP6)
+!                        ! FIXME
+!                    case default
+!                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in change_realms!')
+!                end select
                 if( realmid .eq. REALM_DIH_C ) then
                     if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
                         ! do nothing
@@ -1143,8 +1042,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_angle_a0(fin,exec)
             case('nbmanip')
                 call ffdev_parameters_ctrl_nbmanip(fin,exec)
-            case('pauli')
-                call ffdev_parameters_ctrl_pauli(fin,exec)
             case('parameters')
                 call ffdev_parameters_ctrl_realms(fin)
             case('nbload')
@@ -1318,8 +1215,6 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
     use prmfile
     use ffdev_utils
     use ffdev_topology_dat
-    use ffdev_xdm
-    use ffdev_pauli_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -1351,30 +1246,6 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
                 else
                     call ffdev_utils_exit(DEV_OUT,1,'Missing nb_mode mode!')
                 end if
-            case('gen_ax_from_a1')
-                if( prmfile_get_current_line(fin,string) ) then
-                    call ffdev_pauli_control_gen_ax_from_a1(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_ax_from_a1 parameter!')
-                end if
-            case('gen_bx_from_b1')
-                if( prmfile_get_current_line(fin,string) ) then
-                    call ffdev_pauli_control_gen_bx_from_b1(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_bx_from_b1 parameter!')
-                end if
-            case('gen_cx')
-                if( prmfile_get_current_line(fin,string) ) then
-                    call ffdev_pauli_control_gen_cx(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing gen_cx parameter!')
-                end if
-            case('xdm')
-                if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_xdm_control_nbmanip(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing xdm parameter!')
-                end if
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported nbmanip action '//trim(string)//'!')
         end select
@@ -1384,30 +1255,6 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
 10 format('=== [nbmanip] ==================================================================')
 
 end subroutine ffdev_parameters_ctrl_nbmanip
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_pauli(fin,exec)
-
-    use prmfile
-    use ffdev_pauli_control
-    use ffdev_parameters
-    use ffdev_targetset
-
-    implicit none
-    type(PRMFILE_TYPE)  :: fin
-    logical             :: exec
-    ! --------------------------------------------------------------------------
-
-    call ffdev_pauli_ctrl(fin)
-
-    ! update nb parameters
-    call ffdev_parameters_reinit
-    call ffdev_targetset_reinit_nbparams
-
-end subroutine ffdev_parameters_ctrl_pauli
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
@@ -1485,14 +1332,16 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     character(PRMFILE_MAX_PATH) :: string
     logical                     :: exec
     ! --------------------------------------------
-    integer                     :: i,nb_mode
+    integer                     :: i,lnb_mode
     ! --------------------------------------------------------------------------
 
-    nb_mode = ffdev_topology_nb_mode_from_string(string)
+    ! FIXME
+    ! lnb_mode = ffdev_topology_nb_mode_from_string(string)
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
-    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(nb_mode)
+    ! FIXME
+!    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(lnb_mode)
 
     do i=1,nsets
         if( DebugFFManip ) then
@@ -1504,8 +1353,9 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
             call ffdev_topology_info_types(sets(i)%top,1)
         end if
 
+        ! FIXME
         ! remix parameters
-        call ffdev_topology_switch_nbmode(sets(i)%top,nb_mode)
+        ! call ffdev_topology_switch_nbmode(sets(i)%top,lnb_mode)
 
         if( DebugFFManip ) then
             ! new set of parameters
@@ -1515,7 +1365,8 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
         end if
     end do
 
-    LastNBMode = nb_mode
+    ! FIXME
+    ! LastNBMode = nb_mode
 
     ! update nb parameters
     call ffdev_parameters_reinit
@@ -1580,7 +1431,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     use prmfile
     use ffdev_utils
     use ffdev_targetset_dat
-    use ffdev_targetset    
+    use ffdev_targetset
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -1588,7 +1439,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
     real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
-    integer                     :: i,j,nbt,nb_mode
+    integer                     :: i,j,nbt,lnb_mode
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -1608,7 +1459,8 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
         ! read nb_mode and types first
         read(line,*,err=100,end=100) snb_mode, sti, stj
 
-        nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
+        ! FIXME
+       ! nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
 
         a = 0.0d0
         b = 0.0d0
@@ -1621,56 +1473,39 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
         u = 0.0d0
 
         ! read the entire record
-        select case(nb_mode)
-            case(NB_MODE_LJ,NB_MODE_TT2,NB_MODE_PAULI_EXP2)
-                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
-            case(NB_MODE_EXP6,NB_MODE_TT3,NB_MODE_PAULI_EXP3)
-                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
-            case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-                     read(line,*,err=100,end=100) snb_mode, sti, stj, a,b,c,d,e,f,g,h,u
-            case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-        end select
+        ! FIXME
+!        select case(lnb_mode)
+!            case(NB_MODE_LJ)
+!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
+!            case(NB_MODE_EXP6)
+!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
+!            case default
+!                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!        end select
 
         write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
 
         if( exec ) then
             ! for each topology update given parameters
-            do j=1,nsets
-                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
-                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
-                if( nbt .ne. 0 ) then
-                    select case(nb_mode)
-                        case(NB_MODE_LJ)
-                            sets(j)%top%nb_types(nbt)%eps = a
-                            sets(j)%top%nb_types(nbt)%r0 = b
-                        case(NB_MODE_EXP6)
-                            sets(j)%top%nb_types(nbt)%eps = a
-                            sets(j)%top%nb_types(nbt)%r0 = b
-                            sets(j)%top%nb_types(nbt)%alpha = c
-                        case(NB_MODE_TT2,NB_MODE_PAULI_EXP2)
-                            sets(j)%top%nb_types(nbt)%pa(1) = a
-                            sets(j)%top%nb_types(nbt)%pb(1) = b
-                        case(NB_MODE_TT3,NB_MODE_PAULI_EXP3)
-                            sets(j)%top%nb_types(nbt)%pa(1) = a
-                            sets(j)%top%nb_types(nbt)%pb(1) = b
-                            sets(j)%top%nb_types(nbt)%pc(1) = c
-                        case(NB_MODE_PAULI_DENS,NB_MODE_PAULI_WAVE,NB_MODE_PAULI_XFUN)
-                            sets(j)%top%nb_types(nbt)%pa(1) = a
-                            sets(j)%top%nb_types(nbt)%pb(1) = b
-                            sets(j)%top%nb_types(nbt)%pc(1) = c
-                            sets(j)%top%nb_types(nbt)%pa(2) = d
-                            sets(j)%top%nb_types(nbt)%pb(2) = e
-                            sets(j)%top%nb_types(nbt)%pc(2) = f
-                            sets(j)%top%nb_types(nbt)%pa(3) = g
-                            sets(j)%top%nb_types(nbt)%pb(3) = h
-                            sets(j)%top%nb_types(nbt)%pc(3) = u
-                        case default
-                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-                    end select
-
-                end if
-            end do
+            ! FIXME
+!            do j=1,nsets
+!                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
+!                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
+!                if( nbt .ne. 0 ) then
+!                    select case(nb_mode)
+!                        case(NB_MODE_LJ)
+!                            sets(j)%top%nb_types(nbt)%eps = a
+!                            sets(j)%top%nb_types(nbt)%r0 = b
+!                        case(NB_MODE_EXP6)
+!                            sets(j)%top%nb_types(nbt)%eps = a
+!                            sets(j)%top%nb_types(nbt)%r0 = b
+!                            sets(j)%top%nb_types(nbt)%alpha = c
+!                        case default
+!                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!                    end select
+!
+!                end if
+!            end do
 
         end if
 

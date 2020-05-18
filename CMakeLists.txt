@@ -175,7 +175,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
 
     # default compiler setups - gfortran
     SET(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=core-avx2 -fopenmp")
-    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all") # "-ffpe-trap=invalid,zero,overflow")
+    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow")
 
     # ifort
     IF(FCOMP_NAME STREQUAL ifort)
@@ -198,8 +198,8 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
         ENDIF(LIBS_SHARED)
     ENDIF(FCOMP_NAME STREQUAL xlf)
 
-    SET(CMAKE_BUILD_TYPE Release)
-    #SET(CMAKE_BUILD_TYPE Debug)
+    #SET(CMAKE_BUILD_TYPE Release)
+    SET(CMAKE_BUILD_TYPE Debug)
 ENDIF(NOT DEFINED COMPOSITE_PROJECT)
 
 # ==============================================================================
