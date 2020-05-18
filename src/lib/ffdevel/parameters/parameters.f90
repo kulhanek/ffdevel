@@ -109,8 +109,7 @@ subroutine ffdev_parameters_reinit()
     integer     :: i, j, k, parmid, ti, tj, n1
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_c6
-    logical     :: use_ele_sq, use_disp_s6
-    logical     :: use_disp_fa, use_disp_fb
+    logical     :: use_ele_sq, use_disp_fa, use_disp_fb
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -434,8 +433,6 @@ subroutine ffdev_parameters_reinit()
     use_vdw_c6      = .false.
 
     use_ele_sq      = .true.
-    use_disp_s6     = .false.
-
     use_disp_fa   = .false.
     use_disp_fb   = .false.
 
@@ -445,16 +442,10 @@ subroutine ffdev_parameters_reinit()
             use_vdw_r0      = .true.
         case(NB_VDW_12_XDMC6)
             use_vdw_pa      = .true.
-            use_disp_s6     = .true.
-        case(NB_VDW_12_XDMBJ)
-            use_vdw_pa      = .true.
             use_disp_fa     = .true.
-            use_disp_fb     = .true.
         case(NB_VDW_TT_XDM)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
-        case(NB_VDW_TT_XDM_2)
-            use_vdw_pa      = .true.
             use_disp_fa     = .true.
             use_disp_fb     = .true.
         case default
@@ -624,22 +615,6 @@ subroutine ffdev_parameters_reinit()
         nparams = nparams + 1
         params(nparams)%value = ele_qscale
         params(nparams)%realm = REALM_ELE_SQ
-        params(nparams)%enabled = .false.
-        params(nparams)%identity = 0
-        params(nparams)%pn    = 0
-        params(nparams)%ids(:) = 0
-        params(nparams)%ids(:) = 0
-        params(nparams)%ti   = 0
-        params(nparams)%tj   = 0
-        params(nparams)%tk   = 0
-        params(nparams)%tl   = 0
-    end if
-
-    if( use_disp_s6 ) then
-        ! disp C6 scaling realm =====================
-        nparams = nparams + 1
-        params(nparams)%value = disp_c6scale
-        params(nparams)%realm = REALM_DISP_S6
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
@@ -1714,8 +1689,6 @@ integer function ffdev_parameters_get_realmid(realm)
 
         case('ele_sq')
             ffdev_parameters_get_realmid = REALM_ELE_SQ
-        case('disp_s6')
-            ffdev_parameters_get_realmid = REALM_DISP_S6
 
         case('disp_fa')
             ffdev_parameters_get_realmid = REALM_DISP_FA
@@ -1783,8 +1756,6 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
 
         case(REALM_ELE_SQ)
             ffdev_parameters_get_realm_name = 'ele_sq'
-        case(REALM_DISP_S6)
-            ffdev_parameters_get_realm_name = 'disp_s6'
 
         case(REALM_DISP_FA)
             ffdev_parameters_get_realm_name = 'disp_fa'
@@ -1829,9 +1800,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_C6)
             ! nothing to do
-        case(REALM_ELE_SQ,REALM_DISP_S6)
-            ! nothing to do
-        case(REALM_DISP_FA,REALM_DISP_FB)
+        case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB)
             ! nothing to do
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
@@ -2214,8 +2183,6 @@ subroutine ffdev_parameters_to_tops
                 end do
             case(REALM_ELE_SQ)
                 ele_qscale = params(i)%value
-            case(REALM_DISP_S6)
-                disp_c6scale = params(i)%value
             case(REALM_DISP_FA)
                 disp_fa = params(i)%value
             case(REALM_DISP_FB)
@@ -2311,8 +2278,6 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
 
         case(REALM_ELE_SQ)
             ffdev_params_get_lower_bound = MinEleSQ
-        case(REALM_DISP_S6)
-            ffdev_params_get_lower_bound = MinDispS6
 
         case(REALM_DISP_FA)
             ffdev_params_get_lower_bound = MinDispFA
@@ -2407,8 +2372,6 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
 
         case(REALM_ELE_SQ)
             ffdev_params_get_upper_bound = MaxEleSQ
-        case(REALM_DISP_S6)
-            ffdev_params_get_upper_bound = MaxDispS6
 
         case(REALM_DISP_FA)
             ffdev_params_get_upper_bound = MaxDispFA

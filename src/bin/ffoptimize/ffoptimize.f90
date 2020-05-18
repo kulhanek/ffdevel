@@ -55,7 +55,7 @@ program ffdev_optimize_program
     end if
 
     call get_command_argument(1, ctrlname)
-    
+
     ! open dev null
     call ffdev_utils_open(DEV_NULL,'/dev/null','O')
 
@@ -85,10 +85,6 @@ program ffdev_optimize_program
         call ffdev_parameters_ctrl_grbf2cos(fin)
     end if
 
-    ! init mmd3
-    call ffdev_mmd3_init
-    call ffdev_mmd3_ctrl(fin)
-
     ! read sections
     call ffdev_targetset_ctrl(fin,.false.)
 
@@ -109,6 +105,9 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
+
+    ! run XDM stat if data available
+    call ffdev_xdm_run_stat()
 
     ! do fake input file processing
     rst = prmfile_first_group(fin)
@@ -176,9 +175,6 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
-
-    ! run XDM stat if data available
-    call ffdev_xdm_run_stat()
 
     ! initialize
     write(DEV_OUT,*)

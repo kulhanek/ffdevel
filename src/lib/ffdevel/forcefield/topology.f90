@@ -834,13 +834,11 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
 
-        case(COMB_RULE_PA_GEO_AVE)
-            ffdev_topology_comb_rules_to_string = 'PA geometry average'
-        case(COMB_RULE_PA_ARI_AVE)
-            ffdev_topology_comb_rules_to_string = 'PB arithmetic average'
+        case(COMB_RULE_PA1)
+            ffdev_topology_comb_rules_to_string = 'PA1 (Pauli repulsion, v1)'
 
-        case(COMB_RULE_TT)
-            ffdev_topology_comb_rules_to_string = 'TT (Tang–Toennis)'
+        case(COMB_RULE_TT1)
+            ffdev_topology_comb_rules_to_string = 'TT1 (Tang–Toennis, v1)'
         case(COMB_RULE_TT2)
             ffdev_topology_comb_rules_to_string = 'TT2 (Tang–Toennis, v2)'
 
@@ -875,13 +873,10 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
 
-        case('PA_GEO_AVE')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PA_GEO_AVE
-        case('PA_ARI_AVE')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PA_ARI_AVE
-
-        case('TT')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_TT
+        case('PA1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PA1
+        case('TT1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_TT1
         case('TT2')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_TT2
 
@@ -1425,22 +1420,22 @@ subroutine ffdev_topology_LJ_ERA2ABC(eps,r0,pa,c6,s6)
 end subroutine ffdev_topology_LJ_ERA2ABC
 
 ! ==============================================================================
-! subroutine ffdev_topology_LJ_ERA2ABC
+! subroutine ffdev_topology_LJ_AB2ER
 ! ==============================================================================
 
-subroutine ffdev_topology_LJ_ABC2ERA(pa,c6,s6,eps,r0)
+subroutine ffdev_topology_LJ_AB2ER(pa,c6,eps,r0)
 
     implicit none
-    real(DEVDP)     :: pa,c6,s6,eps,r0
+    real(DEVDP)     :: pa,c6,eps,r0
     ! --------------------------------------------
     real(DEVDP)     :: r6
     ! --------------------------------------------------------------------------
 
-    r6  = 2.0d0*pa/(s6*c6)
+    r6  = 2.0d0*pa/c6
     r0  = r6**(1.0d0/6.0d0)
     eps = pa / (r6**2)
 
-end subroutine ffdev_topology_LJ_ABC2ERA
+end subroutine ffdev_topology_LJ_AB2ER
 
 ! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules
@@ -1460,12 +1455,8 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
             call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
         case(NB_VDW_12_XDMC6)
             call ffdev_topology_apply_NB_comb_rules_12_XDMC6(top,comb_rules)
-        case(NB_VDW_12_XDMBJ)
-            call ffdev_topology_apply_NB_comb_rules_12_XDMBJ(top,comb_rules)
         case(NB_VDW_TT_XDM)
             call ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
-        case(NB_VDW_TT_XDM_2)
-            call ffdev_topology_apply_NB_comb_rules_TT_XDM_2(top,comb_rules)
         case default
             call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
     end select
@@ -1536,18 +1527,23 @@ end subroutine ffdev_topology_apply_NB_comb_rules_LJ
 subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6(top,comb_rules)
 
     use ffdev_utils
+    use ffdev_xdm_dat
 
     implicit none
     type(TOPOLOGY)  :: top
     integer         :: comb_rules
     ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
+    integer         :: i,nbii,nbjj,agti,agtj
+    real(DEVDP)     :: paii,paij,pajj,aLJii,aLJjj,bLJii,bLJjj,r0ij,epsij
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj
     ! --------------------------------------------------------------------------
 
     ! apply combination rules
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            agti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
+            agtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
 
             ! get type parameters
             nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
@@ -1557,10 +1553,31 @@ subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6(top,comb_rules)
             pajj  = top%nb_types(nbjj)%pa
 
             select case(comb_rules)
-                case(COMB_RULE_PA_ARI_AVE)
+                case(COMB_RULE_PA1)
                     paij = (paii + pajj)*0.5d0
-                case(COMB_RULE_PA_GEO_AVE)
-                    paij = sqrt(paii*pajj)
+
+                case(COMB_RULE_LB)
+                    ! convert to ERA
+                    aLJii = exp(paii)
+                    bLJii = xdm_pairs(agti,agti)%c6ave * disp_fa * DEV_HARTREE2KCL * DEV_AU2A**6
+                    call ffdev_topology_LJ_AB2ER(aLJii,bLJii,epsii,r0ii)
+
+                    aLJjj = exp(pajj)
+                    bLJjj = xdm_pairs(agtj,agtj)%c6ave * disp_fa * DEV_HARTREE2KCL * DEV_AU2A**6
+                    call ffdev_topology_LJ_AB2ER(aLJjj,bLJjj,epsjj,r0jj)
+
+                    ! mix
+                    r0ij = (r0ii+r0jj)*0.5d0
+                    epsij = sqrt(epsii*epsjj)
+
+                    ! convert to ABC
+                    paij =  epsij * r0ij**12
+                    if( paij .gt. 0 ) then
+                        paij = log(paij)
+                    else
+                        paij = 0.0
+                    end if
+
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMC6!')
             end select
@@ -1571,49 +1588,6 @@ subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6(top,comb_rules)
     end do
 
 end subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
-    ! --------------------------------------------------------------------------
-
-    ! apply combination rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii  = top%nb_types(nbii)%pa
-            pajj  = top%nb_types(nbjj)%pa
-
-            select case(comb_rules)
-                case(COMB_RULE_PA_ARI_AVE)
-                    paij = (paii + pajj)*0.5d0
-                case(COMB_RULE_PA_GEO_AVE)
-                    paij = sqrt(paii*pajj)
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMBJ!')
-            end select
-
-            top%nb_types(i)%pa = paij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ
 
 ! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM
@@ -1647,12 +1621,12 @@ subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
             pbjj = top%nb_types(nbjj)%pb
 
             select case(comb_rules)
-                case(COMB_RULE_TT)
+                case(COMB_RULE_TT1)
                     paij = (paii+pajj)*0.5d0
                     pbij = (pbii+pbjj)*0.5d0
                 case(COMB_RULE_TT2)
                     paij = (paii+pajj)*0.5d0
-                    pbij = pbii*pbjj/(pbii+pbjj)
+                    pbij = 2.0d0*pbii*pbjj/(pbii+pbjj)
                 case default
                     call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_TT_XDM!')
             end select
@@ -1664,47 +1638,6 @@ subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
     end do
 
 end subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM_2
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM_2(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
-    ! --------------------------------------------------------------------------
-
-    ! apply combination rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii  = top%nb_types(nbii)%pa
-            pajj  = top%nb_types(nbjj)%pa
-
-            select case(comb_rules)
-                case(COMB_RULE_TT)
-                    paij = (paii + pajj)*0.5d0
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_TT_XDM_2!')
-            end select
-
-            top%nb_types(i)%pa = paij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM_2
 
 ! ==============================================================================
 ! function ffdev_topology_get_nbprms
@@ -1875,6 +1808,128 @@ integer function ffdev_topology_z2n(z)
     call ffdev_utils_exit(DEV_OUT,1,'Z out-of-range in ffdev_topology_z2n')
 
 end function ffdev_topology_z2n
+
+! ==============================================================================
+! subroutine ffdev_topology_nb_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: nb_mode
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            ffdev_topology_nb_mode_to_string = 'LJ - Lennard-Jones potential'
+        case(NB_VDW_12_XDMC6)
+            ffdev_topology_nb_mode_to_string = '12_XDMC6 - 12 + scaled C6 from XDM potential'
+        case(NB_VDW_TT_XDM)
+            ffdev_topology_nb_mode_to_string = 'TT_XDM - Tang–Toennis potential with XDM dispersion'
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
+    end select
+
+end function ffdev_topology_nb_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_nb_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_nb_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('LJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_LJ
+        case('12_XDMC6')
+            ffdev_topology_nb_mode_from_string = NB_VDW_12_XDMC6
+        case('TT_XDM')
+            ffdev_topology_nb_mode_from_string = NB_VDW_TT_XDM
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
+    end select
+
+end function ffdev_topology_nb_mode_from_string
+
+! ==============================================================================
+! function ffdev_topology_switch_nbmode
+! ==============================================================================
+
+subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
+
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: from_nb_mode,to_nb_mode
+    ! --------------------------------------------
+    integer         :: nbt,zi,zj,gi,gj
+    real(DEVDP)     :: pbi,pbj,pb,c6,c8,pa
+    ! --------------------------------------------------------------------------
+
+    select case(to_nb_mode)
+        case(NB_VDW_LJ)
+            ! nothing to do
+
+        case(NB_VDW_12_XDMC6)
+            if( .not. xdm_data_loaded ) then
+                call ffdev_utils_exit(DEV_OUT,1,'XDM data were not loaded - unable to switch to 12_XDMC6!')
+            end if
+
+            do nbt=1,top%nnb_types
+                pa = top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
+                if( pa .gt. 0 ) then
+                    top%nb_types(nbt)%pa = log(pa)
+                else
+                    top%nb_types(nbt)%pa = 0.0
+                end if
+            end do
+
+        case(NB_VDW_TT_XDM)
+            if( .not. xdm_data_loaded ) then
+                call ffdev_utils_exit(DEV_OUT,1,'XDM data were not loaded - unable to switch to TT_XDM!')
+            end if
+            ! generate PB from XDM
+            do nbt=1,top%nnb_types
+                zi = top%atom_types(top%nb_types(nbt)%ti)%z
+                gi = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
+
+                zj = top%atom_types(top%nb_types(nbt)%tj)%z
+                gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
+
+                ! PA - guess from Rc
+                c6  = xdm_pairs(gi,gj)%c6ave * DEV_HARTREE2KCL * DEV_AU2A**6
+                c8  = xdm_pairs(gi,gj)%c8ave * DEV_HARTREE2KCL * DEV_AU2A**8
+                top%nb_types(nbt)%pa = sqrt(c8/c6)
+
+                ! from polarizabilities - DEV_AU2A * 2.54d0*(xdm_atoms(gi)%pol + xdm_atoms(gj)%pol)**(1.0d0/7.0d0)
+
+                ! IP is in eV, convert to atomic units
+                ! pbi and pbj are halves of bii or bjj in atomic units
+                pbi = sqrt(2.0*xdm_ip(zi)*DEV_eV2KCL*DEV_KCL2HARTREE) * (xdm_atoms(gi)%v0ave / xdm_atoms(gi)%vave)**(1.0/3.0)
+                pbj = sqrt(2.0*xdm_ip(zj)*DEV_eV2KCL*DEV_KCL2HARTREE) * (xdm_atoms(gj)%v0ave / xdm_atoms(gj)%vave)**(1.0/3.0)
+
+                ! sum two halves
+                pb  = pbi+pbj
+
+                ! convert to Ang^-1
+                top%nb_types(nbt)%pb = pb / DEV_AU2A
+            end do
+        case default
+            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
+    end select
+
+end subroutine ffdev_topology_switch_nbmode
 
 ! ------------------------------------------------------------------------------
 

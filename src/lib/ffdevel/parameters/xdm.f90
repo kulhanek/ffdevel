@@ -71,7 +71,6 @@ subroutine ffdev_xdm_run_stat()
         xdm_atoms(ti)%v0sig = 0.0d0
         xdm_atoms(ti)%p0ave = 0.0d0
         xdm_atoms(ti)%p0sig = 0.0d0
-        xdm_atoms(ti)%Rvdw  = 0.0d0
         xdm_atoms(ti)%pol = 0.0d0
         xdm_atoms(ti)%num = 0
         do tj=1,ntypes
@@ -98,10 +97,13 @@ subroutine ffdev_xdm_run_stat()
                 ! accumulate data
                 xdm_atoms(ti)%vave  = xdm_atoms(ti)%vave + sets(i)%geo(j)%sup_xdm_vol(ai)
                 xdm_atoms(ti)%vsig  = xdm_atoms(ti)%vsig + sets(i)%geo(j)%sup_xdm_vol(ai)**2
+
                 xdm_atoms(ti)%v0ave = xdm_atoms(ti)%v0ave + sets(i)%geo(j)%sup_xdm_vol0(ai)
                 xdm_atoms(ti)%v0sig = xdm_atoms(ti)%v0sig + sets(i)%geo(j)%sup_xdm_vol0(ai)**2
+
                 xdm_atoms(ti)%p0ave = xdm_atoms(ti)%p0ave + sets(i)%geo(j)%sup_xdm_pol0(ai)
                 xdm_atoms(ti)%p0sig = xdm_atoms(ti)%p0sig + sets(i)%geo(j)%sup_xdm_pol0(ai)**2
+
                 xdm_atoms(ti)%num   = xdm_atoms(ti)%num + 1
 
                 do aj=ai,sets(i)%geo(j)%natoms
@@ -112,10 +114,13 @@ subroutine ffdev_xdm_run_stat()
                     ! accumulate data
                     xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave + sets(i)%geo(j)%sup_xdm_c6(ai,aj)
                     xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + sets(i)%geo(j)%sup_xdm_c6(ai,aj)**2
+
                     xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + sets(i)%geo(j)%sup_xdm_c8(ai,aj)
                     xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + sets(i)%geo(j)%sup_xdm_c8(ai,aj)**2
+
                     xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + sets(i)%geo(j)%sup_xdm_c10(ai,aj)
                     xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + sets(i)%geo(j)%sup_xdm_c10(ai,aj)**2
+
                     xdm_pairs(ti,tj)%num = xdm_pairs(ti,tj)%num + 1
 
                     ! complete matrix
@@ -133,7 +138,7 @@ subroutine ffdev_xdm_run_stat()
         end do
     end do
 
-    ! finish statistics for dispersion cooeficients
+    ! finish statistics for dispersion coefficients
     do ti=1,ntypes
 
         if( xdm_atoms(ti)%num .gt. 0 ) then
@@ -223,7 +228,7 @@ subroutine ffdev_xdm_run_stat()
     end do
     write(DEV_OUT,40)
     do ti=1,ntypes
-        do tj=ti+1,ntypes
+        do tj=1,ntypes
             write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
                               xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                               xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
@@ -244,26 +249,20 @@ subroutine ffdev_xdm_run_stat()
                           xdm_atoms(ti)%p0ave, xdm_atoms(ti)%p0sig, &
                           xdm_atoms(ti)%v0ave, xdm_atoms(ti)%v0sig, &
                           xdm_atoms(ti)%vave, xdm_atoms(ti)%vsig, &
-                          xdm_atoms(ti)%pol, xdm_atoms(ti)%Rvdw
+                          xdm_atoms(ti)%pol
     end do
-
 
  10 format('>>> No XDM data available ....')
 
- 20 format('# Dispersion coefficients ...')
+ 20 format('# Dispersion coefficients ... (all in atomic units)')
  30 format('# TypA TypB Number         <C6>        s(C6)         <C8>        s(C8)        <C10>       s(C10)')
  40 format('# ---- ---- ------ ------------ ------------ ------------ ------------ ------------ ------------')
  50 format(2X,A4,1X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
 
-120 format('# Atomic data ...')
-130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol   Rvdw')
-140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------ ------')
-150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,F6.3)
-
-220 format('# LJ parameters ...')
-230 format('# TypA TypB        eps         R0')
-240 format('# ---- ---- ---------- ----------')
-250 format(2X,A4,1X,A4,1X,F10.5,1X,F10.5)
+120 format('# Atomic data ... (all in atomic units)')
+130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol')
+140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------')
+150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
 
 end subroutine ffdev_xdm_run_stat
 

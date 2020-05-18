@@ -180,16 +180,23 @@ end type TOPOLOGY
 
 logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gamma)
                                                 ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
+
+! ==============================================================================
 ! ==== electrostatics
+! ==============================================================================
+
 integer,parameter   :: NB_ELE_QTOP   = 1        ! charges from topology
 integer,parameter   :: NB_ELE_QGEO   = 2        ! charges from geometries
 
-integer     :: ele_mode     = NB_ELE_QGEO
+integer     :: ele_mode     = NB_ELE_QTOP
 real(DEVDP) :: ele_qscale   = 1.0d0             ! scaling factor for charges
 
 ! ==============================================================================
 ! ==== vdW modes
 ! ==============================================================================
+
+! combining rules for nb_mode
+integer,parameter   :: COMB_RULE_NONE = 05    ! input data
 
 ! ####################################################################
 integer,parameter   :: NB_VDW_LJ        = 1
@@ -207,62 +214,37 @@ integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 ! ####################################################################
 integer,parameter   :: NB_VDW_12_XDMC6  = 2
 ! Lenard-Jones
-! Form: Enb = PA/r^12 - disp_c6scale*XDM_C6/r^6
-! XDM_C6 is taken from geo files
-! Parameters: PA, disp_c6scale
+! Form: Enb = exp(PA)/r^12 - disp_fa*XDM_C6/r^6
+! Parameters: PA, disp_fa
 ! Provides: energy
-
-! for C6 constant mode
-real(DEVDP) :: disp_c6scale = 1.0d0             ! scaling factor for C6
 
 ! combining rules - applicable for NB_VDW_12_XDMC6
-integer,parameter   :: COMB_RULE_PA_GEO_AVE = 15   ! geometric mean sqrt(paii*pajj) - This can be physically justify
-integer,parameter   :: COMB_RULE_PA_ARI_AVE = 16   ! arithmetic mean (paii+pajj)/2
+integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_12_XDMBJ  = 3
-! Lenard-Jones
-! Form: Enb = PA/r^12 - (XDM_C6/(r^6 + rvdw^6) + XDM_C8/(r^8 + rvdw^8) + XDM_C10/(r^10 + rvdw^10))
-! XDM_C6, XDM_C8, XDM_C10 are taken from geo files
-! rvdw = BJA*Rc + BJB
-! Parameters: PA, BJA, BJB
+integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennies + XDM
+
+! Tang–Toennis
+! Form: Enb = exp(PA)*exp(-PB*r) - fd6*XDM_C6/r^6 - fd8*XDM_C8/r^8 - fd10*XDM_C10/r^10
+! Parameters: PA, PB
 ! Provides: energy
 
-! combining rules - applicable for NB_VDW_12_XDMBJ
-! = COMB_RULE_PA_ARI_AVE
-! = COMB_RULE_PA_GEO_AVE
-
-! ####################################################################
-integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennis + XDM
-
 ! combining rules - applicable for NB_VDW_TT_XDM
-integer,parameter   :: COMB_RULE_TT  = 17  ! PAIJ=SQRT(PAII*PAJJ); PBIJ=(PBII+PBJJ)/2
-integer,parameter   :: COMB_RULE_TT2 = 18  ! PAIJ=SQRT(PAII*PAJJ); PBIJ=2*PBII*PBJJ/(PBII+PBJJ)
-
-! ####################################################################
-integer,parameter   :: NB_VDW_TT_XDM_2  = 5     ! Tang–Toennis + XDM
-
-! combining rules - applicable for NB_VDW_TT_XDM_2
-! = COMB_RULE_PA_ARI_AVE
-! = COMB_RULE_PA_GEO_AVE
+integer,parameter   :: COMB_RULE_TT1 = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
+                                            ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
+integer,parameter   :: COMB_RULE_TT2 = 18
 
 ! ==============================================================================
 
-integer     :: nb_mode = NB_VDW_TT_XDM_2
-
-! parameters
-real(DEVDP) :: disp_fa  = DEV_AU2A
-real(DEVDP) :: disp_fb  = 0.0
-
-! possible values for lj2exp6_alpha
-real(DEVDP) :: lj2exp6_alpha    = 12.0d0        ! alpha for lj to exp-6 potential conversion
-                                                ! 12.0                           - identical long-range
-                                                ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
+! employed method for NB interactions
+integer     :: nb_mode          = NB_VDW_LJ
+integer     :: nb_comb_rules    = COMB_RULE_LB
 
 ! ------------------------------------------------------------------------------
 
-! combining rules for nb_mode
-integer,parameter   :: COMB_RULE_NONE = 05    ! input data
+! tuneable parameters
+real(DEVDP) :: disp_fa = 1.0d0
+real(DEVDP) :: disp_fb = 1.0d0
 
 ! ------------------------------------------------------------------------------
 

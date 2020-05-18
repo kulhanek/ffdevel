@@ -1060,8 +1060,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight E G H P')
-40 format('# ---- ---------------------------------------- ------ - - - -')
+30 format('# ID   File                                     Weight E G H P X S C')
+40 format('# ---- ---------------------------------------- ------ - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1079,10 +1079,11 @@ subroutine ffdev_geometry_info_point(geo)
 
     lname = trim(geo%name)
     write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_ene_loaded, &
-                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded
+                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 
@@ -1103,9 +1104,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight   Rel Energy E G H P X S')
-35 format('# ID   File                                     Weight       Energy E G H P X S')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - -')
+30 format('# ID   File                                     Weight   Rel Energy E G H P X S C')
+35 format('# ID   File                                     Weight       Energy E G H P X S C')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1113,21 +1114,29 @@ end subroutine ffdev_geometry_info_point_header_ext
 ! subroutine ffdev_geometry_info_point_ext
 ! ==============================================================================
 
-subroutine ffdev_geometry_info_point_ext(geo)
+subroutine ffdev_geometry_info_point_ext(geo,relative)
 
     implicit none
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     character(len=40)   :: lname
+    logical             :: relative
     ! --------------------------------------------------------------------------
 
     lname = trim(geo%name)
+    if( relative ) then
     write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
+    else
+    write(DEV_OUT,15) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
+                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
+    end if
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point_ext
 

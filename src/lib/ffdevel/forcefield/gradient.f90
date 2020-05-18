@@ -80,6 +80,10 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
                 else
                     call ffdev_gradient_nb_lj_qtop(top,geo)
                 end if
+
+            case(NB_VDW_12_XDMC6)
+                call ffdev_gradient_nb_12_XDMC6(top,geo)
+
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_gradient_all!')
         end select
@@ -598,6 +602,91 @@ subroutine ffdev_gradient_nb_lj_qgeo(top,geo)
     end do
 
 end subroutine ffdev_gradient_nb_lj_qgeo
+
+!===============================================================================
+! subroutine ffdev_gradient_nb_12_XDMC6
+!===============================================================================
+
+subroutine ffdev_gradient_nb_12_XDMC6(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, agti, agtj
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,c6,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2a,ra,r6a,Vela,V_aa,V_ba,dva,scale2
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    scale2 = ele_qscale*ele_qscale*332.05221729d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+
+        agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+        agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+        pa  = exp(top%nb_types(nbt)%pa)
+        c6  = xdm_pairs(agti,agtj)%c6ave * disp_fa * DEV_HARTREE2KCL * DEV_AU2A**6
+
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
+            crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
+        else
+            crgij =  top%atoms(i)%charge * top%atoms(j)%charge
+        end if
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2a
+        ra  = sqrt(r2a)
+        r6a = r2a*r2a*r2a
+
+        Vela = scale2*crgij*ra
+        V_aa = pa*r6a*r6a
+        V_ba = c6*r6a
+
+        ! calculate energy
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene  = geo%ele_ene + Vela
+            geo%nb_ene  = geo%nb_ene + V_aa - V_ba
+            dva   = r2a*(Vela + 12.0d0*V_aa - 6.0d0*V_ba)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+            geo%ele14_ene  = geo%ele14_ene + inv_scee*Vela
+            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa - V_ba)
+            dva   = r2a*(inv_scee*Vela + inv_scnb*(12.0d0*V_aa - 6.0d0*V_ba))
+        end if
+
+        ! calculate gradient
+        dxa1 = dva*dxa1
+        dxa2 = dva*dxa2
+        dxa3 = dva*dxa3
+        geo%grd(1,i) = geo%grd(1,i) - dxa1
+        geo%grd(2,i) = geo%grd(2,i) - dxa2
+        geo%grd(3,i) = geo%grd(3,i) - dxa3
+        geo%grd(1,j) = geo%grd(1,j) + dxa1
+        geo%grd(2,j) = geo%grd(2,j) + dxa2
+        geo%grd(3,j) = geo%grd(3,j) + dxa3
+    end do
+
+end subroutine ffdev_gradient_nb_12_XDMC6
 
 ! ------------------------------------------------------------------------------
 

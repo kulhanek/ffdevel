@@ -45,10 +45,9 @@ integer,parameter       :: REALM_VDW_PB     = 17
 integer,parameter       :: REALM_VDW_C6     = 18
 ! non-bonded scaling factors
 integer,parameter       :: REALM_ELE_SQ     = 19 ! charges
-integer,parameter       :: REALM_DISP_S6    = 20 ! C6
-! Backe-Johnson damping
-integer,parameter       :: REALM_DISP_FA    = 21
-integer,parameter       :: REALM_DISP_FB    = 22
+! dispersion parameters
+integer,parameter       :: REALM_DISP_FA    = 20
+integer,parameter       :: REALM_DISP_FB    = 21
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
 integer,parameter       :: REALM_LAST    = REALM_DISP_FB
@@ -110,7 +109,6 @@ integer,parameter       :: PARAMS_SUMMARY_FULL          = 4
 
 ! === [control] ================================================================
 integer         :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
-integer         :: NBCombRules                  = COMB_RULE_LB
 logical         :: OnlyDefinedDihItems          = .true.
 logical         :: LockDihC_PN1                 = .true.
 logical         :: ResetAllSetup                = .true.
@@ -153,27 +151,25 @@ real(DEVDP)     :: MinVdwEps    =       0.0d0
 real(DEVDP)     :: MaxVdwEps    =       2.0d0
 real(DEVDP)     :: MinVdwR0     =       0.5d0
 real(DEVDP)     :: MaxVdwR0     =       6.0d0
-real(DEVDP)     :: MinVdwAlpha  =      10.0
-real(DEVDP)     :: MaxVdwAlpha  =      25.0
+real(DEVDP)     :: MinVdwAlpha  =      10.0d0
+real(DEVDP)     :: MaxVdwAlpha  =      25.0d0
 
 ! non-bonded ABC
-real(DEVDP)     :: MinVdwPA     =        0.0d0
-real(DEVDP)     :: MaxVdwPA     =       20.0d0
-real(DEVDP)     :: MinVdwPB     =        0.1d0
-real(DEVDP)     :: MaxVdwPB     =        6.0d0
-real(DEVDP)     :: MinVdwC6     =        0.0
-real(DEVDP)     :: MaxVdwC6     = 100000000.0
+real(DEVDP)     :: MinVdwPA     =      0.0d0
+real(DEVDP)     :: MaxVdwPA     =     20.0d0
+real(DEVDP)     :: MinVdwPB     =      1.0d0
+real(DEVDP)     :: MaxVdwPB     =      8.0d0
+real(DEVDP)     :: MinVdwC6     =      0.0d0
+real(DEVDP)     :: MaxVdwC6     =      1.0d7
 
 ! non-bonded scaling factors
-real(DEVDP)     :: MinEleSQ     =       0.0d0
-real(DEVDP)     :: MaxEleSQ     =       3.0d0
-real(DEVDP)     :: MinDispS6    =       0.0d0
-real(DEVDP)     :: MaxDispS6    =       3.0d0
+real(DEVDP)     :: MinEleSQ     =      0.0d0
+real(DEVDP)     :: MaxEleSQ     =      3.0d0
 
-real(DEVDP)     :: MinDispFA   =       0.1d0
-real(DEVDP)     :: MaxDispFA   =       3.0d0
-real(DEVDP)     :: MinDispFB   =       0.1d0
-real(DEVDP)     :: MaxDispFB   =       9.0d0
+real(DEVDP)     :: MinDispFA    =      0.1d0
+real(DEVDP)     :: MaxDispFA    =      3.0d0
+real(DEVDP)     :: MinDispFB    =      0.1d0
+real(DEVDP)     :: MaxDispFB    =      9.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

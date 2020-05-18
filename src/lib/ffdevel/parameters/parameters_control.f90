@@ -726,8 +726,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case(NB_PARAMS_MODE_ALL)
                 write(DEV_OUT,25) 'all'
         end select
-        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
-        write(DEV_OUT,45) lj2exp6_alpha
+
+        write(DEV_OUT,35) ffdev_topology_nb_mode_to_string(nb_mode)
+        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(nb_comb_rules)
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
@@ -767,18 +768,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
         end select
     end if
 
-    if( prmfile_get_string_by_key(fin,'comb_rules', string)) then
-        NBCombRules = ffdev_topology_get_comb_rules_from_string(string)
-        write(DEV_OUT,50) ffdev_topology_comb_rules_to_string(NBCombRules)
-    else
-        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(NBCombRules)
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'lj2exp6_alpha', lj2exp6_alpha)) then
-        write(DEV_OUT,40) lj2exp6_alpha
-    else
-        write(DEV_OUT,45) lj2exp6_alpha
-    end if
+    write(DEV_OUT,35) ffdev_topology_nb_mode_to_string(nb_mode)
+    write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(nb_comb_rules)
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
         write(DEV_OUT,60) prmfile_onoff(OnlyDefinedDihItems)
@@ -814,10 +805,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
  20  format ('NB parameter assembly mode (nb_params)   = ',a12)
  25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
- 50  format ('NB combining rules (comb_rules)          = ',a26)
- 55  format ('NB combining rules (comb_rules)          = ',a26,'  (default)')
- 40  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7)
- 45  format ('Default value of alpha (lj2exp6_alpha)   = ',f12.7,'                (default)')
+ 35  format ('NB mode (initial)                        = ',a26,'  (default)')
+ 55  format ('NB combining rules (initial)             = ',a26,'  (default)')
  60  format ('Use defined dih items (dih_only_defined) = ',a12)
  65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
  70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
@@ -1228,7 +1217,8 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-! programatic NB change (order dependent)
+    ! programmatic NB change (order dependent)
+
     rst = prmfile_first_line(fin)
     do while( rst )
         rst = prmfile_get_field_on_line(fin,key)
@@ -1306,6 +1296,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
     end do
 
     ! update nb parameters
+    nb_comb_rules = comb_rules
     call ffdev_targetset_reinit_nbparams
 
 10 format('Combination rules (comb_rules)   = ',A)
@@ -1332,16 +1323,15 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     character(PRMFILE_MAX_PATH) :: string
     logical                     :: exec
     ! --------------------------------------------
-    integer                     :: i,lnb_mode
+    integer                     :: i,from_nb_mode,to_nb_mode
     ! --------------------------------------------------------------------------
 
-    ! FIXME
-    ! lnb_mode = ffdev_topology_nb_mode_from_string(string)
+    from_nb_mode = nb_mode
+    to_nb_mode = ffdev_topology_nb_mode_from_string(string)
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
-    ! FIXME
-!    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(lnb_mode)
+    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(to_nb_mode)
 
     do i=1,nsets
         if( DebugFFManip ) then
@@ -1353,9 +1343,8 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
             call ffdev_topology_info_types(sets(i)%top,1)
         end if
 
-        ! FIXME
-        ! remix parameters
-        ! call ffdev_topology_switch_nbmode(sets(i)%top,lnb_mode)
+        ! switch nb mode
+        call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
 
         if( DebugFFManip ) then
             ! new set of parameters
@@ -1365,58 +1354,17 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
         end if
     end do
 
-    ! FIXME
-    ! LastNBMode = nb_mode
+    ! set nb_mode
+    nb_mode = to_nb_mode
 
     ! update nb parameters
     call ffdev_parameters_reinit
     call ffdev_targetset_reinit_nbparams
 
-10 format('NB mode (nb_mode)                = ',A)
+10 format('New NB mode (nb_mode)            = ',A)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
-
-! FIXME
-!if( NBParamsRealms .eq. NB_PARAMS_REALMS_ERA ) then
-!    select case(nb_mode)
-!        case(NB_MODE_LJ,NB_MODE_EXP6)
-!            ! OK
-!        case default
-!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-!    end select
-!end if
-
-!if( NBParamsRealms .eq. NB_PARAMS_REALMS_ER ) then
-!    select case(nb_mode)
-!        case(NB_MODE_LJ)
-!            ! OK
-!        case default
-!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-!    end select
-!end if
-
-!if( NBParamsRealms .eq. NB_PARAMS_REALMS_PAB ) then
-!    select case(nb_mode)
-!        case(NB_MODE_PAULI_DENS2,NB_MODE_PAULI_WAVE2)
-!            ! OK
-!        case default
-!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-!    end select
-!end if
-
-!if( NBParamsRealms .eq. NB_PARAMS_REALMS_PABC ) then
-!    select case(nb_mode)
-!        case(NB_MODE_PAULI_DENS3,NB_MODE_PAULI_WAVE3)
-!            ! OK
-!        case default
-!            call ffdev_utils_exit(DEV_OUT,1,'Incompatible nb_mode "' // &
-!                 trim(ffdev_topology_nb_mode_to_string(top%nb_mode)) // '" with nb_realms!')
-!    end select
-!end if
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload

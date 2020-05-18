@@ -403,8 +403,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     sets(i)%geo(j)%trg_freq_loaded =  .true.
                 end if
 
-                if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) then
-                    call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref ) then
+                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.false.)
                 else
                     call ffdev_geometry_info_point(sets(i)%geo(j))
                 end if
@@ -459,7 +459,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 do k=1,sets(i)%nrefs
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
                 end do
-                call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                call ffdev_geometry_info_point_ext(sets(i)%geo(j),.true.)
             end do
         end if
 
@@ -492,7 +492,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
-                    call ffdev_geometry_info_point_ext(sets(i)%geo(j))
+                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.true.)
                 end do
             end if
         end if

@@ -84,7 +84,7 @@ subroutine ffdev_targetset_calc_all
     ! apply combination rules
     if( ApplyCombinationRules ) then
         do i=1,nsets
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,NBCombRules)
+            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
         end do
     end if
 

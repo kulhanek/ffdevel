@@ -69,16 +69,6 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
         optimizers/shark-ml.cpp
-
-        dftd3/sizes.f90
-        dftd3/api.f90
-        dftd3/common.f90
-        dftd3/core.f90
-        dftd3/pars.f90
-        dftd3/sizes.f90
-        dftd3/mmd3.f90
-        dftd3/mmd3_dat.f90
-        dftd3/mmd3_control.f90
         )
 
 # create static library --------------------------------------------------------

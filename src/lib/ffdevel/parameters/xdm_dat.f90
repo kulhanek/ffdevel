@@ -30,7 +30,6 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c10ave
     real(DEVDP)         :: c10sig
     integer             :: num
-    real(DEVDP)         :: Cn(20)
 end type XDM_PAIR_TYPE
 
 ! XDM atom
@@ -43,7 +42,6 @@ type XDM_ATOM_TYPE
     real(DEVDP)         :: p0sig
     real(DEVDP)         :: pol      ! atomic polarizability
     integer             :: num
-    real(DEVDP)         :: Rvdw     ! vdW radius derived from V, V0, and pol0
 end type XDM_ATOM_TYPE
 
 logical                         :: xdm_data_loaded = .false.
