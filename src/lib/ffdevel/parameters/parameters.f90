@@ -819,7 +819,7 @@ end function find_parameter
 
 ! ------------------------------------------------------------------------------
 
-integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
+integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl,id)
 
     use ffdev_parameters_dat
     use ffdev_targetset_dat
@@ -828,7 +828,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
     implicit none
     integer         :: realm
     integer         :: pn
-    integer         :: ti,tj,tk,tl
+    integer         :: ti,tj,tk,tl,id
     ! --------------------------------------------
     integer         :: i
     ! --------------------------------------------------------------------------
@@ -841,6 +841,11 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
         if( params(i)%pn .ne. pn ) cycle
 
         select case(realm)
+            case(REALM_EOFFSET)
+                if( i .eq. id ) then
+                    find_parameter_by_ids = id
+                    return
+                end if
             case(REALM_BOND_D0,REALM_BOND_K)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
@@ -881,6 +886,9 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
+           case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB)
+                find_parameter_by_ids = i
+                return
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter_by_ids!')
         end select
@@ -1079,7 +1087,7 @@ subroutine ffdev_parameters_load(name,loaded,ignored)
         tl = get_common_type_from_name(stl)
         tk = get_common_type_from_name(stk)
 
-        parmid = find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
+        parmid = find_parameter_by_ids(realm,pn,ti,tj,tk,tl,idx)
         if( parmid .ne. 0 ) then
             params(parmid)%value = value
             loaded = loaded + 1

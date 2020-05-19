@@ -119,7 +119,7 @@ program ffdev_enefilter_program
     call ffdev_topology_init(top)
     call ffdev_topology_load(top,trim(topname))
 
-    ! switch to probe mode and finalizae topology
+    ! switch to probe mode and finalize topology
     call ffdev_topology_switch_to_probe_mode(top,probe_size,.false.)
 
     ! FIXME

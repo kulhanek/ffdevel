@@ -177,7 +177,6 @@ end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
 ! global options in
-! [force-field]? FIXME
 
 logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gamma)
                                                 ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
