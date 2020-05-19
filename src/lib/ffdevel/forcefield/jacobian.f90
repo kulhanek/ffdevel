@@ -18,6 +18,7 @@
 module ffdev_jacobian
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 

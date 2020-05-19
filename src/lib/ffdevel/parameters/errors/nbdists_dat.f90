@@ -18,6 +18,7 @@
 module ffdev_err_nbdists_dat
 
 use ffdev_constants
+use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 

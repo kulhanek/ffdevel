@@ -19,6 +19,7 @@ module ffdev_xdm
 
 use ffdev_xdm_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 

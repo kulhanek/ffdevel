@@ -18,6 +18,7 @@
 module ffdev_err_rmsd
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -46,7 +47,7 @@ end subroutine ffdev_err_rmsd_init
 subroutine ffdev_err_rmsd_error(error)
 
     use ffdev_targetset_dat
-    use ffdev_utils   
+    use ffdev_utils
     use ffdev_geometry
     use ffdev_geometry_utils
     use ffdev_errors_dat
@@ -80,7 +81,7 @@ subroutine ffdev_err_rmsd_error(error)
 
     if( swsum .gt. 0 ) then
         error%rmsd = sqrt(seterrrmsd/real(swsum))
-    end if 
+    end if
 
 end subroutine ffdev_err_rmsd_error
 

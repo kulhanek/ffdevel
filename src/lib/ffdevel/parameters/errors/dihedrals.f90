@@ -18,6 +18,7 @@
 module ffdev_err_dihedrals
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -46,7 +47,7 @@ end subroutine ffdev_err_dihedrals_init
 subroutine ffdev_err_dihedrals_error(error)
 
     use ffdev_targetset_dat
-    use ffdev_utils   
+    use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
     use ffdev_err_dihedrals_dat
@@ -92,7 +93,7 @@ subroutine ffdev_err_dihedrals_error(error)
 
     if( ndihedrals .gt. 0 ) then
         error%dihedrals = sqrt(seterrdihedrals/real(ndihedrals))
-    end if 
+    end if
 
 end subroutine ffdev_err_dihedrals_error
 

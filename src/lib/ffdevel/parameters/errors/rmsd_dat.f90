@@ -18,6 +18,7 @@
 module ffdev_err_rmsd_dat
 
 use ffdev_constants
+use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 

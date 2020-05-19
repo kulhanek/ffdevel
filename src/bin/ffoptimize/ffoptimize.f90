@@ -20,6 +20,7 @@ program ffdev_optimize_program
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use prmfile
     use ffdev_targetset_control
     use ffdev_parameters
@@ -59,6 +60,10 @@ program ffdev_optimize_program
     ! open dev null
     call ffdev_utils_open(DEV_NULL,'/dev/null','O')
 
+! ==============================================================================
+! INITIAL PART - Initial setup + TARGETSETS
+! ==============================================================================
+
     ! default setup for subsystems ---------------------------------------------
     call prmfile_init(tmpfin)
     write(DEV_OUT,*)
@@ -85,11 +90,8 @@ program ffdev_optimize_program
         call ffdev_parameters_ctrl_grbf2cos(fin)
     end if
 
-    ! read sections
+    ! read target sets
     call ffdev_targetset_ctrl(fin,.false.)
-
-    ! generate parameters from target topologies
-    call ffdev_parameters_init()
 
     ! check if everything was read for TARGETS
     if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
@@ -98,8 +100,27 @@ program ffdev_optimize_program
         call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
     end if
 
+    ! generate parameters from target topologies
+    call ffdev_parameters_init()
+
     ! finalize topologies in sets
     call ffdev_targetset_init_pts()
+
+! ==============================================================================
+! INITIAL PART - check for syntax errors in control file
+! ==============================================================================
+
+    ! start optimization programs ----------------
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'================================', '!')
+    call ffdev_utils_heading(DEV_OUT,'Checking control file for errors', '!')
+    call ffdev_utils_heading(DEV_OUT,'================================', '!')
+
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+        DEV_OUT = DEV_STD_OUTPUT
+    else
+        DEV_OUT = DEV_NULL
+    end if
 
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
@@ -136,7 +157,7 @@ program ffdev_optimize_program
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_ffopt(fin,.false.)
+            call execute_ffopt(fin,i,.false.)
 
             i = i + 1
         end if
@@ -146,7 +167,7 @@ program ffdev_optimize_program
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_ffeval(fin,.false.)
+            call execute_ffeval(fin,i,.false.)
 
             i = i + 1
         end if
@@ -156,11 +177,16 @@ program ffdev_optimize_program
 
     call ffdev_timers_stop_timer(FFDEV_INITIALIZATION_TIMER)
 
+    ! restore output channel
+    DEV_OUT = DEV_STD_OUTPUT
+
     ! check if everything was read
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
         call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+    else
+        write(DEV_OUT,*) '>>> INFO: The control file seems to be OK!'
     end if
 
     ! start optimization programs ----------------
@@ -224,18 +250,18 @@ program ffdev_optimize_program
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_ffopt(fin,.true.)
+            call execute_ffopt(fin,i,.true.)
 
             i = i + 1
         end if
 
-    ! ffevel - single point error evaluation
+    ! ffeval - single point error evaluation
         if( string .eq. 'FFEVAL' ) then
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
 
-            call execute_ffeval(fin,.true.)
+            call execute_ffeval(fin,i,.true.)
 
             i = i + 1
         end if
@@ -291,7 +317,7 @@ program ffdev_optimize_program
     call ffdev_utils_footer('FF Optimize')
 
 100 format('Control file : ',A)
-110 format('FF optimization program #',I2.2)
+110 format('FF optimization program #',I3.3)
 120 format('Final ffdevel parameters        = ',A)
 130 format('Final AMBER parameter file      = ',A)
 
@@ -321,7 +347,7 @@ end subroutine print_usage
 ! subroutine:  execute_ffopt
 !===============================================================================
 
-subroutine execute_ffopt(grpin,exec)
+subroutine execute_ffopt(grpin,pid,exec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
@@ -329,8 +355,11 @@ subroutine execute_ffopt(grpin,exec)
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
+    integer             :: pid
     logical             :: exec
     ! --------------------------------------------------------------------------
+
+    CurrentProgID = pid
 
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
@@ -357,7 +386,7 @@ end subroutine execute_ffopt
 ! subroutine:  execute_ffeval
 !===============================================================================
 
-subroutine execute_ffeval(grpin,exec)
+subroutine execute_ffeval(grpin,pid,exec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
@@ -365,8 +394,11 @@ subroutine execute_ffeval(grpin,exec)
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
+    integer             :: pid
     logical             :: exec
     ! --------------------------------------------------------------------------
+
+    CurrentProgID = pid
 
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
@@ -424,7 +456,7 @@ subroutine execute_ffmanip(grpin,exec)
     ! --------------------------------------------------------------------------
 
     if( exec ) then
-        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
     end if
 
     ! load and execute setup

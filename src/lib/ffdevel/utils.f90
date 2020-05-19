@@ -82,6 +82,7 @@ end subroutine ffdev_utils_open
 logical function ffdev_utils_fexist(filename)
 
     use ffdev_constants
+    use ffdev_variables
 
     implicit none
     character(*)      filename     ! file name
@@ -212,6 +213,7 @@ subroutine ffdev_utils_header(progname)
 
     use ffdev_ver
     use ffdev_constants
+    use ffdev_variables
 
     implicit none
     character(*)   :: progname
@@ -250,6 +252,7 @@ end subroutine ffdev_utils_header
 subroutine ffdev_utils_footer(progname)
 
     use ffdev_constants
+    use ffdev_variables
 
     implicit none
     character(*)   :: progname

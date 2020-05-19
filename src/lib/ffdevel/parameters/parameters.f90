@@ -19,6 +19,7 @@ module ffdev_parameters
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -38,6 +39,13 @@ subroutine ffdev_parameters_init()
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'PARAMETERS', ':')
+    write(DEV_OUT,5) nsets
+
+    if( Verbosity .ge. DEV_VERBOSITY_MEDIUM ) then
+        DEV_OUT = DEV_STD_OUTPUT
+    else
+        DEV_OUT = DEV_NULL
+    end if
 
     ! print parameters of individual topologies
     do i=1,nsets
@@ -48,7 +56,6 @@ subroutine ffdev_parameters_init()
 
     ! extract unique types
     call ffdev_parameters_gen_unique_types()
-    call ffdev_parameters_print_types()
 
     ! generate parameters ------------------------------------------------------
 
@@ -83,11 +90,16 @@ subroutine ffdev_parameters_init()
     ! generate parameters
     call ffdev_parameters_reinit()
 
+    ! restore output channel
+    DEV_OUT = DEV_STD_OUTPUT
+
     write(DEV_OUT,30) nparams
     write(DEV_OUT,50)
 
+    call ffdev_parameters_print_types()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
+  5 format('Number of sets (topologies)              = ',I6)
  10 format('=== [topology] #',I2.2,' =============================================================')
  20 format('Estimated number of parameters (maximum) = ',I6)
  30 format('Final number of parameters               = ',I6)
@@ -1627,10 +1639,10 @@ subroutine ffdev_parameters_print_types()
   5 format('Number of unique atom types among all target sets = ',I6)
 
  10 format('# ID Type Counts     IDs in Sets')
- 20 format('# -- ---- ------     -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --')
+ 20 format('# -- ---- ------     --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---')
  30 format(I4,1X,A4,1X,I6,5X)
- 40 format(I2,1X)
- 50 format('--',1X)
+ 40 format(I3,1X)
+ 50 format('---',1X)
 
 end subroutine ffdev_parameters_print_types
 
@@ -1845,6 +1857,13 @@ subroutine ffdev_parameters_print_parameters(mode)
     write(DEV_OUT,20)
 
     do i=1,nparams
+
+        ! print only enabled parameters for initial/final optimization summaries
+        if( .not. params(i)%enabled ) then
+            if( mode .eq. PARAMS_SUMMARY_INITIAL ) cycle
+            if( mode .eq. PARAMS_SUMMARY_OPTIMIZED ) cycle
+        end if
+
         count = 0
         scaling = 1.0d0
         do j=1,nsets
@@ -1881,7 +1900,22 @@ subroutine ffdev_parameters_print_parameters(mode)
         write(DEV_OUT,*)
     end do
 
-    if( mode .ne. PARAMS_SUMMARY_FULL ) return
+    free = 0
+    act = 0
+    do i=1,nparams
+        if( params(i)%identity .eq. 0 ) free = free + 1
+        if( params(i)%enabled ) act = act + 1
+    end do
+
+    if( mode .ne. PARAMS_SUMMARY_FULL ) then
+        write(DEV_OUT,*)
+        write(DEV_OUT,200) nparams
+        if( free .ne. nparams ) then
+        write(DEV_OUT,210) free
+        end if
+        write(DEV_OUT,230) act
+        return
+    end if
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)
@@ -1918,15 +1952,15 @@ subroutine ffdev_parameters_print_parameters(mode)
 
 
  10 format('# ID ST Iden    Realm    TI TJ TK TL PN       Value      Counts     IDs in Sets')
- 20 format('# -- -- ---- ----------- -- -- -- -- -- ---------------- ------     -- -- -- -- -- -- -- -- -- -- --')
+ 20 format('# -- -- ---- ----------- -- -- -- -- -- ---------------- ------     --- --- ---')
  30 format(I4,1X,L2,1X,I4,1X)
  31 format(I4,1X,L2,1X,'----',1X)
  32 format(A11,1X)
 
 
  35 format(A2,1X,A2,1X,A2,1X,A2,1X,I2,1X,F16.4,1X,I6,5X)
- 40 format(I2,1X)
- 50 format('--',1X)
+ 40 format(I3,1X)
+ 50 format('---',1X)
 
 100 format('#    Realm    Total   Free  Ident  Active')
 110 format('# ----------- ------ ------ ------ ------')
@@ -2654,7 +2688,7 @@ subroutine ffdev_parameters_error_only(prms,error)
     ! distribute parameters to topologies
     call ffdev_parameters_to_tops()
 
-    ! optimize geometry if requested and then calculate energy, and optionaly gradients and hessians
+    ! optimize geometry if requested and then calculate energy, and optionally gradients and hessians
     ! apply combining rules for individual topologies
     call ffdev_targetset_calc_all
 

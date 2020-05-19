@@ -18,6 +18,7 @@
 module ffdev_err_bonds_control
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 

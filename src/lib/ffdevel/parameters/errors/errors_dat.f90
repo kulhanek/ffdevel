@@ -18,6 +18,7 @@
 module ffdev_errors_dat
 
 use ffdev_constants
+use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 ! error function
@@ -44,6 +45,10 @@ type(FFERROR_TYPE)      :: FFError
 logical                 :: errors_calc_ene      = .false.
 logical                 :: errors_calc_grad     = .false.
 logical                 :: errors_calc_hess     = .false.
+
+! ------------------------------------------------------------------------------
+integer                 :: ProgramIndex                 = 0
+
 
 ! ------------------------------------------------------------------------------
 

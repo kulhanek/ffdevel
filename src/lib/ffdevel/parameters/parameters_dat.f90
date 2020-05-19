@@ -19,6 +19,7 @@ module ffdev_parameters_dat
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 use ffdev_topology_dat
 
 ! ------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ type(PARM_TYPE),allocatable :: types(:)  ! types
 ! ------------------------------------------------------------------------------
 
 ! derived setup
-logical                 :: ApplyCombinationRules        = .false.           ! apply combination rules in every error evaluation
+logical                 :: ApplyCombiningRules        = .false.           ! apply combination rules in every error evaluation
 
 ! NBParamsMode
 integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0     ! normal setup depending on a probe mode of target sets
@@ -112,7 +113,6 @@ integer         :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mo
 logical         :: OnlyDefinedDihItems          = .true.
 logical         :: LockDihC_PN1                 = .true.
 logical         :: ResetAllSetup                = .true.
-logical         :: DebugFFManip                 = .false.
 integer         :: GlbRngSeed                   = 5489              ! random number generator setup
 
 ! === [grbf2cos] ===============================================================

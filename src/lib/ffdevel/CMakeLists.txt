@@ -6,9 +6,10 @@
 SET(FFDEVEL_SRC
         sizes.f90
         constants.f90
+        variables.f90
         ver.f90
         utils.f90
-        timers.f90
+        timers.F90
 
         forcefield/topology_dat.f90
         forcefield/topology.f90

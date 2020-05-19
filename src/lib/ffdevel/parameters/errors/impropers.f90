@@ -18,6 +18,7 @@
 module ffdev_err_impropers
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -47,7 +48,7 @@ end subroutine ffdev_err_impropers_init
 subroutine ffdev_err_impropers_error(error)
 
     use ffdev_targetset_dat
-    use ffdev_utils   
+    use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
     use ffdev_err_impropers_dat
@@ -96,7 +97,7 @@ subroutine ffdev_err_impropers_error(error)
 
     if( nimpropers .gt. 0 ) then
         error%impropers = sqrt(seterrimpropers/real(nimpropers))
-    end if 
+    end if
 
 end subroutine ffdev_err_impropers_error
 

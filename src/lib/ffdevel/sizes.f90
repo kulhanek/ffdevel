@@ -26,7 +26,7 @@ integer, parameter  :: MAX_RNAME     =   4  ! max length of residue name
 integer, parameter  :: MAX_CVTYPE    =   5  ! max length of CV type
 
 ! real numbers -----------------------------------------------------------------
-integer, parameter     :: DEVDP         = 8
+integer, parameter  :: DEVDP         = 8
 
 ! ------------------------------------------------------------------------------
 

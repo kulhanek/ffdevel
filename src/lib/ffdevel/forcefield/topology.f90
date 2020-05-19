@@ -19,6 +19,7 @@ module ffdev_topology
 
 use ffdev_topology_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -1097,7 +1098,7 @@ subroutine ffdev_topology_info_types(top,mode)
 440 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,F16.6,1X,F16.6)
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-516 format('# Assumed combination rules = ',A)
+516 format('# Assumed combining rules = ',A)
 
 520 format('# ID TypA TypB        eps              R0       ')
 530 format('# -- ---- ---- ---------------- ----------------')
@@ -1479,7 +1480,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
     real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
     ! --------------------------------------------------------------------------
 
-    ! apply combination rules
+    ! apply combining rules
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
@@ -1538,7 +1539,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6(top,comb_rules)
     real(DEVDP)     :: epsii,r0ii,epsjj,r0jj
     ! --------------------------------------------------------------------------
 
-    ! apply combination rules
+    ! apply combining rules
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
@@ -1606,7 +1607,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
     real(DEVDP)     :: pbii,pbij,pbjj
     ! --------------------------------------------------------------------------
 
-    ! apply combination rules
+    ! apply combining rules
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 

@@ -20,6 +20,7 @@ program ffdev_mmoptimize
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use ffdev_topology
     use ffdev_geometry
     use prmfile
@@ -60,19 +61,19 @@ program ffdev_mmoptimize
     if( .not. prmfile_open_group(fin,'MAIN') ) then
         call ffdev_utils_exit(DEV_OUT,1,'Specified control file does not contain {MAIN} group!')
     end if
-    
+
     if( command_argument_count() .gt. 1 ) then
         call get_command_argument(2, OptTopName)
     end if
-    
+
     if( command_argument_count() .gt. 2 ) then
         call get_command_argument(3, OptCrdName)
         OptRstName = OptCrdName
-    end if 
-    
+    end if
+
     if( command_argument_count() .gt. 3 ) then
         call get_command_argument(4, OptRstName)
-    end if       
+    end if
 
     call ffdev_geoopt_ctrl_files(fin)
     call ffdev_geoopt_ctrl_minimize(fin)

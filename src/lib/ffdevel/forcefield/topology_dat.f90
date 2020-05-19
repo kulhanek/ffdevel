@@ -19,6 +19,7 @@ module ffdev_topology_dat
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 

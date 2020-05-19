@@ -19,6 +19,7 @@ module ffdev_gradient_utils
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 

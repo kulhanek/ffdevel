@@ -18,6 +18,7 @@
 module ffdev_err_energy_dat
 
 use ffdev_constants
+use ffdev_variables
 
 integer,parameter       :: EE_ABS       = 1 ! absolute
 integer,parameter       :: EE_REL       = 2 ! relative

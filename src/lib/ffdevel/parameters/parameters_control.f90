@@ -19,6 +19,7 @@ module ffdev_parameters_control
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -710,7 +711,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
     ! --------------------------------------------------------------------------
 
     ! this is for nb_params = normal
-    ApplyCombinationRules = .false.
+    ApplyCombiningRules = .false.
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -733,6 +734,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
         write(DEV_OUT,95) GlbRngSeed
+        write(DEV_OUT,105) Verbosity
         return
     end if
 
@@ -743,11 +745,11 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,20) trim(string)
             case('like-only')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
-                ApplyCombinationRules = .true.
+                ApplyCombiningRules = .true.
                 write(DEV_OUT,20) trim(string)
             case('like-all')
                 NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
-                ApplyCombinationRules = .true.
+                ApplyCombiningRules = .true.
                 write(DEV_OUT,20) trim(string)
             case('all')
                 NBParamsMode = NB_PARAMS_MODE_ALL
@@ -795,6 +797,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,95) GlbRngSeed
     end if
 
+    if( prmfile_get_integer_by_key(fin,'verbosity', Verbosity)) then
+        write(DEV_OUT,100) Verbosity
+    else
+        write(DEV_OUT,105) Verbosity
+    end if
+
     ! setup random number generator
     call random_seed(GlbRngSeed)
     call ffdev_ffopt_setup_rng(GlbRngSeed)
@@ -815,6 +823,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
  85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
  90  format ('Random number generator seed (seed)      = ',I12)
  95  format ('Random number generator seed (seed)      = ',I12,'                (default)')
+100  format ('Verbosity (verbosity)                    = ',I12)
+105  format ('Verbosity (verbosity)                    = ',I12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 
@@ -1269,14 +1279,17 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
 
     comb_rules = ffdev_topology_get_comb_rules_from_string(string)
 
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'NB combination rules', '%')
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'NB combining rules', '%')
+    end if
+
     write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
 
     if( .not. exec ) return ! do not execute
 
     do i=1,nsets
-        if( DebugFFManip ) then
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
             write(DEV_OUT,*)
             write(DEV_OUT,20) i
             write(DEV_OUT,*)
@@ -1287,7 +1300,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
         ! remix parameters
         call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
 
-        if( DebugFFManip ) then
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
             ! new set of parameters
             write(DEV_OUT,*)
             call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
@@ -1299,7 +1312,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
     nb_comb_rules = comb_rules
     call ffdev_targetset_reinit_nbparams
 
-10 format('Combination rules (comb_rules)   = ',A)
+10 format('New combining rules (comb_rules) = ',A)
 20 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
@@ -1328,12 +1341,15 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
     from_nb_mode = nb_mode
     to_nb_mode = ffdev_topology_nb_mode_from_string(string)
 
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
+    end if
+
     write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(to_nb_mode)
 
     do i=1,nsets
-        if( DebugFFManip ) then
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
             write(DEV_OUT,*)
             write(DEV_OUT,20) i
 
@@ -1345,7 +1361,7 @@ subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
         ! switch nb mode
         call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
 
-        if( DebugFFManip ) then
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
             ! new set of parameters
             write(DEV_OUT,*)
             call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
@@ -1460,7 +1476,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 
     if( .not. exec ) return
 
-    if( DebugFFManip ) then
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
     ! print updated parameters
         do i=1,nsets
             write(DEV_OUT,*)

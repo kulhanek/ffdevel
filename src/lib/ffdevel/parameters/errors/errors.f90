@@ -19,6 +19,7 @@ module ffdev_errors
 
 use ffdev_errors_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 

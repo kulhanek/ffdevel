@@ -25,6 +25,7 @@ module ffdev_timers
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 implicit none
 
@@ -34,6 +35,7 @@ implicit none
             integer     :: FFDEV_ERRORS_TIMER                   = -35
             integer     :: FFDEV_POT_ENERGY_TIMER               = -40
                 integer     :: FFDEV_POT_NB_ENERGY_TIMER        = -41
+            integer     :: FFDEV_TARGETSET_ALL_TIMER            = -42
             integer     :: FFDEV_GEOOPT_TIMER                   = -43
                 integer     :: FFDEV_POT_GRADIENT_TIMER         = -50
                     integer     :: FFDEV_POT_NB_GRADIENT_TIMER  = -51
@@ -75,10 +77,15 @@ subroutine ffdev_timers_init
         FFDEV_ERRORS_TIMER            = add_timer(FFDEV_FFOPT_TIMER,'Errors')
         FFDEV_POT_ENERGY_TIMER        = add_timer(FFDEV_FFOPT_TIMER,'MM Energy')
             FFDEV_POT_NB_ENERGY_TIMER         = add_timer(FFDEV_POT_ENERGY_TIMER,'NB energy')
+#ifdef _OPENMP
+        FFDEV_TARGETSET_ALL_TIMER     = add_timer(FFDEV_FFOPT_TIMER,'TargetSet Calculation')
+        FFDEV_POT_HESSIAN_TIMER       = add_timer(FFDEV_FFOPT_TIMER,'MM Hessian')
+#else
         FFDEV_GEOOPT_TIMER            = add_timer(FFDEV_FFOPT_TIMER,'GeoOpt')
             FFDEV_POT_GRADIENT_TIMER      = add_timer(FFDEV_GEOOPT_TIMER,'MM Gradient')
                 FFDEV_POT_NB_GRADIENT_TIMER       = add_timer(FFDEV_POT_GRADIENT_TIMER,'NB gradient')
         FFDEV_POT_HESSIAN_TIMER       = add_timer(FFDEV_FFOPT_TIMER,'MM Hessian')
+#endif
 
 end subroutine ffdev_timers_init
 
@@ -93,6 +100,8 @@ subroutine ffdev_timers_start_timer(id)
     implicit none
     integer        :: id
     ! -------------------------------------------------------------------------
+
+    if( id .le. 0 ) return
 
     call start_timer(id)
 
@@ -109,6 +118,8 @@ subroutine ffdev_timers_stop_timer(id)
     implicit none
     integer        :: id
     ! -------------------------------------------------------------------------
+
+    if( id .le. 0 ) return
 
     call stop_timer(id)
 

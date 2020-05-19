@@ -19,6 +19,7 @@ module ffdev_targetset_control
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -532,8 +533,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
  70 format('Reference sets (references)             = ',A)
 
- 80 format('Save final point geometry (savepst)     = ',a12)
- 85 format('Save final point geometry (savepst)     = ',a12,'                  (default)')
+ 80 format('Save final point geometry (savepts)     = ',a12)
+ 85 format('Save final point geometry (savepts)     = ',a12,'                  (default)')
 
 120 format('Save final xyzr geometry (savexyzr)     = ',a12)
 125 format('Save final xyzr geometry (savexyzr)     = ',a12,'                  (default)')
@@ -563,6 +564,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
+    integer             :: estat
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -576,13 +578,27 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,95)  SavePtsPath
         write(DEV_OUT,115) prmfile_onoff(SaveXYZR)
         write(DEV_OUT,125) SaveXYZRPath
+        write(DEV_OUT,155) prmfile_onoff(SaveSumLogs)
+        write(DEV_OUT,165) SaveSumLogsPath
 
         ! create directories
         if( SavePts ) then
-            call execute_command_line('mkdir -p ' // trim(SavePtsPath) )
+            call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
+            if( estat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SavePtsPath!')
+            end if
         end if
         if( SaveXYZR ) then
-            call execute_command_line('mkdir -p ' // trim(SaveXYZRPath) )
+            call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat  )
+            if( estat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveXYZRPath!')
+            end if
+        end if
+        if( SaveSumLogs ) then
+            call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
+            if( estat .ne. 0 ) then
+                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveSumLogsPath!')
+            end if
         end if
         return
     end if
@@ -625,36 +641,65 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,95) SaveXYZRPath
     end if
 
+    if( prmfile_get_logical_by_key(fin,'savesumlogs', SaveSumLogs)) then
+        write(DEV_OUT,150) prmfile_onoff(SaveSumLogs)
+    else
+        write(DEV_OUT,155) prmfile_onoff(SaveSumLogs)
+    end if
+    if( prmfile_get_string_by_key(fin,'savesumlogspath', SaveSumLogsPath)) then
+        write(DEV_OUT,160) SaveSumLogsPath
+    else
+        write(DEV_OUT,165) SaveSumLogsPath
+    end if
+
     ! create directories
     if( SavePts ) then
-        call execute_command_line('mkdir -p ' // trim(SavePtsPath) )
+        call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SavePtsPath!')
+        end if
     end if
     if( SaveXYZR ) then
-        call execute_command_line('mkdir -p ' // trim(SaveXYZRPath) )
+        call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveXYZRPath!')
+        end if
+    end if
+    if( SaveSumLogs ) then
+        call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveSumLogsPath!')
+        end if
     end if
 
  10 format('=== [setup] ====================================================================')
 
-100  format ('Do not calculate frequencies (nofreqs) = ',a12)
-105  format ('Do not calculate frequencies (nofreqs) = ',a12,'                  (default)')
+100  format ('Do not calculate frequencies (nofreqs)    = ',a12)
+105  format ('Do not calculate frequencies (nofreqs)    = ',a12,'               (default)')
 
-130  format ('Use optimized geometry (useoptgeo)     = ',a12)
-135  format ('Use optimized geometry (useoptgeo)     = ',a12,'                  (default)')
+130  format ('Use optimized geometry (useoptgeo)        = ',a12)
+135  format ('Use optimized geometry (useoptgeo)        = ',a12,'               (default)')
 
-140  format ('Keep point names (keepptsnames)        = ',a12)
-145  format ('Keep point names (keepptsnames)        = ',a12,'                  (default)')
+140  format ('Keep point names (keepptsnames)           = ',a12)
+145  format ('Keep point names (keepptsnames)           = ',a12,'               (default)')
 
- 80  format ('Save geometry as points (savepts)      = ',a12)
- 85  format ('Save geometry as points (savepts)      = ',a12,'                  (default)')
+ 80  format ('Save geometry as points (savepts)         = ',a12)
+ 85  format ('Save geometry as points (savepts)         = ',a12,'               (default)')
 
- 90  format ('Save points path (saveptspath)         = ',a25)
- 95  format ('Save points path (savepstpath)         = ',a25,'     (default)')
+ 90  format ('Save points path (saveptspath)            = ',a25)
+ 95  format ('Save points path (saveptspath)            = ',a25,'  (default)')
 
-110  format ('Save geometry as xyzr (savexyzr)       = ',a12)
-115  format ('Save geometry as xyzr (savexyzr)       = ',a12,'                  (default)')
+110  format ('Save geometry as xyzr (savexyzr)          = ',a12)
+115  format ('Save geometry as xyzr (savexyzr)          = ',a12,'               (default)')
 
-120  format ('Save xyzr path (savexyzrpath)          = ',a25)
-125  format ('Save xyzr path (savexyzrpath)          = ',a25,'     (default)')
+120  format ('Save xyzr path (savexyzrpath)             = ',a25)
+125  format ('Save xyzr path (savexyzrpath)             = ',a25,'  (default)')
+
+150  format ('Save error summary (savesumlogs)          = ',a12)
+155  format ('Save error summary (savesumlogs)          = ',a12,'               (default)')
+
+160  format ('Save error summary path (savesumlogspath) = ',a25)
+165  format ('Save error summary path (savesumlogspath) = ',a25,'     (default)')
 
 end subroutine ffdev_targetset_ctrl_setup
 

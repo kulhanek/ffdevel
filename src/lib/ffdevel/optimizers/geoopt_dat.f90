@@ -19,6 +19,7 @@ module ffdev_geoopt_dat
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 use smf_xyzfile_type
 
 implicit none
@@ -40,7 +41,7 @@ integer         :: NOptSteps                ! max number of steps
 integer         :: OutSamples               ! how often write results
 integer         :: TrajSamples              ! how often write trajectory
 
-! maximum number of steps is nsteps - this is becuase of change of restraints etc 
+! maximum number of steps is nsteps - this is becuase of change of restraints etc
 real(DEVDP)     :: MaxRMSG
 real(DEVDP)     :: MaxG
 real(DEVDP)     :: MinEnergyChange          ! negative number - this test is switched off by default
@@ -65,6 +66,5 @@ type(XYZFILE_TYPE)  :: OptTrajFile
 integer(8)      :: NumberOfRuns         ! total number of geometry optimizations
 integer(8)      :: NumberOfFailedRuns   ! totla number of failed geometry optimizations
 integer(8)      :: NumberOfGrdEvals     ! total number of MM gradient evaluations
-
 
 end module ffdev_geoopt_dat

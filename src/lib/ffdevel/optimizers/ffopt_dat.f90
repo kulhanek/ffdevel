@@ -19,6 +19,7 @@ module ffdev_ffopt_dat
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 use smf_xyzfile_type
 
 implicit none

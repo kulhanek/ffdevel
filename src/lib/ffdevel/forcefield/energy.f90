@@ -19,6 +19,7 @@ module ffdev_energy
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 

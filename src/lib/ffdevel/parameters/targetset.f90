@@ -19,6 +19,7 @@ module ffdev_targetset
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -70,6 +71,7 @@ subroutine ffdev_targetset_calc_all
     use ffdev_hessian_utils
     use ffdev_parameters_dat
     use ffdev_utils
+    use ffdev_timers
 
     implicit none
     integer         :: i,j,k
@@ -77,20 +79,25 @@ subroutine ffdev_targetset_calc_all
     integer         :: georeseted
     ! --------------------------------------------------------------------------
 
+    call ffdev_timers_start_timer(FFDEV_TARGETSET_ALL_TIMER)
+
     evalcounter = evalcounter + 1
 
     georeseted = 0
 
-    ! apply combination rules
-    if( ApplyCombinationRules ) then
+    ! apply combining rules
+    if( ApplyCombiningRules ) then
         do i=1,nsets
             call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
         end do
     end if
 
+    !$omp parallel
+    !$omp single
     ! optimize geometry
     do i=1,nsets
         do j=1,sets(i)%ngeos
+            sets(i)%geo(j)%trg_crd_optimized = .false.
             if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
                 .and. sets(i)%geo(j)%trg_crd_loaded ) then
                 if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
@@ -103,17 +110,19 @@ subroutine ffdev_targetset_calc_all
                         end if
                     end if
                 end if
+                !$omp task
                 if( GlbShowOptProgress ) then
                     call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
                 else
                     call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))
                 end if
                 sets(i)%geo(j)%trg_crd_optimized = .true.
-            else
-                sets(i)%geo(j)%trg_crd_optimized = .false.
+                !$omp end task
             end if
         end do
     end do
+    !$omp end single
+    !$omp end parallel
 
     if( georeseted .gt. 0 ) then
         write(DEV_OUT,*) '>>> Geometries (',georeseted,') reseted at ', evalcounter
@@ -151,6 +160,8 @@ subroutine ffdev_targetset_calc_all
             end do
         end if
     end do
+
+    call ffdev_timers_stop_timer(FFDEV_TARGETSET_ALL_TIMER)
 
 end subroutine ffdev_targetset_calc_all
 
@@ -234,7 +245,7 @@ subroutine ffdev_targetset_save_final_pts
     use ffdev_geometry
 
     implicit none
-    integer                 :: i,j
+    integer                 :: i,j,nsaved
     character(len=MAX_PATH) :: sname
     ! --------------------------------------------------------------------------
 
@@ -244,6 +255,7 @@ subroutine ffdev_targetset_save_final_pts
         write(DEV_OUT,15)
     end if
 
+    nsaved = 0
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( UseOptGeometry ) then
@@ -257,6 +269,7 @@ subroutine ffdev_targetset_save_final_pts
                     sname = trim(SavePtsPath)//'/'//trim(sname)
                     write(DEV_OUT,30) trim(sname)
                     call ffdev_geometry_save_point(sets(i)%geo(j),sname,.false.)
+                    nsaved = nsaved + 1
                 end if
             else
                 ! save geometry if requested - target geo
@@ -270,13 +283,19 @@ subroutine ffdev_targetset_save_final_pts
                     sname = trim(SavePtsPath)//'/'//trim(sname)
                     write(DEV_OUT,30) trim(sname)
                     call ffdev_geometry_save_point(sets(i)%geo(j),sname,.true.)
+                    nsaved = nsaved + 1
                 end if
             end if
         end do
     end do
 
+    if( nsaved .eq. 0 ) then
+        write(DEV_OUT,16)
+    end if
+
  10 format('Saving final point geometries ... using MM optimized coordinates')
  15 format('Saving final point geometries ... using target coordinates')
+ 16 format('       >>> INFO: No request to save pts geometries ...')
  20 format('S',I2.2,'P',I6.6,'.pst')
  25 format(A)
  30 format(7X,A)
@@ -294,7 +313,7 @@ subroutine ffdev_targetset_save_final_xyzr
     use ffdev_geometry
 
     implicit none
-    integer                 :: i,j
+    integer                 :: i,j,nsaved
     character(len=MAX_PATH) :: sname
     ! --------------------------------------------------------------------------
 
@@ -304,6 +323,7 @@ subroutine ffdev_targetset_save_final_xyzr
         write(DEV_OUT,15)
     end if
 
+    nsaved = 0
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( UseOptGeometry ) then
@@ -334,8 +354,13 @@ subroutine ffdev_targetset_save_final_xyzr
         end do
     end do
 
+    if( nsaved .eq. 0 ) then
+        write(DEV_OUT,16)
+    end if
+
  10 format('Saving final xyzr geometries  ... using MM optimized coordinates')
  15 format('Saving final xyzr geometries  ... using target coordinates')
+ 16 format('       >>> INFO: No request to save xyzr geometries ...')
  20 format('S',I2.2,'P',I6.6,'.xyzr')
  25 format(A,'.xyzr')
  30 format(7X,A)

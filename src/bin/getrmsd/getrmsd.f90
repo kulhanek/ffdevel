@@ -20,6 +20,7 @@ program ffdev_getrmsd_program
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use ffdev_geometry
     use ffdev_geometry_utils
 

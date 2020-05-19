@@ -20,6 +20,7 @@ program ffdev_optimize_program
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use prmfile
     use ffdev_targetset_control
     use ffdev_parameters

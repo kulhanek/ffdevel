@@ -19,6 +19,7 @@ module ffdev_geoopt
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 implicit none
 contains
@@ -314,6 +315,7 @@ subroutine opt_lbfgs(fout,top,geo)
     use ffdev_gradient
     use ffdev_gradient_utils
     use ffdev_utils
+    use lbfgsmodule
 
     implicit none
     integer                 :: fout
@@ -325,6 +327,7 @@ subroutine opt_lbfgs(fout,top,geo)
     integer                 :: iprint(2),iflag
     real(DEVDP),allocatable :: work(:)
     real(DEVDP),allocatable :: tmp_xg(:,:)
+    type(LBFGSCTX)          :: ctx
     ! --------------------------------------------------------------------------
 
     ! init required variables ====================
@@ -389,7 +392,7 @@ subroutine opt_lbfgs(fout,top,geo)
         ! do L-BFGS minimization
         call LBFGS( top%natoms*3,NumberOfCorrections, &
                     geo%crd,totene,geo%grd,&
-                    .false.,tmp_xg,iprint,eps,xtol,work,iflag)
+                    .false.,tmp_xg,iprint,eps,xtol,work,iflag,ctx)
 
         if( iflag .eq. 0 ) exit
         if( iflag .le. 0 ) then

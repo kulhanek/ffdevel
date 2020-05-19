@@ -18,6 +18,7 @@
 module ffdev_err_energy
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 

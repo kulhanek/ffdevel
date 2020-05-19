@@ -19,6 +19,7 @@ module ffdev_genpoints_maths
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 implicit none
 
 ! ------------------------------------------------------------------------------

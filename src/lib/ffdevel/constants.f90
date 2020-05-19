@@ -114,18 +114,24 @@ real(DEVDP), parameter  :: DEV_AU2AMU = 1.0d0 / 1822.88842718d0
 real(DEVDP), parameter  :: DEV_AMU2AU = 1.0d0 / DEV_AU2AMU
 
 ! common part ------------------------------------------------------------------
-integer,parameter       :: DEV_INP      = 5
-integer,parameter       :: DEV_OUT      = 6
-integer,parameter       :: DEV_TEST     = 1342
-integer,parameter       :: DEV_DEBUG    = 1000
-integer,parameter       :: DEV_XYZ      = 123
-integer,parameter       :: DEV_TRAJ     = 125
-integer,parameter       :: DEV_OTRAJ    = 126
-integer,parameter       :: DEV_GEO      = 287
-integer,parameter       :: DEV_TOP      = 289
-integer,parameter       :: DEV_PRMS     = 298
-integer,parameter       :: DEV_NULL     = 456
-integer,parameter       :: DEV_PROFILE  = 371
+integer,parameter       :: DEV_STD_INPUT    = 5
+integer,parameter       :: DEV_STD_OUTPUT   = 6
+integer,parameter       :: DEV_TEST         = 1342
+integer,parameter       :: DEV_DEBUG        = 1000
+integer,parameter       :: DEV_XYZ          = 123
+integer,parameter       :: DEV_TRAJ         = 125
+integer,parameter       :: DEV_OTRAJ        = 126
+integer,parameter       :: DEV_GEO          = 287
+integer,parameter       :: DEV_TOP          = 289
+integer,parameter       :: DEV_PRMS         = 298
+integer,parameter       :: DEV_NULL         = 456
+integer,parameter       :: DEV_PROFILE      = 371
+integer,parameter       :: DEV_ERRSUMLOG    = 387
+
+! verbosity levels
+integer,parameter       :: DEV_VERBOSITY_MINIMAL = 0
+integer,parameter       :: DEV_VERBOSITY_MEDIUM  = 1
+integer,parameter       :: DEV_VERBOSITY_FULL    = 2
 
 !===============================================================================
 

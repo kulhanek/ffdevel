@@ -19,6 +19,7 @@ module ffdev_ver
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 implicit none
 !-------------------------------------------------------------------------------

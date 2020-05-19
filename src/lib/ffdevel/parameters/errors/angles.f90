@@ -18,6 +18,7 @@
 module ffdev_err_angles
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 
@@ -46,7 +47,7 @@ end subroutine ffdev_err_angles_init
 subroutine ffdev_err_angles_error(error)
 
     use ffdev_targetset_dat
-    use ffdev_utils   
+    use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
     use ffdev_err_angles_dat
@@ -87,7 +88,7 @@ subroutine ffdev_err_angles_error(error)
 
     if( nangles .gt. 0 ) then
         error%angles = sqrt(seterrangles/real(nangles))
-    end if 
+    end if
 
 end subroutine ffdev_err_angles_error
 

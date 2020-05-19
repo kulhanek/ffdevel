@@ -18,6 +18,7 @@
 module ffdev_xdm_dat
 
 use ffdev_constants
+use ffdev_variables
 
 ! XDM data ---------------------------------------------------------------------
 

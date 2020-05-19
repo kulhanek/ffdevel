@@ -19,6 +19,7 @@ module ffdev_ffopt
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 implicit none
 
@@ -208,8 +209,8 @@ subroutine ffdev_ffopt_single_point()
     ! get error
     call ffdev_parameters_error_only(FFParams,error)
 
-    ! print statistics
-    call ffdev_errors_summary(.true.)
+    ! print error statistics
+    call ffdev_ffopt_write_error_sumlogs(.true.)
 
     ! write error
     write(DEV_OUT,*)
@@ -258,7 +259,7 @@ subroutine ffdev_ffopt_run()
         ( (OptimizationMethod .eq. MINIMIZATION_SHARK) .and. (Shark_NRuns .eq. 1))  ) then
         ! initial statistics
         call ffdev_parameters_error_only(FFParams,FFError)
-        call ffdev_errors_summary(.false.)
+        call ffdev_ffopt_write_error_sumlogs(.false.)
     end if
 
     write(DEV_OUT,*)
@@ -294,7 +295,7 @@ subroutine ffdev_ffopt_run()
     ! return finial statistics
     ! wee need to recalculate error due to nrun shark mode
     call ffdev_parameters_error_only(FFParams,FFError)
-    call ffdev_errors_summary(.true.)
+    call ffdev_ffopt_write_error_sumlogs(.true.)
 
     deallocate(FFParams,FFParamsGrd)
 
@@ -303,6 +304,58 @@ subroutine ffdev_ffopt_run()
  1 format('# ==============================================================================')
 
 end subroutine ffdev_ffopt_run
+
+!===============================================================================
+! subroutine ffdev_ffopt_write_error_sumlogs
+!===============================================================================
+
+subroutine ffdev_ffopt_write_error_sumlogs(final)
+
+    use ffdev_targetset_dat
+    use ffdev_errors
+    use ffdev_utils
+    use ffdev_parameters_dat
+    use ffdev_parameters
+
+    implicit none
+    logical                 :: final
+    ! --------------------------------------------
+    character(len=MAX_PATH) :: sname
+    character(len=MAX_PATH) :: progname
+    ! --------------------------------------------------------------------------
+
+    if( SaveSumLogs ) then
+        write(progname,10) CurrentProgID
+        if( final ) then
+            sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-1.final.log'
+        else
+            sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-0.initial.log'
+        end if
+        write(DEV_OUT,*)
+        write(DEV_OUT,30) trim(sname)
+
+        call ffdev_utils_open(DEV_ERRSUMLOG,sname,'U')
+        DEV_OUT = DEV_ERRSUMLOG
+
+        ! print all parameters
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
+
+        ! print error statistics
+        call ffdev_errors_summary(final)
+
+        close(DEV_ERRSUMLOG)
+
+        ! restore output stream
+        DEV_OUT = DEV_STD_OUTPUT
+    else
+        ! print statistics
+        call ffdev_errors_summary(final)
+    end if
+
+ 10 format('errorsum',I3.3)
+ 30 format('>>> Error summary written to: ',A)
+
+end subroutine ffdev_ffopt_write_error_sumlogs
 
 !===============================================================================
 ! subroutine opt_steepest_descent
@@ -431,12 +484,14 @@ subroutine opt_lbfgs
     use ffdev_errors_dat
     use ffdev_parameters_dat
     use ffdev_parameters
+    use lbfgsmodule
 
     implicit none
     integer                 :: istep,alloc_status
     real(DEVDP)             :: rmsg, maxgrad, lasterror, eps, xtol
     integer                 :: iprint(2),iflag
     real(DEVDP),allocatable :: work(:)
+    type(LBFGSCTX)          :: ctx
     ! --------------------------------------------------------------------------
 
     ! init required variables ====================
@@ -492,9 +547,9 @@ subroutine opt_lbfgs
 
         !===============================================================================
         ! do L-BFGS minimization
-        call LBFGS( nactparms, NumberOfCorrections, &
-                    FFParams,FFError,FFParamsGrd,&
-                    .false.,tmp_xg,iprint,eps,xtol,work,iflag)
+        call LBFGS(nactparms, NumberOfCorrections, &
+                   FFParams,FFError%total,FFParamsGrd, &
+                   .false.,tmp_xg,iprint,eps,xtol,work,iflag,ctx)
 
         if( iflag .eq. 0 ) exit
         if( iflag .le. 0 ) then

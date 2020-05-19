@@ -20,6 +20,7 @@ program ffdev_external_program
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use ffdev_topology
     use ffdev_geometry
     use ffdev_energy
@@ -76,7 +77,7 @@ program ffdev_external_program
         call print_usage()
         call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified after topology!')
     end if
-    
+
     call get_command_argument(i+0, layer)
     call get_command_argument(i+1, inpname)
     call get_command_argument(i+2, outname)

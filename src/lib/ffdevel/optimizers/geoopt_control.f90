@@ -19,6 +19,7 @@ module ffdev_geoopt_control
 
 use ffdev_sizes
 use ffdev_constants
+use ffdev_variables
 
 implicit none
 contains
@@ -331,8 +332,8 @@ subroutine ffdev_geoopt_ctrl_files(fin)
         write (DEV_OUT,10) trim(OptTopName)
         if( len(OptCrdName) .eq. 0 ) then
             call ffdev_utils_exit(DEV_OUT,1,'Input coordinates (input) are required!')
-        end if        
-        write (DEV_OUT,20) trim(OptCrdName)      
+        end if
+        write (DEV_OUT,20) trim(OptCrdName)
         write (DEV_OUT,35) trim(OptRstName)
         write (DEV_OUT,45) trim(OptTrajName)
         return

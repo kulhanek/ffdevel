@@ -18,6 +18,7 @@
 module ffdev_err_nbdists
 
 use ffdev_constants
+use ffdev_variables
 
 contains
 

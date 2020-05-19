@@ -19,6 +19,7 @@ module ffdev_targetset_dat
 
 use ffdev_geometry_dat
 use ffdev_constants
+use ffdev_variables
 use ffdev_topology
 
 ! ------------------------------------------------------------------------------
@@ -57,6 +58,8 @@ logical                 :: SavePts                      = .false.
 character(len=MAX_PATH) :: SavePtsPath                  = 'points'  ! storage for saved points
 logical                 :: SaveXYZR                     = .false.
 character(len=MAX_PATH) :: SaveXYZRPath                 = 'xyzr'
+logical                 :: SaveSumLogs                  = .true.   ! for error statistics
+character(len=MAX_PATH) :: SaveSumLogsPath              = 'sumlogs'
 
 ! [optgeo] --------------------------------------------------------------------
 ! default values set in ffdev_targetset_ctrl_optgeo_set_default

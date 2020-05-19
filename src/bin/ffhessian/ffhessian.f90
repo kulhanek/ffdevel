@@ -20,6 +20,7 @@ program ffdev_hessian_program
     use ffdev_sizes
     use ffdev_utils
     use ffdev_constants
+    use ffdev_variables
     use ffdev_topology
     use ffdev_geometry
     use ffdev_energy
@@ -107,7 +108,7 @@ program ffdev_hessian_program
     if( do_numerical ) then
         write(DEV_OUT,'(A)') 'Numerical hessian ...'
         call ffdev_hessian_num_by_grds_all(top,geo)
-    else 
+    else
         write(DEV_OUT,'(A)') 'Analytical hessian ...'
         call ffdev_hessian_all(top,geo)
     end if
