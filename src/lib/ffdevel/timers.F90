@@ -78,7 +78,7 @@ subroutine ffdev_timers_init
         FFDEV_POT_ENERGY_TIMER        = add_timer(FFDEV_FFOPT_TIMER,'MM Energy')
             FFDEV_POT_NB_ENERGY_TIMER         = add_timer(FFDEV_POT_ENERGY_TIMER,'NB energy')
 #ifdef _OPENMP
-        FFDEV_TARGETSET_ALL_TIMER     = add_timer(FFDEV_FFOPT_TIMER,'TargetSet Calculation')
+        FFDEV_TARGETSET_ALL_TIMER     = add_timer(FFDEV_FFOPT_TIMER,'TargetSet Evaluation')
         FFDEV_POT_HESSIAN_TIMER       = add_timer(FFDEV_FFOPT_TIMER,'MM Hessian')
 #else
         FFDEV_GEOOPT_TIMER            = add_timer(FFDEV_FFOPT_TIMER,'GeoOpt')
@@ -101,6 +101,7 @@ subroutine ffdev_timers_start_timer(id)
     integer        :: id
     ! -------------------------------------------------------------------------
 
+    ! skip timers from OpenMP regions, which were not initialized
     if( id .le. 0 ) return
 
     call start_timer(id)
@@ -119,6 +120,7 @@ subroutine ffdev_timers_stop_timer(id)
     integer        :: id
     ! -------------------------------------------------------------------------
 
+    ! skip timers from OpenMP regions, which were not initialized
     if( id .le. 0 ) return
 
     call stop_timer(id)
