@@ -1767,18 +1767,18 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'impr_gamma'
 
         case(REALM_VDW_EPS)
-            ffdev_parameters_get_realm_name = 'vdW_eps'
+            ffdev_parameters_get_realm_name = 'vdw_eps'
         case(REALM_VDW_R0)
-            ffdev_parameters_get_realm_name = 'vdW_r0'
+            ffdev_parameters_get_realm_name = 'vdw_r0'
         case(REALM_VDW_ALPHA)
-            ffdev_parameters_get_realm_name = 'vdW_alpha'
+            ffdev_parameters_get_realm_name = 'vdw_alpha'
 
         case(REALM_VDW_PA)
-            ffdev_parameters_get_realm_name = 'vdW_pa'
+            ffdev_parameters_get_realm_name = 'vdw_pa'
         case(REALM_VDW_PB)
-            ffdev_parameters_get_realm_name = 'vdW_pb'
+            ffdev_parameters_get_realm_name = 'vdw_pb'
         case(REALM_VDW_C6)
-            ffdev_parameters_get_realm_name = 'vdW_c6'
+            ffdev_parameters_get_realm_name = 'vdw_c6'
 
         case(REALM_ELE_SQ)
             ffdev_parameters_get_realm_name = 'ele_sq'

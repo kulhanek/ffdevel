@@ -916,6 +916,7 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
                 write(DEV_OUT,10) trim(name)
                 if( exec ) then
                     call ffdev_parameters_load(name,loaded,ignored)
+                    call ffdev_parameters_to_tops
                 end if
             case('save')
                 rst = prmfile_get_field_on_line(fin,name)
