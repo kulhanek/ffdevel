@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="FFDevel" />
+		<Option pch_mode="2" />
+		<Option compiler="gfortran" />
+		<Build>
+			<Target title="All">
+				<Option platforms="Unix;" />
+				<Option output="FFDevel2" prefix_auto="1" extension_auto="1" />
+				<Option object_output="/scratch/kulhanek/Development/linux/projects/ffdevel/1.0/.objs" />
+				<Option type="1" />
+				<Option compiler="gfortran" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+				<ExtraCommands>
+					<Add before="cmake ." />
+					<Add before="make" />
+				</ExtraCommands>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="CMakeLists.txt">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/CMakeLists.txt" />
+		<Unit filename="src/bin/compenepts/compenepts.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/compenetop/compenetop.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/compgeo/compgeo.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/cos2grbf/Cos2GRBF.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/cos2grbf/Cos2GRBF.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/cos2grbf/Cos2GRBFOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/cos2grbf/Cos2GRBFOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/espfit/espfit.f90">
+			<Option weight="16" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffenergy/ffenergy.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffexternal/ffexternal.f90">
+			<Option weight="10" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffgradient/ffgradient.f90">
+			<Option weight="9" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffhessian/ffhessian.f90">
+			<Option weight="10" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffoptimize/ffoptimize.f90">
+			<Option weight="16" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ffparams/ffparams.f90">
+			<Option weight="16" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genpoints/genpoints.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genpoints/genpoints_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genpoints/genpoints_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genpoints/genpoints_math.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genpoints/genpoints_utils.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genrotors/GenRotors.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genrotors/GenRotors.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genrotors/GenRotorsOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/genrotors/GenRotorsOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/getrmsd/getrmsd.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/mmoptimize/mmoptimize.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ptsfreq/ptsfreq.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/ptsihessian/ptsihessian.f90">
+			<Option weight="10" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/rmsdfit/rmsdfit.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/rstgradient/rstgradient.f90">
+			<Option weight="9" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/MMTypes.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/MMTypes.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/Top2STop.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/Top2STop.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/Top2STopOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/top2stop/Top2STopOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topfilter/TopFilter.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topfilter/TopFilter.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topfilter/TopFilterOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topfilter/TopFilterOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/MMTypes.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/MMTypes.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/TopReport.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/TopReport.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/TopReportOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/topreport/TopReportOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwenefilter/vdwenefilter.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/Sphere.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/Sphere.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/VDWGenProbe.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/VDWGenProbe.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/VDWGenProbeOptions.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/bin/vdwgenprobe/VDWGenProbeOptions.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/CMakeLists.txt" />
+		<Unit filename="src/lib/ffdevel/constants.f90">
+			<Option weight="1" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/energy.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/geometry.f90">
+			<Option weight="6" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/geometry_dat.f90">
+			<Option weight="1" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/geometry_utils.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/gradient.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/gradient_utils.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/hessian.f90">
+			<Option weight="9" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/hessian_utils.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/jacobian.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/topology.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/topology_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/ffopt.f90">
+			<Option weight="14" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/ffopt_control.f90">
+			<Option weight="15" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/ffopt_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/geoopt.f90">
+			<Option weight="9" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/geoopt_control.f90">
+			<Option weight="10" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/geoopt_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/angles.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/angles_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/angles_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/bonds.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/bonds_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/bonds_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/dihedrals.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/dihedrals_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/dihedrals_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/energy.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/energy_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/energy_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/errors.f90">
+			<Option weight="12" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/errors_control.f90">
+			<Option weight="13" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/errors_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/ihess.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/ihess_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/ihess_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/impropers.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/impropers_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/impropers_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbdists.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbdists_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbdists_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/rmsd.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/rmsd_control.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/rmsd_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/parameters.f90">
+			<Option weight="13" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/parameters_control.f90">
+			<Option weight="15" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/parameters_dat.f90">
+			<Option weight="4" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/targetset.f90">
+			<Option weight="10" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/targetset_control.f90">
+			<Option weight="8" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/targetset_dat.f90">
+			<Option weight="6" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/xdm.f90">
+			<Option weight="11" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/xdm_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/sizes.f90">
+			<Option weight="0" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/timers.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/utils.f90">
+			<Option weight="4" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/variables.f90">
+			<Option weight="2" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/ver.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+			<fortran_project />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
