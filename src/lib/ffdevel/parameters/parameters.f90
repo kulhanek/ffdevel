@@ -875,6 +875,12 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_C6)
+                if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
+                    ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
+                        find_parameter_by_ids = i
+                        return
+                end if
             case default
                 call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter_by_ids!')
         end select
