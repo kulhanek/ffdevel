@@ -35,7 +35,7 @@ program ffdev_ptsfreq_program
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one expected)!')
     end if
 
     call get_command_argument(1, geoname)
@@ -53,7 +53,7 @@ program ffdev_ptsfreq_program
     call ffdev_geometry_info_point(geo)
 
     if( .not. geo%trg_hess_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Point does not contain Hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Point does not contain Hessian!')
     end if
 
     ! print input data ---------------------------------------------------------

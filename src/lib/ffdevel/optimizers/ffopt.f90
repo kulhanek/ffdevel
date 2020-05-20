@@ -197,7 +197,7 @@ subroutine ffdev_ffopt_single_point()
 
     allocate(FFParams(nactparms), FFParamsGrd(nactparms), stat=alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for FF sp!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for FF sp!')
     end if
 
     bmethod = OptimizationMethod
@@ -249,7 +249,7 @@ subroutine ffdev_ffopt_run()
 
     allocate(FFParams(nactparms), FFParamsGrd(nactparms), stat=alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for FF optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for FF optimization!')
     end if
 
     ! get initial parameters
@@ -289,7 +289,7 @@ subroutine ffdev_ffopt_run()
                 call opt_shark_nruns
             end if
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'OptimizationMethod not implemented in ffdev_ffopt_run!')
+            call ffdev_utils_exit(DEV_ERR,1,'OptimizationMethod not implemented in ffdev_ffopt_run!')
     end select
 
     ! return finial statistics
@@ -382,7 +382,7 @@ subroutine opt_steepest_descent()
     allocate(tmp_xg1(nactparms), tmp_xg2(nactparms), &
              stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for SD optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SD optimization!')
     end if
 
     tmp_xg1(:) = FFParams(:)
@@ -507,7 +507,7 @@ subroutine opt_lbfgs
              tmp_xg(nactparms), &
              stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for L-BFGS optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for L-BFGS optimization!')
     end if
 
     ! perform minimization ========================
@@ -614,27 +614,27 @@ subroutine opt_nlopt
     ! allocate working array
     allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for NLOPT optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for NLOPT optimization!')
     end if
 
     call ffdev_params_get_lower_bounds(tmp_lb)
     ! write(*,*) tmp_lb
     call nlo_set_lower_bounds(ires, NLoptID, tmp_lb)
     if( ires .ne. NLOPT_SUCCESS ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_lower_bounds!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_lower_bounds!')
     end if
 
     call ffdev_params_get_upper_bounds(tmp_ub)
     ! write(*,*) tmp_ub
     call nlo_set_upper_bounds(ires, NLoptID, tmp_ub)
     if( ires .ne. NLOPT_SUCCESS ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_upper_bounds!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_upper_bounds!')
     end if
 
     istep = 0
     call nlo_set_min_objective(ires, NLoptID, opt_nlopt_fce, istep)
     if( ires .ne. NLOPT_SUCCESS ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to set nlo_set_min_objective!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_min_objective!')
     end if
 
     tmp_xg(:) = FFParams(:)
@@ -762,7 +762,7 @@ subroutine opt_shark_nruns
              tmp_FinalParams(nactparms,Shark_NRuns), &
              tmp_FinalError(Shark_NRuns), stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for opt_shark_nruns!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for opt_shark_nruns!')
     end if
 
     ! save initial params
@@ -803,7 +803,7 @@ subroutine opt_shark_nruns
                     FFParams(:) = 0.5d0*(tmp_FinalParams(:,istep-1) + tmp_FinalParams(:,istep-2))
                 end if
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported Shark_ParameterGuess in opt_shark_nruns!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported Shark_ParameterGuess in opt_shark_nruns!')
             end select
 
 ! print input parameters
@@ -890,7 +890,7 @@ subroutine opt_shark
     ! allocate working array
     allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for SHARK optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SHARK optimization!')
     end if
 
     call ffdev_params_get_lower_bounds(tmp_lb)

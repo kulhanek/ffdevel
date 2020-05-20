@@ -84,7 +84,7 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
 !            case(NB_MODE_LJ)
 !                call ffdev_hessian_nb_lj(top,geo,+1.0d0)
 !            case default
-!                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_hessian_all!')
+!                call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_hessian_all!')
 !        end select
 !    end if
 

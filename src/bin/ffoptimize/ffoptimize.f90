@@ -140,6 +140,10 @@ program ffdev_optimize_program
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
         end if
 
+        if( string .eq. 'CHECKGRD' ) then
+            call execute_check_gradient(fin,.false.)
+        end if
+
         if( string .eq. 'FFERROR' ) then
             call execute_fferror(fin,.false.)
         end if
@@ -227,6 +231,11 @@ program ffdev_optimize_program
         ! open set section
         if( .not. prmfile_get_group_name(fin,string) ) then
             call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
+        end if
+
+    ! check gradient ------------------------------
+        if( string .eq. 'CHECKGRD' ) then
+            call execute_check_gradient(fin,.true.)
         end if
 
     ! fferror -------------------------------------
@@ -489,6 +498,70 @@ subroutine execute_fferror(grpin,exec)
     return
 
 end subroutine execute_fferror
+
+!===============================================================================
+! subroutine:  execute_check_gradient
+!===============================================================================
+
+subroutine execute_check_gradient(grpin,exec)
+
+    use ffdev_targetset_dat
+    use ffdev_gradient
+    use ffdev_gradient_utils
+    use ffdev_geometry
+    use ffdev_geometry_utils
+
+    implicit none
+    type(PRMFILE_TYPE)  :: grpin
+    logical             :: exec
+    type(GEOMETRY)      :: ageo,ngeo
+    ! --------------------------------------------
+    integer             :: i,j
+    ! --------------------------------------------------------------------------
+
+    if( .not. exec ) return
+
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            write(DEV_OUT,*)
+            write(DEV_OUT,1) i,j
+            write(DEV_OUT,'(A)') 'Analytical gradient ...'
+            call ffdev_geometry_init(ageo)
+            call ffdev_geometry_copy(ageo,sets(i)%geo(j))
+            call ffdev_gradient_allocate(ageo)
+            call ffdev_gradient_all(sets(i)%top,ageo)
+            call ffdev_geometry_info_ene(ageo)
+
+            write(DEV_OUT,'(A)') 'Numerical gradient ...'
+            call ffdev_geometry_init(ngeo)
+            call ffdev_geometry_copy(ngeo,sets(i)%geo(j))
+            call ffdev_gradient_allocate(ngeo)
+            call ffdev_gradient_num_all(sets(i)%top,ngeo)
+            call ffdev_geometry_info_ene(ngeo)
+
+            if( .not. ffdev_gradient_test(ageo,ngeo,1.0d-3) ) then
+                write(DEV_OUT,*)
+                call ffdev_utils_heading(DEV_OUT,'Analytical FF Gradient','=')
+                call ffdev_gradient_print(DEV_OUT,sets(i)%top,ageo)
+                    write(DEV_OUT,*)
+                call ffdev_utils_heading(DEV_OUT,'Numerical FF Gradient','=')
+                call ffdev_gradient_print(DEV_OUT,sets(i)%top,ngeo)
+
+                write(DEV_OUT,*)
+                call ffdev_utils_heading(DEV_OUT,'Difference in Gradients','=')
+                ngeo%grd = ngeo%grd - ageo%grd
+                call ffdev_gradient_print(DEV_OUT,sets(i)%top,ngeo)
+
+                call ffdev_utils_exit(DEV_ERR,1,'Analytical and numerical gradients do not match!')
+            else
+                write(DEV_OUT,'(A)') 'Analytical and numerical gradients match each other ...'
+            end if
+        end do
+    end do
+
+  1 format('=== [SET ',I3.3,']/[GEO ',I3.3,'] ========================================================')
+
+end subroutine execute_check_gradient
 
 !===============================================================================
 

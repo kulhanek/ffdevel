@@ -38,7 +38,7 @@ program ffdev_params_program
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one expected)!')
     end if
 
     call get_command_argument(1, ctrlname)
@@ -51,7 +51,7 @@ program ffdev_params_program
     call prmfile_init(fin)
 
     if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
     end if
 
     ! read sections
@@ -64,7 +64,7 @@ program ffdev_params_program
     if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump_group(fin,DEV_OUT,'TARGETS',.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! do we have identities in the {MAIN} group?

@@ -74,7 +74,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
                 OptimizationMethod=MINIMIZATION_LBFGS
                 write(DEV_OUT,10) 'l-bfgs'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
         end select
     else
         select case(OptimizationMethod)
@@ -89,7 +89,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     if( prmfile_get_integer_by_key(fin,'steps', NOptSteps)) then
         write(DEV_OUT,20) NOptSteps
         if( NOptSteps .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'steps has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'steps has to be grater than zero!')
         end if
     else
         write(DEV_OUT,25) NOptSteps
@@ -98,7 +98,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     if( prmfile_get_real8_by_key(fin,'maxrmsg', MaxRMSG)) then
         write(DEV_OUT,30) MaxRMSG
         if( MaxRMSG .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maxrmsg has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'maxrmsg has to be grater than zero!')
         end if
     else
         write(DEV_OUT,35) MaxRMSG
@@ -107,7 +107,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     if( prmfile_get_real8_by_key(fin,'maxg', MaxG)) then
         write(DEV_OUT,40) MaxG
         if( MaxG .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maxg has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'maxg has to be grater than zero!')
         end if
     else
         write(DEV_OUT,45) MaxG
@@ -128,7 +128,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     if( prmfile_get_integer_by_key(fin,'outsamples', OutSamples)) then
         write(DEV_OUT,70) OutSamples
         if( OutSamples .lt. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'outsamples has to be grater than or equal zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'outsamples has to be grater than or equal zero!')
         end if
     else
         write(DEV_OUT,75) OutSamples
@@ -138,7 +138,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     if( prmfile_get_integer_by_key(fin,'trajsamples', TrajSamples)) then
         write(DEV_OUT,80) TrajSamples
         if( TrajSamples .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'trajsamples has to be grater than or equal zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'trajsamples has to be grater than or equal zero!')
         end if
     else
         write(DEV_OUT,85) TrajSamples
@@ -218,7 +218,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'initialstepsize', InitialStepSize)) then
         write(DEV_OUT,10) InitialStepSize
         if( InitialStepSize .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'initialstepsize has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'initialstepsize has to be grater than zero!')
         end if
     else
         write(DEV_OUT,15) InitialStepSize
@@ -227,7 +227,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'maximalstepsize', MaximalStepSize)) then
         write(DEV_OUT,20) MaximalStepSize
         if( MaximalStepSize .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maximalstepsize has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'maximalstepsize has to be grater than zero!')
         end if
     else
         write(DEV_OUT,25) MaximalStepSize
@@ -236,7 +236,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'acceptratio', AcceptRatio)) then
         write(DEV_OUT,30) AcceptRatio
         if( AcceptRatio .lt. 1.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'acceptratio has to be grater or equal to 1.0!')
+            call ffdev_utils_exit(DEV_ERR,1,'acceptratio has to be grater or equal to 1.0!')
         end if
     else
         write(DEV_OUT,35) AcceptRatio
@@ -245,7 +245,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'rejectratio', RejectRatio)) then
         write(DEV_OUT,40) RejectRatio
         if( RejectRatio .le. 0.0d0 .or. RejectRatio .ge. 1.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'rejectratio has to be in (0;1) interval!')
+            call ffdev_utils_exit(DEV_ERR,1,'rejectratio has to be in (0;1) interval!')
         end if
     else
         write(DEV_OUT,45) RejectRatio
@@ -296,7 +296,7 @@ subroutine read_lbfgs_method(fin)
     if( prmfile_get_integer_by_key(fin,'numofcorrections', NumberOfCorrections)) then
         write(DEV_OUT,10) NumberOfCorrections
         if( NumberOfCorrections .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Number of corrections (numofcorrections) has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'Number of corrections (numofcorrections) has to be grater than zero!')
         end if
     else
         write(DEV_OUT,15) NumberOfCorrections
@@ -327,11 +327,11 @@ subroutine ffdev_geoopt_ctrl_files(fin)
 
     if(.not. prmfile_open_section(fin,'files')) then
         if( len(OptTopName) .eq. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Topology (topology) is not specified!')
+            call ffdev_utils_exit(DEV_ERR,1,'Topology (topology) is not specified!')
         end if
         write (DEV_OUT,10) trim(OptTopName)
         if( len(OptCrdName) .eq. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Input coordinates (input) are required!')
+            call ffdev_utils_exit(DEV_ERR,1,'Input coordinates (input) are required!')
         end if
         write (DEV_OUT,20) trim(OptCrdName)
         write (DEV_OUT,35) trim(OptRstName)
@@ -341,13 +341,13 @@ subroutine ffdev_geoopt_ctrl_files(fin)
 
     ! topology file
     if(.not. prmfile_get_string_by_key(fin,'topology', OptTopName)) then
-        call ffdev_utils_exit(DEV_OUT,1,'Topology (topology) is not specified!')
+        call ffdev_utils_exit(DEV_ERR,1,'Topology (topology) is not specified!')
     end if
     write (DEV_OUT,10) trim(OptTopName)
 
     ! input file
     if(.not. prmfile_get_string_by_key(fin,'input', OptCrdName)) then
-        call ffdev_utils_exit(DEV_OUT,1,'Input coordinates (input) are required!')
+        call ffdev_utils_exit(DEV_ERR,1,'Input coordinates (input) are required!')
     end if
     write (DEV_OUT,20) trim(OptCrdName)
 

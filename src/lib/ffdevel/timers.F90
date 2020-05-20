@@ -104,7 +104,7 @@ subroutine ffdev_timers_start_timer(id)
     ! skip timers from OpenMP regions, which were not initialized
     if( id .le. 0 ) return
 
-    call start_timer(id)
+   ! call start_timer(id)
 
 end subroutine ffdev_timers_start_timer
 
@@ -123,7 +123,7 @@ subroutine ffdev_timers_stop_timer(id)
     ! skip timers from OpenMP regions, which were not initialized
     if( id .le. 0 ) return
 
-    call stop_timer(id)
+   ! call stop_timer(id)
 
 end subroutine ffdev_timers_stop_timer
 

@@ -41,7 +41,7 @@ program ffdev_optimize_program
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one expected)!')
     end if
 
     call get_command_argument(1, ctrlname)
@@ -54,7 +54,7 @@ program ffdev_optimize_program
     call prmfile_init(fin)
 
     if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
     end if
 
     ! read files
@@ -72,7 +72,7 @@ program ffdev_optimize_program
     if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump_group(fin,DEV_OUT,'TARGETS',.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! finalize topologies in sets
@@ -85,7 +85,7 @@ program ffdev_optimize_program
 
         ! open set section
         if( .not. prmfile_get_group_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get group name!')
         end if
 
         if( string .eq. 'PROGRAM' ) then
@@ -109,7 +109,7 @@ program ffdev_optimize_program
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! start optimization programs ----------------
@@ -125,7 +125,7 @@ program ffdev_optimize_program
 
         ! open set section
         if( .not. prmfile_get_group_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get group name!')
         end if
 
         ! program -------------------------------------
@@ -151,7 +151,7 @@ program ffdev_optimize_program
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! release the file

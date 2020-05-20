@@ -51,7 +51,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
     ! open TARGETS group
     if( .not. prmfile_open_group(fin,'TARGETS') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open {TARGETS} group!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open {TARGETS} group!')
     end if
 
     ! load [setup] configuration
@@ -63,7 +63,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     do while( rst )
         ! open section
         if( .not. prmfile_get_section_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get section name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get section name!')
         end if
 
         if( string .eq. 'SET' ) then
@@ -73,13 +73,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     end do
 
     if( nsets .lt. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'At least one target set must be defined!')
+        call ffdev_utils_exit(DEV_ERR,1,'At least one target set must be defined!')
     end if
 
     ! allocate sets
     allocate(sets(nsets), stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for target sets!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for target sets!')
     end if
 
     ! pre-init
@@ -94,7 +94,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         ! open set section
         if( .not. prmfile_get_section_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get section name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get section name!')
         end if
 
         if( string .ne. 'SET' ) then
@@ -117,7 +117,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         ! get topology name
         if( .not. prmfile_get_string_by_key(fin,'topology',topin) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get topology name (topology) for [SET]!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get topology name (topology) for [SET]!')
         end if
         write(DEV_OUT,12) trim(topin)
 
@@ -152,7 +152,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%isref ) then
             if( len(trim(sets(i)%name)) .eq. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Name is not specified for a reference set!')
+                call ffdev_utils_exit(DEV_ERR,1,'Name is not specified for a reference set!')
             end if
         end if
 
@@ -161,7 +161,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( prmfile_init_field_by_key(fin,'references') ) then
             if( sets(i)%isref ) then
-                call ffdev_utils_exit(DEV_OUT,1,'References cannot be defined for a reference set!')
+                call ffdev_utils_exit(DEV_ERR,1,'References cannot be defined for a reference set!')
             end if
 
             do while ( prmfile_get_field_by_key(fin,field) )
@@ -169,7 +169,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end do
             allocate(sets(i)%refs(sets(i)%nrefs), stat = alloc_status)
             if( alloc_status .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for references!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for references!')
             end if
             rst = prmfile_init_field_by_key(fin,'references')
             k = 1
@@ -183,7 +183,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     end if
                 end do
                 if( sets(i)%refs(k) .eq. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to find reference (' // trim(field) // ')!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to find reference (' // trim(field) // ')!')
                 end if
                 k = k + 1
             end do
@@ -195,7 +195,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 k = k + sets(sets(i)%refs(l))%top%natoms
             end do
             if( k .ne. sets(i)%top%natoms ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Size (natoms) inconsistency between reference systems and the set detected!')
+                call ffdev_utils_exit(DEV_ERR,1,'Size (natoms) inconsistency between reference systems and the set detected!')
             end if
         end if
 
@@ -308,7 +308,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 case('points')
                     rst = prmfile_get_field_on_line(fin,geoname)
                     if( .not. rst ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Name of file with stream of points is not specified!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Name of file with stream of points is not specified!')
                     end if
                     sets(i)%ngeos = sets(i)%ngeos +  ffdev_geometry_num_of_points(geoname)
                 case default
@@ -319,19 +319,19 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%ngeos .le. 0 ) then
             if( allow_nopoints .eqv. .false. ) then
-                call ffdev_utils_exit(DEV_OUT,1,'No points for current set!')
+                call ffdev_utils_exit(DEV_ERR,1,'No points for current set!')
             end if
         end if
 
         if( sets(i)%isref .and. (sets(i)%ngeos .ne. 1) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Reference set can contain only one point!')
+            call ffdev_utils_exit(DEV_ERR,1,'Reference set can contain only one point!')
         end if
 
         if( sets(i)%ngeos .gt. 0 ) then
             ! allocate points
             allocate(sets(i)%geo(sets(i)%ngeos), stat = alloc_status)
             if( alloc_status .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for set points!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for set points!')
             end if
         end if
 
@@ -362,7 +362,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
             rst = prmfile_get_field_on_line(fin,geoname)
             if( .not. rst ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Point name not specified!')
+                call ffdev_utils_exit(DEV_ERR,1,'Point name not specified!')
             end if
 
             weight = 1.0d0
@@ -386,7 +386,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             do k=1,npoints
 
                 if( j .gt. sets(i)%ngeos ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Mismatch in the number of data points!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Mismatch in the number of data points!')
                 end if
 
                 ! load point and print its info
@@ -419,7 +419,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                             sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
                         end if
                     case default
-                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
 
                 call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
@@ -427,7 +427,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 ! reference point needs energy
                 if( sets(i)%isref ) then
                     if( sets(i)%geo(j)%trg_ene_loaded .eqv. .false. ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Reference point must contain ENERGY definition!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Reference point must contain ENERGY definition!')
                     end if
                 end if
 
@@ -438,7 +438,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                              sets(i)%optgeo .or. sets(i)%isref
 
                 if( .not. data_avail ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'No training data are available in the point!')
+                    call ffdev_utils_exit(DEV_ERR,1,'No training data are available in the point!')
                 end if
                 j = j + 1
             end do
@@ -585,19 +585,19 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         if( SavePts ) then
             call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
             if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SavePtsPath!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SavePtsPath!')
             end if
         end if
         if( SaveXYZR ) then
             call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat  )
             if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveXYZRPath!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveXYZRPath!')
             end if
         end if
         if( SaveSumLogs ) then
             call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
             if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveSumLogsPath!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveSumLogsPath!')
             end if
         end if
         return
@@ -656,19 +656,19 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     if( SavePts ) then
         call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
         if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SavePtsPath!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SavePtsPath!')
         end if
     end if
     if( SaveXYZR ) then
         call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat )
         if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveXYZRPath!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveXYZRPath!')
         end if
     end if
     if( SaveSumLogs ) then
         call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
         if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to create SaveSumLogsPath!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveSumLogsPath!')
         end if
     end if
 

@@ -83,11 +83,14 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
                     call ffdev_gradient_nb_lj_qtop(top,geo)
                 end if
 
-            case(NB_VDW_12_XDMC6)
-                call ffdev_gradient_nb_12_XDMC6(top,geo)
+            case(NB_VDW_12_6)
+                call ffdev_gradient_nb_12_6(top,geo)
+
+            case(NB_VDW_12_XDMBJ)
+                call ffdev_gradient_nb_12_XDMBJ(top,geo)
 
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported vdW mode in ffdev_gradient_all!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_gradient_all!')
         end select
         call ffdev_timers_stop_timer(FFDEV_POT_NB_GRADIENT_TIMER)
     end if
@@ -366,7 +369,7 @@ subroutine ffdev_gradient_dihedrals(top,geo)
                             * 2.0*diff/top%dihedral_types(ic)%w2(pn)
                 end do
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_gradient_dihedrals]!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented [ffdev_gradient_dihedrals]!')
         end select
 
         ! calculate gradient
@@ -607,10 +610,10 @@ subroutine ffdev_gradient_nb_lj_qgeo(top,geo)
 end subroutine ffdev_gradient_nb_lj_qgeo
 
 !===============================================================================
-! subroutine ffdev_gradient_nb_12_XDMC6
+! subroutine ffdev_gradient_nb_12_6
 !===============================================================================
 
-subroutine ffdev_gradient_nb_12_XDMC6(top,geo)
+subroutine ffdev_gradient_nb_12_6(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -641,7 +644,7 @@ subroutine ffdev_gradient_nb_12_XDMC6(top,geo)
         agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
 
         pa  = exp(top%nb_types(nbt)%pa)
-        c6  = xdm_pairs(agti,agtj)%c6ave * disp_fa * DEV_HARTREE2KCL * DEV_AU2A**6
+        c6  = top%nb_types(nbt)%c6 * disp_fa
 
         if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
             crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
@@ -689,7 +692,122 @@ subroutine ffdev_gradient_nb_12_XDMC6(top,geo)
         geo%grd(3,j) = geo%grd(3,j) + dxa3
     end do
 
-end subroutine ffdev_gradient_nb_12_XDMC6
+end subroutine ffdev_gradient_nb_12_6
+
+!===============================================================================
+! subroutine ffdev_gradient_nb_12_XDMBJ
+!===============================================================================
+
+subroutine ffdev_gradient_nb_12_XDMBJ(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, agti, agtj
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,dva
+    real(DEVDP)     :: r2,ra,r6,r8,r10,r12,scale2,c6,c8,c10,rc,rc2,rc6,rc8,rc10
+    real(DEVDP)     :: Vela,r2a,V_aa,r6i,r8i,r10i
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+
+    if( .not. xdm_data_loaded ) then
+        call ffdev_utils_exit(DEV_OUT,1,'XDM not loaded for ffdev_energy_nb_TT!')
+    end if
+
+    scale2 = ele_qscale*ele_qscale*332.05221729d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+
+        pa  = exp(top%nb_types(nbt)%pa)
+
+        agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+        agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+        ! XDM
+        c6  = xdm_pairs(agti,agtj)%c6ave
+        c8  = xdm_pairs(agti,agtj)%c8ave
+        c10 = xdm_pairs(agti,agtj)%c10ave
+
+        rc  = disp_fa*xdm_pairs(agti,agtj)%rc + disp_fb
+
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
+            crgij = geo%sup_chrg(i) * geo%sup_chrg(j)
+        else
+            crgij = top%atoms(i)%charge * top%atoms(j)%charge
+        end if
+
+        ! calculate distances
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2
+        ra  = sqrt(r2a)
+
+        rc2 = rc*rc
+
+        r6 = r2*r2*r2
+        rc6 = rc2*rc2*rc2
+
+        r8 = r6*r2
+        rc8 = rc6*rc2
+
+        r10 = r8*r2
+        rc10 = rc8*rc2
+
+        r12 = r6*r6
+
+        Vela = scale2*crgij*ra
+        V_aa = pa/r12
+
+        r6i = 1.0d0/(r6+rc6)
+        r8i = 1.0d0/(r8+rc8)
+        r10i = 1.0d0/(r10+rc10)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + Vela
+            geo%nb_ene  = geo%nb_ene + V_aa - c6*r6i - c8*r8i - c10*r10i
+
+            dva = r2a*(Vela + 12.0d0*V_aa - 6.0d0*c6*r6i*r6i*r6 - 8.0d0*c8*r8i*r8i*r8 - 10.0d0*c10*r10i*r10i*r10)
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+            geo%ele14_ene = geo%ele14_ene + inv_scee*Vela
+            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa - c6*r6i - c8*r8i - c10*r10i)
+
+            dva = r2a*(inv_scee*Vela + inv_scnb*(12.0d0*V_aa - 6.0d0*c6*r6i*r6i*r6 &
+                                                 - 8.0d0*c8*r8i*r8i*r8 - 10.0d0*c10*r10i*r10i*r10))
+        end if
+
+        ! calculate gradient
+        dxa1 = dva*dxa1
+        dxa2 = dva*dxa2
+        dxa3 = dva*dxa3
+        geo%grd(1,i) = geo%grd(1,i) - dxa1
+        geo%grd(2,i) = geo%grd(2,i) - dxa2
+        geo%grd(3,i) = geo%grd(3,i) - dxa3
+        geo%grd(1,j) = geo%grd(1,j) + dxa1
+        geo%grd(2,j) = geo%grd(2,j) + dxa2
+        geo%grd(3,j) = geo%grd(3,j) + dxa3
+
+    end do
+
+end subroutine ffdev_gradient_nb_12_XDMBJ
 
 ! ------------------------------------------------------------------------------
 

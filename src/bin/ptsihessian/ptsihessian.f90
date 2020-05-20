@@ -42,7 +42,7 @@ program ffdev_ptsihessian_program
     ! test number of input arguments
     if( command_argument_count() .lt. 2 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least two expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (at least two expected)!')
     end if
 
     call get_command_argument(1, topname)
@@ -56,7 +56,7 @@ program ffdev_ptsihessian_program
             case('excludenb')
                 excludenb = .true.
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unrecognized argument ('//trim(arg)//')')
+                call ffdev_utils_exit(DEV_ERR,1,'Unrecognized argument ('//trim(arg)//')')
         end select
     end do
 
@@ -88,7 +88,7 @@ program ffdev_ptsihessian_program
     call ffdev_topology_finalize_setup(top)
 
     if( .not. geo%trg_hess_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Point does not contain Hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Point does not contain Hessian!')
     end if
 
     ! print input data ---------------------------------------------------------

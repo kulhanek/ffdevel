@@ -61,7 +61,7 @@ subroutine ffdev_xdm_run_stat()
     ! allocate xdm pairs
     allocate( xdm_pairs(ntypes,ntypes), xdm_atoms(ntypes), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,trim('Unable to allocate xdm_pairs or xdm_atoms'))
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate xdm_pairs or xdm_atoms')
     end if
 
     ! clear data
@@ -81,6 +81,7 @@ subroutine ffdev_xdm_run_stat()
             xdm_pairs(ti,tj)%c8sig = 0.0d0
             xdm_pairs(ti,tj)%c10ave = 0.0d0
             xdm_pairs(ti,tj)%c10sig = 0.0d0
+            xdm_pairs(ti,tj)%Rc = 0.0d0
             xdm_pairs(ti,tj)%num = 0
         end do
     end do
@@ -113,14 +114,20 @@ subroutine ffdev_xdm_run_stat()
                     tj = sets(i)%top%atom_types(sets(i)%top%atoms(aj)%typeid)%glbtypeid
 
                     ! accumulate data
-                    xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave + sets(i)%geo(j)%sup_xdm_c6(ai,aj)
-                    xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + sets(i)%geo(j)%sup_xdm_c6(ai,aj)**2
+                    xdm_pairs(ti,tj)%c6ave = xdm_pairs(ti,tj)%c6ave +  &
+                                             sets(i)%geo(j)%sup_xdm_c6(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**6
+                    xdm_pairs(ti,tj)%c6sig = xdm_pairs(ti,tj)%c6sig + &
+                                           ( sets(i)%geo(j)%sup_xdm_c6(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**6 )**2
 
-                    xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + sets(i)%geo(j)%sup_xdm_c8(ai,aj)
-                    xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + sets(i)%geo(j)%sup_xdm_c8(ai,aj)**2
+                    xdm_pairs(ti,tj)%c8ave = xdm_pairs(ti,tj)%c8ave + &
+                                             sets(i)%geo(j)%sup_xdm_c8(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**8
+                    xdm_pairs(ti,tj)%c8sig = xdm_pairs(ti,tj)%c8sig + &
+                                           ( sets(i)%geo(j)%sup_xdm_c8(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**8 )**2
 
-                    xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + sets(i)%geo(j)%sup_xdm_c10(ai,aj)
-                    xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + sets(i)%geo(j)%sup_xdm_c10(ai,aj)**2
+                    xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave + &
+                                              sets(i)%geo(j)%sup_xdm_c10(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**10
+                    xdm_pairs(ti,tj)%c10sig = xdm_pairs(ti,tj)%c10sig + &
+                                            ( sets(i)%geo(j)%sup_xdm_c10(ai,aj) * DEV_HARTREE2KCL * DEV_AU2A**10 )**2
 
                     xdm_pairs(ti,tj)%num = xdm_pairs(ti,tj)%num + 1
 
@@ -212,6 +219,70 @@ subroutine ffdev_xdm_run_stat()
         end do
     end do
 
+    call ffdev_xdm_calc_rc
+    call ffdev_xdm_print
+
+ 10 format('>>> No XDM data available ....')
+
+end subroutine ffdev_xdm_run_stat
+
+! ==============================================================================
+! subroutine ffdev_xdm_calc_rc
+! ==============================================================================
+
+subroutine ffdev_xdm_calc_rc()
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: ti, tj, ai, aj
+    ! --------------------------------------------------------------------------
+
+    ! do we have XDM data?
+    if( .not. xdm_data_loaded ) then
+        return
+    end if
+
+    do ti=1,ntypes
+        do tj=1,ntypes
+            xdm_pairs(ti,tj)%Rcd = ( sqrt(xdm_pairs(ti,tj)%C8ave/xdm_pairs(ti,tj)%C6ave) &
+                                  + sqrt(xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C8ave) &
+                                  + (xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C6ave)**(1.0/4.0) ) / 3.0d0
+            xdm_pairs(ti,tj)%Rcp = DEV_AU2A * 2.54d0*(xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)**(1.0d0/7.0d0)
+
+            select case(xdm_rc_source)
+                case(XDM_RC_FROM_CX)
+                    xdm_pairs(ti,tj)%Rc = xdm_pairs(ti,tj)%Rcd
+                case(XDM_RC_FROM_POL)
+                    xdm_pairs(ti,tj)%Rc = xdm_pairs(ti,tj)%Rcp
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_xdm_calc_rc!')
+            end select
+        end do
+    end do
+
+end subroutine ffdev_xdm_calc_rc
+
+! ==============================================================================
+! subroutine ffdev_xdm_print
+! ==============================================================================
+
+subroutine ffdev_xdm_print()
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: ti, tj, ai, aj
+    ! --------------------------------------------------------------------------
+
+    ! do we have XDM data?
+    if( .not. xdm_data_loaded ) then
+        write(DEV_OUT,10)
+        return
+    end if
+
     ! dispersion data ----------------------------
     write(DEV_OUT,*)
     write(DEV_OUT,20)
@@ -225,15 +296,17 @@ subroutine ffdev_xdm_run_stat()
         write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
                           xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                           xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                          xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
+                          xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, xdm_pairs(ti,tj)%Rcd, &
+                          xdm_pairs(ti,tj)%Rcp, xdm_pairs(ti,tj)%Rc
     end do
     write(DEV_OUT,40)
     do ti=1,ntypes
-        do tj=1,ntypes
+        do tj=ti+1,ntypes
             write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
                               xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                               xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig
+                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, xdm_pairs(ti,tj)%Rc, &
+                              xdm_pairs(ti,tj)%Rcp, xdm_pairs(ti,tj)%Rc
         end do
     end do
     write(DEV_OUT,40)
@@ -255,17 +328,17 @@ subroutine ffdev_xdm_run_stat()
 
  10 format('>>> No XDM data available ....')
 
- 20 format('# Dispersion coefficients ... (all in atomic units)')
- 30 format('# TypA TypB Number         <C6>        s(C6)         <C8>        s(C8)        <C10>       s(C10)')
- 40 format('# ---- ---- ------ ------------ ------------ ------------ ------------ ------------ ------------')
- 50 format(2X,A4,1X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
+ 20 format('# Dispersion coefficients ...')
+ 30 format('# TypA TypB Number         <C6>  s(C6)         <C8>  s(C8)        <C10> s(C10)    Rcd   Rvdw     Rc')
+ 40 format('# ---- ---- ------ ------------ ------ ------------ ------ ------------ ------ ------ ------ ------')
+ 50 format(2X,A4,1X,A4,1X,I6,1X,F12.2,1X,F6.2,1X,F12.2,1X,F6.1,1X,F12.1,1X,F6.1,1X,F6.3,1X,F6.3,1X,F6.3)
 
 120 format('# Atomic data ... (all in atomic units)')
 130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol')
 140 format('# ---- ------ ------------ ------------ ------------ ------------ ------------ ------------ ------------')
 150 format(2X,A4,1X,I6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6,1X,E12.6)
 
-end subroutine ffdev_xdm_run_stat
+end subroutine ffdev_xdm_print
 
 ! ------------------------------------------------------------------------------
 

@@ -37,7 +37,7 @@ program ffdev_getrmsd_program
     ! test number of input arguments
     if( (command_argument_count() .ne. 2) .and. (command_argument_count() .ne. 3)  ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (two or three expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (two or three expected)!')
     end if
 
     call get_command_argument(1, refname)
@@ -69,12 +69,12 @@ program ffdev_getrmsd_program
 
     ! check compability of two geometries
     if( ref%natoms .ne. src%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same number of atoms!')
+        call ffdev_utils_exit(DEV_ERR,1,'Two geometries must have the same number of atoms!')
     end if
 
     do i=1,ref%natoms
         if( ref%z(i) .ne. src%z(i) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same order of atoms!')
+            call ffdev_utils_exit(DEV_ERR,1,'Two geometries must have the same order of atoms!')
         end if
     end do
 

@@ -57,7 +57,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             case(MINIMIZATION_SHARK)
                 write(DEV_OUT,15) 'shark'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
         end select
         write(DEV_OUT,25) NOptSteps
         write(DEV_OUT,75) OutSamples
@@ -71,7 +71,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK)
                 ! nothing to do
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
         end select
 
         call read_opt_method(fin)
@@ -93,7 +93,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
                 OptimizationMethod=MINIMIZATION_SHARK
                 write(DEV_OUT,10) 'shark'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
         end select
     else
         select case(OptimizationMethod)
@@ -106,7 +106,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             case(MINIMIZATION_SHARK)
                 write(DEV_OUT,15) 'shark'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
         end select
     end if
 
@@ -114,7 +114,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
     if( prmfile_get_integer_by_key(fin,'nsteps', NOptSteps)) then
         write(DEV_OUT,20) NOptSteps
         if( NOptSteps .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'steps has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'steps has to be grater than zero!')
         end if
     else
         write(DEV_OUT,25) NOptSteps
@@ -122,7 +122,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
     if( prmfile_get_integer_by_key(fin,'outsamples', OutSamples)) then
         write(DEV_OUT,70) OutSamples
         if( OutSamples .lt. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'outsamples has to be grater than or equal zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'outsamples has to be grater than or equal zero!')
         end if
     else
         write(DEV_OUT,75) OutSamples
@@ -140,7 +140,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             if( prmfile_get_real8_by_key(fin,'maxrmsg', MaxRMSG)) then
                 write(DEV_OUT,30) MaxRMSG
                 if( MaxRMSG .le. 0.0d0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'maxrmsg has to be grater than zero!')
+                    call ffdev_utils_exit(DEV_ERR,1,'maxrmsg has to be grater than zero!')
                 end if
             else
                 write(DEV_OUT,35) MaxRMSG
@@ -149,7 +149,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
             if( prmfile_get_real8_by_key(fin,'maxg', MaxG)) then
                 write(DEV_OUT,40) MaxG
                 if( MaxG .le. 0.0d0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'maxg has to be grater than zero!')
+                    call ffdev_utils_exit(DEV_ERR,1,'maxg has to be grater than zero!')
                 end if
             else
                 write(DEV_OUT,45) MaxG
@@ -162,7 +162,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
         case(MINIMIZATION_NLOPT,MINIMIZATION_SHARK)
             ! nothing to do
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unknown minimization method!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
     end select
 
     call read_opt_method(fin)
@@ -240,7 +240,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'initialstepsize', InitialStepSize)) then
         write(DEV_OUT,10) InitialStepSize
         if( InitialStepSize .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'initialstepsize has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'initialstepsize has to be grater than zero!')
         end if
     else
         write(DEV_OUT,15) InitialStepSize
@@ -249,7 +249,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'maximalstepsize', MaximalStepSize)) then
         write(DEV_OUT,20) MaximalStepSize
         if( MaximalStepSize .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'maximalstepsize has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'maximalstepsize has to be grater than zero!')
         end if
     else
         write(DEV_OUT,25) MaximalStepSize
@@ -258,7 +258,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'acceptratio', AcceptRatio)) then
         write(DEV_OUT,30) AcceptRatio
         if( AcceptRatio .lt. 1.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'acceptratio has to be grater or equal to 1.0!')
+            call ffdev_utils_exit(DEV_ERR,1,'acceptratio has to be grater or equal to 1.0!')
         end if
     else
         write(DEV_OUT,35) AcceptRatio
@@ -267,7 +267,7 @@ subroutine read_sd_method(fin)
     if( prmfile_get_real8_by_key(fin,'rejectratio', RejectRatio)) then
         write(DEV_OUT,40) RejectRatio
         if( RejectRatio .le. 0.0d0 .or. RejectRatio .ge. 1.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'rejectratio has to be in (0;1) interval!')
+            call ffdev_utils_exit(DEV_ERR,1,'rejectratio has to be in (0;1) interval!')
         end if
     else
         write(DEV_OUT,45) RejectRatio
@@ -318,7 +318,7 @@ subroutine read_lbfgs_method(fin)
     if( prmfile_get_integer_by_key(fin,'numofcorrections', NumberOfCorrections)) then
         write(DEV_OUT,10) NumberOfCorrections
         if( NumberOfCorrections .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Number of corrections (numofcorrections) has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'Number of corrections (numofcorrections) has to be grater than zero!')
         end if
     else
         write(DEV_OUT,15) NumberOfCorrections
@@ -367,7 +367,7 @@ subroutine read_nlopt_method(fin)
             case(NLOPT_GN_DIRECT_L)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported methopd in read_nlopt_method!')
         end select
         write(DEV_OUT,35) NLOpt_InitialStep
         return
@@ -397,7 +397,7 @@ subroutine read_nlopt_method(fin)
                 NLOpt_Method = NLOPT_GN_DIRECT_L
                 write(DEV_OUT,20) trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported methopd in read_nlopt_method!')
         end select
     else
         select case(NLOpt_Method)
@@ -416,7 +416,7 @@ subroutine read_nlopt_method(fin)
             case(NLOPT_GN_DIRECT_L)
                 write(DEV_OUT,25) 'NLOPT_GN_DIRECT_L'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_nlopt_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported methopd in read_nlopt_method!')
         end select
     end if
 
@@ -458,7 +458,7 @@ subroutine read_shark_method(fin)
             case(SHARK_CMA_ES)
                 write(DEV_OUT,25) 'CMA-ES'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported methopd in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported methopd in read_shark_method!')
         end select
         write(DEV_OUT,35) Shark_InitialStep
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
@@ -473,7 +473,7 @@ subroutine read_shark_method(fin)
             case(SHARK_GUESS_MIX)
                 write(DEV_OUT,75) 'mix'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
         end select
         return
     end if
@@ -484,14 +484,14 @@ subroutine read_shark_method(fin)
                 Shark_Method = SHARK_CMA_ES
                 write(DEV_OUT,20) trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported method in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported method in read_shark_method!')
         end select
     else
         select case(Shark_Method)
             case(SHARK_CMA_ES)
                 write(DEV_OUT,25) 'CMA-ES'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported method in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported method in read_shark_method!')
         end select
     end if
 
@@ -528,7 +528,7 @@ subroutine read_shark_method(fin)
                 Shark_ParameterGuess = SHARK_GUESS_MIX
                 write(DEV_OUT,70) trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
         end select
     else
         select case(Shark_ParameterGuess)
@@ -541,7 +541,7 @@ subroutine read_shark_method(fin)
             case(SHARK_GUESS_MIX)
                 write(DEV_OUT,75) 'mix'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported guess in read_shark_method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
         end select
     end if
 

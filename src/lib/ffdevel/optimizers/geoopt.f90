@@ -197,7 +197,7 @@ subroutine opt_steepest_descent(fout,top,geo)
     allocate(tmp_xg1(3,top%natoms), tmp_xg2(3,top%natoms), &
              stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for SD optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SD optimization!')
     end if
 
     tmp_xg1(:,:) = geo%crd(:,:)
@@ -343,7 +343,7 @@ subroutine opt_lbfgs(fout,top,geo)
              tmp_xg(3,top%natoms), &
              stat=alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate data for L-BFGS optimization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for L-BFGS optimization!')
     end if
 
     ! perform minimization ========================

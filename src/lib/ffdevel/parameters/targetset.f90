@@ -203,7 +203,7 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
                     ! nothing to be here
                 case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
             end select
         end do
     end do
@@ -476,7 +476,7 @@ subroutine ffdev_targetset_save_drvene(set,name)
                     case('A','D')
                         write(DEV_PROFILE,32,ADVANCE='NO') set%geo(i)%rst(j)%value*DEV_R2D
                     case default
-                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported RST in ffdev_geometry_copy!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unsupported RST in ffdev_geometry_copy!')
                 end select
             end do
         else

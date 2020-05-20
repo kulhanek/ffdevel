@@ -24,6 +24,7 @@ implicit none
 ! input/output -----------------------------------------------------------------
 integer     :: DEV_INP      = DEV_STD_INPUT
 integer     :: DEV_OUT      = DEV_STD_OUTPUT
+integer     :: DEV_ERR      = DEV_STD_OUTPUT
 integer     :: Verbosity    = DEV_VERBOSITY_MINIMAL
 
 ! program index ----------------------------------------------------------------

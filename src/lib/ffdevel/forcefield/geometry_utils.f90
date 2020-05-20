@@ -48,7 +48,7 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(natoms,z,ref,src,mw)
     ! --------------------------------------------------------------------------
 
     if( natoms .lt. 2 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'At least two atoms must be in both structures!')
+        call ffdev_utils_exit(DEV_ERR,1,'At least two atoms must be in both structures!')
     end if
 
     ! calculate geometrical centres (source and target) -------------------
@@ -158,7 +158,7 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(natoms,z,ref,src,mw)
     call dsyev('V','L', 4, f, 4, eigenvalues, work, 26*4, info)
 
     if( info .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to diagonalize matrix in calculate_rmsdt!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to diagonalize matrix in calculate_rmsdt!')
     end if
 
     best = 4
@@ -189,7 +189,7 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd_nofit(natoms,z,ref,src,mw)
     ! --------------------------------------------------------------------------
 
     if( natoms .lt. 1 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'At least one atom must be in both structures!')
+        call ffdev_utils_exit(DEV_ERR,1,'At least one atom must be in both structures!')
     end if
 
     ! calculate geometrical centres (source and target) -------------------
@@ -235,10 +235,10 @@ subroutine ffdev_geometry_utils_rmsdfit(ref,src,mw,rmsd)
     ! --------------------------------------------------------------------------
 
     if( src%natoms .ne. ref%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have the same number of atoms!')
+        call ffdev_utils_exit(DEV_ERR,1,'Two geometries must have the same number of atoms!')
     end if
     if( src%natoms .lt. 2 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'At least two atoms must be in both structures!')
+        call ffdev_utils_exit(DEV_ERR,1,'At least two atoms must be in both structures!')
     end if
 
     ! calculate geometrical centres (source and target) -------------------
@@ -252,7 +252,7 @@ subroutine ffdev_geometry_utils_rmsdfit(ref,src,mw,rmsd)
 
     do  i = 1, src%natoms
         if( src%z(i) .ne. ref%z(i) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Two geometries must have identical order of atoms!')
+            call ffdev_utils_exit(DEV_ERR,1,'Two geometries must have identical order of atoms!')
         end if
         if( mw ) then
             amass = pt_masses(src%z(i))
@@ -351,7 +351,7 @@ subroutine ffdev_geometry_utils_rmsdfit(ref,src,mw,rmsd)
     call dsyev('V','L', 4, f, 4, eigenvalues, work, 26*4, info)
 
     if( info .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to diagonalize matrix in calculate_rmsdt!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to diagonalize matrix in calculate_rmsdt!')
     end if
 
     best = 4

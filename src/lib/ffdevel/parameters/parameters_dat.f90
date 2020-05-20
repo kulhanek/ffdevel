@@ -166,9 +166,9 @@ real(DEVDP)     :: MaxVdwC6     =      1.0d7
 real(DEVDP)     :: MinEleSQ     =      0.0d0
 real(DEVDP)     :: MaxEleSQ     =      3.0d0
 
-real(DEVDP)     :: MinDispFA    =      0.1d0
-real(DEVDP)     :: MaxDispFA    =      3.0d0
-real(DEVDP)     :: MinDispFB    =      0.1d0
+real(DEVDP)     :: MinDispFA    =      0.0d0
+real(DEVDP)     :: MaxDispFA    =      5.0d0
+real(DEVDP)     :: MinDispFB    =     -9.0d0
 real(DEVDP)     :: MaxDispFB    =      9.0d0
 
 ! === [files] ==================================================================

@@ -212,14 +212,33 @@ integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
 integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_12_XDMC6  = 2
+integer,parameter   :: NB_VDW_12_6      = 2
 ! Lenard-Jones
-! Form: Enb = exp(PA)/r^12 - disp_fa*XDM_C6/r^6
-! Parameters: PA, disp_fa
-! Provides: energy
+! Form: Enb = exp(PA)/r^12 - disp_fa*C6/r^6
+! Parameters: PA, C6, disp_fa
+! Provides: energy, gradient
 
 ! combining rules - applicable for NB_VDW_12_XDMC6
-integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
+integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
+
+! these are also applicable via backward/forward transformations
+!integer,parameter   :: COMB_RULE_LB = 11    ! LB (Lorentz-Berthelot)
+!integer,parameter   :: COMB_RULE_WH = 12    ! WH (Waldman-Hagler)
+!integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
+!integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
+
+
+! ####################################################################
+integer,parameter   :: NB_VDW_12_XDMBJ  = 3
+! Lenard-Jones
+! Form: Enb = exp(PA)/r^12 - XDMC6/(r^6 + rbj^6) - XDMC8/(r^8 + rbj^8) - XDMC10/(r^10 + rbj^10)
+! Parameters: PA, disp_fa, disp_fb
+! Provides: energy, gradient
+
+! rbj = disp_fa*rc + disp_fb
+
+! combining rules - applicable for NB_VDW_12_XDMC6
+! integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
 
 ! ####################################################################
 integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennies + XDM
@@ -244,7 +263,7 @@ integer     :: nb_comb_rules    = COMB_RULE_LB
 
 ! tuneable parameters
 real(DEVDP) :: disp_fa = 1.0d0
-real(DEVDP) :: disp_fb = 1.0d0
+real(DEVDP) :: disp_fb = 0.0d0
 
 ! ------------------------------------------------------------------------------
 

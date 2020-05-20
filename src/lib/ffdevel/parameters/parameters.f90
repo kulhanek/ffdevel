@@ -78,12 +78,12 @@ subroutine ffdev_parameters_init()
 
     allocate(params(maxnparams), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for parameter extraction!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for parameter extraction!')
     end if
     do i=1,maxnparams
         allocate(params(i)%ids(nsets), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for parameter extraction!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for parameter extraction!')
         end if
     end do
 
@@ -452,16 +452,21 @@ subroutine ffdev_parameters_reinit()
         case(NB_VDW_LJ)
             use_vdw_eps     = .true.
             use_vdw_r0      = .true.
-        case(NB_VDW_12_XDMC6)
+        case(NB_VDW_12_6)
+            use_vdw_pa      = .true.
+            use_vdw_c6      = .true.
+            use_disp_fa     = .true.
+        case(NB_VDW_12_XDMBJ)
             use_vdw_pa      = .true.
             use_disp_fa     = .true.
+            use_disp_fb     = .true.
         case(NB_VDW_TT_XDM)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
             use_disp_fa     = .true.
             use_disp_fb     = .true.
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_parameters_reinit IIa!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_parameters_reinit IIa!')
     end select
 
     if( use_vdw_eps ) then
@@ -713,7 +718,7 @@ logical function ffdev_parameters_is_nbtype_used(top,nbt)
         case(NB_PARAMS_MODE_ALL)
             ffdev_parameters_is_nbtype_used = .true.
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'not implemented in ffdev_parameters_is_nbtype_used!')
+            call ffdev_utils_exit(DEV_ERR,1,'not implemented in ffdev_parameters_is_nbtype_used!')
     end select
 
     ! not found
@@ -767,7 +772,7 @@ integer function find_parameter(top,id,pn,realm)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter I!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter I!')
     end select
 
     ! is parameter defined?
@@ -811,7 +816,7 @@ integer function find_parameter(top,id,pn,realm)
                         find_parameter = i
                 end if
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter II!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter II!')
         end select
     end do
 
@@ -890,7 +895,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl,id)
                 find_parameter_by_ids = i
                 return
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in find_parameter_by_ids!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter_by_ids!')
         end select
     end do
 
@@ -973,7 +978,7 @@ subroutine ffdev_parameters_gen_unique_types()
 
     allocate(ltypes(maxnparams), stat = alloc_stat)
     if(alloc_stat .ne. 0) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for all types!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for all types!')
     end if
 
     k = 1
@@ -1012,7 +1017,7 @@ subroutine ffdev_parameters_gen_unique_types()
     ! allocate array for types
     allocate(types(ntypes), stat = alloc_stat)
     if(alloc_stat .ne. 0) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for common types!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for common types!')
     end if
 
     ! copy types
@@ -1030,7 +1035,7 @@ subroutine ffdev_parameters_gen_unique_types()
     do i=1,ntypes
         allocate(types(i)%ids(nsets), stat = alloc_stat)
         if(alloc_stat .ne. 0) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for type ids!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for type ids!')
         end if
         types(i)%ids(:) = 0
         types(i)%probe = .false.
@@ -1075,7 +1080,7 @@ subroutine ffdev_parameters_load(name,loaded,ignored)
     read(DEV_PRMS,*) tmp ! skip the first line
     read(DEV_PRMS,*) tmp, nlp  ! nlp is read but ignored
     if( trim(tmp) .ne. 'v1' ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unsupported file format version, it should be v1!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported file format version, it should be v1!')
     end if
 
     ! read file by lines
@@ -1100,7 +1105,7 @@ subroutine ffdev_parameters_load(name,loaded,ignored)
 
     return
 
-110 call ffdev_utils_exit(DEV_OUT,1,'Unable to read data from FFDevel parameter file!')
+110 call ffdev_utils_exit(DEV_ERR,1,'Unable to read data from FFDevel parameter file!')
 
 end subroutine ffdev_parameters_load
 
@@ -1519,7 +1524,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     ! --------------------------------------------------------------------------
 
     if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Dihedral is not DIH_GRBF in ffdev_parameters_grbf2cos!')
+        call ffdev_utils_exit(DEV_ERR,1,'Dihedral is not DIH_GRBF in ffdev_parameters_grbf2cos!')
     end if
 
     write(DEV_OUT,10,ADVANCE='NO')  top%atom_types(top%dihedral_types(idx)%ti)%name, &
@@ -1529,7 +1534,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
 
     allocate(x(GRBF2COSMaxN),y(GRBF2COSMaxN/2+1), stat = alloc_stat)
     if(alloc_stat .ne. 0) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for FFTW in ffdev_parameters_grbf2cos!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for FFTW in ffdev_parameters_grbf2cos!')
     end if
 
     ! calculate the dihedral potential
@@ -1722,7 +1727,7 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_DISP_FB
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
     end select
 
 end function ffdev_parameters_get_realmid
@@ -1789,7 +1794,7 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'disp_fb'
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realm_name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
     end select
 
 end function ffdev_parameters_get_realm_name
@@ -1829,7 +1834,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
         case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB)
             ! nothing to do
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
     end select
 
 end function ffdev_parameters_get_realm_scaling
@@ -1863,7 +1868,7 @@ subroutine ffdev_parameters_print_parameters(mode)
         case(PARAMS_SUMMARY_FULL)
             call ffdev_utils_heading(DEV_OUT,'Parameter Summary', ':')
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_print_parameters!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_print_parameters!')
     end select
 
     write(DEV_OUT,*)
@@ -2236,7 +2241,7 @@ subroutine ffdev_parameters_to_tops
             case(REALM_DISP_FB)
                 disp_fb = params(i)%value
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_parameters_to_tops!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_to_tops!')
         end select
     end do
 
@@ -2333,7 +2338,7 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinDispFB
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_lower_bounds')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
     end select
 
 end function ffdev_params_get_lower_bound
@@ -2427,7 +2432,7 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDispFB
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_params_get_upper_bounds')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')
     end select
 
 end function ffdev_params_get_upper_bound
