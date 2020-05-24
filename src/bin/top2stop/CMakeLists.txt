@@ -14,6 +14,7 @@ ADD_EXECUTABLE(top2stop ${TOP2STOP_SRC})
 
 TARGET_LINK_LIBRARIES(top2stop
         ${ASL_LIB_NAME}
+        ${OPEN_BABEL_LIB}
         ${SCIMAFIC_CLIB_NAME}
         ${HIPOLY_LIB_NAME}
         )

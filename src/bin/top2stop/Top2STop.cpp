@@ -29,10 +29,14 @@
 #include <SciLapack.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <openbabel/mol.h>
+#include <openbabel/graphsym.h>
+
 //------------------------------------------------------------------------------
 
 using namespace std;
 using namespace boost;
+using namespace OpenBabel;
 
 MAIN_ENTRY(CTop2STop);
 
@@ -196,56 +200,31 @@ bool CTop2STop::LoadCoords(void)
     }
 
     // convert to OBMol
-    OBMol mol;
+    OBMol  obmol;
 
-        std::map<int,int>   id_map;
-    int                 conf_size = p_mol->GetAtoms()->GetNumberOfAtoms();
-
-    double* p_conf = NULL;
-    if( (conf_size > 0) && add_as_conformer ) {
-        p_conf = new double[3*conf_size];
-    }
-
-    // add atoms
-    int i=0;
     int at_lid = 1;
-
-    foreach(QObject* p_qobj,p_mol->GetAtoms()->children()) {
-        CAtom*  p_atom = static_cast<CAtom*>(p_qobj);
+    for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++){
+        CAmberAtom* p_atom = Topology.AtomList.GetAtom(i);
         OBAtom* p_ob_atom = obmol.NewAtom();
-        p_ob_atom->SetAtomicNum(p_atom->GetZ());
-        p_ob_atom->SetVector(p_atom->GetPos().x, p_atom->GetPos().y, p_atom->GetPos().z);
-        id_map[p_atom->GetIndex()] = at_lid;
-
-        if( add_as_conformer ) {
-            p_conf[i++] = p_atom->GetPos().x;
-            p_conf[i++] = p_atom->GetPos().y;
-            p_conf[i++] = p_atom->GetPos().z;
-        }
+        p_ob_atom->SetAtomicNum(p_atom->GetAtomicNumber());
+        CPoint pos = Coords.GetPosition(i);
+        p_ob_atom->SetVector(pos.x, pos.y, pos.z);
         at_lid++;
     }
 
-    if( p_conf != NULL ) {
-        obmol.AddConformer(p_conf);
-    }
-
     // add bonds
-    foreach(QObject* p_qobj,p_mol->GetBonds()->children()) {
-        CBond*  p_bond = static_cast<CBond*>(p_qobj);
-        if( p_bond->IsInvalidBond() ) continue;
-        int order = COpenBabelUtils::NemesisToOBBondOrder(p_bond->GetBondOrder());
-
-        // get begin and end atom indexes
-        int a1_id = p_bond->GetFirstAtom()->GetIndex();
-        int a2_id = p_bond->GetSecondAtom()->GetIndex();
-
-        unsigned int ob_a1_id = id_map[a1_id];
-        unsigned int ob_a2_id = id_map[a2_id];
-
+    for(int i=0; i < Topology.BondList.GetNumberOfBonds(); i++){
+        CAmberBond*  p_bond = Topology.BondList.GetBond(i);
+        int ob_a1_id = p_bond->GetIB() + 1;
+        int ob_a2_id = p_bond->GetJB() + 1;
+        int order = 1;
         // create bond
         obmol.AddBond(ob_a1_id, ob_a2_id, order);
     }
 
+    // generate symmetry classes
+    OBGraphSym  graph_sym(&obmol);
+    graph_sym.GetSymmetry(SymmClasses);
 
     return(true);
 }
@@ -435,17 +414,22 @@ void CTop2STop::WriteAtomTypes(ostream& sout)
 void CTop2STop::WriteAtoms(ostream& sout)
 {
     sout << "[atoms]" << endl;
-    sout << "! Index Type Name ResID ResN     Charge   Type" << endl;
+    sout << "! Index Type Name ResID ResN     Charge SymmClass ! Type" << endl;
 
     // write atoms
     for(int i=0; i < Topology.AtomList.GetNumberOfAtoms(); i++) {
         CAmberAtom* p_atom = Topology.AtomList.GetAtom(i);
         sout << right << setw(7) << i+1 << " ";
         sout << right << setw(4) << FindAtomTypeIdx(i) << " ";
-        sout << left << setw(4) << p_atom->GetName() << " ";
+        sout << left  << setw(4) << p_atom->GetName() << " ";
         sout << right << setw(5) << p_atom->GetResidue()->GetIndex()+1 << " ";
-        sout << left << setw(4) << p_atom->GetResidue()->GetName() << " ";
-        sout << right << fixed << setw(10) << setprecision(6) << p_atom->GetStandardCharge() << " ! ";
+        sout << left  << setw(4) << p_atom->GetResidue()->GetName() << " ";
+        sout << right << fixed   << setw(10) << setprecision(6) << p_atom->GetStandardCharge() << " ";
+        int symm_class = i + 1;
+        if( SymmClasses.size() != 0 ){
+            symm_class = SymmClasses[i];
+        }
+        sout << right << setw(9) << symm_class << " ! ";
         sout << left << setw(4) << p_atom->GetType() << endl;
     }
 
@@ -495,7 +479,7 @@ void CTop2STop::WriteBondTypes(ostream& sout)
 
     sout << "[bond_types]" << endl;
     sout << "! 0.5*k(d-d0)^2" << endl;
-    sout << "! Index TypeA TypeB Form            d0             K   TypeA TypeB" << endl;
+    sout << "! Index TypeA TypeB Form            d0             K ! TypeA TypeB" << endl;
 
     std::map<int,CBondType>::iterator it = BondTypes.begin();
     std::map<int,CBondType>::iterator ie = BondTypes.end();
@@ -521,7 +505,7 @@ void CTop2STop::WriteBondTypes(ostream& sout)
 void CTop2STop::WriteBonds(ostream& sout)
 {
     sout << "[bonds]" << endl;
-    sout << "! Index AtomA AtomB Type   AtomA TypeA AtomB TypeB" << endl;
+    sout << "! Index AtomA AtomB Type ! AtomA TypeA AtomB TypeB" << endl;
 
     // print bonds
     for(int i=0; i < Topology.BondList.GetNumberOfBonds(); i++) {
@@ -568,7 +552,7 @@ void CTop2STop::WriteAngleTypes(ostream& sout)
 
     sout << "[angle_types]" << endl;
     sout << "! 0.5*k(a-a0)^2" << endl;
-    sout << "! Index TypeA TypeB TypeC Form            a0             K   TypeA TypeB TypeC" << endl;
+    sout << "! Index TypeA TypeB TypeC Form            a0             K ! TypeA TypeB TypeC" << endl;
 
     std::map<int,CAngleType>::iterator it = AngleTypes.begin();
     std::map<int,CAngleType>::iterator ie = AngleTypes.end();
@@ -596,7 +580,7 @@ void CTop2STop::WriteAngleTypes(ostream& sout)
 void CTop2STop::WriteAngles(ostream& sout)
 {
     sout << "[angles]" << endl;
-    sout << "! Index AtomA AtomB AtomC Type   AtomA TypeA AtomB TypeB AtomC TypeC" << endl;
+    sout << "! Index AtomA AtomB AtomC Type ! AtomA TypeA AtomB TypeB AtomC TypeC" << endl;
 
     // print angles
     for(int i=0; i < Topology.AngleList.GetNumberOfAngles(); i++) {
@@ -732,7 +716,7 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
     }
 
     sout << "[dihedral_types]" << endl;
-    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb   TypeA TypeB TypeC TypeD" << endl;
+    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb ! TypeA TypeB TypeC TypeD" << endl;
 
     std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
@@ -948,7 +932,7 @@ void CTop2STop::WriteDihedrals(ostream& sout)
     }
 
     sout << "[dihedrals]" << endl;
-    sout << "! Index AtomA AtomB AtomC AtomD Type   AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
+    sout << "! Index AtomA AtomB AtomC AtomD Type ! AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
 
     std::list<CDihedral>::iterator  it = UniqueDihedrals.begin();
     std::list<CDihedral>::iterator  ie = UniqueDihedrals.end();
@@ -1035,7 +1019,7 @@ void CTop2STop::WriteImproperTypes(ostream& sout)
     }
 
     sout << "[improper_types]" << endl;
-    sout << "! Index TypeA TypeB TypeC TypeD            v0         phase   TypeA TypeB TypeC TypeD" << endl;
+    sout << "! Index TypeA TypeB TypeC TypeD            v0         phase ! TypeA TypeB TypeC TypeD" << endl;
 
     std::map<int,CDihedralType>::iterator it = ImproperTypes.begin();
     std::map<int,CDihedralType>::iterator ie = ImproperTypes.end();
@@ -1098,7 +1082,7 @@ void CTop2STop::WriteImpropers(ostream& sout)
     }
 
     sout << "[impropers]" << endl;
-    sout << "! Index AtomA AtomB AtomC AtomD Type   AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
+    sout << "! Index AtomA AtomB AtomC AtomD Type ! AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
 
     std::list<CDihedral>::iterator  it = UniqueImpropers.begin();
     std::list<CDihedral>::iterator  ie = UniqueImpropers.end();
@@ -1151,7 +1135,7 @@ void CTop2STop::WriteNBTypes(ostream& sout)
     NBTypes.clear();
 
     sout << "[nb_types]" << endl;
-    sout << "! Index TypA TypB           eps            r0! TypeA TypeB" << endl;
+    sout << "! Index TypA TypB           eps            r0 ! TypeA TypeB" << endl;
 
     int idx = 1;
     for(int i=1; i <= natom_types; i++){
@@ -1185,7 +1169,7 @@ void CTop2STop::WriteNBTypes(ostream& sout)
             sout << left << setw(4) << it << " ";
             sout << left << setw(4) << jt << " ";
             sout << right << fixed << setw(13) << setprecision(7) << epsij << " ";
-            sout << right << fixed << setw(13) << setprecision(7) << rij*2.0 << " ";
+            sout << right << fixed << setw(13) << setprecision(7) << rij*2.0 << " ! ";
             sout << left << setw(5) << AtomTypes[it].name << " ";
             sout << left << setw(5) << AtomTypes[jt].name << endl;
             idx++;
@@ -1202,7 +1186,7 @@ void CTop2STop::WriteNBTypes(ostream& sout)
 void CTop2STop::WriteNBListKeep(ostream& sout)
 {
     sout << "[nb_list]" << endl;
-    sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
+    sout << "! Index AtomA AtomB  Type Dihed ! AtomA TypeA AtomB TypeB" << endl;
 
     nb_size = 0;
     nb_size14 = 0;
@@ -1333,7 +1317,7 @@ void CTop2STop::WriteNBListKeep(ostream& sout)
 void CTop2STop::WriteNBListRebuild(ostream& sout)
 {
     sout << "[nb_list]" << endl;
-    sout << "! Index AtomA AtomB  Type Dihed   AtomA TypeA AtomB TypeB" << endl;
+    sout << "! Index AtomA AtomB  Type Dihed ! AtomA TypeA AtomB TypeB" << endl;
 
     nb_size = 0;
     nb_size14 = 0;
@@ -1434,7 +1418,6 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "nb_size14         " << nb_size14 << endl;
     sout << "nb_size           " << nb_size << endl;
     sout << "nb_types          " << nnb_types << endl;
-    sout << "nsymm_classes     " << nsymm_classes << endl;
 }
 
 //==============================================================================

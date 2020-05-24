@@ -27,6 +27,8 @@
 #include <map>
 #include <list>
 
+#include <openbabel/mol.h>
+
 //------------------------------------------------------------------------------
 
 class CTop2STop {
@@ -65,6 +67,7 @@ private:
     std::list<CDihedral>                UniqueDihedrals;
     std::list<CDihedral>                UniqueImpropers;
     std::vector<CDihedralTypeFilter>    DihFilters;
+    std::vector<unsigned int>           SymmClasses;
 
     int dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
     int dih_samp_freq;  // dihedral sampling frequency
