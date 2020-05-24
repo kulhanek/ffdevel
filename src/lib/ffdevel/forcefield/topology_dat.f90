@@ -111,7 +111,6 @@ type NB_PAIR
     integer     ::  nbt         ! NB type
     integer     ::  nbtii,nbtjj ! NB types of correponding like atoms
     integer     ::  dt          ! dihedral type for scaling factors
-    integer     ::  ci          ! index to grid cache
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -165,7 +164,6 @@ type TOPOLOGY
 
 ! non-bonded terms
     integer                     :: nb_size
-    ! integer                     :: nb_mode
     type(NB_PAIR),pointer       :: nb_list(:)
     integer                     :: natom_types
     type(ATOM_TYPE),pointer     :: atom_types(:)
@@ -173,6 +171,9 @@ type TOPOLOGY
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size           ! number of atoms in probe
     integer                     :: nfragments
+! SAPT0
+    integer                     :: sapt0_size
+    type(NB_PAIR),pointer       :: sapt0_list(:)
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------
@@ -188,7 +189,7 @@ logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gam
 integer,parameter   :: NB_ELE_QTOP   = 1        ! charges from topology
 integer,parameter   :: NB_ELE_QGEO   = 2        ! charges from geometries
 
-integer     :: ele_mode     = NB_ELE_QTOP
+integer     :: ele_qsource  = NB_ELE_QTOP
 real(DEVDP) :: ele_qscale   = 1.0d0             ! scaling factor for charges
 
 ! ==============================================================================
@@ -213,13 +214,13 @@ integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
 integer,parameter   :: NB_VDW_12_6      = 2
-! Lenard-Jones
+! Lenard-Jones, 12-6 form
 ! Form: Enb = exp(PA)/r^12 - disp_fa*C6/r^6
 ! Parameters: PA, C6, disp_fa
 ! Provides: energy, gradient
 
 ! combining rules - applicable for NB_VDW_12_XDMC6
-integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
+integer,parameter   :: COMB_RULE_12V1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
 
 ! these are also applicable via backward/forward transformations
 !integer,parameter   :: COMB_RULE_LB = 11    ! LB (Lorentz-Berthelot)
@@ -227,10 +228,8 @@ integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(
 !integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
 !integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 
-
 ! ####################################################################
 integer,parameter   :: NB_VDW_12_XDMBJ  = 3
-! Lenard-Jones
 ! Form: Enb = exp(PA)/r^12 - XDMC6/(r^6 + rbj^6) - XDMC8/(r^8 + rbj^8) - XDMC10/(r^10 + rbj^10)
 ! Parameters: PA, disp_fa, disp_fb
 ! Provides: energy, gradient
@@ -240,8 +239,21 @@ integer,parameter   :: NB_VDW_12_XDMBJ  = 3
 ! combining rules - applicable for NB_VDW_12_XDMC6
 ! integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
 
+integer,parameter   :: NB_VDW_EXP_XDMBJ = 310
+
 ! ####################################################################
-integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennies + XDM
+integer,parameter   :: NB_VDW_12_D3BJ  = 4
+! Form: Enb = exp(PA)/r^12 - D3C6/(r^6 + rbj^6) - D3C8/(r^8 + rbj^8)
+! Parameters: PA, disp_fa, disp_fb
+! Provides: energy, gradient
+
+! rbj = disp_fa*rc + disp_fb
+
+! combining rules - applicable for NB_VDW_12_D3BJ
+! integer,parameter   :: COMB_RULE_PA1 = 15   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ)), PAIJ = (PAII+PAJJ)/2
+
+! ####################################################################
+integer,parameter   :: NB_VDW_EXP_TTXDM    = 5     ! Tang–Toennies + XDM
 
 ! Tang–Toennis
 ! Form: Enb = exp(PA)*exp(-PB*r) - fd6*XDM_C6/r^6 - fd8*XDM_C8/r^8 - fd10*XDM_C10/r^10
@@ -249,9 +261,17 @@ integer,parameter   :: NB_VDW_TT_XDM    = 4     ! Tang–Toennies + XDM
 ! Provides: energy
 
 ! combining rules - applicable for NB_VDW_TT_XDM
-integer,parameter   :: COMB_RULE_TT1 = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
-                                            ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
-integer,parameter   :: COMB_RULE_TT2 = 18
+integer,parameter   :: COMB_RULE_EXPV1 = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
+                                              ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
+integer,parameter   :: COMB_RULE_EXPV2 = 18
+
+! ####################################################################
+integer,parameter   :: NB_VDW_EXP_TTD3    = 6     ! Tang–Toennies + D3
+
+! Tang–Toennis
+! Form: Enb = exp(PA)*exp(-PB*r) - fd6*XDM_C6/r^6 - fd8*XDM_C8/r^8 - fd10*XDM_C10/r^10
+! Parameters: PA, PB
+! Provides: energy
 
 ! ==============================================================================
 
@@ -262,8 +282,9 @@ integer     :: nb_comb_rules    = COMB_RULE_LB
 ! ------------------------------------------------------------------------------
 
 ! tuneable parameters
-real(DEVDP) :: disp_fa = 1.0d0
+real(DEVDP) :: disp_fa = 1.2d0
 real(DEVDP) :: disp_fb = 0.0d0
+real(DEVDP) :: disp_fc = 1.0d0
 
 ! ------------------------------------------------------------------------------
 

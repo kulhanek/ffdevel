@@ -32,7 +32,6 @@ program ffdev_enefilter_program
     character(len=MAX_PATH)     :: topname
     character(len=MAX_PATH)     :: itrjname
     character(len=MAX_PATH)     :: otrjname
-    logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string, fmethod
     integer                     :: i, probe_size, snap, kept, removed, nbins, nstrperbin, idx
     real(DEVDP)                 :: enemin,enemax, ene, binsize
@@ -48,7 +47,7 @@ program ffdev_enefilter_program
     ! test number of input arguments
     if( command_argument_count() .lt. 5 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least 5 expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (at least 5 expected)!')
     end if
 
     ! input data
@@ -73,7 +72,7 @@ program ffdev_enefilter_program
         case('lj')
             if( command_argument_count() .ne. 6 ) then
                 call print_usage()
-                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the lj mode (six expected)!')
+                call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified for the lj mode (six expected)!')
             end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemax
@@ -81,7 +80,7 @@ program ffdev_enefilter_program
         case('exp')
             if( command_argument_count() .ne. 7 ) then
                 call print_usage()
-                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (seven expected)!')
+                call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified for the exp mode (seven expected)!')
             end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) enemin
@@ -93,7 +92,7 @@ program ffdev_enefilter_program
         case('exp-bin')
             if( command_argument_count() .ne. 8 ) then
                 call print_usage()
-                call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified for the exp mode (eight expected)!')
+                call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified for the exp mode (eight expected)!')
             end if
             call get_command_argument(6, string)
             read(string,*,end=210,err=210) binsize
@@ -108,7 +107,7 @@ program ffdev_enefilter_program
             write(DEV_OUT,148) nstrperbin
         case default
             call print_usage()
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
     end select
 
 
@@ -130,7 +129,7 @@ program ffdev_enefilter_program
 !            allocate(bins(nbins))
 !            bins(:) = 0
 !        case default
-!            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+!            call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
 !    end select
 
     call ffdev_topology_finalize_setup(top)
@@ -211,7 +210,7 @@ program ffdev_enefilter_program
                     removed = removed + 1
                 end if
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
         end select
 
         snap = snap + 1
@@ -238,7 +237,7 @@ program ffdev_enefilter_program
                 end if
             end do
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported filter mode!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
     end select
 
 
@@ -266,8 +265,8 @@ program ffdev_enefilter_program
 180 format('Number of removed snapshots   = ',I6)
 190 format('Number of kept snapshots      = ',I6)
 
-200 call ffdev_utils_exit(DEV_OUT,1,'Probe size must be an integer number!')
-210 call ffdev_utils_exit(DEV_OUT,1,'Energy treshold must be an real number!')
+200 call ffdev_utils_exit(DEV_ERR,1,'Probe size must be an integer number!')
+210 call ffdev_utils_exit(DEV_ERR,1,'Energy treshold must be an real number!')
 
 contains
 

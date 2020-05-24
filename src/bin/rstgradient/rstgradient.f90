@@ -42,7 +42,7 @@ program ffdev_gradient_program
     ! test number of input arguments
     if( command_argument_count() .lt. 2  ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least two expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (at least two expected)!')
     end if
 
     call get_command_argument(1, topname)
@@ -59,7 +59,7 @@ program ffdev_gradient_program
             case('numerical')
                 do_numerical = .true.
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unrecognized argument ('//trim(arg)//')')
+                call ffdev_utils_exit(DEV_ERR,1,'Unrecognized argument ('//trim(arg)//')')
         end select
     end do
 
@@ -128,7 +128,7 @@ program ffdev_gradient_program
             ngeo%grd = ngeo%grd - geo%grd
             call ffdev_gradient_print(DEV_OUT,top,ngeo)
 
-            call ffdev_utils_exit(DEV_OUT,1,'Analytical and numerical gradients do not match!')
+            call ffdev_utils_exit(DEV_ERR,1,'Analytical and numerical gradients do not match!')
         else
             write(DEV_OUT,'(A)') 'Analytical and numerical gradients match each other ...'
             write(DEV_OUT,*)

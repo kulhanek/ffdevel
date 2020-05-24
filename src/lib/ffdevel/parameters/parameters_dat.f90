@@ -49,9 +49,10 @@ integer,parameter       :: REALM_ELE_SQ     = 19 ! charges
 ! dispersion parameters
 integer,parameter       :: REALM_DISP_FA    = 20
 integer,parameter       :: REALM_DISP_FB    = 21
+integer,parameter       :: REALM_DISP_FC    = 22
 
 integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
-integer,parameter       :: REALM_LAST    = REALM_DISP_FB
+integer,parameter       :: REALM_LAST    = REALM_DISP_FC
 
 ! ------------------------------------------------------------------------------
 
@@ -89,6 +90,12 @@ end type PARM_TYPE
 
 integer                     :: ntypes    ! number of types
 type(PARM_TYPE),allocatable :: types(:)  ! types
+
+! ------------------------------------------------------------------------------
+
+! charges
+integer                     :: nprmchrgs    ! number of charges
+real(DEVDP),allocatable     :: prmchrgs     ! values
 
 ! ------------------------------------------------------------------------------
 
@@ -170,6 +177,8 @@ real(DEVDP)     :: MinDispFA    =      0.0d0
 real(DEVDP)     :: MaxDispFA    =      5.0d0
 real(DEVDP)     :: MinDispFB    =     -9.0d0
 real(DEVDP)     :: MaxDispFB    =      9.0d0
+real(DEVDP)     :: MinDispFC    =     -9.0d0
+real(DEVDP)     :: MaxDispFC    =      9.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

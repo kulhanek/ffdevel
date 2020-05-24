@@ -47,7 +47,7 @@ program ffdev_genpoints_program
     ! check if control file was provided
     if( command_argument_count() .ne. 1 ) then
         call print_usage
-        call ffdev_utils_exit(DEV_OUT,1,'No input file specified on the command line!')
+        call ffdev_utils_exit(DEV_ERR,1,'No input file specified on the command line!')
     end if
 
     call get_command_argument(1, ctrlname)
@@ -60,11 +60,11 @@ program ffdev_genpoints_program
     call prmfile_init(fin)
 
     if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
     end if
 
     if( .not. prmfile_open_group(fin,'MAIN') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file does not contain {MAIN} group!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file does not contain {MAIN} group!')
     end if
 
     call ffdev_genpoints_ctrl_files(fin)
@@ -78,7 +78,7 @@ program ffdev_genpoints_program
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! release the file
@@ -109,7 +109,7 @@ program ffdev_genpoints_program
 
     ! check coordinates and topology
     if( top%natoms .ne. geo%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Topology and coordinates are not compatible (different number of atoms)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Topology and coordinates are not compatible (different number of atoms)!')
     end if
 
     ! finalize topology and geometry setup
@@ -129,7 +129,7 @@ program ffdev_genpoints_program
     select case(GeneratorMethod)
         case(GENPOINTS_NMODES_METHOD)
             if( top%natoms .le. 2 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'More than two atoms are required for the nmodes generator!')
+                call ffdev_utils_exit(DEV_ERR,1,'More than two atoms are required for the nmodes generator!')
             end if
             NPoints = (3*top%natoms - 6)*2*NModePoints
             if( MaxPoints .lt. NPoints ) then
@@ -141,7 +141,7 @@ program ffdev_genpoints_program
     NPoints = MaxPoints
     allocate( Points(NPoints), AtomMask(top%natoms), ProcessingStack(top%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays for points and atom mask!')
+         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays for points and atom mask!')
     end if
 
     select case(GeneratorMethod)
@@ -278,41 +278,41 @@ subroutine read_rotors(top)
     call prmfile_init(rotfin)
 
     if( .not. prmfile_read(rotfin,GenRotName) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified rotor bond file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified rotor bond file cannot be opened!')
     end if
 
     if( .not. prmfile_open_group(rotfin,'MAIN') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified rotor bond file does not contain {MAIN} group!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified rotor bond file does not contain {MAIN} group!')
     end if
 
     if( .not. prmfile_open_section(rotfin,'rotors') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [rotors] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [rotors] section!')
     end if
 
     ! number of lines
     nrotors = prmfile_count_section(rotfin)
 
     if( nrotors .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'At least one rotor must be specified in the rotor bond file!')
+        call ffdev_utils_exit(DEV_ERR,1,'At least one rotor must be specified in the rotor bond file!')
     end if
 
     ! allocate data
     allocate( rotors(nrotors), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-         call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate list for rotors!')
+         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate list for rotors!')
     end if
 
     ! read individual rotors
     i = 1
     do while( prmfile_get_int_int(rotfin,ai,aj) )
         if( i .gt. nrotors ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Mismatch in the rotor bond file parser!')
+            call ffdev_utils_exit(DEV_ERR,1,'Mismatch in the rotor bond file parser!')
         end if
         if( (ai .le. 0) .or. (ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'ai out-of-limits!')
+            call ffdev_utils_exit(DEV_ERR,1,'ai out-of-limits!')
         end if
         if( (aj .le. 0) .or. (aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'aj out-of-limits!')
+            call ffdev_utils_exit(DEV_ERR,1,'aj out-of-limits!')
         end if
         rotors(i)%ai = ai
         rotors(i)%aj = aj
@@ -323,7 +323,7 @@ subroutine read_rotors(top)
     if( prmfile_count_ulines(rotfin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(rotfin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the rotor bond file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the rotor bond file!')
     end if
 
     ! release the file
@@ -407,7 +407,7 @@ subroutine genpoints_stepbystep
     MinEnergy = geo%total_ene
     MinEnergyPtsIndex = 1
 
-    nticks = real(2.0d0*DEV_PI / TickAngle)
+    nticks = INT(2.0d0*DEV_PI / TickAngle)
     est_npoints = nticks * nrotors ! only one * !!!!
 
     write(DEV_OUT,*)
@@ -422,7 +422,7 @@ subroutine genpoints_stepbystep
     allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
              stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
     end if
     Points(CurrPtsIndex)%crd(:,:) = geo%crd(:,:)
     Points(CurrPtsIndex)%angles(:) = 0.0d0
@@ -493,7 +493,7 @@ subroutine genpoints_stepbystep
         allocate(Points(CurrPtsIndex)%crd(3,top%natoms), Points(CurrPtsIndex)%angles(NRotors), &
                  stat = alloc_status)
         if( alloc_status .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
         end if
         Points(CurrPtsIndex)%crd(:,:) = tmpgeo%crd(:,:)
         Points(CurrPtsIndex)%angles(:) = Rotors(:)%angle
@@ -539,7 +539,7 @@ subroutine genpoints_systematic
     MinEnergy = geo%total_ene
     MinEnergyPtsIndex = 1
 
-    nticks = real(2.0d0*DEV_PI / TickAngle)
+    nticks = INT(2.0d0*DEV_PI / TickAngle)
     est_npoints = nticks**nrotors
 
     write(DEV_OUT,*)
@@ -554,7 +554,7 @@ subroutine genpoints_systematic
     allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
              stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
     end if
     Points(CurrPtsIndex)%crd(:,:) = geo%crd(:,:)
     Points(CurrPtsIndex)%angles(:) = 0.0d0
@@ -621,7 +621,7 @@ subroutine genpoints_systematic
         allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
                  stat = alloc_status)
         if( alloc_status .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
         end if
         Points(CurrPtsIndex)%crd(:,:) = tmpgeo%crd(:,:)
         Points(CurrPtsIndex)%angles(:) = Rotors(:)%angle
@@ -678,7 +678,7 @@ subroutine genpoints_stochastic
     allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
              stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
     end if
     Points(CurrPtsIndex)%crd(:,:) = geo%crd(:,:)
     Points(CurrPtsIndex)%angles(:) = 0.0d0
@@ -740,7 +740,7 @@ subroutine genpoints_stochastic
         allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
                  stat = alloc_status)
         if( alloc_status .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
         end if
         Points(CurrPtsIndex)%crd(:,:) = tmpgeo%crd(:,:)
         Points(CurrPtsIndex)%angles(:) = Rotors(:)%angle
@@ -797,7 +797,7 @@ subroutine genpoints_stochastic_opt
     allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
              stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
     end if
     Points(CurrPtsIndex)%crd(:,:) = geo%crd(:,:)
     Points(CurrPtsIndex)%angles(:) = 0.0d0
@@ -856,7 +856,7 @@ subroutine genpoints_stochastic_opt
         allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
                  stat = alloc_status)
         if( alloc_status .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
         end if
         Points(CurrPtsIndex)%crd(:,:) = tmpgeo%crd(:,:)
         Points(CurrPtsIndex)%angles(:) = Rotors(:)%angle
@@ -900,7 +900,7 @@ subroutine genpoints_stochastic_by_steps
     MinEnergy = geo%total_ene
     MinEnergyPtsIndex = 1
 
-    nticks = real(2.0d0*DEV_PI / TickAngle)
+    nticks = INT(2.0d0*DEV_PI / TickAngle)
     est_npoints = nticks**nrotors
 
     write(DEV_OUT,*)
@@ -914,7 +914,7 @@ subroutine genpoints_stochastic_by_steps
     allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
              stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
     end if
     Points(CurrPtsIndex)%crd(:,:) = geo%crd(:,:)
     Points(CurrPtsIndex)%angles(:) = 0.0d0
@@ -980,7 +980,7 @@ subroutine genpoints_stochastic_by_steps
         allocate(Points(CurrPtsIndex)%crd(3,top%natoms),Points(CurrPtsIndex)%angles(NRotors), &
                  stat = alloc_status)
         if( alloc_status .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
         end if
         Points(CurrPtsIndex)%angles(:) = Rotors(:)%angle
         Points(CurrPtsIndex)%crd(:,:) = tmpgeo%crd(:,:)
@@ -1023,7 +1023,7 @@ subroutine genpoints_nmodes
 
     ! do we have hessian? ------------
     if( .not. geo%trg_hess_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Initial point does not contain Hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Initial point does not contain Hessian!')
     end if
 
     ! calculate frequencies ----------
@@ -1053,7 +1053,7 @@ subroutine genpoints_nmodes
             ! copy coordinates
             allocate(Points(CurrPtsIndex)%crd(3,top%natoms), stat = alloc_status)
             if( alloc_status .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for point coordinates!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for point coordinates!')
             end if
             Points(CurrPtsIndex)%crd = geo%crd
             ! perturbe coordinates
@@ -1092,12 +1092,12 @@ subroutine genpoints_optimize_points
         tmpgeo%nrst = NRotors
         allocate( tmpgeo%rst(tmpgeo%nrst), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-             call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst array!')
+             call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate rst array!')
         end if
         do i=1,tmpgeo%nrst
             allocate( tmpgeo%rst(i)%ai(4), stat = alloc_stat)
             if( alloc_stat .ne. 0 ) then
-                 call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst%ai array!')
+                 call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate rst%ai array!')
             end if
             tmpgeo%rst(i)%ai(1) = Rotors(i)%ait
             tmpgeo%rst(i)%ai(2) = Rotors(i)%ai

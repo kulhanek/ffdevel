@@ -29,6 +29,9 @@ contains
 
 subroutine ffdev_errors_init_all()
 
+    use ffdev_errors_dat
+    use ffdev_utils
+
     use ffdev_err_bonds
     use ffdev_err_angles
     use ffdev_err_dihedrals
@@ -37,19 +40,22 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_energy
     use ffdev_err_rmsd
     use ffdev_err_ihess
-    use ffdev_errors_dat
-    use ffdev_utils
+    use ffdev_err_sapt0
+
 
     implicit none
     ! --------------------------------------------------------------------------
 
     ! clear what should be calculated
-    errors_calc_hess = .false.
-    errors_calc_grad = .false.
-    errors_calc_ene  = .false.
+    errors_calc_ene     = .false.
+    errors_calc_sapt0   = .false.
+    errors_calc_grad    = .false.
+    errors_calc_hess    = .false.
 
     ! reset all setup
     call ffdev_err_energy_init()
+    call ffdev_err_sapt0_init()
+
     call ffdev_err_bonds_init()
     call ffdev_err_angles_init()
     call ffdev_err_dihedrals_init()
@@ -89,6 +95,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_rmsd_dat
     use ffdev_err_rmsd
 
+    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt0
+
     use ffdev_timers
 
     implicit none
@@ -105,11 +114,25 @@ subroutine ffdev_errors_error_only(error)
     error%impropers = 0.0d0
     error%nbdists = 0.0d0
     error%rmsd = 0.0d0
+    error%ihess_bonds = 0.0d0
+    error%ihess_angles = 0.0d0
+    error%ihess_dihedrals = 0.0d0
+    error%ihess_impropers = 0.0d0
+    error%sapt0_ele = 0.0d0
+    error%sapt0_rep = 0.0d0
+    error%sapt0_disp = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
         call ffdev_err_energy_error(error)
         error%total = error%total + error%energy*EnergyErrorWeight
+    end if
+
+    if( EnableSAPT0Error ) then
+        call ffdev_err_sapt0_error(error)
+        error%total = error%total + error%sapt0_ele * SAPT0EleErrorWeight &
+                                  + error%sapt0_rep * SAPT0RepErrorWeight &
+                                  + error%sapt0_disp * SAPT0DispErrorWeight
     end if
 
 ! geometry based errors
@@ -161,12 +184,22 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_ihess_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
+    use ffdev_err_sapt0_dat
 
     implicit none
     ! --------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
         write(DEV_OUT,30,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,40,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,41,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,42,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,33,ADVANCE='NO')
@@ -194,6 +227,9 @@ subroutine ffdev_errors_ffopt_header_I()
  36 format('       d(NBs)')
  38 format('    Impropers')
  39 format('         RMSD')
+ 40 format('   SAPT0(Ele)')
+ 41 format('   SAPT0(Rep)')
+ 42 format('  SAPT0(Disp)')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -210,11 +246,21 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_energy_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
+    use ffdev_err_sapt0_dat
 
     implicit none
     ! --------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableSAPT0Error ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
@@ -253,6 +299,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_energy_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
+    use ffdev_err_sapt0_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -260,6 +307,15 @@ subroutine ffdev_errors_ffopt_results(error)
 
     if( EnableEnergyError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%energy
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_ele
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_rep
+    end if
+    if( EnableSAPT0Error ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_disp
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%bonds
@@ -295,27 +351,38 @@ subroutine ffdev_errors_summary(final)
     use ffdev_utils
 
     use ffdev_err_bonds_dat
-    use ffdev_err_angles_dat
-    use ffdev_err_dihedrals_dat
-    use ffdev_err_nbdists_dat
-    use ffdev_err_energy_dat
-    use ffdev_err_impropers_dat
-    use ffdev_err_rmsd_dat
-
     use ffdev_err_bonds
+
+    use ffdev_err_angles_dat
     use ffdev_err_angles
+
+    use ffdev_err_dihedrals_dat
     use ffdev_err_dihedrals
+
+    use ffdev_err_nbdists_dat
     use ffdev_err_nbdists
+
+    use ffdev_err_energy_dat
     use ffdev_err_energy
+
+    use ffdev_err_ihess_dat
+    use ffdev_err_ihess
+
+    use ffdev_err_impropers_dat
     use ffdev_err_impropers
+
+    use ffdev_err_rmsd_dat
     use ffdev_err_rmsd
 
+    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt0
+
     implicit none
-    logical     :: final, anyrep, printme, printsum
+    logical     :: final, printme, printsum
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
-    if( .not. (PrintEnergyErrorSummary .or. &
+    if( .not. (PrintEnergyErrorSummary .or. EnableSAPT0Error .or. &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary) ) then
@@ -332,18 +399,17 @@ subroutine ffdev_errors_summary(final)
     end if
     write(DEV_OUT,1)
 
-    ! summary pers sets
-    if( PrintEnergyErrorSummary ) then
+    ! individual summaries
+    call ffdev_err_energy_summary
+    call ffdev_err_sapt0_summary
+
+    ! summary per sets
+    if( PrintRMSDErrorSummary ) then
         write(DEV_OUT,*)
         write(DEV_OUT,10)
 
         do i=1,nsets
             printme = .false.
-            if( PrintEnergyErrorSummary ) then
-                printsum = .false.
-                call ffdev_err_energy_summary(sets(i),printsum)
-                printme = printme .or. printsum
-            end if
             if( PrintRMSDErrorSummary ) then
                 printsum = .false.
                 call ffdev_err_rmsd_summary(sets(i),printsum)
@@ -356,9 +422,6 @@ subroutine ffdev_errors_summary(final)
 
             write(DEV_OUT,*)
             write(DEV_OUT,5) i
-            if( PrintEnergyErrorSummary ) then
-                call ffdev_err_energy_summary(sets(i),printsum)
-            end if
             if( PrintRMSDErrorSummary ) then
                 call ffdev_err_rmsd_summary(sets(i),printsum)
             end if

@@ -71,7 +71,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 6*sets(i)%top%nnb_types        ! 3+3 NB
     end do
-    maxnparams = maxnparams + 4 ! sq+s6+bj_a+bj_b
+    maxnparams = maxnparams + 4 ! sq+dips_fa+disp_fb+disp_fc
 
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
@@ -121,7 +121,7 @@ subroutine ffdev_parameters_reinit()
     integer     :: i, j, k, parmid, ti, tj, n1
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_c6
-    logical     :: use_ele_sq, use_disp_fa, use_disp_fb
+    logical     :: use_ele_sq, use_disp_fa, use_disp_fb, use_disp_fc
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -445,8 +445,9 @@ subroutine ffdev_parameters_reinit()
     use_vdw_c6      = .false.
 
     use_ele_sq      = .true.
-    use_disp_fa   = .false.
-    use_disp_fb   = .false.
+    use_disp_fa     = .false.
+    use_disp_fb     = .false.
+    use_disp_fc     = .false.
 
     select case(nb_mode)
         case(NB_VDW_LJ)
@@ -458,13 +459,28 @@ subroutine ffdev_parameters_reinit()
             use_disp_fa     = .true.
         case(NB_VDW_12_XDMBJ)
             use_vdw_pa      = .true.
+            use_vdw_r0      = .true.
             use_disp_fa     = .true.
             use_disp_fb     = .true.
-        case(NB_VDW_TT_XDM)
+        case(NB_VDW_EXP_XDMBJ)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
             use_disp_fa     = .true.
             use_disp_fb     = .true.
+            use_disp_fc     = .true.
+        case(NB_VDW_12_D3BJ)
+            use_vdw_pa      = .true.
+            use_disp_fa     = .true.
+            use_disp_fb     = .true.
+            use_disp_fc     = .true.
+        case(NB_VDW_EXP_TTXDM)
+            use_vdw_pa      = .true.
+            use_vdw_pb      = .true.
+            use_disp_fa     = .true.
+        case(NB_VDW_EXP_TTD3)
+            use_vdw_pa      = .true.
+            use_vdw_pb      = .true.
+            use_disp_fa     = .true.
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_parameters_reinit IIa!')
     end select
@@ -644,7 +660,7 @@ subroutine ffdev_parameters_reinit()
     end if
 
     if( use_disp_fa ) then
-        ! disp BJ A parameter realm =====================
+        ! disp A parameter realm =====================
         nparams = nparams + 1
         params(nparams)%value = disp_fa
         params(nparams)%realm = REALM_DISP_FA
@@ -660,10 +676,26 @@ subroutine ffdev_parameters_reinit()
     end if
 
     if( use_disp_fb ) then
-        ! disp BJ B parameter realm =====================
+        ! disp B parameter realm =====================
         nparams = nparams + 1
         params(nparams)%value = disp_fb
         params(nparams)%realm = REALM_DISP_FB
+        params(nparams)%enabled = .false.
+        params(nparams)%identity = 0
+        params(nparams)%pn    = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ti   = 0
+        params(nparams)%tj   = 0
+        params(nparams)%tk   = 0
+        params(nparams)%tl   = 0
+    end if
+
+    if( use_disp_fc ) then
+        ! disp C parameter realm =====================
+        nparams = nparams + 1
+        params(nparams)%value = disp_fc
+        params(nparams)%realm = REALM_DISP_FC
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
@@ -891,7 +923,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl,id)
                         find_parameter_by_ids = i
                         return
                 end if
-           case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB)
+           case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB,REALM_DISP_FC)
                 find_parameter_by_ids = i
                 return
             case default
@@ -1031,7 +1063,7 @@ subroutine ffdev_parameters_gen_unique_types()
         end if
     end do
 
-    ! init set occurence
+    ! init set occurrence
     do i=1,ntypes
         allocate(types(i)%ids(nsets), stat = alloc_stat)
         if(alloc_stat .ne. 0) then
@@ -1725,6 +1757,8 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_DISP_FA
         case('disp_fb')
             ffdev_parameters_get_realmid = REALM_DISP_FB
+        case('disp_fc')
+            ffdev_parameters_get_realmid = REALM_DISP_FC
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
@@ -1792,6 +1826,8 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'disp_fa'
         case(REALM_DISP_FB)
             ffdev_parameters_get_realm_name = 'disp_fb'
+        case(REALM_DISP_FC)
+            ffdev_parameters_get_realm_name = 'disp_fc'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
@@ -1831,7 +1867,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_C6)
             ! nothing to do
-        case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB)
+        case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB,REALM_DISP_FC)
             ! nothing to do
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
@@ -2240,6 +2276,8 @@ subroutine ffdev_parameters_to_tops
                 disp_fa = params(i)%value
             case(REALM_DISP_FB)
                 disp_fb = params(i)%value
+            case(REALM_DISP_FC)
+                disp_fc = params(i)%value
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_to_tops!')
         end select
@@ -2336,6 +2374,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinDispFA
         case(REALM_DISP_FB)
             ffdev_params_get_lower_bound = MinDispFB
+        case(REALM_DISP_FC)
+            ffdev_params_get_lower_bound = MinDispFC
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
@@ -2430,6 +2470,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDispFA
         case(REALM_DISP_FB)
             ffdev_params_get_upper_bound = MaxDispFB
+        case(REALM_DISP_FC)
+            ffdev_params_get_upper_bound = MaxDispFC
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')

@@ -299,8 +299,6 @@ subroutine opt_steepest_descent(fout,top,geo)
         end if
     end if
 
- 10 format(I10.10,' >>> Nonbonded pair list generation ...')
-
 end subroutine opt_steepest_descent
 
 !===============================================================================

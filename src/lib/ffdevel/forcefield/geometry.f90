@@ -45,10 +45,23 @@ subroutine ffdev_geometry_init(geo)
     geo%nb14_ene = 0
     geo%ele_ene = 0
     geo%nb_ene = 0
+    geo%nb_rep = 0
+    geo%nb_disp = 0
     geo%weight = 0
     geo%trg_energy = 0
     geo%total_ene = 0
     geo%weight = 1.0
+
+    geo%sapt0_ele = 0.0
+    geo%sapt0_rep = 0.0
+    geo%sapt0_disp = 0.0
+    geo%sapt0_total = 0.0
+
+    geo%trg_sapt0_loaded = .false.
+    geo%trg_sapt0_ele = 0
+    geo%trg_sapt0_exch = 0
+    geo%trg_sapt0_ind = 0
+    geo%trg_sapt0_disp = 0
 
     geo%trg_ene_loaded = .false.
     geo%trg_crd_loaded = .false.
@@ -221,7 +234,7 @@ subroutine ffdev_geometry_load_xyz(geo,name)
 
     allocate( geo%crd(3,geo%natoms), geo%z(geo%natoms), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
     end if
 
     geo%crd(:,:) = fin%cvs(:,:)
@@ -263,7 +276,7 @@ subroutine ffdev_geometry_load_xyz_snapshot(geo,fin)
 
     allocate( geo%crd(3,geo%natoms), geo%z(geo%natoms), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
     end if
 
     geo%crd(:,:) = fin%cvs(:,:)
@@ -437,6 +450,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
     integer             :: i,j,k,l,alloc_stat,read_stat,ri,rj,xdm_mode
     character(len=255)  :: line,buffer
     character(len=80)   :: key,sym
+    real(DEVDP)         :: rnum
     ! --------------------------------------------------------------------------
 
     ! load number of atoms - mandatory
@@ -446,29 +460,29 @@ subroutine ffdev_geometry_load_1point(geo,stream)
             geo%natoms = 0
             return
         else
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to load number of atoms from geometry point!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to load number of atoms from geometry point!')
         end if
     end if
 
     ! load title - mandatory
     read(DEV_GEO,'(A80)',iostat = read_stat) geo%title
     if( read_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to load title from geometry point!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to load title from geometry point!')
     end if
 
     ! load geometry - mandatory
     allocate( geo%z(geo%natoms), geo%crd(3,geo%natoms), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
     end if
     do i=1,geo%natoms
         read(DEV_GEO,'(A255)',iostat = read_stat) line
         if( read_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to load line with coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to load line with coordinates!')
         end if
         read(line,*,iostat = read_stat) sym, geo%crd(1,i), geo%crd(2,i), geo%crd(3,i)
         if( read_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to load coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to load coordinates!')
         end if
         geo%z(i) = SearchZBySymbol(sym)
         if( geo%z(i) .eq. 0 ) then
@@ -479,7 +493,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
         ! always load trg_geo
         allocate( geo%trg_crd(3,geo%natoms), stat = alloc_stat )
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
         end if
         geo%trg_crd = geo%crd
     end if
@@ -491,7 +505,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
 
         if( read_stat .lt. 0 ) exit ! end of file
         if( read_stat .gt. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to read data key token!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to read data key token!')
         end if
 
         ! is it a number?
@@ -507,38 +521,61 @@ subroutine ffdev_geometry_load_1point(geo,stream)
             case('WEIGHT')
                 read(DEV_GEO,*,iostat = read_stat) geo%weight
                 if( read_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read point weight!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to read point weight!')
                 end if
             case('ENERGY')
                 read(DEV_GEO,*,iostat = read_stat) geo%trg_energy
                 if( read_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read point energy!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to read point energy!')
                 end if
                 geo%trg_ene_loaded = .true.
+            case('SAPT0')
+                do i=1,4
+                    read(DEV_GEO,*,iostat = read_stat) key, rnum
+                    if( read_stat .ne. 0 ) then
+                        write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! SAPT0 line = ',i
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                    end if
+                    select case(trim(key))
+                        case('Eele')
+                            geo%trg_sapt0_ele = rnum
+                        case('Eexch')
+                            geo%trg_sapt0_exch = rnum
+                        case('Eind')
+                            geo%trg_sapt0_ind = rnum
+                        case('Edisp')
+                            geo%trg_sapt0_disp = rnum
+                        case default
+                            write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! Unrecognized item (' &
+                                                   // trim(key) // ') at line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                    end select
+                end do
+                geo%trg_sapt0_loaded = .true.
             case('GRADIENT')
                 allocate( geo%trg_grd(3,geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for trg_grd!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for trg_grd!')
                 end if
                 do i=1,geo%natoms
                     read(DEV_GEO,*,iostat = read_stat) geo%trg_grd(1,i), geo%trg_grd(2,i), geo%trg_grd(3,i)
                     if( read_stat .ne. 0 ) then
                         write(buffer,'(A,I3)') 'Unable to read GRADIENT entry! Gradient line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                 end do
                 geo%trg_grd_loaded = .true.
             case('HESSIAN')
                 allocate( geo%trg_hess(3,geo%natoms,3,geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for trg_hess!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for trg_hess!')
                 end if
                 do i=1,geo%natoms
                     do j=1,3
                         read(DEV_GEO,*,iostat = read_stat) ((geo%trg_hess(j,i,k,l), k=1,3), l=1,geo%natoms)
                         if( read_stat .ne. 0 ) then
                             write(buffer,'(A,I3)') 'Unable to read HESSIAN entry! Hessian line = ',(i-1)*3 + j
-                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end if
                     end do
                 end do
@@ -548,22 +585,22 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 read(DEV_GEO,*,iostat = read_stat) geo%esp_npoints
                 if( read_stat .ne. 0 ) then
                     write(buffer,'(A)') 'Unable to read ESP entry - number of ESP points!'
-                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
                 if( geo%esp_npoints .le. 0 ) then
                     write(buffer,'(A)') 'Nunber of ESP points must be larger than zero!'
-                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
                 allocate( geo%trg_esp(4,geo%esp_npoints), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for ESP!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for ESP!')
                 end if
                 do i=1,geo%esp_npoints
                     read(DEV_GEO,*,iostat = read_stat) geo%trg_esp(1,i), geo%trg_esp(2,i), &
                                                        geo%trg_esp(3,i), geo%trg_esp(4,i)
                     if( read_stat .ne. 0 ) then
                         write(buffer,'(A,I3)') 'Unable to read ESP entry! ESP line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                 end do
                 geo%trg_esp_loaded = .true.
@@ -572,11 +609,11 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 read(DEV_GEO,*,iostat = read_stat) xdm_mode
                 if( read_stat .ne. 0 ) then
                     write(buffer,'(A,I3)') 'Unable to read XDM mode entry! XDM line = ',i
-                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
                 if( xdm_mode .ne. 1 ) then
                     write(buffer,'(A,I3)') 'Unsupported XMD mode:',xdm_mode
-                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
                 allocate( geo%sup_xdm_c6(geo%natoms,geo%natoms),  &
                           geo%sup_xdm_c8(geo%natoms,geo%natoms),  &
@@ -585,7 +622,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                           geo%sup_xdm_vol0(geo%natoms), &
                           geo%sup_xdm_pol0(geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for XDM!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for XDM!')
                 end if
                 geo%sup_xdm_c6(:,:) = 0.0d0
                 geo%sup_xdm_c8(:,:) = 0.0d0
@@ -599,11 +636,11 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                                                        geo%sup_xdm_vol0(i), geo%sup_xdm_pol0(i)
                     if( read_stat .ne. 0 ) then
                         write(buffer,'(A,I3)') 'Unable to read XDM pol entry! XDM line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                     if( ri .ne. i ) then
                         write(buffer,'(A,I3)') 'Miss-aligned XDM pol entry! XDM line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                 end do
                 ! then dispersion coefficients
@@ -613,11 +650,11 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                                                            geo%sup_xdm_c8(i,j), geo%sup_xdm_c10(i,j)
                         if( read_stat .ne. 0 ) then
                             write(buffer,'(A,I3,1X,I3)') 'Unable to read XDM Cx entry! XDM line = ',i,j
-                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end if
                         if( (ri .ne. i) .or. (rj .ne. j) ) then
                             write(buffer,'(A,I3,1X,I3)') 'Miss-aligned XDM Cx entry! XDM line = ',i,j
-                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end if
                         if( i .ne. j ) then
                             geo%sup_xdm_c6(j,i) = geo%sup_xdm_c6(i,j)
@@ -631,7 +668,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 allocate( geo%sup_surf_ses(geo%natoms), &
                           geo%sup_surf_sas(geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for SURF!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for SURF!')
                 end if
                 geo%sup_surf_ses(:) = 0.0d0
                 geo%sup_surf_sas(:) = 0.0d0
@@ -639,11 +676,11 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_surf_ses(i), geo%sup_surf_sas(i)
                     if( read_stat .ne. 0 ) then
                         write(buffer,'(A,I3)') 'Unable to read SURF pol entry! SURF line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                     if( ri .ne. i ) then
                         write(buffer,'(A,I3)') 'Miss-aligned SURF pol entry! SURF line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end if
                 end do
                 geo%sup_surf_loaded = .true.
@@ -651,72 +688,83 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 read(DEV_GEO,*,iostat = read_stat) geo%sup_chrg_type
                 if( read_stat .ne. 0 ) then
                     write(buffer,'(A,I3)') 'Unable to read CHARGES type entry! CHARGES line = ',i
-                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
-                allocate( geo%sup_chrg(geo%natoms), stat = alloc_stat )
-                if( alloc_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for CHARGES!')
+                if( trim(geo%sup_chrg_type) .eq. trim(LoadCharges) ) then
+                    allocate( geo%sup_chrg(geo%natoms), stat = alloc_stat )
+                    if( alloc_stat .ne. 0 ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for CHARGES!')
+                    end if
+                    geo%sup_chrg(:) = 0.0d0
+                    do i=1,geo%natoms
+                        read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_chrg(i)
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3)') 'Unable to read CHARGES entry! CHARGES line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                        end if
+                        if( ri .ne. i ) then
+                            write(buffer,'(A,I3)') 'Miss-aligned CHARGES entry! CHARGES line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                        end if
+                    end do
+                    geo%sup_chrg_loaded = .true.
+                else
+                    ! skip this block
+                    do i=1,geo%natoms
+                        read(DEV_GEO,*,iostat = read_stat) buffer
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3)') 'Unable to read CHARGES entry! CHARGES line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                        end if
+                    end do
                 end if
-                geo%sup_chrg(:) = 0.0d0
-                do i=1,geo%natoms
-                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_chrg(i)
-                    if( read_stat .ne. 0 ) then
-                        write(buffer,'(A,I3)') 'Unable to read CHARGES pol entry! CHARGES line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
-                    end if
-                    if( ri .ne. i ) then
-                        write(buffer,'(A,I3)') 'Miss-aligned CHARGES pol entry! CHARGES line = ',i
-                        call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
-                    end if
-                end do
-                geo%sup_chrg_loaded = .true.
             case('RST')
                 read(DEV_GEO,*,iostat = read_stat) geo%nrst
                 if( read_stat .ne. 0 ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Unable to read nrst entry!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to read nrst entry!')
                 end if
                 if( geo%nrst .gt. 0 ) then
                     allocate( geo%rst(geo%nrst), stat = alloc_stat )
                     if( alloc_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate aray for rst!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate aray for rst!')
                     end if
                     do i=1,geo%nrst
                         read(DEV_GEO,'(A255)',iostat = read_stat) line
                         if( read_stat .ne. 0 ) then
                             write(buffer,'(A,I3)') 'Unable to read RST entry! RST line = ',i
-                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end if
                         geo%rst(i)%cvtype = ''
                         j = 0
                         read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype
                         if( i .ne. j ) then
                             write(buffer,'(A,I3)') 'Unable to read RST entry - order mismatch! RST line = ',i
-                            call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end if
                         select case(trim(geo%rst(i)%cvtype))
                             case('B')
                                 allocate( geo%rst(i)%ai(2), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry B! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                                 read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value, geo%rst(i)%ai(1), &
                                                                    geo%rst(i)%ai(2)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read RST entry B! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                             case('A')
                                 allocate( geo%rst(i)%ai(3), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry A! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                                 read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value,geo%rst(i)%ai(1), &
                                                                    geo%rst(i)%ai(2),geo%rst(i)%ai(3)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read RST entry A! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                                 ! convert to rad
                                 geo%rst(i)%trg_value = geo%rst(i)%trg_value * DEV_D2R
@@ -724,24 +772,24 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                                 allocate( geo%rst(i)%ai(4), stat = alloc_stat )
                                 if( alloc_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to allocate ai for RST entry D! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                                 read(line,*,iostat = read_stat) j,geo%rst(i)%cvtype,geo%rst(i)%trg_value,geo%rst(i)%ai(1), &
                                                                    geo%rst(i)%ai(2),geo%rst(i)%ai(3),geo%rst(i)%ai(4)
                                 if( read_stat .ne. 0 ) then
                                     write(buffer,'(A,I3)') 'Unable to read RST entry D! RST line = ',i
-                                    call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                                 end if
                                 ! convert to rad
                                 geo%rst(i)%trg_value = geo%rst(i)%trg_value * DEV_D2R
                             case default
                                 write(buffer,'(A,A,A,I3)') 'Unsupported RST type ',trim(geo%rst(i)%cvtype),'! RST line = ',i
-                                call ffdev_utils_exit(DEV_OUT,1,trim(buffer))
+                                call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                         end select
                     end do
                 end if
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unrecognized data point key ''' // trim(key) // '''!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unrecognized data point key ''' // trim(key) // '''!')
         end select
     end do
 
@@ -772,13 +820,13 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
     ! number of atoms
     write(DEV_GEO,'(I8)',iostat = write_stat) geo%natoms
     if( write_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to save number of atoms!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save number of atoms!')
     end if
 
     ! title
     write(DEV_GEO,'(A80)',iostat = write_stat) geo%title
     if( write_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to save title!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save title!')
     end if
 
     if( trg ) then
@@ -787,7 +835,7 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
             write(DEV_GEO,'(A2,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
                            pt_symbols(geo%z(i)), geo%trg_crd(1,i), geo%trg_crd(2,i), geo%trg_crd(3,i)
             if( write_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with coordinates!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with coordinates!')
             end if
         end do
 
@@ -803,7 +851,7 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
         write(DEV_GEO,'(A2,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
                        pt_symbols(geo%z(i)), geo%crd(1,i), geo%crd(2,i), geo%crd(3,i)
         if( write_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with coordinates!')
         end if
     end do
 
@@ -811,13 +859,13 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
     write(DEV_GEO,'(A)',iostat = write_stat) 'WEIGHT'
     write(DEV_GEO,'(F12.6)',iostat = write_stat) geo%weight
     if( write_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with weight!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with weight!')
     end if
 
     write(DEV_GEO,'(A)',iostat = write_stat) 'ENERGY'
     write(DEV_GEO,'(F20.6)',iostat = write_stat) geo%total_ene
     if( write_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with energy!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with energy!')
     end if
 
     if( associated(geo%grd) ) then
@@ -826,7 +874,7 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
             write(DEV_GEO,'(F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
                            geo%grd(1,i), geo%grd(2,i), geo%grd(3,i)
             if( write_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with gradient!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with gradient!')
             end if
         end do
     end if
@@ -839,7 +887,7 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
                     do l=1,3
                         write(DEV_GEO,'(F12.6,1X)',iostat = write_stat,advance='NO') geo%hess(j,i,l,k)
                         if( write_stat .ne. 0 ) then
-                            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with hessian!')
+                            call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with hessian!')
                         end if
                     end do
                 end do
@@ -898,7 +946,7 @@ subroutine ffdev_geometry_save_xyzr(top,geo,name,trg)
         end if
 
         if( write_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to save line with coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with coordinates!')
         end if
     end do
 
@@ -934,7 +982,7 @@ subroutine ffdev_geometry_load_ginp(geo,name,mode)
     ! load number of atoms - mandatory
     read(DEV_GEO,*,iostat = read_stat) geo%natoms, mode
     if( read_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to load number of atoms from input file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to load number of atoms from input file!')
     end if
 
     geo%name   = name
@@ -942,14 +990,14 @@ subroutine ffdev_geometry_load_ginp(geo,name,mode)
 
     allocate( geo%crd(3,geo%natoms), geo%z(geo%natoms), stat = alloc_stat )
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arays for geometry!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
     end if
 
     ! read atoms
     do i=1,geo%natoms
         read(DEV_GEO,*,iostat = read_stat) geo%z(i), geo%crd(1,i), geo%crd(2,i), geo%crd(3,i)
         if( read_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to load atom coordinates!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to load atom coordinates!')
         end if
         ! convert from au to A
         geo%crd(:,i) = geo%crd(:,i)*DEV_AU2A
@@ -1061,8 +1109,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight E G H P X S C')
-40 format('# ---- ---------------------------------------- ------ - - - - - - -')
+30 format('# ID   File                                     Weight E S G H P X A C')
+40 format('# ---- ---------------------------------------- ------ - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1079,12 +1127,13 @@ subroutine ffdev_geometry_info_point(geo)
     ! --------------------------------------------------------------------------
 
     lname = trim(geo%name)
-    write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_ene_loaded, &
+    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_ene_loaded, &
+                      geo%trg_sapt0_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,1L,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 
@@ -1105,9 +1154,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight   Rel Energy E G H P X S C')
-35 format('# ID   File                                     Weight       Energy E G H P X S C')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - -')
+30 format('# ID   File                                     Weight   Rel Energy E S G H P X A C')
+35 format('# ID   File                                     Weight       Energy E S G H P X A C')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1126,18 +1175,20 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
 
     lname = trim(geo%name)
     if( relative ) then
-    write(DEV_OUT,10) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
+    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
+                      geo%trg_sapt0_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     else
-    write(DEV_OUT,15) geo%id,adjustl(lname),geo%weight,geo%trg_energy,geo%trg_ene_loaded, &
+    write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
+                      geo%trg_sapt0_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     end if
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
-  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point_ext
 
@@ -1155,20 +1206,36 @@ subroutine ffdev_geometry_info_ene(geo)
     write(DEV_OUT,110) geo%angle_ene
     write(DEV_OUT,120) geo%dih_ene
     write(DEV_OUT,130) geo%impropr_ene
+    write(DEV_OUT,131) geo%dih_ene + geo%impropr_ene
+    write(DEV_OUT,10)
     write(DEV_OUT,140) geo%ele14_ene
     write(DEV_OUT,150) geo%nb14_ene
     write(DEV_OUT,160) geo%ele_ene
     write(DEV_OUT,170) geo%nb_ene
+    write(DEV_OUT,10)
+    write(DEV_OUT,172) geo%ele_ene + geo%ele14_ene
+    write(DEV_OUT,174) geo%nb_rep
+    write(DEV_OUT,176) geo%nb_disp
+    write(DEV_OUT,10)
+    write(DEV_OUT,177) geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene
+    write(DEV_OUT,178) geo%ele_ene + geo%ele14_ene + geo%nb_rep + geo%nb_disp
     write(DEV_OUT,180) geo%total_ene
 
 100 format('Ebonds     = ',F20.7)
 110 format('Eangles    = ',F20.7)
 120 format('Edihedrals = ',F20.7)
 130 format('Eimpropers = ',F20.7)
+131 format('Etot-dih   = ',F20.7)
+ 10 format('---------------------------------')
 140 format('E14ele     = ',F20.7)
 150 format('E14vdw     = ',F20.7)
 160 format('Eele       = ',F20.7)
 170 format('Evdw       = ',F20.7)
+172 format('Etot-ele   = ',F20.7)
+174 format('Etot-rep   = ',F20.7)
+176 format('Etot-disp  = ',F20.7)
+177 format('Etot-bn    = ',F20.7)
+178 format('Etot-nb    = ',F20.7)
 180 format('Etotal     = ',F20.7)
 
 end subroutine ffdev_geometry_info_ene
@@ -1226,7 +1293,7 @@ subroutine ffdev_geometry_copy(geo1,geo2)
     if( geo1%natoms .gt. 0 ) then
         allocate(geo1%crd(3,geo1%natoms), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate crd array for geometry!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate crd array for geometry!')
         end if
         geo1%crd(:,:) = geo2%crd(:,:)
     end if
@@ -1235,7 +1302,7 @@ subroutine ffdev_geometry_copy(geo1,geo2)
     if( geo1%natoms .gt. 0 ) then
         allocate(geo1%rst(geo1%nrst), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate rst array for geometry!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate rst array for geometry!')
         end if
         do i=1,geo1%nrst
             geo1%rst(i)%trg_value = geo2%rst(i)%trg_value
@@ -1244,20 +1311,20 @@ subroutine ffdev_geometry_copy(geo1,geo2)
                 case('B')
                     allocate(geo1%rst(i)%ai(2), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate ai array for geometry!')
                     end if
                 case('A')
                     allocate(geo1%rst(i)%ai(3), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate ai array for geometry!')
                     end if
                 case('D')
                     allocate(geo1%rst(i)%ai(4), stat = alloc_stat)
                     if( alloc_stat .ne. 0 ) then
-                        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate ai array for geometry!')
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate ai array for geometry!')
                     end if
                 case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_copy!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_copy!')
             end select
             geo1%rst(i)%ai(:) = geo2%rst(i)%ai(:)
         end do
@@ -1287,7 +1354,7 @@ subroutine ffdev_geometry_allocate(geo,natoms)
     if( geo%natoms .gt. 0 ) then
         allocate(geo%crd(3,geo%natoms), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate crd array for geometry!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate crd array for geometry!')
         end if
     end if
 
@@ -1311,14 +1378,14 @@ subroutine ffdev_geometry_check_z(top,geo)
     ! --------------------------------------------------------------------------
 
     if( top%natoms .ne. geo%natoms ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Topology and geometry does not have the same number of atoms!')
+        call ffdev_utils_exit(DEV_ERR,1,'Topology and geometry does not have the same number of atoms!')
     end if
 
     do i=1,top%natoms
         if( top%atom_types(top%atoms(i)%typeid)%z .ne. geo%z(i) ) then
             write(msg,'(A,I3,A,I2,A,I2)') 'Inconsistency at position: ',i,'! Topology atom Z: ', &
                              top%atom_types(top%atoms(i)%typeid)%z,' Geometry atom Z: ',geo%z(i)
-            call ffdev_utils_exit(DEV_OUT,1,trim(msg))
+            call ffdev_utils_exit(DEV_ERR,1,trim(msg))
         end if
     end do
 
@@ -1566,7 +1633,7 @@ subroutine ffdev_geometry_get_rst_penalty(geo)
             case('D')
                 call ffdev_geometry_get_torsion_penalty(geo,i)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_penalty!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_get_rst_penalty!')
         end select
     end do
 
@@ -1607,7 +1674,7 @@ subroutine ffdev_geometry_get_rst_penalty_only(geo)
                 dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
                 geo%rst_energy = geo%rst_energy + 0.5d0*ANG_FC*dev**2
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_penalty_only!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_get_rst_penalty_only!')
         end select
     end do
 
@@ -1689,7 +1756,7 @@ subroutine ffdev_geometry_get_rst_values(geo)
                       ffdev_geometry_get_dihedral(geo%crd,geo%rst(i)%ai(1),geo%rst(i)%ai(2), &
                                                           geo%rst(i)%ai(3),geo%rst(i)%ai(4))
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_get_rst_values!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_get_rst_values!')
         end select
     end do
 
@@ -1736,7 +1803,7 @@ subroutine ffdev_geometry_rstsum(unid,geo)
                 tv = geo%rst(i)%trg_value * DEV_R2D
                 dev = ffdev_geometry_get_dihedral_deviation(actv,tv)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported CV in ffdev_geometry_rstsum!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_rstsum!')
         end select
         write(unid,40) i, geo%rst(i)%cvtype, tv, actv, dev
     end do

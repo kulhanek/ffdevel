@@ -142,6 +142,18 @@ subroutine ffdev_targetset_calc_all
         end do
     end do
 
+    ! calculate SAPT0
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( sets(i)%geo(j)%trg_sapt0_loaded .and. errors_calc_sapt0 .and. sets(i)%nrefs .gt. 1 ) then
+                if( sets(i)%top%sapt0_size .le. 0 ) then
+                    call ffdev_topology_gen_sapt0_list(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
+                end if
+                call ffdev_energy_sapt0(sets(i)%top,sets(i)%geo(j))
+            end if
+        end do
+    end do
+
    ! update energies
     do i=1,nsets
         if( sets(i)%nrefs .gt. 0 ) then
@@ -155,6 +167,8 @@ subroutine ffdev_targetset_calc_all
                     sets(i)%geo(j)%nb14_ene     = sets(i)%geo(j)%nb14_ene - sets( sets(i)%refs(k) )%geo(1)%nb14_ene
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
                     sets(i)%geo(j)%nb_ene       = sets(i)%geo(j)%nb_ene - sets( sets(i)%refs(k) )%geo(1)%nb_ene
+                    sets(i)%geo(j)%nb_rep       = sets(i)%geo(j)%nb_rep - sets( sets(i)%refs(k) )%geo(1)%nb_rep
+                    sets(i)%geo(j)%nb_disp       = sets(i)%geo(j)%nb_disp - sets( sets(i)%refs(k) )%geo(1)%nb_disp
                     sets(i)%geo(j)%total_ene    = sets(i)%geo(j)%total_ene - sets( sets(i)%refs(k) )%geo(1)%total_ene
                 end do
             end do

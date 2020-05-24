@@ -116,7 +116,7 @@ subroutine ffdev_err_nbdists_summary(top,geo,printsum)
     type(GEOMETRY)  :: geo
     logical         :: printsum
     ! --------------------------------------------
-    integer         :: q, ai, aj, nb
+    integer         :: q, ai, aj
     real(DEVDP)     :: d1, d2, diff, sdiff, sw, swsum
     real(DEVDP)     :: serr, lerr,aerr,rmse
     ! --------------------------------------------------------------------------

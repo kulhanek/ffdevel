@@ -50,7 +50,7 @@ program ffdev_hessian_program
     ! test number of input arguments
     if( command_argument_count() .lt. 2 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (at least two expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (at least two expected)!')
     end if
 
     call get_command_argument(1, topname)
@@ -70,7 +70,7 @@ program ffdev_hessian_program
             case('write')
                 write_pts = .true.
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unrecognized argument ('//trim(arg)//')')
+                call ffdev_utils_exit(DEV_ERR,1,'Unrecognized argument ('//trim(arg)//')')
         end select
     end do
 
@@ -146,7 +146,7 @@ program ffdev_hessian_program
             nggeo%grd = nggeo%grd - geo%grd
             call ffdev_gradient_print(DEV_OUT,top,nggeo)
 
-            call ffdev_utils_exit(DEV_OUT,1,'Analytical gradients from Hessian and gradient calculations do not match!')
+            call ffdev_utils_exit(DEV_ERR,1,'Analytical gradients from Hessian and gradient calculations do not match!')
         else
             write(DEV_OUT,'(A)') 'Analytical gradients from Hessian and gradient calculations match each other ...'
             write(DEV_OUT,*)
@@ -176,7 +176,7 @@ program ffdev_hessian_program
             ngeo%hess = ngeo%hess - geo%hess
             call ffdev_hessian_print(DEV_OUT,ngeo)
 
-            call ffdev_utils_exit(DEV_OUT,1,'Analytical and numerical Hessians do not match!')
+            call ffdev_utils_exit(DEV_ERR,1,'Analytical and numerical Hessians do not match!')
         else
             write(DEV_OUT,'(A)') 'Analytical and numerical Hessians match each other ...'
             write(DEV_OUT,*)

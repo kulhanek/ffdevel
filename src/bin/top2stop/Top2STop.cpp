@@ -59,6 +59,9 @@ CTop2STop::CTop2STop(void)
     nnb_types = 0;
     dih_mode = 0;
     dih_samp_freq = 5;
+    nsymm_classes = 0;
+
+    Coords.AssignTopology(&Topology);
 }
 
 //------------------------------------------------------------------------------
@@ -120,6 +123,10 @@ bool CTop2STop::Run(void)
     // load topology
     if( LoadTopology() == false ) return(false);
 
+    if( Options.IsOptCrdNameSet() ){
+        if( LoadCoords() == false ) return(false);
+    }
+
     // load filters
     if( Options.IsOptDihedralTypesSet() ){
         if( LoadDihFilters()  == false ) return(false);
@@ -175,6 +182,70 @@ bool CTop2STop::LoadTopology(void)
         vout << "<red>>>> ERROR: Unable to load AMBER topology: " << Options.GetArgTopologyName() << "</red>" << endl;
         return(false);
     }
+
+    return(true);
+}
+
+//------------------------------------------------------------------------------
+
+bool CTop2STop::LoadCoords(void)
+{
+    if( Coords.Load(Options.GetOptCrdName(),true) == false ) {
+        vout << "<red>>>> ERROR: Unable to load AMBER coords: " << Options.GetOptCrdName() << "</red>" << endl;
+        return(false);
+    }
+
+    // convert to OBMol
+    OBMol mol;
+
+        std::map<int,int>   id_map;
+    int                 conf_size = p_mol->GetAtoms()->GetNumberOfAtoms();
+
+    double* p_conf = NULL;
+    if( (conf_size > 0) && add_as_conformer ) {
+        p_conf = new double[3*conf_size];
+    }
+
+    // add atoms
+    int i=0;
+    int at_lid = 1;
+
+    foreach(QObject* p_qobj,p_mol->GetAtoms()->children()) {
+        CAtom*  p_atom = static_cast<CAtom*>(p_qobj);
+        OBAtom* p_ob_atom = obmol.NewAtom();
+        p_ob_atom->SetAtomicNum(p_atom->GetZ());
+        p_ob_atom->SetVector(p_atom->GetPos().x, p_atom->GetPos().y, p_atom->GetPos().z);
+        id_map[p_atom->GetIndex()] = at_lid;
+
+        if( add_as_conformer ) {
+            p_conf[i++] = p_atom->GetPos().x;
+            p_conf[i++] = p_atom->GetPos().y;
+            p_conf[i++] = p_atom->GetPos().z;
+        }
+        at_lid++;
+    }
+
+    if( p_conf != NULL ) {
+        obmol.AddConformer(p_conf);
+    }
+
+    // add bonds
+    foreach(QObject* p_qobj,p_mol->GetBonds()->children()) {
+        CBond*  p_bond = static_cast<CBond*>(p_qobj);
+        if( p_bond->IsInvalidBond() ) continue;
+        int order = COpenBabelUtils::NemesisToOBBondOrder(p_bond->GetBondOrder());
+
+        // get begin and end atom indexes
+        int a1_id = p_bond->GetFirstAtom()->GetIndex();
+        int a2_id = p_bond->GetSecondAtom()->GetIndex();
+
+        unsigned int ob_a1_id = id_map[a1_id];
+        unsigned int ob_a2_id = id_map[a2_id];
+
+        // create bond
+        obmol.AddBond(ob_a1_id, ob_a2_id, order);
+    }
+
 
     return(true);
 }
@@ -1363,6 +1434,7 @@ void CTop2STop::WriteDimensions(std::ostream& sout)
     sout << "nb_size14         " << nb_size14 << endl;
     sout << "nb_size           " << nb_size << endl;
     sout << "nb_types          " << nnb_types << endl;
+    sout << "nsymm_classes     " << nsymm_classes << endl;
 }
 
 //==============================================================================

@@ -41,18 +41,18 @@ subroutine ffdev_genpoints_ctrl_files(fin)
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
 
     if(.not. prmfile_open_section(fin,'files')) then
-        call ffdev_utils_exit(DEV_OUT,1,'[files] section not found.')
+        call ffdev_utils_exit(DEV_ERR,1,'[files] section not found.')
     end if
 
     ! topology file
     if(.not. prmfile_get_string_by_key(fin,'topology', GenTopName)) then
-        call ffdev_utils_exit(DEV_OUT,1,'Topology (topology) is not specified!')
+        call ffdev_utils_exit(DEV_ERR,1,'Topology (topology) is not specified!')
     end if
     write (DEV_OUT,10) trim(GenTopName)
 
     ! input file
     if(.not. prmfile_get_string_by_key(fin,'input', GenCrdName)) then
-        call ffdev_utils_exit(DEV_OUT,1,'Input coordinates (input) are required!')
+        call ffdev_utils_exit(DEV_ERR,1,'Input coordinates (input) are required!')
     end if
     write (DEV_OUT,20) trim(GenCrdName)
 
@@ -166,7 +166,7 @@ subroutine ffdev_genpoints_ctrl_points(fin)
                 GeneratorMethod=GENPOINTS_SYSTEMATIC_OPT_METHOD
                 write(DEV_OUT,10) 'systematic-opt'
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unknown generator method!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unknown generator method!')
         end select
     else
         select case(GeneratorMethod)
@@ -190,7 +190,7 @@ subroutine ffdev_genpoints_ctrl_points(fin)
     if( prmfile_get_integer_by_key(fin,'max_points', MaxPoints)) then
         write(DEV_OUT,20) MaxPoints
         if( MaxPoints .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'npoints has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'npoints has to be grater than zero!')
         end if
     else
         write(DEV_OUT,25) MaxPoints
@@ -199,7 +199,7 @@ subroutine ffdev_genpoints_ctrl_points(fin)
     if( prmfile_get_real8_by_key(fin,'max_energy', MaxEnergy)) then
         write(DEV_OUT,30) MaxEnergy
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'MaxEnergy has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'MaxEnergy has to be grater than zero!')
         end if
     else
         write(DEV_OUT,35) MaxEnergy
@@ -289,7 +289,7 @@ subroutine read_systematic_method(fin)
     if( prmfile_get_real8_by_key(fin,'tick', TickAngle)) then
         write(DEV_OUT,30) TickAngle
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'tick has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'tick has to be grater than zero!')
         end if
         TickAngle = TickAngle*DEV_D2R
     else
@@ -326,7 +326,7 @@ subroutine read_stepbystep_method(fin)
     if( prmfile_get_real8_by_key(fin,'tick', TickAngle)) then
         write(DEV_OUT,30) TickAngle
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'tick has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'tick has to be grater than zero!')
         end if
         TickAngle = TickAngle*DEV_D2R
     else
@@ -363,7 +363,7 @@ subroutine read_stochasticbystep_method(fin)
     if( prmfile_get_real8_by_key(fin,'tick', TickAngle)) then
         write(DEV_OUT,30) TickAngle
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'tick has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'tick has to be grater than zero!')
         end if
         TickAngle = TickAngle*DEV_D2R
     else
@@ -407,7 +407,7 @@ subroutine read_nmodes_method(fin)
     if( prmfile_get_integer_by_key(fin,'npoints', NModePoints)) then
         write(DEV_OUT,40) NModePoints
         if( NModePoints .le. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'npoints has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'npoints has to be grater than zero!')
         end if
     else
         write(DEV_OUT,45) NModePoints
@@ -446,7 +446,7 @@ subroutine read_systematic_opt_method(fin)
     if( prmfile_get_real8_by_key(fin,'tick', TickAngle)) then
         write(DEV_OUT,30) TickAngle
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'tick has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'tick has to be grater than zero!')
         end if
         TickAngle = TickAngle*DEV_D2R
     else
@@ -456,7 +456,7 @@ subroutine read_systematic_opt_method(fin)
     if( prmfile_get_real8_by_key(fin,'force_constant', ForceConstant)) then
         write(DEV_OUT,40) ForceConstant
         if( MaxEnergy .le. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'force_constant has to be grater than zero!')
+            call ffdev_utils_exit(DEV_ERR,1,'force_constant has to be grater than zero!')
         end if
     else
         write(DEV_OUT,45) ForceConstant

@@ -31,6 +31,7 @@ subroutine ffdev_err_energy_ctrl(fin)
     use ffdev_err_energy_dat
     use ffdev_errors_dat
     use ffdev_utils
+    use ffdev_errors_utils
     use prmfile
 
     implicit none
@@ -46,7 +47,7 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableEnergyError)
         write(DEV_OUT,135) prmfile_onoff(PrintEnergyErrorSummary)
         write(DEV_OUT,125) EnergyErrorWeight
-        write(DEV_OUT,145) ffdev_err_energy_ctrl_scale_to_string(EnergyErrorMode)
+        write(DEV_OUT,145) ffdev_errors_utils_scale_to_string(EnergyErrorMode)
         write(DEV_OUT,155) prmfile_onoff(EnableMaxFilter)
         write(DEV_OUT,165) MaxTargetEnergy
         write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
@@ -71,10 +72,10 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,125) EnergyErrorWeight
     end if
     if( prmfile_get_string_by_key(fin,'scale', string)) then
-        EnergyErrorMode = ffdev_err_energy_ctrl_get_scale_from_string(string)
-        write(DEV_OUT,140) ffdev_err_energy_ctrl_scale_to_string(EnergyErrorMode)
+        EnergyErrorMode = ffdev_errors_utils_scale_from_string(string)
+        write(DEV_OUT,140) ffdev_errors_utils_scale_to_string(EnergyErrorMode)
     else
-        write(DEV_OUT,145) ffdev_err_energy_ctrl_scale_to_string(EnergyErrorMode)
+        write(DEV_OUT,145) ffdev_errors_utils_scale_to_string(EnergyErrorMode)
     end if
 
     if( prmfile_get_logical_by_key(fin,'maxfilter', EnableMaxFilter)) then
@@ -105,12 +106,12 @@ subroutine ffdev_err_energy_ctrl(fin)
 
 110  format ('Energy error (enabled)                 = ',a12)
 115  format ('Energy error (enabled)                 = ',a12,'                  (default)')
-130  format ('Print bonds error summary (summary)    = ',a12)
-135  format ('Print bonds error summary (summary)    = ',a12,'                  (default)')
+130  format ('Print energy error summary (summary)   = ',a12)
+135  format ('Print energy error summary (summary)   = ',a12,'                  (default)')
 120  format ('Energy error weight (weight)           = ',f21.8)
 125  format ('Energy error weight (weight)           = ',f21.8,'         (default)')
 140  format ('Error scale (scale)                    = ',a24)
-145  format ('Error scale (scale)                    = ',a24,'     (default)')
+145  format ('Error scale (scale)                    = ',a24,'      (default)')
 150  format ('Enable max energy filter (maxfilter)   = ',a12)
 155  format ('Enable max energy filter (maxfilter)   = ',a12,'                  (default)')
 160  format ('Max target rnergy (maxvalue)           = ',f21.8)
@@ -121,63 +122,6 @@ subroutine ffdev_err_energy_ctrl(fin)
 185  format ('Min target rnergy (maxvalue)           = ',f21.8,'         (default)')
 
 end subroutine ffdev_err_energy_ctrl
-
-! ==============================================================================
-! subroutine ffdev_err_energy_ctrl_scale_to_string
-! ==============================================================================
-
-character(80) function ffdev_err_energy_ctrl_scale_to_string(iscale)
-
-    use ffdev_utils
-    use ffdev_err_energy_dat
-
-    implicit none
-    integer  :: iscale
-    ! --------------------------------------------------------------------------
-
-    select case(iscale)
-        case(EE_ABS)
-            ffdev_err_energy_ctrl_scale_to_string = 'abs (absolute)'
-        case(EE_REL)
-            ffdev_err_energy_ctrl_scale_to_string = 'rel (relative)'
-        case(EE_LOG)
-            ffdev_err_energy_ctrl_scale_to_string = 'log (logarithimic)'
-        case(EE_ABSLOG)
-            ffdev_err_energy_ctrl_scale_to_string = 'abs+log (absolute+logarithimic)'
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_err_energy_ctrl_scale_to_string!')
-    end select
-
-end function ffdev_err_energy_ctrl_scale_to_string
-
-! ==============================================================================
-! function ffdev_err_energy_ctrl_get_scale_from_string
-! ==============================================================================
-
-integer function ffdev_err_energy_ctrl_get_scale_from_string(string)
-
-    use ffdev_utils
-    use ffdev_err_energy_dat
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('abs')
-            ffdev_err_energy_ctrl_get_scale_from_string = EE_ABS
-        case('rel')
-            ffdev_err_energy_ctrl_get_scale_from_string = EE_REL
-        case('log')
-            ffdev_err_energy_ctrl_get_scale_from_string = EE_LOG
-        case('abs+log')
-            ffdev_err_energy_ctrl_get_scale_from_string = EE_ABSLOG
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) // &
-                                            '" in ffdev_err_energy_ctrl_get_scale_from_string!')
-    end select
-
-end function ffdev_err_energy_ctrl_get_scale_from_string
 
 ! ------------------------------------------------------------------------------
 

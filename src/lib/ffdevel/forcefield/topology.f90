@@ -48,6 +48,7 @@ subroutine ffdev_topology_init(top)
     top%nb_size = 0
     top%probe_size = 0
     top%nfragments = 0
+    top%sapt0_size = 0
 
 end subroutine ffdev_topology_init
 
@@ -75,14 +76,14 @@ subroutine ffdev_topology_load(top,name)
     ! load topology file
     call prmfile_init(fin)
     if( .not. prmfile_read(fin,name) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to read topology "'//trim(name)//'"!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to read topology "'//trim(name)//'"!')
     end if
 
     top%name = name
 
     ! read dimmensions
     if( .not. prmfile_open_section(fin,'dimensions') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [dimensions] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [dimensions] section!')
     end if
 
     my_result = .true.
@@ -105,7 +106,7 @@ subroutine ffdev_topology_load(top,name)
     lbuff = prmfile_get_integer_by_key(fin,'nb_size14',nbuff)
 
     if( .not. my_result ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Missing data in [dimmensions] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Missing data in [dimmensions] section!')
     end if
 
     ! allocate arrays
@@ -117,27 +118,27 @@ subroutine ffdev_topology_load(top,name)
               top%nb_types(top%nnb_types), stat = alloc_stat )
 
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_load!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate topology arrays in ffdev_topology_load!')
     end if
 
     ! read sections
 
     ! read atoms -------------------------------------
     if( .not. prmfile_open_section(fin,'atoms') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [atoms] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [atoms] section!')
     end if
 
     do i=1,top%natoms
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [atoms] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [atoms] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%atoms(i)%typeid, top%atoms(i)%name, &
                                       top%atoms(i)%residx,top%atoms(i)%resname, top%atoms(i)%charge
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [atoms] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [atoms] section!')
         end if
         if( (top%atoms(i)%typeid .le. 0) .or. (top%atoms(i)%typeid .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [atoms] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [atoms] section!')
         end if
         top%atoms(i)%nbonds = 0
         top%atoms(i)%frgid = 0
@@ -145,159 +146,159 @@ subroutine ffdev_topology_load(top,name)
 
     ! read types -------------------------------------
     if( .not. prmfile_open_section(fin,'atom_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [atom_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [atom_types] section!')
     end if
 
     do i=1,top%natom_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [atom_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [atom_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%atom_types(i)%name, top%atom_types(i)%mass, &
                                       top%atom_types(i)%z
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [atom_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [atom_types] section!')
         end if
         top%atom_types(i)%probe = .false.
     end do
 
     ! read bonds -------------------------------------
     if( .not. prmfile_open_section(fin,'bonds') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [bonds] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [bonds] section!')
     end if
 
     do i=1,top%nbonds
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [bonds] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [bonds] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%bonds(i)%ai, top%bonds(i)%aj, &
                                       top%bonds(i)%bt
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [bonds] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [bonds] section!')
         end if
         if( (top%bonds(i)%ai .le. 0) .or. (top%bonds(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [bonds] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [bonds] section!')
         end if
         if( (top%bonds(i)%aj .le. 0) .or. (top%bonds(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [bonds] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [bonds] section!')
         end if
         if( (top%bonds(i)%bt .le. 0) .or. (top%bonds(i)%bt .gt. top%nbond_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Bond type out-of-legal range in [bonds] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Bond type out-of-legal range in [bonds] section!')
         end if
     end do
 
     ! read bond types -------------------------------------
     if( .not. prmfile_open_section(fin,'bond_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [bond_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [bond_types] section!')
     end if
 
     do i=1,top%nbond_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [bond_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [bond_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%bond_types(i)%ti, top%bond_types(i)%tj, &
                                       top%bond_types(i)%model, &
                                       top%bond_types(i)%d0, top%bond_types(i)%k
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [bond_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [bond_types] section!')
         end if
         if( (top%bond_types(i)%ti .le. 0) .or. (top%bond_types(i)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [bond_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [bond_types] section!')
         end if
         if( (top%bond_types(i)%tj .le. 0) .or. (top%bond_types(i)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [bond_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [bond_types] section!')
         end if
         top%bond_types(i)%ffoptactive = .false.
     end do
 
     ! read angles -------------------------------------
     if( .not. prmfile_open_section(fin,'angles') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [angles] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [angles] section!')
     end if
 
     do i=1,top%nangles
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [angles] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%angles(i)%ai, top%angles(i)%aj, &
                                       top%angles(i)%ak, top%angles(i)%at
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [angles] section!')
         end if
         if( (top%angles(i)%ai .le. 0) .or. (top%angles(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [angles] section!')
         end if
         if( (top%angles(i)%aj .le. 0) .or. (top%angles(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [angles] section!')
         end if
         if( (top%angles(i)%ak .le. 0) .or. (top%angles(i)%ak .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [angles] section!')
         end if
         if( (top%angles(i)%at .le. 0) .or. (top%angles(i)%at .gt. top%nangle_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Angle type out-of-legal range in [angles] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Angle type out-of-legal range in [angles] section!')
         end if
     end do
 
     ! read angle types -------------------------------------
     if( .not. prmfile_open_section(fin,'angle_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [angle_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [angle_types] section!')
     end if
 
     do i=1,top%nangle_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [angle_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [angle_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%angle_types(i)%ti, top%angle_types(i)%tj, &
                                       top%angle_types(i)%tk, top%angle_types(i)%model, &
                                       top%angle_types(i)%a0, top%angle_types(i)%k
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [angle_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [angle_types] section!')
         end if
         if( (top%angle_types(i)%ti .le. 0) .or. (top%angle_types(i)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [angle_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [angle_types] section!')
         end if
         if( (top%angle_types(i)%tj .le. 0) .or. (top%angle_types(i)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [angle_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [angle_types] section!')
         end if
         if( (top%angle_types(i)%tk .le. 0) .or. (top%angle_types(i)%tk .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [angle_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [angle_types] section!')
         end if
         top%angle_types(i)%ffoptactive = .false.
     end do
 
     ! read dihedrals -------------------------------------
     if( .not. prmfile_open_section(fin,'dihedrals') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [dihedrals] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [dihedrals] section!')
     end if
 
     do i=1,top%ndihedrals
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [dihedrals] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%dihedrals(i)%ai, top%dihedrals(i)%aj, &
                                       top%dihedrals(i)%ak, top%dihedrals(i)%al, top%dihedrals(i)%dt
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedrals] section!')
         end if
         if( (top%dihedrals(i)%ai .le. 0) .or. (top%dihedrals(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [dihedrals] section!')
         end if
         if( (top%dihedrals(i)%aj .le. 0) .or. (top%dihedrals(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [dihedrals] section!')
         end if
         if( (top%dihedrals(i)%ak .le. 0) .or. (top%dihedrals(i)%ak .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [dihedrals] section!')
         end if
         if( (top%dihedrals(i)%al .le. 0) .or. (top%dihedrals(i)%al .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [dihedrals] section!')
         end if
         if( (top%dihedrals(i)%dt .le. 0) .or. (top%dihedrals(i)%dt .gt. top%ndihedral_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Dihedral type out-of-legal range in [dihedrals] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Dihedral type out-of-legal range in [dihedrals] section!')
         end if
     end do
 
     ! read dihedral types -------------------------------------
     if( .not. prmfile_open_section(fin,'dihedral_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [dihedral_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [dihedral_types] section!')
     end if
 
     ! allocate
@@ -310,7 +311,7 @@ subroutine ffdev_topology_load(top,name)
                  top%dihedral_types(i)%w2(top%dihedral_types(i)%n), &
                  top%dihedral_types(i)%enabled(top%dihedral_types(i)%n), stat = alloc_stat )
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate dihedral arrays!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate dihedral arrays!')
         end if
         top%dihedral_types(i)%v(:) = 0.0d0
         top%dihedral_types(i)%g(:) = 0.0d0
@@ -323,14 +324,14 @@ subroutine ffdev_topology_load(top,name)
 
     do i=1,top%ndihedral_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [dihedral_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, nbuff, nbuff, nbuff, nbuff
         if( io_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_types] section!')
         end if
         if( (idx .le. 0) .or. (idx .gt. top%ndihedral_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_types] section!')
         end if
 
         read(buffer,*,iostat=io_stat) nbuff, top%dihedral_types(idx)%ti, top%dihedral_types(idx)%tj, &
@@ -346,19 +347,19 @@ subroutine ffdev_topology_load(top,name)
         end if
 
         if( io_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_types] section!')
         end if
         if( (top%dihedral_types(idx)%ti .le. 0) .or. (top%dihedral_types(idx)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [dihedral_types] section!')
         end if
         if( (top%dihedral_types(idx)%tj .le. 0) .or. (top%dihedral_types(idx)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [dihedral_types] section!')
         end if
         if( (top%dihedral_types(idx)%tk .le. 0) .or. (top%dihedral_types(idx)%tk .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [dihedral_types] section!')
         end if
         if( (top%dihedral_types(idx)%tl .le. 0) .or. (top%dihedral_types(idx)%tl .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [dihedral_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [dihedral_types] section!')
         end if
     end do
 
@@ -366,22 +367,22 @@ subroutine ffdev_topology_load(top,name)
         do while( prmfile_get_line(fin,buffer) )
             read(buffer,*,iostat=io_stat) idx, pn
             if( io_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
             if( (idx .le. 0) .or. (idx .gt. top%ndihedral_types) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
             if( (pn .le. 0) .or. (pn .gt. top%ndihedral_seq_size) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
             if( top%dihedral_types(idx)%mode .ne. DIH_COS ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
 
             e = 0
             read(buffer,*,iostat=io_stat) idx, pn, v, g, e
             if( io_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_cos] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_cos] section!')
             end if
 
             top%dihedral_types(idx)%v(pn) = v
@@ -398,21 +399,21 @@ subroutine ffdev_topology_load(top,name)
         do while( prmfile_get_line(fin,buffer) )
             read(buffer,*,iostat=io_stat) idx, pn
             if( io_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_grbf] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_grbf] section!')
             end if
             if( (idx .le. 0) .or. (idx .gt. top%ndihedral_types) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_grbf] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_grbf] section!')
             end if
             if( (pn .le. 0) .or. (pn .gt. top%ndihedral_seq_size) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_grbf] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_grbf] section!')
             end if
             if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_grbf] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_grbf] section!')
             end if
 
             read(buffer,*,iostat=io_stat) idx, pn, c, p, w
             if( io_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [dihedral_seq_grbf] section!')
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [dihedral_seq_grbf] section!')
             end if
 
             top%dihedral_types(idx)%c(pn) = c
@@ -424,61 +425,61 @@ subroutine ffdev_topology_load(top,name)
 
     ! read impropers -------------------------------------
     if( .not. prmfile_open_section(fin,'impropers') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [impropers] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [impropers] section!')
     end if
 
     do i=1,top%nimpropers
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [impropers] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%impropers(i)%ai, top%impropers(i)%aj, &
                                       top%impropers(i)%ak, top%impropers(i)%al, top%impropers(i)%dt
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [impropers] section!')
         end if
         if( (top%impropers(i)%ai .le. 0) .or. (top%impropers(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
         end if
         if( (top%impropers(i)%aj .le. 0) .or. (top%impropers(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
         end if
         if( (top%impropers(i)%ak .le. 0) .or. (top%impropers(i)%ak .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
         end if
         if( (top%impropers(i)%al .le. 0) .or. (top%impropers(i)%al .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
         end if
         if( (top%impropers(i)%dt .le. 0) .or. (top%impropers(i)%dt .gt. top%nimproper_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Bond type out-of-legal range in [impropers] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Bond type out-of-legal range in [impropers] section!')
         end if
     end do
 
     ! read improper types -------------------------------------
     if( .not. prmfile_open_section(fin,'improper_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [improper_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [improper_types] section!')
     end if
 
     do i=1,top%nimproper_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [improper_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%improper_types(i)%ti, top%improper_types(i)%tj, &
                                       top%improper_types(i)%tk, top%improper_types(i)%tl, &
                                       top%improper_types(i)%v, top%improper_types(i)%g
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [improper_types] section!')
         end if
         if( (top%improper_types(i)%ti .le. 0) .or. (top%improper_types(i)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
         end if
         if( (top%improper_types(i)%tj .le. 0) .or. (top%improper_types(i)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
         end if
         if( (top%improper_types(i)%tk .le. 0) .or. (top%improper_types(i)%tk .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
         end if
         if( (top%improper_types(i)%tl .le. 0) .or. (top%improper_types(i)%tl .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [improper_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
         end if
 
         top%improper_types(i)%ffoptactive = .false.
@@ -486,46 +487,46 @@ subroutine ffdev_topology_load(top,name)
 
     ! read NB list -------------------------------------
     if( .not. prmfile_open_section(fin,'nb_list') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [nb_list] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [nb_list] section!')
     end if
 
     do i=1,top%nb_size
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [nb_list] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%nb_list(i)%ai, top%nb_list(i)%aj, &
                                       top%nb_list(i)%nbt, top%nb_list(i)%dt
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [nb_list] section!')
         end if
         if( (top%nb_list(i)%ai .le. 0) .or. (top%nb_list(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [nb_list] section!')
         end if
         if( (top%nb_list(i)%aj .le. 0) .or. (top%nb_list(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom index out-of-legal range in [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [nb_list] section!')
         end if
         if( (top%nb_list(i)%nbt .lt. 0) .or. (top%nb_list(i)%nbt .gt. top%nnb_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'NB type out-of-legal range in [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'NB type out-of-legal range in [nb_list] section!')
         end if
         ! it includes zero, which is not 1,4 interaction
         if( (top%nb_list(i)%dt .lt. 0) .or. (top%nb_list(i)%dt .gt. top%ndihedral_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Dihedral type out-of-legal range in [nb_list] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Dihedral type out-of-legal range in [nb_list] section!')
         end if
     end do
 
     ! read NB types ------------------------------------
     if( .not. prmfile_open_section(fin,'nb_types') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to open [nb_types] section!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [nb_types] section!')
     end if
 
     do i=1,top%nnb_types
         if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Premature end of [nb_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [nb_types] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%nb_types(i)%ti, top%nb_types(i)%tj, &
                                       top%nb_types(i)%eps, top%nb_types(i)%r0
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Illegal record in [nb_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [nb_types] section!')
         end if
 
         top%nb_types(i)%alpha = 0.0d0
@@ -534,10 +535,10 @@ subroutine ffdev_topology_load(top,name)
         top%nb_types(i)%c6 = 0.0d0
 
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
         if( (top%nb_types(i)%tj .le. 0) .or. (top%nb_types(i)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Atom type out-of-legal range in [nb_types] section!')
+            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
         top%nb_types(i)%ffoptactive = .false.
     end do
@@ -546,7 +547,7 @@ subroutine ffdev_topology_load(top,name)
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the topology file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the topology file!')
     end if
 
     ! release the file
@@ -835,16 +836,16 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
 
-        case(COMB_RULE_PA1)
-            ffdev_topology_comb_rules_to_string = 'PA1 (Pauli repulsion, v1)'
+        case(COMB_RULE_12V1)
+            ffdev_topology_comb_rules_to_string = '12V1 (12 repulsion, v1)'
 
-        case(COMB_RULE_TT1)
-            ffdev_topology_comb_rules_to_string = 'TT1 (Tang–Toennis, v1)'
-        case(COMB_RULE_TT2)
-            ffdev_topology_comb_rules_to_string = 'TT2 (Tang–Toennis, v2)'
+        case(COMB_RULE_EXPV1)
+            ffdev_topology_comb_rules_to_string = 'EXPV1 (Pauli repulsion, v1)'
+        case(COMB_RULE_EXPV2)
+            ffdev_topology_comb_rules_to_string = 'EXPV2 (Pauli repulsion, v2)'
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
     end select
 
 end function ffdev_topology_comb_rules_to_string
@@ -874,15 +875,15 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
 
-        case('PA1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_PA1
-        case('TT1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_TT1
-        case('TT2')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_TT2
+        case('12V1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_12V1
+        case('EXPV1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV1
+        case('EXPV2')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV2
 
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
     end select
 
 end function ffdev_topology_get_comb_rules_from_string
@@ -1098,7 +1099,6 @@ subroutine ffdev_topology_info_types(top,mode)
 440 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,F16.6,1X,F16.6)
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-516 format('# Assumed combining rules = ',A)
 
 520 format('# ID TypA TypB        eps              R0       ')
 530 format('# -- ---- ---- ---------------- ----------------')
@@ -1116,9 +1116,6 @@ subroutine ffdev_topology_finalize_setup(top)
 
     implicit none
     type(TOPOLOGY)  :: top
-    ! --------------------------------------------
-    integer         :: ip,i,j,it,jt,alloc_stat,nbt
-    real(DEVDP)     :: eps,r0
     ! --------------------------------------------------------------------------
 
     ! reserved for future usage
@@ -1148,7 +1145,7 @@ subroutine ffdev_topology_gen_bonded(top)
         if( top%atoms(i)%nbonds .gt. 0 ) then
             allocate(top%atoms(i)%bonded(top%atoms(i)%nbonds), stat = alloc_stat)
             if( alloc_stat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate memory for atom neighbours!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for atom neighbours!')
             end if
             k = 0
             do j=1,top%nbonds
@@ -1279,7 +1276,7 @@ integer function ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
     type(TOPOLOGY)  :: top
     integer         :: ti,tj
     ! --------------------------------------------
-    integer         :: i,j,k
+    integer         :: i
     ! --------------------------------------------------------------------------
 
     do i=1,top%nnb_types
@@ -1439,298 +1436,6 @@ subroutine ffdev_topology_LJ_AB2ER(pa,c6,eps,r0)
 end subroutine ffdev_topology_LJ_AB2ER
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------------------------------------
-
-    select case(nb_mode)
-        case(NB_VDW_LJ)
-            call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
-        case(NB_VDW_12_6)
-            call ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
-        case(NB_VDW_12_XDMBJ)
-            call ffdev_topology_apply_NB_comb_rules_12_XDMBJ(top,comb_rules)
-        case(NB_VDW_TT_XDM)
-            call ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
-        case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
-    end select
-
-end subroutine ffdev_topology_apply_NB_comb_rules
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_LJ
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            r0ii  = top%nb_types(nbii)%r0
-            epsii = top%nb_types(nbii)%eps
-
-            r0jj  = top%nb_types(nbjj)%r0
-            epsjj = top%nb_types(nbjj)%eps
-
-            select case(comb_rules)
-                case(COMB_RULE_LB)
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = sqrt(epsii*epsjj)
-                case(COMB_RULE_WH)
-                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
-                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
-                case(COMB_RULE_KG)
-                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
-                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
-                    r0ij = (l/k)**(1.0d0/6.0d0)
-                    epsij = k / (r0ij**6)
-                case(COMB_RULE_FB)
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_LJ!')
-            end select
-
-            top%nb_types(i)%r0 = r0ij
-            top%nb_types(i)%eps = epsij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_LJ
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_12_XDMC6
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
-
-    use ffdev_utils
-    use ffdev_xdm_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj,agti,agtj
-    real(DEVDP)     :: paii,paij,pajj,aLJii,aLJjj,bLJii,bLJjj,r0ij,epsij
-    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,k,l
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            agti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
-            agtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii  = top%nb_types(nbii)%pa
-            pajj  = top%nb_types(nbjj)%pa
-
-            ! convert to ERA
-            aLJii = exp(paii)
-            bLJii = top%nb_types(nbii)%c6 * disp_fa
-            call ffdev_topology_LJ_AB2ER(aLJii,bLJii,epsii,r0ii)
-
-            aLJjj = exp(pajj)
-            bLJjj = top%nb_types(nbjj)%c6 * disp_fa
-            call ffdev_topology_LJ_AB2ER(aLJjj,bLJjj,epsjj,r0jj)
-
-            select case(comb_rules)
-                case(COMB_RULE_PA1)
-                    paij = (paii + pajj)*0.5d0
-
-                case(COMB_RULE_LB)
-                    ! mix
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = sqrt(epsii*epsjj)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_WH)
-                    ! mix
-                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
-                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
-
-                   ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_KG)
-                    ! mix
-                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
-                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
-                    r0ij = (l/k)**(1.0d0/6.0d0)
-                    epsij = k / (r0ij**6)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_FB)
-                    ! mix
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMC6!')
-            end select
-
-            top%nb_types(i)%pa = paij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_12_6
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
-    real(DEVDP)     :: pbii,pbij,pbjj
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii = top%nb_types(nbii)%pa
-            pbii = top%nb_types(nbii)%pb
-
-            pajj = top%nb_types(nbjj)%pa
-            pbjj = top%nb_types(nbjj)%pb
-
-            select case(comb_rules)
-                case(COMB_RULE_PA1)
-                    paij = (paii+pajj)*0.5d0
-                    pbij = (pbii+pbjj)*0.5d0
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMBJ!')
-            end select
-
-            top%nb_types(i)%pa = paij
-            top%nb_types(i)%pb = pbij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_12_XDMBJ
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
-    real(DEVDP)     :: pbii,pbij,pbjj
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii = top%nb_types(nbii)%pa
-            pbii = top%nb_types(nbii)%pb
-
-            pajj = top%nb_types(nbjj)%pa
-            pbjj = top%nb_types(nbjj)%pb
-
-            select case(comb_rules)
-                case(COMB_RULE_TT1)
-                    paij = (paii+pajj)*0.5d0
-                    pbij = (pbii+pbjj)*0.5d0
-                case(COMB_RULE_TT2)
-                    paij = (paii+pajj)*0.5d0
-                    pbij = 2.0d0*pbii*pbjj/(pbii+pbjj)
-                case default
-                    call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_TT_XDM!')
-            end select
-
-            top%nb_types(i)%pa = paij
-            top%nb_types(i)%pb = pbij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_TT_XDM
-
-! ==============================================================================
 ! function ffdev_topology_get_nbprms
 ! ==============================================================================
 
@@ -1794,7 +1499,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
         do i=1,top%natoms - top%probe_size
             it = top%atoms(i)%typeid
             if( top%atom_types(it)%probe ) then
-                call ffdev_utils_exit(DEV_OUT,1,'Atom type of probe cannot be used in probed structure!')
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type of probe cannot be used in probed structure!')
             end if
         end do
     end if
@@ -1805,7 +1510,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
             do k=1,top%nbonds
                 if( (top%bonds(k)%ai .eq. i) .and. (top%bonds(k)%aj .eq. j) .or. &
                     (top%bonds(k)%ai .eq. j) .and. (top%bonds(k)%aj .eq. i) ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Covalent bond detected between the probe and probed structure!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Covalent bond detected between the probe and probed structure!')
                 end if
             end do
         end do
@@ -1820,7 +1525,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
     allocate( top%nb_list(top%nb_size), stat = alloc_stat )
 
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate topology arrays in ffdev_topology_switch_to_probe_mode!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate topology arrays in ffdev_topology_switch_to_probe_mode!')
     end if
 
     ip = 1
@@ -1896,9 +1601,115 @@ integer function ffdev_topology_z2n(z)
         return
     end if
 
-    call ffdev_utils_exit(DEV_OUT,1,'Z out-of-range in ffdev_topology_z2n')
+    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range in ffdev_topology_z2n')
 
 end function ffdev_topology_z2n
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! ==============================================================================
+
+subroutine ffdev_topology_gen_sapt0_list(top,nrefs,natomsrefs)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nrefs
+    integer         :: natomsrefs(:)
+    ! --------------------------------------------
+    integer         :: m,i,j,ip,alloc_status,istart,iend
+    ! --------------------------------------------------------------------------
+
+    if( top%sapt0_size .gt. 0 ) return
+
+    ! calculate size of the list
+    istart = 1
+    ip = 0 ! start from zero for sapt0_size
+    do m=1,nrefs
+        iend = natomsrefs(m)
+        do i=istart,istart+iend-1
+            do j=istart+iend,top%natoms
+                ip = ip + 1
+            end do
+        end do
+        istart = istart + iend
+    end do
+
+    top%sapt0_size = ip
+    if( top%sapt0_size .le. 0 ) return
+
+    ! allocate list
+    allocate(top%sapt0_list(top%sapt0_size), stat = alloc_status)
+    if( alloc_status .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT0 in ffdev_topology_gen_sapt0_list!')
+    end if
+
+    istart = 1
+    ip = 1 ! start from one for array index
+    do m=1,nrefs
+        iend = natomsrefs(m)
+        do i=istart,istart+iend-1
+            do j=istart+iend,top%natoms
+                top%sapt0_list(ip)%ai    = i
+                top%sapt0_list(ip)%aj    = j
+                top%sapt0_list(ip)%dt    = 0
+                top%sapt0_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+                top%sapt0_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
+                top%sapt0_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+                ip = ip + 1
+            end do
+        end do
+        istart = istart + iend
+    end do
+
+end subroutine ffdev_topology_gen_sapt0_list
+
+! ==============================================================================
+! subroutine ffdev_topology_qsource_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_qsource_to_string(nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: nb_mode
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_ELE_QTOP)
+            ffdev_topology_qsource_to_string = 'QTOP - topology charges'
+        case(NB_ELE_QGEO)
+            ffdev_topology_qsource_to_string = 'QGEO - geometry charges'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_qsource_to_string!')
+    end select
+
+end function ffdev_topology_qsource_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_qsource_from_string
+! ==============================================================================
+
+integer function ffdev_topology_qsource_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('QTOP')
+            ffdev_topology_qsource_from_string = NB_ELE_QTOP
+        case('QGEO')
+            ffdev_topology_qsource_from_string = NB_ELE_QGEO
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_qsource_from_string!')
+    end select
+
+end function ffdev_topology_qsource_from_string
 
 ! ==============================================================================
 ! subroutine ffdev_topology_nb_mode_to_string
@@ -1919,10 +1730,16 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = '12-6 - 12-6 potential with possibility to scale C6'
         case(NB_VDW_12_XDMBJ)
             ffdev_topology_nb_mode_to_string = '12-XDMBJ - 12-XDMBJ potential with XDM dispersion with BJ damping'
-        case(NB_VDW_TT_XDM)
-            ffdev_topology_nb_mode_to_string = 'TT-XDM - Tang–Toennis potential with XDM dispersion'
+        case(NB_VDW_EXP_XDMBJ)
+            ffdev_topology_nb_mode_to_string = 'EXP-XDMBJ - EXP-XDMBJ potential with XDM dispersion with BJ damping'
+        case(NB_VDW_12_D3BJ)
+            ffdev_topology_nb_mode_to_string = '12-D3BJ - 12-D3BJ potential with MMD3 dispersion with BJ damping'
+        case(NB_VDW_EXP_TTXDM)
+            ffdev_topology_nb_mode_to_string = 'EXP-TTXDM - Tang–Toennis potential with XDM dispersion'
+        case(NB_VDW_EXP_TTD3)
+            ffdev_topology_nb_mode_to_string = 'EXP-TTD3 - Tang–Toennis potential with MMD3 dispersion'
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
 
 end function ffdev_topology_nb_mode_to_string
@@ -1946,10 +1763,16 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_VDW_12_6
         case('12-XDMBJ')
             ffdev_topology_nb_mode_from_string = NB_VDW_12_XDMBJ
-        case('TT-XDM')
-            ffdev_topology_nb_mode_from_string = NB_VDW_TT_XDM
+        case('EXP-XDMBJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_XDMBJ
+        case('12-D3BJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_12_D3BJ
+        case('EXP-TTXDM')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_TTXDM
+        case('EXP-TTD3')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_TTD3
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
 
 end function ffdev_topology_nb_mode_from_string
@@ -1963,13 +1786,14 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
     use ffdev_utils
     use ffdev_topology_dat
     use ffdev_xdm_dat
+    use ffdev_mmd3_dat
 
     implicit none
     type(TOPOLOGY)  :: top
     integer         :: from_nb_mode,to_nb_mode
     ! --------------------------------------------
     integer         :: nbt,zi,zj,gi,gj
-    real(DEVDP)     :: pbi,pbj,pb,c6,c8,pa
+    real(DEVDP)     :: pbi,pbj,pb,pa
     ! --------------------------------------------------------------------------
 
     select case(to_nb_mode)
@@ -1984,13 +1808,17 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 else
                     top%nb_types(nbt)%pa = 0.0
                 end if
-                c6 = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-                top%nb_types(nbt)%c6 = c6
+
+                gi = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
+                gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
+
+                !c6 = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
+                top%nb_types(nbt)%c6 = mmd3_pairs(gi,gj)%c6ave ! c6
             end do
 
-        case(NB_VDW_12_XDMBJ)
+        case(NB_VDW_12_XDMBJ,NB_VDW_12_D3BJ)
             if( .not. xdm_data_loaded ) then
-                call ffdev_utils_exit(DEV_OUT,1,'XDM data were not loaded - unable to switch to 12_XDMC6!')
+                call ffdev_utils_exit(DEV_ERR,1,'XDM data were not loaded - unable to switch to 12_XDMBJ!')
             end if
 
             do nbt=1,top%nnb_types
@@ -2002,9 +1830,9 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 end if
             end do
 
-        case(NB_VDW_TT_XDM)
+        case(NB_VDW_EXP_TTXDM,NB_VDW_EXP_TTD3,NB_VDW_EXP_XDMBJ)
             if( .not. xdm_data_loaded ) then
-                call ffdev_utils_exit(DEV_OUT,1,'XDM data were not loaded - unable to switch to TT_XDM!')
+                call ffdev_utils_exit(DEV_ERR,1,'XDM data were not loaded - unable to switch to TT_XDM!')
             end if
             ! generate PB from XDM
             do nbt=1,top%nnb_types
@@ -2015,11 +1843,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
 
                 ! PA - guess from Rc
-                c6  = xdm_pairs(gi,gj)%c6ave * DEV_HARTREE2KCL * DEV_AU2A**6
-                c8  = xdm_pairs(gi,gj)%c8ave * DEV_HARTREE2KCL * DEV_AU2A**8
-                top%nb_types(nbt)%pa = sqrt(c8/c6)
-
-                ! from polarizabilities - DEV_AU2A * 2.54d0*(xdm_atoms(gi)%pol + xdm_atoms(gj)%pol)**(1.0d0/7.0d0)
+                top%nb_types(nbt)%pa = xdm_pairs(gi,gj)%rc
 
                 ! IP is in eV, convert to atomic units
                 ! pbi and pbj are halves of bii or bjj in atomic units
@@ -2032,11 +1856,309 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 ! convert to Ang^-1
                 top%nb_types(nbt)%pb = pb / DEV_AU2A
             end do
+
         case default
-            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
     end select
 
 end subroutine ffdev_topology_switch_nbmode
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
+        case(NB_VDW_12_6)
+            call ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
+        case(NB_VDW_12_XDMBJ)
+            call ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
+        case(NB_VDW_EXP_XDMBJ)
+            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+        case(NB_VDW_12_D3BJ)
+            call ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
+        case(NB_VDW_EXP_TTXDM)
+            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+        case(NB_VDW_EXP_TTD3)
+            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
+    end select
+
+end subroutine ffdev_topology_apply_NB_comb_rules
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_LJ
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            r0ii  = top%nb_types(nbii)%r0
+            epsii = top%nb_types(nbii)%eps
+
+            r0jj  = top%nb_types(nbjj)%r0
+            epsjj = top%nb_types(nbjj)%eps
+
+            select case(comb_rules)
+                case(COMB_RULE_LB)
+                    r0ij = (r0ii+r0jj)*0.5d0
+                    epsij = sqrt(epsii*epsjj)
+                case(COMB_RULE_WH)
+                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
+                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
+                case(COMB_RULE_KG)
+                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
+                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
+                    r0ij = (l/k)**(1.0d0/6.0d0)
+                    epsij = k / (r0ij**6)
+                case(COMB_RULE_FB)
+                    r0ij = (r0ii+r0jj)*0.5d0
+                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_LJ!')
+            end select
+
+            top%nb_types(i)%r0 = r0ij
+            top%nb_types(i)%eps = epsij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_LJ
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_12_6
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
+
+    use ffdev_utils
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj,agti,agtj
+    real(DEVDP)     :: paii,paij,pajj,aLJii,aLJjj,bLJii,bLJjj,r0ij,epsij
+    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,k,l
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            agti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
+            agtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii  = top%nb_types(nbii)%pa
+            pajj  = top%nb_types(nbjj)%pa
+
+            ! convert to ERA
+            aLJii = exp(paii)
+            bLJii = top%nb_types(nbii)%c6 * disp_fa
+            call ffdev_topology_LJ_AB2ER(aLJii,bLJii,epsii,r0ii)
+
+            aLJjj = exp(pajj)
+            bLJjj = top%nb_types(nbjj)%c6 * disp_fa
+            call ffdev_topology_LJ_AB2ER(aLJjj,bLJjj,epsjj,r0jj)
+
+            select case(comb_rules)
+                case(COMB_RULE_12V1)
+                    paij = (paii + pajj)*0.5d0
+
+                case(COMB_RULE_LB)
+                    ! mix
+                    r0ij = (r0ii+r0jj)*0.5d0
+                    epsij = sqrt(epsii*epsjj)
+
+                    ! convert to ABC
+                    paij =  epsij * r0ij**12
+                    if( paij .gt. 0 ) then
+                        paij = log(paij)
+                    else
+                        paij = 0.0
+                    end if
+
+                case(COMB_RULE_WH)
+                    ! mix
+                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
+                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
+
+                   ! convert to ABC
+                    paij =  epsij * r0ij**12
+                    if( paij .gt. 0 ) then
+                        paij = log(paij)
+                    else
+                        paij = 0.0
+                    end if
+
+                case(COMB_RULE_KG)
+                    ! mix
+                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
+                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
+                    r0ij = (l/k)**(1.0d0/6.0d0)
+                    epsij = k / (r0ij**6)
+
+                    ! convert to ABC
+                    paij =  epsij * r0ij**12
+                    if( paij .gt. 0 ) then
+                        paij = log(paij)
+                    else
+                        paij = 0.0
+                    end if
+
+                case(COMB_RULE_FB)
+                    ! mix
+                    r0ij = (r0ii+r0jj)*0.5d0
+                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
+
+                    ! convert to ABC
+                    paij =  epsij * r0ij**12
+                    if( paij .gt. 0 ) then
+                        paij = log(paij)
+                    else
+                        paij = 0.0
+                    end if
+
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMC6!')
+            end select
+
+            top%nb_types(i)%pa = paij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_12_6
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_12
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: paii,paij,pajj
+    real(DEVDP)     :: r0ii,r0jj,r0ij
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii = top%nb_types(nbii)%pa
+            pajj = top%nb_types(nbjj)%pa
+
+            r0ii = top%nb_types(nbii)%r0
+            r0jj = top%nb_types(nbjj)%r0
+
+            select case(comb_rules)
+                case(COMB_RULE_12V1)
+                    paij = (paii+pajj)*0.5d0
+                    r0ij = (r0ii+r0jj)*0.5d0
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12!')
+            end select
+
+            top%nb_types(i)%pa = paij
+            top%nb_types(i)%r0 = r0ij
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_12
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: paii,paij,pajj
+    real(DEVDP)     :: pbii,pbij,pbjj
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii = top%nb_types(nbii)%pa
+            pbii = top%nb_types(nbii)%pb
+
+            pajj = top%nb_types(nbjj)%pa
+            pbjj = top%nb_types(nbjj)%pb
+
+            select case(comb_rules)
+                case(COMB_RULE_EXPV1)
+                    paij = (paii+pajj)*0.5d0
+                    pbij = (pbii+pbjj)*0.5d0
+                case(COMB_RULE_EXPV2)
+                    paij = (paii+pajj)*0.5d0
+                    pbij = 2.0d0*pbii*pbjj/(pbii+pbjj)
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXP!')
+            end select
+
+            top%nb_types(i)%pa = paij
+            top%nb_types(i)%pb = pbij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_EXP
 
 ! ------------------------------------------------------------------------------
 

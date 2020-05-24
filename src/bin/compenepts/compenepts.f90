@@ -39,7 +39,7 @@ program ffdev_compenepts_program
     ! test number of input arguments
     if( command_argument_count() .ne. 3 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (three expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (three expected)!')
     end if
 
     call get_command_argument(1, topname)

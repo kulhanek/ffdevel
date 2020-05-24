@@ -39,12 +39,12 @@ subroutine ffdev_hessian_allocate(geo)
     ! --------------------------------------------------------------------------
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for hessian!')
     end if
 
     allocate(geo%hess(3,geo%natoms,3,geo%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for hessian!')
     end if
 
     geo%hess(:,:,:,:) = 0.0d0
@@ -140,12 +140,12 @@ subroutine ffdev_hessian_allocate_freq(geo)
     if( associated(geo%nmodes) ) return     ! already allocated
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for frequencies!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for frequencies!')
     end if
 
     allocate(geo%freq(3*geo%natoms), geo%nmodes(3,geo%natoms,3,geo%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays for frequencies!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays for frequencies!')
     end if
 
     geo%freq(:) = 0.0d0
@@ -172,12 +172,12 @@ subroutine ffdev_hessian_allocate_trg_hess(geo)
     ! --------------------------------------------------------------------------
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for hessian!')
     end if
 
     allocate(geo%trg_hess(3,geo%natoms,3,geo%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for hessian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for hessian!')
     end if
 
     geo%trg_hess(:,:,:,:) = 0.0d0
@@ -320,14 +320,14 @@ subroutine ffdev_hessian_calc_freqs(geo)
     ! allocate data
     allocate(work(lwork), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for force matrix diagonalization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for force matrix diagonalization!')
     end if
 
     ! diagonalize matrix
     call dsyev('V','L',geo%natoms*3, geo%nmodes, geo%natoms*3, geo%freq, work, lwork, info)
 
     if( info .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Force matrix diagonalization failed!')
+        call ffdev_utils_exit(DEV_ERR,1,'Force matrix diagonalization failed!')
     end if
 
     deallocate(work)
@@ -366,7 +366,7 @@ subroutine ffdev_hessian_calc_ihess(top,geo)
     ! --------------------------------------------------------------------------
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for ffdev_hessian_calc_ihess!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for ffdev_hessian_calc_ihess!')
     end if
 
     m = top%natoms * 3
@@ -374,13 +374,13 @@ subroutine ffdev_hessian_calc_ihess(top,geo)
 
     allocate(ihess(n,n), jac(m,n), ijac(n,m) , stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
     end if
 
     if( .not. associated(geo%ihess) ) then
         allocate(geo%ihess(n), stat = alloc_stat)
         if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
         end if
     end if
 
@@ -426,12 +426,12 @@ subroutine ffdev_hessian_calc_trg_freqs(geo)
     ! allocate data
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for target frequencies!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for target frequencies!')
     end if
 
     allocate(geo%trg_freq(3*geo%natoms), geo%trg_nmodes(3,geo%natoms,3,geo%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays for target frequencies!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays for target frequencies!')
     end if
 
     geo%trg_freq(:) = 0.0d0
@@ -460,14 +460,14 @@ subroutine ffdev_hessian_calc_trg_freqs(geo)
     ! allocate data
     allocate(work(lwork), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate array for force matrix diagonalization!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for force matrix diagonalization!')
     end if
 
     ! diagonalize matrix
     call dsyev('V','L',geo%natoms*3, geo%trg_nmodes, geo%natoms*3, geo%trg_freq, work, lwork, info)
 
     if( info .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Force matrix diagonalization failed for traget hesssian!')
+        call ffdev_utils_exit(DEV_ERR,1,'Force matrix diagonalization failed for traget hesssian!')
     end if
 
     deallocate(work)

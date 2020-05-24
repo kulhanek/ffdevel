@@ -34,6 +34,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     use ffdev_utils
     use ffdev_timers
 
+    use ffdev_nbmode_LJ
+
     implicit none
     type(TOPOLOGY)      :: top
     type(GEOMETRY)      :: geo
@@ -58,6 +60,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     geo%nb14_ene = 0.0d0
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
@@ -73,7 +77,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
         call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
         select case(nb_mode)
             case(NB_VDW_LJ)
-                if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
+                if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
                     call ffdev_energy_nb_LJ_qgeo(top,geo)
                 else
                     call ffdev_energy_nb_LJ_qtop(top,geo)
@@ -85,11 +89,20 @@ subroutine ffdev_energy_all(top,geo,skipnb)
             case(NB_VDW_12_XDMBJ)
                 call ffdev_energy_nb_12_XDMBJ(top,geo)
 
-            case(NB_VDW_TT_XDM)
-                call ffdev_energy_nb_TT_XDM(top,geo)
+            case(NB_VDW_EXP_XDMBJ)
+                call ffdev_energy_nb_EXP_XDMBJ(top,geo)
+
+            case(NB_VDW_12_D3BJ)
+                call ffdev_energy_nb_12_D3BJ(top,geo)
+
+            case(NB_VDW_EXP_TTXDM)
+                call ffdev_energy_nb_EXP_TTXDM(top,geo)
+
+            case(NB_VDW_EXP_TTD3)
+                call ffdev_energy_nb_EXP_TTD3(top,geo)
 
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported in ffdev_energy_all!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
         end select
         call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     end if
@@ -101,6 +114,50 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
 end subroutine ffdev_energy_all
+
+! ==============================================================================
+! subroutine ffdev_energy_sapt0
+! ==============================================================================
+
+subroutine ffdev_energy_sapt0(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_timers
+
+    use ffdev_nbmode_LJ
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------------------------------------
+
+    ! reset energy
+    geo%sapt0_ele = 0.0
+    geo%sapt0_rep = 0.0
+    geo%sapt0_disp = 0.0
+    geo%sapt0_total = 0.0
+
+    if( top%sapt0_size .le. 0 ) return ! no SAPT0 list
+
+    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
+    call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            call ffdev_energy_sapt0_LJ(top,geo)
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt0!')
+    end select
+
+    geo%sapt0_total = geo%sapt0_ele + geo%sapt0_rep + geo%sapt0_disp
+
+    call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
+    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
+
+end subroutine ffdev_energy_sapt0
 
 !===============================================================================
 ! subroutine ffdev_energy_bonds
@@ -273,7 +330,7 @@ subroutine ffdev_energy_dihedrals(top,geo)
                                   / top%dihedral_types(ic)%w2(pn))
                 end do
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Not implemented [ffdev_energy_dihedrals]!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented [ffdev_energy_dihedrals]!')
         end select
     end do
 
@@ -345,119 +402,6 @@ subroutine ffdev_energy_impropers(top,geo)
 end subroutine ffdev_energy_impropers
 
 !===============================================================================
-! subroutine ffdev_energy_nb_LJ_qtop
-!===============================================================================
-
-subroutine ffdev_energy_nb_LJ_qtop(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a,scale2
-    ! --------------------------------------------------------------------------
-
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-
-    scale2 = ele_qscale*ele_qscale*332.05221729d0
-
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
-        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-        crgij =  top%atoms(i)%charge * top%atoms(j)%charge
-
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
-
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene  = geo%ele_ene + scale2*crgij*ra
-            geo%nb_ene  = geo%nb_ene + aLJa*r6a*r6a - bLJa*r6a
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij*ra
-            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(aLJa*r6a*r6a - bLJa*r6a)
-        end if
-    end do
-
-end subroutine ffdev_energy_nb_LJ_qtop
-
-!===============================================================================
-! subroutine ffdev_energy_nb_LJ_qgeo
-!===============================================================================
-
-subroutine ffdev_energy_nb_LJ_qgeo(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a,scale2
-    ! --------------------------------------------------------------------------
-
-    geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
-    geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-
-    scale2 = ele_qscale*ele_qscale*332.05221729d0
-
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
-        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-        crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
-
-        ! calculate dx, r and r2
-        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
-
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene  = geo%ele_ene + scale2*crgij*ra
-            geo%nb_ene  = geo%nb_ene + aLJa*r6a*r6a - bLJa*r6a
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-
-            geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij*ra
-            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(aLJa*r6a*r6a - bLJa*r6a)
-        end if
-    end do
-
-end subroutine ffdev_energy_nb_LJ_qgeo
-
-!===============================================================================
 ! subroutine ffdev_energy_nb_12_6
 !===============================================================================
 
@@ -472,7 +416,7 @@ subroutine ffdev_energy_nb_12_6(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j, nbt, agti, agtj
+    integer         :: ip,i,j,nbt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,c6,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2a,ra,r6a,scale2
     ! --------------------------------------------------------------------------
@@ -481,9 +425,11 @@ subroutine ffdev_energy_nb_12_6(top,geo)
     geo%nb14_ene = 0.0d0
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
 
     if( .not. xdm_data_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'XDM not loaded for ffdev_energy_nb_12_6!')
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_12_6!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
@@ -495,10 +441,10 @@ subroutine ffdev_energy_nb_12_6(top,geo)
         pa  = exp(top%nb_types(nbt)%pa)
         c6  = top%nb_types(nbt)%c6 * disp_fa
 
-        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
-            crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
+            crgij = geo%sup_chrg(i) * geo%sup_chrg(j)
         else
-            crgij =  top%atoms(i)%charge * top%atoms(j)%charge
+            crgij = top%atoms(i)%charge * top%atoms(j)%charge
         end if
 
         ! calculate dx, r and r2
@@ -541,7 +487,7 @@ subroutine ffdev_energy_nb_12_XDMBJ(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip, i, j, nbt, agti, agtj
-    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r2a,ra,r6,r8,r10,r12,scale2,c6,c8,c10,rc,rc2,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,r6i,r8i,r10i
     ! --------------------------------------------------------------------------
@@ -550,9 +496,11 @@ subroutine ffdev_energy_nb_12_XDMBJ(top,geo)
     geo%nb14_ene = 0.0d0
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
 
     if( .not. xdm_data_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'XDM not loaded for ffdev_energy_nb_12_XDMBJ!')
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_12_XDMBJ!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
@@ -572,9 +520,9 @@ subroutine ffdev_energy_nb_12_XDMBJ(top,geo)
         c8  = xdm_pairs(agti,agtj)%c8ave
         c10 = xdm_pairs(agti,agtj)%c10ave
 
-        rc  = disp_fa*xdm_pairs(agti,agtj)%rc + disp_fb
+        rc  = top%nb_types(nbt)%r0 ! disp_fa*xdm_pairs(agti,agtj)%rc + disp_fb
 
-        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
             crgij = geo%sup_chrg(i) * geo%sup_chrg(j)
         else
             crgij = top%atoms(i)%charge * top%atoms(j)%charge
@@ -623,10 +571,208 @@ subroutine ffdev_energy_nb_12_XDMBJ(top,geo)
 end subroutine ffdev_energy_nb_12_XDMBJ
 
 !===============================================================================
-! subroutine ffdev_energy_nb_TT_XDM
+! subroutine ffdev_energy_nb_EXP_XDMBJ
 !===============================================================================
 
-subroutine ffdev_energy_nb_TT_XDM(top,geo)
+subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, agti, agtj
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2,r,r6,r8,r10,scale2,c6,c8,c10,rc,rc2,rc6,rc8,rc10
+    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
+
+    if( .not. xdm_data_loaded ) then
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_12_XDMBJ!')
+    end if
+
+    scale2 = ele_qscale*ele_qscale*332.05221729d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+
+        pa  = disp_fc * exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+        pb  = top%nb_types(nbt)%pb
+
+        agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+        agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+        ! XDM
+        c6  = xdm_pairs(agti,agtj)%c6ave
+        c8  = xdm_pairs(agti,agtj)%c8ave
+        c10 = xdm_pairs(agti,agtj)%c10ave
+
+        rc  = disp_fa*xdm_pairs(agti,agtj)%rc + disp_fb
+
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
+            crgij = geo%sup_chrg(i) * geo%sup_chrg(j)
+        else
+            crgij = top%atoms(i)%charge * top%atoms(j)%charge
+        end if
+
+        ! calculate distances
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r  = sqrt(r2)
+
+        rc2 = rc*rc
+
+        r6 = r2*r2*r2
+        rc6 = rc2*rc2*rc2
+
+        r8 = r6*r2
+        rc8 = rc6*rc2
+
+        r10 = r8*r2
+        rc10 = rc8*rc2
+
+        V_aa = pa*exp(-pb*r)
+
+        r6i = 1.0d0/(r6+rc6)
+        r8i = 1.0d0/(r8+rc8)
+        r10i = 1.0d0/(r10+rc10)
+
+        V_bb = - c6*r6i - c8*r8i - c10*r10i
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene  = geo%ele_ene + scale2*crgij/r
+            geo%nb_ene  = geo%nb_ene + V_aa + V_bb
+            geo%nb_rep =  geo%nb_rep + V_aa
+            geo%nb_disp =  geo%nb_disp + V_bb
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+            geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij/r
+            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa + V_bb)
+
+            geo%nb_rep =  geo%nb_rep + inv_scnb*V_aa
+            geo%nb_disp =  geo%nb_disp + inv_scnb*V_bb
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_EXP_XDMBJ
+
+!===============================================================================
+! subroutine ffdev_energy_nb_12_D3BJ
+!===============================================================================
+
+subroutine ffdev_energy_nb_12_D3BJ(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_mmd3_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, agti, agtj
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2,r2a,ra,r6,r8,r12,scale2,c6,c8,rc,rc2,rc6,rc8
+    real(DEVDP)     :: V_aa,r6i,r8i
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
+
+    if( .not. mmd3_data_loaded ) then
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_12_XDMBJ!')
+    end if
+
+    scale2 = ele_qscale*ele_qscale*332.05221729d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+
+        pa  = exp(top%nb_types(nbt)%pa)
+
+        agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+        agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+        ! MMD3
+        c6  = mmd3_pairs(agti,agtj)%c6ave
+        c8  = disp_fc*mmd3_pairs(agti,agtj)%c8ave
+
+        rc  = disp_fa*mmd3_pairs(agti,agtj)%rc + disp_fb
+
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
+            crgij = geo%sup_chrg(i) * geo%sup_chrg(j)
+        else
+            crgij = top%atoms(i)%charge * top%atoms(j)%charge
+        end if
+
+        ! calculate distances
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2
+        ra  = sqrt(r2a)
+
+        rc2 = rc*rc
+
+        r6 = r2*r2*r2
+        rc6 = rc2*rc2*rc2
+
+        r8 = r6*r2
+        rc8 = rc6*rc2
+
+        r12 = r6*r6
+
+        V_aa = pa/r12
+
+        r6i = 1.0d0/(r6+rc6)
+        r8i = 1.0d0/(r8+rc8)
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene  = geo%ele_ene + scale2*crgij*ra
+            geo%nb_ene  = geo%nb_ene + V_aa - c6*r6i - c8*r8i
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+            geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij*ra
+            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa - c6*r6i - c8*r8i)
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_12_D3BJ
+
+!===============================================================================
+! subroutine ffdev_energy_nb_EXP_TTXDM
+!===============================================================================
+
+subroutine ffdev_energy_nb_EXP_TTXDM(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -638,7 +784,7 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip, i, j, nbt, agti, agtj, k
-    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe
     real(DEVDP)     :: r2,r,r6,r8,r10,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg, sump
     ! --------------------------------------------------------------------------
 
@@ -646,9 +792,11 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
     geo%nb14_ene = 0.0d0
     geo%ele_ene = 0.0d0
     geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
 
     if( .not. xdm_data_loaded ) then
-        call ffdev_utils_exit(DEV_OUT,1,'XDM not loaded for ffdev_energy_nb_TT!')
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_EXP_TTXDM!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
@@ -658,7 +806,7 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
         j = top%nb_list(ip)%aj
         nbt = top%nb_list(ip)%nbt
         pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
-        pb  = disp_fb*top%nb_types(nbt)%pb
+        pb  = top%nb_types(nbt)%pb
 
         agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
         agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
@@ -671,7 +819,7 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
         c8  = xdm_pairs(agti,agtj)%c8ave
         c10 = xdm_pairs(agti,agtj)%c10ave
 
-        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_mode .eq. NB_ELE_QGEO) ) then
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
             crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
         else
             crgij =  top%atoms(i)%charge * top%atoms(j)%charge
@@ -685,7 +833,9 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
         r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
         r  = sqrt(r2)
 
-        arg = pb*r
+        upe = exp(-pb*r)
+
+        arg = disp_fa*pb*r
         pe = exp(-arg)
 
     ! 6
@@ -722,18 +872,121 @@ subroutine ffdev_energy_nb_TT_XDM(top,geo)
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene  = geo%ele_ene + scale2*crgij/r
 
-            geo%nb_ene  = geo%nb_ene + pa*pe - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
+            geo%nb_ene  = geo%nb_ene + pa*upe - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
         else
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
 
             geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij/r
 
-            geo%nb14_ene  = geo%nb14_ene + (pa*pe - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10) * inv_scnb
+            geo%nb14_ene  = geo%nb14_ene + (pa*upe - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10) * inv_scnb
         end if
     end do
 
-end subroutine ffdev_energy_nb_TT_XDM
+end subroutine ffdev_energy_nb_EXP_TTXDM
+
+!===============================================================================
+! subroutine ffdev_energy_nb_EXP_TTD3
+!===============================================================================
+
+subroutine ffdev_energy_nb_EXP_TTD3(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_mmd3_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip, i, j, nbt, agti, agtj, k
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r2,r,r6,r8,scale2,c6,c8,fd6,fd8,pe,arg,sump
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%nb14_ene = 0.0d0
+    geo%ele_ene = 0.0d0
+    geo%nb_ene = 0.0d0
+    geo%nb_rep = 0.0d0
+    geo%nb_disp = 0.0d0
+
+    if( .not. mmd3_data_loaded ) then
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_EXP_TTD3!')
+    end if
+
+    scale2 = ele_qscale*ele_qscale*332.05221729d0
+
+    do ip=1,top%nb_size
+        i = top%nb_list(ip)%ai
+        j = top%nb_list(ip)%aj
+        nbt = top%nb_list(ip)%nbt
+
+        pa  = exp(top%nb_types(nbt)%pa) ! * top%nb_types(nbt)%pb)
+        pb  = top%nb_types(nbt)%pb
+
+        agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+        agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+        ! DEBUG
+        ! write(*,*) agti, trim(top%atom_types(top%atoms(i)%typeid)%name), agtj, trim(top%atom_types(top%atoms(j)%typeid)%name)
+
+        ! MMD3
+        c6  = mmd3_pairs(agti,agtj)%c6ave
+        c8  = mmd3_pairs(agti,agtj)%c8ave
+
+        if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
+            crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
+        else
+            crgij =  top%atoms(i)%charge * top%atoms(j)%charge
+        end if
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r  = sqrt(r2)
+
+       ! upe = exp(-pb*r)
+
+        arg = pb*r
+        pe = exp(-arg)
+
+    ! 6
+        r6 = r2*r2*r2
+        fd6 = 1.0d0 - pe
+        sump = 1.0d0
+        do k=1,6
+            sump = sump * arg / real(k,DEVDP)
+            fd6 = fd6 - pe*sump
+        end do
+
+    ! 8
+        r8 = r6*r2
+        fd8 = fd6
+        sump = sump * arg / real(7,DEVDP)
+        fd8 = fd8 - pe*sump
+        sump = sump * arg / real(8,DEVDP)
+        fd8 = fd8 - pe*sump
+
+        if( top%nb_list(ip)%dt .eq. 0 ) then
+            geo%ele_ene  = geo%ele_ene + scale2*crgij/r
+
+            geo%nb_ene  = geo%nb_ene + pa/(r6*r6)- fd6*c6/r6 - fd8*c8/r8
+        else
+            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+
+            geo%ele14_ene  = geo%ele14_ene + inv_scee*scale2*crgij/r
+
+            geo%nb14_ene  = geo%nb14_ene + (pa/(r6*r6) - fd6*c6/r6 - fd8*c8/r8) * inv_scnb
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_EXP_TTD3
 
 ! ------------------------------------------------------------------------------
 

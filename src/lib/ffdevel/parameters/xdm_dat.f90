@@ -30,8 +30,6 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c8sig
     real(DEVDP)         :: c10ave
     real(DEVDP)         :: c10sig
-    real(DEVDP)         :: Rcd      ! critical from disp
-    real(DEVDP)         :: Rcp      ! critical from pol (Rvdw)
     real(DEVDP)         :: Rc       ! critical radius for BJ
     integer             :: num
 end type XDM_PAIR_TYPE
@@ -51,16 +49,6 @@ end type XDM_ATOM_TYPE
 logical                         :: xdm_data_loaded = .false.
 type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
 type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
-
-! ------------------------------------------------------------------------------
-
-! DOI:
-integer,parameter   ::   XDM_RC_FROM_CX  = 1
-
-! DOI:
-integer,parameter   ::   XDM_RC_FROM_POL = 2
-
-integer :: xdm_rc_source    = XDM_RC_FROM_CX
 
 ! ------------------------------------------------------------------------------
 

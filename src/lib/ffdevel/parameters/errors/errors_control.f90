@@ -28,6 +28,14 @@ contains
 
 subroutine ffdev_errors_ctrl(fin)
 
+    use prmfile
+    use ffdev_utils
+
+    use ffdev_errors_dat
+    use ffdev_errors
+
+    use ffdev_parameters_dat
+
     use ffdev_err_bonds_control
     use ffdev_err_angles_control
     use ffdev_err_dihedrals_control
@@ -36,19 +44,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_energy_control
     use ffdev_err_rmsd_control
     use ffdev_err_ihess_control
-    use ffdev_err_bonds
-    use ffdev_err_angles
-    use ffdev_err_dihedrals
-    use ffdev_err_impropers
-    use ffdev_err_nbdists
-    use ffdev_err_energy
-    use ffdev_err_rmsd
-    use ffdev_err_ihess
-    use ffdev_errors_dat
-    use ffdev_utils
-    use prmfile
-    use ffdev_parameters_dat
-    use ffdev_errors
+    use ffdev_err_sapt0_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -58,9 +54,10 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_utils_heading(DEV_OUT,'FFERROR', ':')
 
     ! clear what should be calculated
-    errors_calc_hess = .false.
-    errors_calc_grad = .false.
-    errors_calc_ene  = .false.
+    errors_calc_hess    = .false.
+    errors_calc_grad    = .false.
+    errors_calc_ene     = .false.
+    errors_calc_sapt0   = .false.
 
     ! reset setup by external request
     if( prmfile_open_section(fin,'setdefault') .or. ResetAllSetup ) then
@@ -70,6 +67,7 @@ subroutine ffdev_errors_ctrl(fin)
 
     ! read setup
     call ffdev_err_energy_ctrl(fin)
+    call ffdev_err_sapt0_ctrl(fin)
     call ffdev_err_bonds_ctrl(fin)
     call ffdev_err_angles_ctrl(fin)
     call ffdev_err_dihedrals_ctrl(fin)

@@ -91,7 +91,7 @@ subroutine ffdev_parameters_ctrl_identities(fin)
                 write(DEV_OUT,40) adjustl(key),'all'
                 call setup_realm_identity(REALM_IMPR_G,niden)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported identity key '''//trim(key)//'''!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported identity key '''//trim(key)//'''!')
         end select
     end do
 
@@ -129,7 +129,7 @@ subroutine setup_realm_identity(realm,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .eq. REALM_DIH_V) .or. (realm .eq. REALM_DIH_G) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unsupported real for setup_realm_identity!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported real for setup_realm_identity!')
     end if
 
     lniden = 0
@@ -179,7 +179,7 @@ subroutine setup_dih_identity_byrot(realm,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .ne. REALM_DIH_V) .and. (realm .ne. REALM_DIH_G) .and. (realm .ne. REALM_DIH_C) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unsupported realm for setup_dih_identity_byrot!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_dih_identity_byrot!')
     end if
 
     do i=1,nparams
@@ -336,7 +336,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
                 end do
                 write(DEV_OUT,30) nchanged,trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported action key '''//trim(key)//'''!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported action key '''//trim(key)//'''!')
         end select
     end do
 
@@ -355,8 +355,8 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     end if
 
     return
-555 call ffdev_utils_exit(DEV_OUT,1,'Unable to read key in [prameters]!')
-556 call ffdev_utils_exit(DEV_OUT,1,'Unable to read key and realm in [prameters]!')
+555 call ffdev_utils_exit(DEV_ERR,1,'Unable to read key in [prameters]!')
+556 call ffdev_utils_exit(DEV_ERR,1,'Unable to read key and realm in [prameters]!')
 
 10 format('=== [parameters] ===============================================================')
 30 format('Altered parameters = ',I3,' | ', A)
@@ -568,7 +568,7 @@ subroutine change_realms(realm,enable,options,nchanged)
 !                    case(NB_MODE_EXP6)
 !                        ! FIXME
 !                    case default
-!                        call ffdev_utils_exit(DEV_OUT,1,'Unsupported NB mode in change_realms!')
+!                        call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB mode in change_realms!')
 !                end select
                 if( realmid .eq. REALM_DIH_C ) then
                     if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
@@ -612,15 +612,15 @@ subroutine change_dih_realm_bond(realmid,enable,options)
     read(options,*,end=100,err=100) k1,k2,k3,sid,aj,ak
 
     if( (sid .lt. 1) .or. (sid .gt. nsets) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Set ID is out-of-legal range!')
+        call ffdev_utils_exit(DEV_ERR,1,'Set ID is out-of-legal range!')
     end if
 
     if( (aj .lt. 1) .or. (aj .gt. sets(sid)%top%natoms) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Atom i is out-of-legal range!')
+        call ffdev_utils_exit(DEV_ERR,1,'Atom i is out-of-legal range!')
     end if
 
     if( (ak .lt. 1) .or. (ak .gt. sets(sid)%top%natoms) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Atom j is out-of-legal range!')
+        call ffdev_utils_exit(DEV_ERR,1,'Atom j is out-of-legal range!')
     end if
 
     do i=1,nparams
@@ -648,7 +648,7 @@ subroutine change_dih_realm_bond(realmid,enable,options)
 
     return
 
-100 call ffdev_utils_exit(DEV_OUT,1,'Illegal option ''bond'' for dih_* realm!')
+100 call ffdev_utils_exit(DEV_ERR,1,'Illegal option ''bond'' for dih_* realm!')
 
 end subroutine change_dih_realm_bond
 
@@ -687,7 +687,7 @@ subroutine change_dih_realm_pn(realmid,enable,options)
 
     return
 
-100 call ffdev_utils_exit(DEV_OUT,1,'Illegal option ''pn'' for dih_* realm!')
+100 call ffdev_utils_exit(DEV_ERR,1,'Illegal option ''pn'' for dih_* realm!')
 
 end subroutine change_dih_realm_pn
 
@@ -728,8 +728,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'all'
         end select
 
-        write(DEV_OUT,35) ffdev_topology_nb_mode_to_string(nb_mode)
-        write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(nb_comb_rules)
         write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
@@ -755,7 +753,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 NBParamsMode = NB_PARAMS_MODE_ALL
                 write(DEV_OUT,20) trim(string)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_params ('//trim(string)//')')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
         end select
     else
         select case(NBParamsMode)
@@ -769,9 +767,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'all'
         end select
     end if
-
-    write(DEV_OUT,35) ffdev_topology_nb_mode_to_string(nb_mode)
-    write(DEV_OUT,55) ffdev_topology_comb_rules_to_string(nb_comb_rules)
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
         write(DEV_OUT,60) prmfile_onoff(OnlyDefinedDihItems)
@@ -813,8 +808,6 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
  20  format ('NB parameter assembly mode (nb_params)   = ',a12)
  25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
- 35  format ('NB mode (initial)                        = ',a26,'  (default)')
- 55  format ('NB combining rules (initial)             = ',a26,'  (default)')
  60  format ('Use defined dih items (dih_only_defined) = ',a12)
  65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
  70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
@@ -911,7 +904,7 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
             case('load')
                 rst = prmfile_get_field_on_line(fin,name)
                 if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with FFDevel parameters to be loaded is not provided!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be loaded is not provided!')
                 end if
                 write(DEV_OUT,10) trim(name)
                 if( exec ) then
@@ -921,7 +914,7 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
             case('save')
                 rst = prmfile_get_field_on_line(fin,name)
                 if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with FFDevel parameters to be saved is not provided!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be saved is not provided!')
                 end if
                 write(DEV_OUT,10) trim(name)
                 if( exec ) then
@@ -930,7 +923,7 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
             case('amber')
                 rst = prmfile_get_field_on_line(fin,name)
                 if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_OUT,1,'Name of the file with AMBER parameters to be saved is not provided!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with AMBER parameters to be saved is not provided!')
                 end if
                 write(DEV_OUT,10) trim(name)
                 if( exec ) then
@@ -1032,7 +1025,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
 
         ! open set section
         if( .not. prmfile_get_section_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get section name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get section name!')
         end if
 
         select case(string)
@@ -1040,8 +1033,8 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_bond_r0(fin,exec)
             case('angle_a0')
                 call ffdev_parameters_ctrl_angle_a0(fin,exec)
-            case('nbmanip')
-                call ffdev_parameters_ctrl_nbmanip(fin,exec)
+            case('nbsetup')
+                call ffdev_parameters_ctrl_nbsetup(fin,exec)
             case('parameters')
                 call ffdev_parameters_ctrl_realms(fin)
             case('nbload')
@@ -1088,7 +1081,7 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
                 mode = 1
                 write(DEV_OUT,20)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported initff mode '//trim(string)//'!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported initff mode '//trim(string)//'!')
         end select
         string = 'average'
     else
@@ -1103,13 +1096,13 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
         do while ( rst )
             rst = prmfile_get_integer_by_key(fin,'type',typeid)
             if( rst .eqv. .false. ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type must be integer number!')
+                call ffdev_utils_exit(DEV_ERR,1,'type must be integer number!')
             end if
             if( (typeid .le. 0) .or. (typeid .gt. nparams) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type is out-of-legal range!')
+                call ffdev_utils_exit(DEV_ERR,1,'type is out-of-legal range!')
             end if
             if( params(typeid)%realm .ne. REALM_BOND_D0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type is not bond_r0!')
+                call ffdev_utils_exit(DEV_ERR,1,'type is not bond_r0!')
             end if
             if( exec ) call ffdev_parameters_bond_r0_init(typeid,mode)
             rst = prmfile_next_line(fin)
@@ -1163,7 +1156,7 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
                 mode = 1
                 write(DEV_OUT,20)
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported initff mode '//trim(string)//'!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported initff mode '//trim(string)//'!')
         end select
         string = 'average'
     else
@@ -1178,13 +1171,13 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
         do while ( rst )
             rst = prmfile_get_integer_by_key(fin,'type',typeid)
             if( rst .eqv. .false. ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type must be integer number!')
+                call ffdev_utils_exit(DEV_ERR,1,'type must be integer number!')
             end if
             if( (typeid .le. 0) .or. (typeid .gt. nparams) ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type is out-of-legal range!')
+                call ffdev_utils_exit(DEV_ERR,1,'type is out-of-legal range!')
             end if
             if( params(typeid)%realm .ne. REALM_ANGLE_A0 ) then
-                call ffdev_utils_exit(DEV_OUT,1,'type is not angle_a0!')
+                call ffdev_utils_exit(DEV_ERR,1,'type is not angle_a0!')
             end if
             rst = prmfile_next_line(fin)
         end do
@@ -1205,15 +1198,16 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
 end subroutine ffdev_parameters_ctrl_angle_a0
 
 ! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip
+! subroutine ffdev_parameters_ctrl_nbsetup
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
+subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
     use prmfile
     use ffdev_utils
+    use ffdev_topology
     use ffdev_topology_dat
 
     implicit none
@@ -1223,10 +1217,28 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
     logical                     :: rst
     character(50)               :: key
     character(PRMFILE_MAX_PATH) :: string
+    integer                     :: mode
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'nbsetup') ) then
+        write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
+        write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
+        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+    end if
+
+    ! setup
+    if( prmfile_get_string_by_key(fin,'qsource', string)) then
+        mode = ffdev_topology_qsource_from_string(string)
+        write(DEV_OUT,40) ffdev_topology_qsource_to_string(mode)
+        if( exec ) then
+            ele_qsource = mode
+        end if
+    else
+        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+    end if
 
     ! programmatic NB change (order dependent)
 
@@ -1239,23 +1251,29 @@ subroutine ffdev_parameters_ctrl_nbmanip(fin,exec)
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
                 else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing comb_rules rule!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Missing comb_rules rule!')
                 end if
             case('nb_mode')
                 if( prmfile_get_field_on_line(fin,string) ) then
                     call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
                 else
-                    call ffdev_utils_exit(DEV_OUT,1,'Missing nb_mode mode!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Missing nb_mode mode!')
                 end if
+            case('qsource')
+                ! ignore ..., processed earlier
             case default
-                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nbmanip action '//trim(string)//'!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nbsetup action '//trim(string)//'!')
         end select
         rst = prmfile_next_line(fin)
     end do
 
-10 format('=== [nbmanip] ==================================================================')
+ 10 format('=== [nbsetup] ==================================================================')
+ 25 format('NB mode (nb_mode)            = ',A30,' (current)')
+ 35 format('Combining rules (comb_rules) = ',A30,' (current)')
+ 40 format('Source of charges (qsource)  = ',A30)
+ 45 format('Source of charges (qsource)  = ',A30,' (current)')
 
-end subroutine ffdev_parameters_ctrl_nbmanip
+end subroutine ffdev_parameters_ctrl_nbsetup
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
@@ -1444,7 +1462,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 !            case(NB_MODE_EXP6)
 !                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
 !            case default
-!                call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
 !        end select
 
         write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
@@ -1465,7 +1483,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 !                            sets(j)%top%nb_types(nbt)%r0 = b
 !                            sets(j)%top%nb_types(nbt)%alpha = c
 !                        case default
-!                            call ffdev_utils_exit(DEV_OUT,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!                            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
 !                    end select
 !
 !                end if
@@ -1498,7 +1516,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
 
 20 format('=== SET ',I2.2)
 
-100 call ffdev_utils_exit(DEV_OUT,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
+100 call ffdev_utils_exit(DEV_ERR,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
 
 510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 520 format('# NBMode TypA TypB      eps/A             R0/B          alpha/C6             C8       ')

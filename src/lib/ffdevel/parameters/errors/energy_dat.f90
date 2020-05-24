@@ -20,18 +20,13 @@ module ffdev_err_energy_dat
 use ffdev_constants
 use ffdev_variables
 
-integer,parameter       :: EE_ABS       = 1 ! absolute
-integer,parameter       :: EE_REL       = 2 ! relative
-integer,parameter       :: EE_LOG       = 3 ! log
-integer,parameter       :: EE_ABSLOG    = 4 ! abs+log
-
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_energy_init
 logical                 :: EnableEnergyError
 logical                 :: PrintEnergyErrorSummary
 real(DEVDP)             :: EnergyErrorWeight
-integer                 :: EnergyErrorMode = EE_ABS
+integer                 :: EnergyErrorMode
 logical                 :: EnableMaxFilter
 real(DEVDP)             :: MaxTargetEnergy
 logical                 :: EnableMinFilter

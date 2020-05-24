@@ -42,7 +42,7 @@ program ffdev_mmoptimize
     if( (command_argument_count() .ne. 1) .and. (command_argument_count() .ne. 2) &
         .and. (command_argument_count() .ne. 3) .and. (command_argument_count() .ne. 4) ) then
         call print_usage
-        call ffdev_utils_exit(DEV_OUT,1,'No input file specified on the command line!')
+        call ffdev_utils_exit(DEV_ERR,1,'No input file specified on the command line!')
     end if
 
     call get_command_argument(1, ctrlname)
@@ -55,11 +55,11 @@ program ffdev_mmoptimize
     call prmfile_init(fin)
 
     if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
     end if
 
     if( .not. prmfile_open_group(fin,'MAIN') ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file does not contain {MAIN} group!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file does not contain {MAIN} group!')
     end if
 
     if( command_argument_count() .gt. 1 ) then
@@ -82,7 +82,7 @@ program ffdev_mmoptimize
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! release the file

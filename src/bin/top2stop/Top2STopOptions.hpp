@@ -45,6 +45,7 @@ public:
     CSO_ARG(CSmallString,TopologyName)
     CSO_ARG(CSmallString,STopologyName)
     // options ------------------------------
+    CSO_OPT(CSmallString,CrdName)
     CSO_OPT(int,DihedralSeriesSize)
     CSO_OPT(CSmallString,DihedralMode)
     CSO_OPT(CSmallString,DihedralTypes)
@@ -72,6 +73,15 @@ public:
                 "STOPOLOGY",                           /* parametr name */
                 "Simplified topology name. If the name is '-' then the simplified topology is written to the standard output.")   /* argument description */
 // description of options -----------------------------------------------------
+    CSO_MAP_OPT(CSmallString,                           /* option type */
+                CrdName,                        /* option name */
+                NULL,                          /* default value */
+                false,                          /* is option mandatory */
+                'c',                           /* short option name */
+                "coords",                      /* long option name */
+                "NAME",                           /* parametr name */
+                "file with coordinates")   /* option description */
+    //----------------------------------------------------------------------
     CSO_MAP_OPT(int,                           /* option type */
                 DihedralSeriesSize,                        /* option name */
                 4,                          /* default value */
@@ -87,7 +97,7 @@ public:
                 false,                          /* is option mandatory */
                 'm',                           /* short option name */
                 "dihmode",                      /* long option name */
-                NULL,                           /* parametr name */
+                "MODE",                           /* parametr name */
                 "dihedral mode: cos - cosine series, grbf - gaussian radial basis functions")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */

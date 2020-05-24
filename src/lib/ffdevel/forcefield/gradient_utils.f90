@@ -39,12 +39,12 @@ subroutine ffdev_gradient_allocate(geo)
     ! --------------------------------------------------------------------------
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Number of atoms has to be greater than zero for gradient!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for gradient!')
     end if
 
     allocate(geo%grd(3,geo%natoms), stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate temporary array for gradient!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate temporary array for gradient!')
     end if
 
     geo%grd(:,:) = 0.0d0

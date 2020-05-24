@@ -83,8 +83,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     end if
 
     ! pre-init
-    sets(:)%isref = .false.
-    sets(:)%name  = ''
+    sets(:)%isref       = .false.
+    sets(:)%name        = ''
 
     rst = prmfile_first_section(fin)
 
@@ -158,6 +158,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         sets(i)%nrefs = 0
         nullify(sets(i)%refs)
+        nullify(sets(i)%natomsrefs)
 
         if( prmfile_init_field_by_key(fin,'references') ) then
             if( sets(i)%isref ) then
@@ -167,7 +168,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             do while ( prmfile_get_field_by_key(fin,field) )
                 sets(i)%nrefs = sets(i)%nrefs + 1
             end do
-            allocate(sets(i)%refs(sets(i)%nrefs), stat = alloc_status)
+            allocate(sets(i)%refs(sets(i)%nrefs),sets(i)%natomsrefs(sets(i)%nrefs), stat = alloc_status)
             if( alloc_status .ne. 0 ) then
                 call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for references!')
             end if
@@ -189,13 +190,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end do
             rst = prmfile_get_string_by_key(fin,'references', string)
             write(DEV_OUT,70) trim(string)
-            ! check size consitency
+            ! check size consistency
             k = 0
             do l=1,sets(i)%nrefs
-                k = k + sets(sets(i)%refs(l))%top%natoms
+                sets(i)%natomsrefs(l) = sets(sets(i)%refs(l))%top%natoms
+                k = k + sets(i)%natomsrefs(l)
             end do
             if( k .ne. sets(i)%top%natoms ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Size (natoms) inconsistency between reference systems and the set detected!')
+                call ffdev_utils_exit(DEV_ERR,1,'Size (natoms) inconsistency detected between the set and reference systems!')
             end if
         end if
 
@@ -291,6 +293,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,17) trim('-none-')
         else
             write(DEV_OUT,17) trim(sets(i)%final_drvxyz)
+        end if
+
+        ! setup charges, which should be loaded
+        if( .not. prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
+            write(DEV_OUT,235) trim(LoadCharges)
+        else
+            write(DEV_OUT,230) trim(LoadCharges)
         end if
 
 !----------------------
@@ -512,6 +521,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  17 format('Final driving structures (final_drvxyz) = ',A)
  18 format('Initial drv profile (initial_drvene)    = ',A)
  19 format('Initial drv structures (initial_drvxyz) = ',A)
+
+230 format('Load charges (load_charges)             = ',A12)
+235 format('Load charges (load_charges)             = ',A12,'                  (default)')
 
  20 format('Probe size (probesize)                  = ',I12)
  25 format('Probe size (probesize)                  = ',I12,'                  (default)')

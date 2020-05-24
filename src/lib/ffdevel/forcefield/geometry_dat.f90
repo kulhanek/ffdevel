@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2020 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2013 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -30,24 +31,16 @@ end type RESTRAINT
 
 ! ------------------------------------------------------------------------------
 
-type GRID_CACHE
-    real(DEVDP)                 :: r
-    integer                     :: npts1
-    real(DEVDP),pointer         :: grid_1(:,:)
-    integer                     :: npts2
-    real(DEVDP),pointer         :: grid_2(:,:)
-end type GRID_CACHE
-
-! ------------------------------------------------------------------------------
-
 type GEOMETRY
     integer                 :: id
     integer                 :: natoms           ! number of atoms
     character(len=MAX_PATH) :: name
     character(len=MAX_PATH) :: title
+    real(DEVDP)             :: weight           ! contribution to all data
 ! geometry data
     integer,pointer         :: z(:)             ! proton numbers
     real(DEVDP),pointer     :: crd(:,:)         ! geometry (3,natoms)
+! energies
     real(DEVDP)             :: bond_ene         ! bond energy
     real(DEVDP)             :: angle_ene        ! angle energy
     real(DEVDP)             :: dih_ene          ! dihedral energy
@@ -56,13 +49,20 @@ type GEOMETRY
     real(DEVDP)             :: nb14_ene         ! 1-4 vdW
     real(DEVDP)             :: ele_ene          ! electrostatics
     real(DEVDP)             :: nb_ene           ! vdW
+    real(DEVDP)             :: nb_rep           ! total repulsion
+    real(DEVDP)             :: nb_disp          ! total dispersion
     real(DEVDP)             :: total_ene        ! total energy from MM
+! sapt0 energies
+    real(DEVDP)             :: sapt0_ele         ! electrostatics
+    real(DEVDP)             :: sapt0_rep         ! NB repulsion
+    real(DEVDP)             :: sapt0_disp        ! NB dispersion
+    real(DEVDP)             :: sapt0_total
+! derivatives, etc.
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer     :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
     real(DEVDP),pointer     :: ihess(:)         ! hessian in internal coordinates (na+nb+nd+ni)
     real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
-    real(DEVDP)             :: weight           ! contribution to all data
 ! target data
     logical                 :: trg_crd_optimized    ! indicates that the goemtry was optimized
     logical                 :: trg_ene_loaded
@@ -81,6 +81,12 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
+! target SAPT0
+    logical                 :: trg_sapt0_loaded
+    real(DEVDP)             :: trg_sapt0_ele
+    real(DEVDP)             :: trg_sapt0_exch
+    real(DEVDP)             :: trg_sapt0_ind
+    real(DEVDP)             :: trg_sapt0_disp
 ! restraints
     integer                 :: nrst                 ! number of restraints
     type(RESTRAINT),pointer :: rst(:)               ! restraints
@@ -106,6 +112,9 @@ end type GEOMETRY
 
 real(DEVDP)     :: DIS_FC   = 1000.0     ! kcal/mol/A^2
 real(DEVDP)     :: ANG_FC   = 1000.0     ! kcal/mol/rad^2
+
+! which charges should be loaded
+character(len=MAX_PATH) :: LoadCharges  = 'DDEC6'
 
 ! ------------------------------------------------------------------------------
 

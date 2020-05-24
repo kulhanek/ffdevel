@@ -26,25 +26,26 @@ use ffdev_topology
 
 ! this training set associated with the topology
 type TARGETSET
-    type(TOPOLOGY)              :: top          ! set topology
-    character(len=MAX_PATH)     :: final_stop   ! final name of topology
-    character(len=MAX_PATH)     :: initial_drvene ! driving profiles
-    character(len=MAX_PATH)     :: initial_drvxyz ! driving geometries
-    character(len=MAX_PATH)     :: final_drvene ! driving profiles
-    character(len=MAX_PATH)     :: final_drvxyz ! driving geometries
-    integer                     :: ngeos        ! number of training points in the set
-    type(GEOMETRY),pointer      :: geo(:)       ! training data
-    real(DEVDP)                 :: offset       ! energy offset
-    integer                     :: mineneid     ! geometry with minimum of energy
-    logical                     :: optgeo       ! optimize geometry
-    logical                     :: keepoptgeo   ! keep optimized geometry
-    logical                     :: savepts      ! save final pst
-    logical                     :: savexyzr     ! save final xyzr
-    logical                     :: nofreq       ! do not calculate frequencies when hessian is loaded
-    character(len=MAX_PATH)     :: name         ! target name
-    logical                     :: isref        ! is reference structure
-    integer                     :: nrefs        ! number of references
-    integer,pointer             :: refs(:)      ! references
+    type(TOPOLOGY)              :: top              ! set topology
+    character(len=MAX_PATH)     :: final_stop       ! final name of topology
+    character(len=MAX_PATH)     :: initial_drvene   ! driving profiles
+    character(len=MAX_PATH)     :: initial_drvxyz   ! driving geometries
+    character(len=MAX_PATH)     :: final_drvene     ! driving profiles
+    character(len=MAX_PATH)     :: final_drvxyz     ! driving geometries
+    integer                     :: ngeos            ! number of training points in the set
+    type(GEOMETRY),pointer      :: geo(:)           ! training data
+    real(DEVDP)                 :: offset           ! energy offset
+    integer                     :: mineneid         ! geometry with minimum of energy
+    logical                     :: optgeo           ! optimize geometry
+    logical                     :: keepoptgeo       ! keep optimized geometry
+    logical                     :: savepts          ! save final pst
+    logical                     :: savexyzr         ! save final xyzr
+    logical                     :: nofreq           ! do not calculate frequencies when hessian is loaded
+    character(len=MAX_PATH)     :: name             ! target name
+    logical                     :: isref            ! is reference structure
+    integer                     :: nrefs            ! number of references
+    integer,pointer             :: refs(:)          ! references
+    integer,pointer             :: natomsrefs(:)    ! number of atoms in reference sets for SAPT0 calculations
 end type TARGETSET
 
 integer                     :: nsets    ! number of sets

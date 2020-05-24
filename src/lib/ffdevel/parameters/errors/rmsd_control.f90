@@ -68,7 +68,7 @@ subroutine ffdev_err_rmsd_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(RMSDErrorMassWeighted)
     end if
 
- 10 format('=== [rmsd] ==================================================================')
+ 10 format('=== [rmsd] =====================================================================')
 
 110  format ('RMSD error (enabled)                   = ',a12)
 115  format ('RMSD error (enabled)                   = ',a12,'                  (default)')

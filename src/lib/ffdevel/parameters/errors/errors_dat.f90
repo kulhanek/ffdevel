@@ -21,6 +21,13 @@ use ffdev_constants
 use ffdev_variables
 
 ! ------------------------------------------------------------------------------
+
+integer,parameter       :: EE_ABS       = 1 ! absolute
+integer,parameter       :: EE_REL       = 2 ! relative
+integer,parameter       :: EE_LOG       = 3 ! log
+integer,parameter       :: EE_ABSLOG    = 4 ! abs+log
+
+! ------------------------------------------------------------------------------
 ! error function
 
 type FFERROR_TYPE
@@ -36,6 +43,9 @@ type FFERROR_TYPE
     real(DEVDP)         :: ihess_angles
     real(DEVDP)         :: ihess_dihedrals
     real(DEVDP)         :: ihess_impropers
+    real(DEVDP)         :: sapt0_ele
+    real(DEVDP)         :: sapt0_rep
+    real(DEVDP)         :: sapt0_disp
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError
@@ -43,12 +53,12 @@ type(FFERROR_TYPE)      :: FFError
 ! ------------------------------------------------------------------------------
 ! internal setup
 logical                 :: errors_calc_ene      = .false.
+logical                 :: errors_calc_sapt0    = .false.
 logical                 :: errors_calc_grad     = .false.
 logical                 :: errors_calc_hess     = .false.
 
 ! ------------------------------------------------------------------------------
 integer                 :: ProgramIndex                 = 0
-
 
 ! ------------------------------------------------------------------------------
 

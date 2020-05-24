@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <AmberTopology.hpp>
+#include <AmberRestart.hpp>
 #include "Top2STopOptions.hpp"
 #include <VerboseStr.hpp>
 #include <TerminalStr.hpp>
@@ -48,6 +49,7 @@ public:
 private:
     CTop2STopOptions    Options;            // program options
     CAmberTopology      Topology;           // input topology
+    CAmberRestart       Coords;
 
     // output ------------------------------------
     CTerminalStr        Console;
@@ -83,9 +85,11 @@ private:
     int nb_sizeij;
     int nb_size14;
     int nnb_types;
+    int nsymm_classes;
 
     /// load topology
     bool LoadTopology(void);
+    bool LoadCoords(void);
     bool LoadDihFilters(void);
 
     /// write all data

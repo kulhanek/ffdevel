@@ -22,10 +22,12 @@ SET(FFDEVEL_SRC
         forcefield/hessian.f90
         forcefield/hessian_utils.f90
         forcefield/jacobian.f90
+        forcefield/nbmodes/LJ.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90
         parameters/errors/errors_control.f90
+        parameters/errors/errors_utils.f90
 
         parameters/errors/bonds_dat.f90
         parameters/errors/bonds.f90
@@ -53,6 +55,10 @@ SET(FFDEVEL_SRC
         parameters/errors/energy.f90
         parameters/errors/energy_control.f90
 
+        parameters/errors/sapt0_dat.f90
+        parameters/errors/sapt0.f90
+        parameters/errors/sapt0_control.f90
+
         parameters/xdm_dat.f90
         parameters/xdm.f90
         parameters/targetset_dat.f90
@@ -70,6 +76,15 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
         optimizers/shark-ml.cpp
+
+        dftd3/sizes.f90
+        dftd3/api.f90
+        dftd3/common.f90
+        dftd3/core.f90
+        dftd3/pars.f90
+        dftd3/sizes.f90
+        dftd3/mmd3.f90
+        dftd3/mmd3_dat.f90
         )
 
 # create static library --------------------------------------------------------

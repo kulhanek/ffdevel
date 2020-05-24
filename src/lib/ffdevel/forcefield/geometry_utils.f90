@@ -42,7 +42,7 @@ real(DEVDP) function ffdev_geometry_utils_get_rmsd(natoms,z,ref,src,mw)
     integer        :: i,info,best
     real(DEVDP)    :: x1,x2,x3,xr1,xr2,xr3,amass,totmass,itotmass
     real(DEVDP)    :: r11,r12,r13,r21,r22,r23,r31,r32,r33
-    real(DEVDP)    :: f(4,4),u(3,3)
+    real(DEVDP)    :: f(4,4)
     real(DEVDP)    :: eigenvalues(4),work(26*4)
     real(DEVDP)    :: x2sum,xr2sum
     ! --------------------------------------------------------------------------
@@ -667,7 +667,6 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
     logical         :: onlytyped
     ! --------------------------------------------
     integer         :: i, j, ai, aj, ak, al, nb
-    logical         :: found
     real(DEVDP)     :: d1, d2, diff
     real(DEVDP)     :: serr, lerr,aerr,rmse
     ! --------------------------------------------------------------------------

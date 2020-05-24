@@ -81,7 +81,7 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
     allocate(u(m,m),vt(n,n),sig(k),sig_plus(n,m),iwork(8*k),work(1),temp_mat(n,m), &
              stat = alloc_stat)
     if( alloc_stat .ne. 0) then
-       call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays I in ffdev_jacobian_inverse!')
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays I in ffdev_jacobian_inverse!')
     end if
 
     u(:,:)          = 0.0d0
@@ -96,7 +96,7 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
                 lwork, iwork(1), info)
 
     if( info .ne. 0) then
-       call ffdev_utils_exit(DEV_OUT,1,'Unable to get size of working array in ffdev_jacobian_inverse!')
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to get size of working array in ffdev_jacobian_inverse!')
     end if
 
     ! reinit working array
@@ -105,7 +105,7 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
     allocate(work(lwork), stat = alloc_stat)
 
     if( alloc_stat .ne. 0) then
-       call ffdev_utils_exit(DEV_OUT,1,'Unable to allocate arrays II in ffdev_jacobian_inverse!')
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays II in ffdev_jacobian_inverse!')
     end if
 
     ! do SVD
@@ -113,7 +113,7 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
                 lwork, iwork(1), info)
 
     if( info .ne. 0) then
-       call ffdev_utils_exit(DEV_OUT,1,'SVD failed in ffdev_jacobian_inverse!')
+       call ffdev_utils_exit(DEV_ERR,1,'SVD failed in ffdev_jacobian_inverse!')
     end if
 
     ! set singular values that are too small to zero

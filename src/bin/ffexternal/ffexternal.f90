@@ -52,7 +52,7 @@ program ffdev_external_program
     if( command_argument_count() .lt. 5  ) then
         call print_usage()
         write(DEV_OUT,*) 'Number of arguments: ',command_argument_count()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (4 or more are required)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (4 or more are required)!')
     end if
 
     do_numerical = .false.
@@ -75,7 +75,7 @@ program ffdev_external_program
 
     if( i .lt. 3  ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified after topology!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified after topology!')
     end if
 
     call get_command_argument(i+0, layer)

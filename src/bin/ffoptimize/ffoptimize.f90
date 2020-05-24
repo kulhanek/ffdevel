@@ -30,6 +30,7 @@ program ffdev_optimize_program
     use ffdev_errors
     use ffdev_errors_dat
     use ffdev_xdm
+    use ffdev_mmd3
     use ffdev_timers
 !$ use omp_lib
 
@@ -52,7 +53,7 @@ program ffdev_optimize_program
     ! test number of input arguments
     if( command_argument_count() .ne. 1 ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_OUT,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one expected)!')
     end if
 
     call get_command_argument(1, ctrlname)
@@ -68,6 +69,7 @@ program ffdev_optimize_program
     call prmfile_init(tmpfin)
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
+    call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
 
     ! process control file -----------------------------------------------------
@@ -78,7 +80,7 @@ program ffdev_optimize_program
     call prmfile_init(fin)
 
     if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_OUT,1,'Specified control file cannot be opened!')
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
     end if
 
     ! read configuration
@@ -97,7 +99,7 @@ program ffdev_optimize_program
     if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump_group(fin,DEV_OUT,'TARGETS',.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! generate parameters from target topologies
@@ -127,6 +129,10 @@ program ffdev_optimize_program
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
 
+    ! run mmd3
+    call ffdev_mmd3_init
+    call ffdev_mmd3_run_stat()
+
     ! run XDM stat if data available
     call ffdev_xdm_run_stat()
 
@@ -137,7 +143,7 @@ program ffdev_optimize_program
 
         ! open set section
         if( .not. prmfile_get_group_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get group name!')
         end if
 
         if( string .eq. 'CHECKGRD' ) then
@@ -186,9 +192,9 @@ program ffdev_optimize_program
 
     ! check if everything was read
     if( prmfile_count_ulines(fin) .ne. 0 ) then
-        write(DEV_OUT,*)
-        call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        write(DEV_ERR,*)
+        call prmfile_dump(fin,DEV_ERR,.true.)
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     else
         write(DEV_OUT,*) '>>> INFO: The control file seems to be OK!'
     end if
@@ -201,7 +207,7 @@ program ffdev_optimize_program
 
     ncpu = 1
     !$ ncpu = omp_get_max_threads()
-    write(*,*) 'Number of threads = ',ncpu
+    write(*,'(A,I3)') '>>> INFO: Number of threads = ',ncpu
 
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
@@ -230,7 +236,7 @@ program ffdev_optimize_program
 
         ! open set section
         if( .not. prmfile_get_group_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_OUT,1,'Unable to get group name!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get group name!')
         end if
 
     ! check gradient ------------------------------
@@ -282,7 +288,7 @@ program ffdev_optimize_program
     if( prmfile_count_ulines(fin) .ne. 0 ) then
         write(DEV_OUT,*)
         call prmfile_dump(fin,DEV_OUT,.true.)
-        call ffdev_utils_exit(DEV_OUT,1,'Unprocessed lines found in the control file!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
     end if
 
     ! release the file

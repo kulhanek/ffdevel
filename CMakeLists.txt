@@ -176,7 +176,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
 
     # default compiler setups - gfortran
     SET(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=core-avx2 -fopenmp")
-    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow -fopenmp")
+    SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow -fopenmp -Wall")
 
     # ifort
     IF(FCOMP_NAME STREQUAL ifort)
