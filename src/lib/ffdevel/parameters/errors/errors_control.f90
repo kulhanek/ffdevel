@@ -45,6 +45,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_rmsd_control
     use ffdev_err_ihess_control
     use ffdev_err_sapt0_control
+    use ffdev_err_chrgpnl_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -75,6 +76,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_nbdists_ctrl(fin)
     call ffdev_err_ihess_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
+    call ffdev_err_chrgpnl_ctrl(fin)
 
 end subroutine ffdev_errors_ctrl
 

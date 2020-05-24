@@ -59,6 +59,10 @@ SET(FFDEVEL_SRC
         parameters/errors/sapt0.f90
         parameters/errors/sapt0_control.f90
 
+        parameters/errors/chrgpnl_dat.f90
+        parameters/errors/chrgpnl.f90
+        parameters/errors/chrgpnl_control.f90
+
         parameters/xdm_dat.f90
         parameters/xdm.f90
         parameters/targetset_dat.f90

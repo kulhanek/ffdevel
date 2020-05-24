@@ -41,7 +41,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_rmsd
     use ffdev_err_ihess
     use ffdev_err_sapt0
-
+    use ffdev_err_chrgpnl
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -62,6 +62,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_impropers_init()
     call ffdev_err_nbdists_init()
     call ffdev_err_rmsd_init()
+    call ffdev_err_chrgpnl_init()
 
 end subroutine ffdev_errors_init_all
 
@@ -98,6 +99,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_sapt0_dat
     use ffdev_err_sapt0
 
+    use ffdev_err_chrgpnl_dat
+    use ffdev_err_chrgpnl
+
     use ffdev_timers
 
     implicit none
@@ -121,6 +125,7 @@ subroutine ffdev_errors_error_only(error)
     error%sapt0_ele = 0.0d0
     error%sapt0_rep = 0.0d0
     error%sapt0_disp = 0.0d0
+    error%chrgpnl = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
@@ -166,6 +171,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%rmsd*RMSDErrorWeight
     end if
 
+    if( EnableChrgPnlError ) then
+        call ffdev_err_chrgpnl_error(error)
+        error%total = error%total + error%chrgpnl*ChrgPnlErrorWeight
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
@@ -185,6 +195,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt0_dat
+    use ffdev_err_chrgpnl_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -219,6 +230,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableRMSDError ) then
         write(DEV_OUT,39,ADVANCE='NO')
     end if
+    if( EnableChrgPnlError ) then
+        write(DEV_OUT,43,ADVANCE='NO')
+    end if
 
  30 format('       Energy')
  33 format('        Bonds')
@@ -230,6 +244,7 @@ subroutine ffdev_errors_ffopt_header_I()
  40 format('   SAPT0(Ele)')
  41 format('   SAPT0(Rep)')
  42 format('  SAPT0(Disp)')
+ 43 format('  ChrgPenalty')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -247,6 +262,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt0_dat
+    use ffdev_err_chrgpnl_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -281,6 +297,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableRMSDError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableChrgPnlError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
  50 format(' ------------')
 
@@ -300,6 +319,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt0_dat
+    use ffdev_err_chrgpnl_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -334,6 +354,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableRMSDError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%rmsd
+    end if
+    if( EnableChrgPnlError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%chrgpnl
     end if
 
  15 format(1X,E12.5)
@@ -377,6 +400,9 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_sapt0_dat
     use ffdev_err_sapt0
 
+    use ffdev_err_chrgpnl_dat
+    use ffdev_err_chrgpnl
+
     implicit none
     logical     :: final, printme, printsum
     integer     :: i,j
@@ -385,7 +411,7 @@ subroutine ffdev_errors_summary(final)
     if( .not. (PrintEnergyErrorSummary .or. EnableSAPT0Error .or. &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. &
-            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary) ) then
+            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. EnableChrgPnlError) ) then
         ! no error to report
         return
     end if
@@ -431,7 +457,7 @@ subroutine ffdev_errors_summary(final)
     ! summary per points
     if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
         PrintImpropersErrorSummary .or. &
-        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary) then
+        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. EnableChrgPnlError) then
 
         write(DEV_OUT,*)
         write(DEV_OUT,20)
@@ -464,6 +490,11 @@ subroutine ffdev_errors_summary(final)
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
                     printme = printme .or. printsum
                 end if
+                if( EnableChrgPnlError ) then
+                    printsum = .false.
+                    call ffdev_err_chrgpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
+                end if
 
                 if( .not. printme ) cycle
 
@@ -484,6 +515,9 @@ subroutine ffdev_errors_summary(final)
                 end if
                 if( PrintNBDistsErrorSummary ) then
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
+                if( EnableChrgPnlError ) then
+                    call ffdev_err_chrgpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
                 end if
             end do
         end do

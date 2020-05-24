@@ -46,6 +46,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: sapt0_ele
     real(DEVDP)         :: sapt0_rep
     real(DEVDP)         :: sapt0_disp
+    real(DEVDP)         :: chrgpnl
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError
