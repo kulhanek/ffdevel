@@ -239,7 +239,7 @@ subroutine ffdev_ffopt_run()
     use ffdev_timers
 
     implicit none
-    integer :: alloc_stat, i, istep
+    integer :: alloc_stat, istep
     ! --------------------------------------------------------------------------
 
     call ffdev_timers_start_timer(FFDEV_FFOPT_TIMER)
@@ -707,8 +707,8 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     integer         :: need_gradient
     integer         :: istep
     ! --------------------------------------------
-    real(DEVDP)     :: rmsg, maxgrad, lasterror, eps, xtol
-    integer         :: ires,i
+    real(DEVDP)     :: rmsg, maxgrad
+    integer         :: ires
     ! --------------------------------------------------------------------------
 
     istep = istep + 1

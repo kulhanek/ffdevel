@@ -34,7 +34,7 @@ subroutine ffdev_parameters_init()
     use ffdev_utils
 
     implicit none
-    integer     :: maxnparams, i, alloc_stat, parmid
+    integer     :: maxnparams, i, alloc_stat
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -62,15 +62,23 @@ subroutine ffdev_parameters_init()
     ! determine maximum number of parameters
     maxnparams = 0
     do i=1,nsets
+        if( PACAsPrms ) then
+            ! sets with references are dependent on referenced topology charges
+            ! use only sets with no references
+            if( sets(i)%nrefs .eq. 0 )  then
+                ! -1 : one class is dependent (total charge constraint))
+                maxnparams = maxnparams + (sets(i)%top%nsymm_classes - 1)
+            end if
+        end if
         ! topology related data
         maxnparams = maxnparams + 2*sets(i)%top%nbond_types     ! bonds
         maxnparams = maxnparams + 2*sets(i)%top%nangle_types    ! angles
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 6*sets(i)%top%nnb_types        ! 3+3 NB
+        maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 3+3 NB
     end do
-    maxnparams = maxnparams + 4 ! sq+dips_fa+disp_fb+disp_fc
+    maxnparams = maxnparams + 4 ! sq/disp_fa/disp_fb/disp_fc
 
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
@@ -117,7 +125,7 @@ subroutine ffdev_parameters_reinit()
     use ffdev_utils
 
     implicit none
-    integer     :: i, j, k, parmid, ti, tj, n1
+    integer     :: i, j, k, parmid, ai, refid
     logical     :: use_vdw_eps, use_vdw_r0, use_vdw_alpha
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_c6
     logical     :: use_ele_sq, use_disp_fa, use_disp_fb, use_disp_fc
@@ -634,7 +642,6 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
         params(nparams)%ids(:) = 0
-        params(nparams)%ids(:) = 0
         params(nparams)%ti   = 0
         params(nparams)%tj   = 0
         params(nparams)%tk   = 0
@@ -649,7 +656,6 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
-        params(nparams)%ids(:) = 0
         params(nparams)%ids(:) = 0
         params(nparams)%ti   = 0
         params(nparams)%tj   = 0
@@ -666,7 +672,6 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
         params(nparams)%ids(:) = 0
-        params(nparams)%ids(:) = 0
         params(nparams)%ti   = 0
         params(nparams)%tj   = 0
         params(nparams)%tk   = 0
@@ -682,11 +687,63 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
         params(nparams)%ids(:) = 0
-        params(nparams)%ids(:) = 0
         params(nparams)%ti   = 0
         params(nparams)%tj   = 0
         params(nparams)%tk   = 0
         params(nparams)%tl   = 0
+    end if
+
+    ! charges
+    if( PACAsPrms ) then
+        ! reset helper index
+        do i=1,nsets
+            do k=1,sets(i)%top%natoms
+                sets(i)%top%atoms(k)%chrg_prm_id = 0
+            end do
+        end do
+
+        ! first consider non-referenced sets
+        do i=1,nsets
+            if( sets(i)%nrefs .gt. 0 ) cycle
+            ! one symmetry class is dependent (total charge constraint)
+            do j=1,sets(i)%top%nsymm_classes-1
+                ! add new parameter
+                nparams = nparams + 1
+                params(nparams)%value = 0.0 ! will be set later
+                params(nparams)%realm = REALM_PAC
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn     = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j   ! use symmetry class
+                params(nparams)%ti     = 0
+                params(nparams)%tj     = 0
+                params(nparams)%tk     = 0
+                params(nparams)%tl     = 0
+                do k=1,sets(i)%top%natoms
+                    if( sets(i)%top%atoms(k)%symmclass .eq. j ) then
+                        sets(i)%top%atoms(k)%chrg_prm_id = nparams
+                        params(nparams)%value = sets(i)%top%atoms(k)%charge ! simply use the last value
+                    end if
+                end do
+            end do
+        end do
+
+        ! then update sets with references
+        do i=1,nsets
+            if( sets(i)%nrefs .le. 0 ) cycle
+            ai = 1
+            do j=1,sets(i)%nrefs
+                refid = sets(i)%refs(j)
+                do k=1,sets(refid)%top%natoms
+                    if( sets(refid)%top%atoms(k)%chrg_prm_id .ne. 0 ) then
+                        params(sets(refid)%top%atoms(k)%chrg_prm_id)%ids(i) = sets(i)%top%atoms(ai)%symmclass
+                        sets(i)%top%atoms(ai)%chrg_prm_id = sets(refid)%top%atoms(k)%chrg_prm_id
+                    end if
+                    ai = ai + 1
+                end do
+            end do
+        end do
     end if
 
 end subroutine ffdev_parameters_reinit
@@ -1177,9 +1234,9 @@ subroutine ffdev_parameters_save_amber(name)
     character(*)    :: name
     ! --------------------------------------------
     integer         :: datum(8)
-    integer         :: i,j,it,ij,pn,max_pn,nbt,idx,si
+    integer         :: i,j,it,ij,pn,max_pn,idx,si
     real(DEVDP)     :: v,g, scee, scnb
-    logical         :: enable_section,ok,old_enable_section
+    logical         :: enable_section,old_enable_section
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'U')
@@ -2092,7 +2149,8 @@ subroutine ffdev_parameters_to_tops
     use ffdev_utils
 
     implicit none
-    integer         :: i,j
+    integer         :: i,j,k,ai,ndep,refid
+    real(DEVDP)     :: chrg
     ! --------------------------------------------------------------------------
 
     ! disable all types in target topologies
@@ -2112,10 +2170,15 @@ subroutine ffdev_parameters_to_tops
         do j=1,sets(i)%top%nnb_types
             sets(i)%top%nb_types(j)%ffoptactive = .false.
         end do
+        do j=1,sets(i)%top%natoms
+            sets(i)%top%atoms(j)%ffoptactive = .false.
+        end do
     end do
 
     do i=1,nparams
         select case(params(i)%realm)
+
+        ! bonded parameters
             case(REALM_BOND_D0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
@@ -2203,6 +2266,8 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+
+        ! NB parameters
             case(REALM_VDW_EPS)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
@@ -2245,6 +2310,8 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+
+        ! single parameters
             case(REALM_ELE_SQ)
                 ele_qscale = params(i)%value
             case(REALM_DISP_FA)
@@ -2253,10 +2320,71 @@ subroutine ffdev_parameters_to_tops
                 disp_fb = params(i)%value
             case(REALM_DISP_FC)
                 disp_fc = params(i)%value
+
+        ! PAC - partial atomic charges
+            case(REALM_PAC)
+                ! update independent charges in all sets
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        do k=1,sets(j)%top%natoms
+                            if( sets(j)%top%atoms(k)%symmclass .eq. params(i)%ids(j) ) then
+                                sets(j)%top%atoms(k)%charge = params(i)%value
+                                sets(j)%top%atoms(k)%ffoptactive = params(i)%enabled
+                            end if
+                        end do
+                    end if
+                end do
+
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_to_tops!')
         end select
     end do
+
+    if( PACAsPrms ) then
+        ! update dependent charges in sets without references
+        do i=1,nsets
+            if( sets(i)%nrefs .gt. 0 ) cycle
+            chrg = 0.0
+            ndep = 0
+            do k=1,sets(i)%top%natoms
+                if( sets(i)%top%atoms(k)%symmclass .ne. sets(i)%top%nsymm_classes ) then
+                    ! independent
+                    chrg = chrg + sets(i)%top%atoms(k)%charge
+                else
+                    ! dependent
+                    ndep = ndep + 1
+                end if
+            end do
+            if( ndep .le. 0 ) then
+                call ffdev_utils_exit(DEV_ERR,1, &
+                     'Consistency violation - no dependent charge was found in ffdev_parameters_to_tops!')
+            end if
+            chrg = (REAL(sets(i)%top%total_charge,DEVDP) - chrg)/REAL(ndep,DEVDP)
+            do k=1,sets(i)%top%natoms
+                if( sets(i)%top%atoms(k)%symmclass .eq. sets(i)%top%nsymm_classes ) then
+                    ! dependent
+                    sets(i)%top%atoms(k)%charge = chrg
+                end if
+            end do
+        end do
+        ! update dependent/independent charges in sets with references
+        do i=1,nsets
+            if( sets(i)%nrefs .le. 0 ) cycle
+            ai = 1
+            chrg = 0.0d0
+            do j=1,sets(i)%nrefs
+                refid = sets(i)%refs(j)
+                do k=1,sets(refid)%top%natoms
+                    sets(i)%top%atoms(ai)%charge = sets(refid)%top%atoms(k)%charge
+                    chrg = chrg + sets(refid)%top%atoms(k)%charge
+                    ai = ai + 1
+                end do
+            end do
+            if( abs(chrg - REAL(sets(i)%top%total_charge,DEVDP)) .gt. 0.01 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Consistency violation - wrong total charge in ffdev_parameters_to_tops!')
+            end if
+        end do
+    end if
 
 end subroutine ffdev_parameters_to_tops
 
@@ -2298,8 +2426,6 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
 
     implicit none
     integer     :: realm
-    ! --------------------------------------------
-    integer     :: i, id
     ! --------------------------------------------------------------------------
 
     select case(realm)
@@ -2629,9 +2755,6 @@ subroutine ffdev_parameters_error(prms,error,grads)
     real(DEVDP)         :: prms(:)
     type(FFERROR_TYPE)  :: error
     real(DEVDP)         :: grads(:)
-    ! --------------------------------------------------------------------------
-    real(DEVDP),allocatable :: tmp_prms(:)
-    integer                 :: i
     ! --------------------------------------------------------------------------
 
     error%total = 0.0d0

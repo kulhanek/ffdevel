@@ -49,6 +49,8 @@ subroutine ffdev_topology_init(top)
     top%probe_size = 0
     top%nfragments = 0
     top%sapt0_size = 0
+    top%nsymm_classes = 0
+    top%total_charge = 0
 
 end subroutine ffdev_topology_init
 
@@ -70,7 +72,7 @@ subroutine ffdev_topology_load(top,name)
     logical                     :: my_result, lbuff
     integer                     :: alloc_stat, io_stat, i, idx, nbuff, pn
     character(PRMFILE_MAX_LINE) :: buffer
-    real(DEVDP)                 :: v,g,c,p,w,e
+    real(DEVDP)                 :: v,g,c,p,w,e,chrg
     ! --------------------------------------------------------------------------
 
     ! load topology file
@@ -128,21 +130,30 @@ subroutine ffdev_topology_load(top,name)
         call ffdev_utils_exit(DEV_ERR,1,'Unable to open [atoms] section!')
     end if
 
+    chrg = 0.0
     do i=1,top%natoms
         if( .not. prmfile_get_line(fin,buffer) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Premature end of [atoms] section!')
         end if
         read(buffer,*,iostat=io_stat) idx, top%atoms(i)%typeid, top%atoms(i)%name, &
-                                      top%atoms(i)%residx,top%atoms(i)%resname, top%atoms(i)%charge
+                                      top%atoms(i)%residx,top%atoms(i)%resname, top%atoms(i)%charge, top%atoms(i)%symmclass
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [atoms] section!')
         end if
         if( (top%atoms(i)%typeid .le. 0) .or. (top%atoms(i)%typeid .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [atoms] section!')
         end if
+        if( (top%atoms(i)%symmclass .le. 0) .or. (top%atoms(i)%symmclass .gt. top%natoms) ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Symmetry class out-of-legal range in [atoms] section!')
+        end if
+        if( top%atoms(i)%symmclass .gt. top%nsymm_classes ) then
+            top%nsymm_classes = top%atoms(i)%symmclass
+        end if
         top%atoms(i)%nbonds = 0
         top%atoms(i)%frgid = 0
+        chrg = chrg + top%atoms(i)%charge
     end do
+    top%total_charge = NINT(chrg)
 
     ! read types -------------------------------------
     if( .not. prmfile_open_section(fin,'atom_types') ) then

@@ -522,7 +522,7 @@ subroutine change_realms(realm,enable,options,nchanged)
         if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) return
     end if
 
-444 do i=1,nparams
+    do i=1,nparams
 
         ! these two options have application only for NB
         ! but for simplicity we will consider them for all parameters
@@ -728,10 +728,11 @@ subroutine ffdev_parameters_ctrl_control(fin)
                 write(DEV_OUT,25) 'all'
         end select
 
-        write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
-        write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
-        write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
-        write(DEV_OUT,95) GlbRngSeed
+        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+        write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
+        write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
+        write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
+        write(DEV_OUT,95)  GlbRngSeed
         write(DEV_OUT,105) Verbosity
         return
     end if
@@ -766,6 +767,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
             case(NB_PARAMS_MODE_ALL)
                 write(DEV_OUT,25) 'all'
         end select
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'pac_as_prms', PACAsPrms)) then
+        write(DEV_OUT,110) prmfile_onoff(PACAsPrms)
+    else
+        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
     end if
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
@@ -808,6 +815,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
  20  format ('NB parameter assembly mode (nb_params)   = ',a12)
  25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
+110  format ('Partial charges as params (pac_as_prms)  = ',a12)
+115  format ('Partial charges as params (pac_as_prms)  = ',a12,'                (default)')
  60  format ('Use defined dih items (dih_only_defined) = ',a12)
  65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
  70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
@@ -943,8 +952,6 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
 10 format('Load parameters file (load)       = ',a)
 12 format('     Number of loaded parameters  = ',I6)
 14 format('     Number of ignored parameters = ',I6)
-20 format('Save parameters file (save)       = ',a)
-30 format('Save AMBER parameters (amber)     = ',a)
 
 end subroutine ffdev_parameters_ctrl_files_exec
 
@@ -962,8 +969,7 @@ subroutine ffdev_parameters_ctrl_grbf2cos(fin)
     use ffdev_topology
 
     implicit none
-    type(PRMFILE_TYPE)          :: fin
-    character(PRMFILE_MAX_PATH) :: string
+    type(PRMFILE_TYPE)  :: fin
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -1421,7 +1427,7 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
     real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
-    integer                     :: i,j,nbt,lnb_mode
+    integer                     :: i
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)

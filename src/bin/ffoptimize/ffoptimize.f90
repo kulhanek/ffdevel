@@ -331,10 +331,8 @@ program ffdev_optimize_program
 
     call ffdev_utils_footer('FF Optimize')
 
-100 format('Control file : ',A)
 110 format('FF optimization program #',I3.3)
 120 format('Final ffdevel parameters        = ',A)
-130 format('Final AMBER parameter file      = ',A)
 
 contains
 

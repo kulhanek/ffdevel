@@ -31,7 +31,10 @@ type ATOM
     integer                 :: typeid
     integer                 :: nbonds
     integer,pointer         :: bonded(:)
-    integer                 :: frgid        ! fragment ID for NB error function
+    integer                 :: frgid            ! fragment ID for NB error function
+    integer                 :: symmclass
+    logical                 :: ffoptactive      ! this type is subject of ffopt
+    integer                 :: chrg_prm_id      ! helper variable
 end type ATOM
 
 ! ------------------------------------------------------------------------------
@@ -171,6 +174,9 @@ type TOPOLOGY
     type(NB_TYPE),pointer       :: nb_types(:)
     integer                     :: probe_size           ! number of atoms in probe
     integer                     :: nfragments
+    integer                     :: nsymm_classes
+    integer                     :: total_charge
+
 ! SAPT0
     integer                     :: sapt0_size
     type(NB_PAIR),pointer       :: sapt0_list(:)

@@ -117,11 +117,12 @@ integer,parameter       :: PARAMS_SUMMARY_MODIFIED      = 3
 integer,parameter       :: PARAMS_SUMMARY_FULL          = 4
 
 ! === [control] ================================================================
-integer         :: NBParamsMode                 = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
-logical         :: OnlyDefinedDihItems          = .true.
-logical         :: LockDihC_PN1                 = .true.
-logical         :: ResetAllSetup                = .true.
-integer         :: GlbRngSeed                   = 5489              ! random number generator setup
+integer         :: NBParamsMode         = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
+logical         :: PACAsPrms            = .false.                   ! partial atomic charges as parameters
+logical         :: OnlyDefinedDihItems  = .true.
+logical         :: LockDihC_PN1         = .true.
+logical         :: ResetAllSetup        = .true.
+integer         :: GlbRngSeed           = 5489              ! random number generator setup
 
 ! === [grbf2cos] ===============================================================
 integer         :: GRBF2COSMaxN     = 4             ! max length of cos series
