@@ -62,7 +62,6 @@ subroutine ffdev_parameters_init()
     ! determine maximum number of parameters
     maxnparams = 0
     do i=1,nsets
-        maxnparams = maxnparams + 1     ! energy offset for a set
         ! topology related data
         maxnparams = maxnparams + 2*sets(i)%top%nbond_types     ! bonds
         maxnparams = maxnparams + 2*sets(i)%top%nangle_types    ! angles
@@ -125,23 +124,6 @@ subroutine ffdev_parameters_reinit()
     ! --------------------------------------------------------------------------
 
     nparams = 0
-
-    ! energy offset realm ==================
-    do i=1,nsets
-        if( sets(i)%top%probe_size .ne. 0 ) cycle
-        nparams = nparams + 1
-        params(nparams)%value = sets(i)%offset
-        params(nparams)%realm = REALM_EOFFSET
-        params(nparams)%enabled = .false.
-        params(nparams)%identity = 0
-        params(nparams)%pn    = 0
-        params(nparams)%ids(:) = 0
-        params(nparams)%ids(i) = 1
-        params(nparams)%ti   = 0
-        params(nparams)%tj   = 0
-        params(nparams)%tk   = 0
-        params(nparams)%tl   = 0
-    end do
 
     ! bond length realm ====================
     do i=1,nsets
@@ -878,11 +860,6 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl,id)
         if( params(i)%pn .ne. pn ) cycle
 
         select case(realm)
-            case(REALM_EOFFSET)
-                if( i .eq. id ) then
-                    find_parameter_by_ids = id
-                    return
-                end if
             case(REALM_BOND_D0,REALM_BOND_K)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
@@ -1711,8 +1688,6 @@ integer function ffdev_parameters_get_realmid(realm)
     ! --------------------------------------------------------------------------
 
     select case(trim(realm))
-        case('E_offset')
-            ffdev_parameters_get_realmid = REALM_EOFFSET
         case('bond_r0')
             ffdev_parameters_get_realmid = REALM_BOND_D0
         case('bond_k')
@@ -1760,6 +1735,9 @@ integer function ffdev_parameters_get_realmid(realm)
         case('disp_fc')
             ffdev_parameters_get_realmid = REALM_DISP_FC
 
+        case('pac')
+            ffdev_parameters_get_realmid = REALM_PAC
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
     end select
@@ -1780,8 +1758,6 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
     ! --------------------------------------------------------------------------
 
     select case(realmid)
-        case(REALM_EOFFSET)
-            ffdev_parameters_get_realm_name = 'E_offset'
         case(REALM_BOND_D0)
             ffdev_parameters_get_realm_name = 'bond_r0'
         case(REALM_BOND_K)
@@ -1829,6 +1805,9 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_DISP_FC)
             ffdev_parameters_get_realm_name = 'disp_fc'
 
+        case(REALM_PAC)
+            ffdev_parameters_get_realm_name = 'pac'
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
     end select
@@ -1851,7 +1830,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
     ffdev_parameters_get_realm_scaling = 1.0d0
 
     select case(realmid)
-        case(REALM_EOFFSET,REALM_BOND_D0,REALM_BOND_K)
+        case(REALM_BOND_D0,REALM_BOND_K)
             ! nothing to do
         case(REALM_ANGLE_A0)
             ffdev_parameters_get_realm_scaling = DEV_R2D
@@ -1868,6 +1847,8 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_C6)
             ! nothing to do
         case(REALM_ELE_SQ,REALM_DISP_FA,REALM_DISP_FB,REALM_DISP_FC)
+            ! nothing to do
+        case(REALM_PAC)
             ! nothing to do
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
@@ -2135,12 +2116,6 @@ subroutine ffdev_parameters_to_tops
 
     do i=1,nparams
         select case(params(i)%realm)
-            case(REALM_EOFFSET)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%offset = params(i)%value
-                    end if
-                end do
             case(REALM_BOND_D0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
@@ -2328,8 +2303,6 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_EOFFSET)
-            ffdev_params_get_lower_bound = MinOffset
         case(REALM_BOND_D0)
             ffdev_params_get_lower_bound = MinBondD0
         case(REALM_BOND_K)
@@ -2376,6 +2349,9 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinDispFB
         case(REALM_DISP_FC)
             ffdev_params_get_lower_bound = MinDispFC
+
+        case(REALM_PAC)
+            ffdev_params_get_lower_bound = MinPAC
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
@@ -2424,8 +2400,6 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_EOFFSET)
-            ffdev_params_get_upper_bound = MaxOffset
         case(REALM_BOND_D0)
             ffdev_params_get_upper_bound = MaxBondD0
         case(REALM_BOND_K)
@@ -2472,6 +2446,9 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDispFB
         case(REALM_DISP_FC)
             ffdev_params_get_upper_bound = MaxDispFC
+
+        case(REALM_PAC)
+            ffdev_params_get_upper_bound = MaxPAC
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')

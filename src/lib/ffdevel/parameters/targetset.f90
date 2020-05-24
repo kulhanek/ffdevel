@@ -198,10 +198,10 @@ subroutine ffdev_targetset_reinit_nbparams()
         do j=1,nsets
             if( params(i)%ids(j) .eq. 0 ) cycle
             select case(params(i)%realm)
-                case(REALM_EOFFSET,REALM_BOND_D0,REALM_BOND_K, &
+                case(REALM_BOND_D0,REALM_BOND_K, &
                      REALM_ANGLE_A0,REALM_ANGLE_K,REALM_DIH_V,REALM_DIH_G, &
                      REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_IMPR_V, &
-                     REALM_IMPR_G,REALM_DIH_C)
+                     REALM_IMPR_G,REALM_DIH_C,REALM_PAC)
                     ! nothing to be here
                 case(REALM_VDW_EPS)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
@@ -498,9 +498,9 @@ subroutine ffdev_targetset_save_drvene(set,name)
                 write(DEV_PROFILE,21,ADVANCE='NO')
             end do
         end if
-        err = set%geo(i)%total_ene - set%offset - set%geo(i)%trg_energy
-        write(DEV_PROFILE,33,ADVANCE='NO') set%geo(i)%trg_energy, set%geo(i)%total_ene - set%offset, err
-        write(DEV_PROFILE,34) set%offset, set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
+        err = set%geo(i)%total_ene - set%geo(i)%trg_energy
+        write(DEV_PROFILE,33,ADVANCE='NO') set%geo(i)%trg_energy, set%geo(i)%total_ene, err
+        write(DEV_PROFILE,34) set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
                               set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
                               set%geo(i)%nb_ene, set%geo(i)%nb14_ene
     end do
@@ -510,16 +510,16 @@ subroutine ffdev_targetset_save_drvene(set,name)
  10 format('# IDX')
  11 format('       CV',I2.2)
  12 format('   E(TRG,1)    E(MM,2)     E(2-1)')
- 13 format('   Eoffset      Ebonds    Eangles      Etors    Eimprps       Eeel      E14el        Enb      E14nb')
+ 13 format('     Ebonds    Eangles      Etors    Eimprps       Eeel      E14el        Enb      E14nb')
  20 format('# ---')
  21 format(' ----------')
  22 format(' ---------- ---------- ----------')
- 23 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+ 23 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
  30 format(I5)
  31 format(1X,F10.4)
  32 format(1X,F10.1)
  33 format(1X,F10.2,1X,F10.2,1X,F10.2)
- 34 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
+ 34 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
 
 end subroutine ffdev_targetset_save_drvene
 

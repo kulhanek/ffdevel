@@ -34,7 +34,6 @@ type TARGETSET
     character(len=MAX_PATH)     :: final_drvxyz     ! driving geometries
     integer                     :: ngeos            ! number of training points in the set
     type(GEOMETRY),pointer      :: geo(:)           ! training data
-    real(DEVDP)                 :: offset           ! energy offset
     integer                     :: mineneid         ! geometry with minimum of energy
     logical                     :: optgeo           ! optimize geometry
     logical                     :: keepoptgeo       ! keep optimized geometry

@@ -24,7 +24,6 @@ use ffdev_topology_dat
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter       :: REALM_EOFFSET    = 1
 integer,parameter       :: REALM_BOND_D0    = 2
 integer,parameter       :: REALM_BOND_K     = 3
 integer,parameter       :: REALM_ANGLE_A0   = 4
@@ -50,8 +49,10 @@ integer,parameter       :: REALM_ELE_SQ     = 19 ! charges
 integer,parameter       :: REALM_DISP_FA    = 20
 integer,parameter       :: REALM_DISP_FB    = 21
 integer,parameter       :: REALM_DISP_FC    = 22
+! partial atomic charges
+integer,parameter       :: REALM_PAC        = 23
 
-integer,parameter       :: REALM_FIRST   = REALM_EOFFSET
+integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_DISP_FC
 
 ! ------------------------------------------------------------------------------
@@ -128,8 +129,6 @@ real(DEVDP)     :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos 
 
 ! === [ranges] =================================================================
 
-real(DEVDP)     :: MinOffset    =   -1000.0d0
-real(DEVDP)     :: MaxOffset    =    1000.0d0
 real(DEVDP)     :: MinBondD0    =       0.5d0
 real(DEVDP)     :: MaxBondD0    =       5.0d0
 real(DEVDP)     :: MinBondK     =       0.0
@@ -179,6 +178,10 @@ real(DEVDP)     :: MinDispFB    =     -9.0d0
 real(DEVDP)     :: MaxDispFB    =      9.0d0
 real(DEVDP)     :: MinDispFC    =     -9.0d0
 real(DEVDP)     :: MaxDispFC    =      9.0d0
+
+! partial atomic charges
+real(DEVDP)     :: MinPAC       =     -2.0d0
+real(DEVDP)     :: MaxPAC       =      2.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

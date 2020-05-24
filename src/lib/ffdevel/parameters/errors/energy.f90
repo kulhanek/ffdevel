@@ -87,33 +87,33 @@ subroutine ffdev_err_energy_error(error)
             select case(EnergyErrorMode)
                 case(EE_ABS)
                     nene = nene + 1
-                    err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                    err = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
                     seterrene = seterrene + sets(i)%geo(j)%weight * err**2
                 case(EE_REL)
                     if( sets(i)%geo(j)%trg_energy .gt. 0 ) then
                         nene = nene + 1
-                        err = (sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy) / &
+                        err = (sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) / &
                               sets(i)%geo(j)%trg_energy
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
                     end if
                 case(EE_LOG)
-                    if( ((sets(i)%geo(j)%total_ene - sets(i)%offset) .gt. 0) .and. &
+                    if( (sets(i)%geo(j)%total_ene .gt. 0) .and. &
                         (sets(i)%geo(j)%trg_energy .gt. 0) ) then
                         nene = nene + 1
-                        err = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
+                        err = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
                     end if
                 case(EE_ABSLOG)
                     ! log
-                    if( ((sets(i)%geo(j)%total_ene - sets(i)%offset) .gt. 0) .and. &
+                    if( (sets(i)%geo(j)%total_ene .gt. 0) .and. &
                         (sets(i)%geo(j)%trg_energy .gt. 0) ) then
                         nene = nene + 1
-                        err = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
+                        err = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
                     end if
                     ! and abs
                     nene = nene + 1
-                    err = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+                    err = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
                     seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end select
 
@@ -175,20 +175,20 @@ subroutine ffdev_err_energy_summary
             printsum = .true.
 
             ! absolute
-            aerr  = sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy
+            aerr  = sets(i)%geo(j)%total_ene- sets(i)%geo(j)%trg_energy
             aserr = aserr + sets(i)%geo(j)%weight * aerr**2
             anum  = anum + 1
             ! relative
             rerr  = 0.0
             if( sets(i)%geo(j)%trg_energy .ne. 0 ) then
-                rerr  = (sets(i)%geo(j)%total_ene - sets(i)%offset - sets(i)%geo(j)%trg_energy)/sets(i)%geo(j)%trg_energy
+                rerr  = (sets(i)%geo(j)%total_ene- sets(i)%geo(j)%trg_energy)/sets(i)%geo(j)%trg_energy
                 rserr = rserr + sets(i)%geo(j)%weight * rerr**2
                 rnum  = rnum + 1
             end if
             ! log
             lerr  = 0.0
-            if( (sets(i)%geo(j)%trg_energy .gt. 0) .and.  (sets(i)%geo(j)%total_ene - sets(i)%offset .gt. 0) ) then
-                lerr  = log(sets(i)%geo(j)%total_ene - sets(i)%offset) - log(sets(i)%geo(j)%trg_energy)
+            if( (sets(i)%geo(j)%trg_energy .gt. 0) .and. (sets(i)%geo(j)%total_ene .gt. 0) ) then
+                lerr  = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
                 lserr = lserr + sets(i)%geo(j)%weight * lerr**2
                 lnum  = lnum + 1
             end if
@@ -197,7 +197,7 @@ subroutine ffdev_err_energy_summary
                 call ffdev_geometry_info_ene(sets(i)%geo(j))
             end if
 
-            write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight,sets(i)%offset, &
+            write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_energy, sets(i)%geo(j)%total_ene, aerr, rerr*100.0d0, lerr
         end do
         if( printsum ) write(DEV_OUT,20)
@@ -217,11 +217,11 @@ subroutine ffdev_err_energy_summary
     write(DEV_OUT,45)  EnergyErrorWeight*aserr, EnergyErrorWeight*rserr*100.0d0, EnergyErrorWeight*lserr
 
  5 format('# Energy errors')
-10 format('# SET GeoID Weight  E(offset)     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)')
-20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ---------- ----------')
-30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
-40 format('# Final error (weighted per geometry) =             ',F10.3,1X,F10.3,1X,F10.3)
-45 format('# Final error (all weights)           =             ',F10.3,1X,F10.3,1X,F10.3)
+10 format('# SET GeoID Weight     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)')
+20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ----------')
+30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+40 format('# Final error (weighted per geometry) =  ',F10.3,1X,F10.3,1X,F10.3)
+45 format('# Final error (all weights)           =  ',F10.3,1X,F10.3,1X,F10.3)
 
 end subroutine ffdev_err_energy_summary
 

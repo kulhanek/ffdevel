@@ -201,7 +201,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end if
         end if
 
-        sets(i)%offset = 0.0d0
         shift2zero = .false.
         if( sets(i)%nrefs .eq. 0 ) then
             if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then
