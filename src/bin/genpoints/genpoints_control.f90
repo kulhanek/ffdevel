@@ -212,9 +212,9 @@ subroutine ffdev_genpoints_ctrl_points(fin)
     end if
 
     if( prmfile_get_logical_by_key(fin,'holdcv', HoldCV)) then
-        write(DEV_OUT,40) prmfile_onoff(HoldCV)
+        write(DEV_OUT,50) prmfile_onoff(HoldCV)
     else
-        write(DEV_OUT,45) prmfile_onoff(HoldCV)
+        write(DEV_OUT,55) prmfile_onoff(HoldCV)
     end if
 
     call read_genpoints_method(fin)

@@ -291,6 +291,17 @@
 			<Option weight="5" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/12-6.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/12-XDMBJ.f90">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/EXP-XDMBJ.f90">
+			<Option weight="7" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/LJ.f90">
 			<Option weight="7" />
 			<Option target="&lt;{~None~}&gt;" />
@@ -358,12 +369,15 @@
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/chrgpnl.f90">
+			<Option weight="12" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/chrgpnl_control.f90">
+			<Option weight="6" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/chrgpnl_dat.f90">
+			<Option weight="3" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/dihedrals.f90">

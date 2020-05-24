@@ -58,7 +58,7 @@ subroutine ffdev_err_rmsd_error(error)
     ! --------------------------------------------
     integer             :: i,j,q
     real(DEVDP)         :: rmsd,seterrrmsd
-    real(DEVDP)         :: d0,dt,sw,swsum
+    real(DEVDP)         :: swsum
     ! --------------------------------------------------------------------------
 
     error%rmsd = 0.0

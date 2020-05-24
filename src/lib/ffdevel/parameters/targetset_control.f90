@@ -40,7 +40,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
-    integer                     :: i,j,k,l,alloc_status,minj,probesize,comb_rules,npoints
+    integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints
     logical                     :: data_avail,rst,shift2zero,stream
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
@@ -642,14 +642,14 @@ subroutine ffdev_targetset_ctrl_setup(fin)
     end if
 
     if( prmfile_get_logical_by_key(fin,'savexyzr', SaveXYZR)) then
-        write(DEV_OUT,80) prmfile_onoff(SaveXYZR)
+        write(DEV_OUT,110) prmfile_onoff(SaveXYZR)
     else
-        write(DEV_OUT,85) prmfile_onoff(SaveXYZR)
+        write(DEV_OUT,115) prmfile_onoff(SaveXYZR)
     end if
     if( prmfile_get_string_by_key(fin,'savexyzpath', SaveXYZRPath)) then
-        write(DEV_OUT,90) SaveXYZRPath
+        write(DEV_OUT,120) SaveXYZRPath
     else
-        write(DEV_OUT,95) SaveXYZRPath
+        write(DEV_OUT,120) SaveXYZRPath
     end if
 
     if( prmfile_get_logical_by_key(fin,'savesumlogs', SaveSumLogs)) then

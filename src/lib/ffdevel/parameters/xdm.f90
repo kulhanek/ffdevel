@@ -35,8 +35,8 @@ subroutine ffdev_xdm_run_stat()
     use ffdev_utils
 
     implicit none
-    integer     :: ti, tj, ai, aj, i, j, num, alloc_stat
-    real(DEVDP) :: c6sum, c8sum, c10sum, rms, pol
+    integer     :: ti, tj, ai, aj, i, j, alloc_stat
+    real(DEVDP) :: rms
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -242,7 +242,7 @@ subroutine ffdev_xdm_print()
     use ffdev_mmd3
 
     implicit none
-    integer     :: ti, tj, ai, aj, nfsum
+    integer     :: ti, tj, nfsum
     real(DEVDP) :: f1,f2,f1sum,f2sum
     ! --------------------------------------------------------------------------
 

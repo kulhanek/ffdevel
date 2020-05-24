@@ -71,9 +71,9 @@ subroutine ffdev_err_nbdists_ctrl(fin)
     end if
 
     if( prmfile_get_real8_by_key(fin,'swa', NBDistanceSWAlpha)) then
-        write(DEV_OUT,60) NBDistanceSWAlpha
+        write(DEV_OUT,70) NBDistanceSWAlpha
     else
-        write(DEV_OUT,65) NBDistanceSWAlpha
+        write(DEV_OUT,75) NBDistanceSWAlpha
     end if
 
  10 format('=== [nbdists] ==================================================================')

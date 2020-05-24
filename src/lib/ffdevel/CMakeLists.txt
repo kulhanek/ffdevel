@@ -22,7 +22,12 @@ SET(FFDEVEL_SRC
         forcefield/hessian.f90
         forcefield/hessian_utils.f90
         forcefield/jacobian.f90
+
         forcefield/nbmodes/LJ.f90
+        forcefield/nbmodes/12-6.f90
+        forcefield/nbmodes/12-XDMBJ.f90
+        forcefield/nbmodes/EXP-XDMBJ.f90
+        forcefield/nbmodes/12-D3BJ.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90
