@@ -177,7 +177,7 @@ type TOPOLOGY
     integer                     :: nsymm_classes
     integer                     :: total_charge
 
-! SAPT0
+! SAPT
     integer                     :: sapt_size
     type(NB_PAIR),pointer       :: sapt_list(:)
 end type TOPOLOGY

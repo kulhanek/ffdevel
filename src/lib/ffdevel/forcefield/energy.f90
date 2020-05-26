@@ -147,7 +147,7 @@ subroutine ffdev_energy_sapt(top,geo)
     geo%sapt_disp = 0.0
     geo%sapt_total = 0.0
 
-    if( top%sapt_size .le. 0 ) return ! no SAPT0 list
+    if( top%sapt_size .le. 0 ) return ! no SAPT list
 
     call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
     call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)

@@ -133,11 +133,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%energy*EnergyErrorWeight
     end if
 
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         call ffdev_err_sapt_error(error)
-        error%total = error%total + error%sapt_ele * SAPT0EleErrorWeight &
-                                  + error%sapt_rep * SAPT0RepErrorWeight &
-                                  + error%sapt_disp * SAPT0DispErrorWeight
+        error%total = error%total + error%sapt_ele * SAPTEleErrorWeight &
+                                  + error%sapt_rep * SAPTRepErrorWeight &
+                                  + error%sapt_disp * SAPTDispErrorWeight
     end if
 
 ! geometry based errors
@@ -203,13 +203,13 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableEnergyError ) then
         write(DEV_OUT,30,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,40,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,41,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,42,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
@@ -241,9 +241,9 @@ subroutine ffdev_errors_ffopt_header_I()
  36 format('       d(NBs)')
  38 format('    Impropers')
  39 format('         RMSD')
- 40 format('   SAPT0(Ele)')
- 41 format('   SAPT0(Rep)')
- 42 format('  SAPT0(Disp)')
+ 40 format('    SAPT(Ele)')
+ 41 format('    SAPT(Rep)')
+ 42 format('   SAPT(Disp)')
  43 format('  ChrgPenalty')
 
 end subroutine ffdev_errors_ffopt_header_I
@@ -270,13 +270,13 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableEnergyError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
@@ -328,13 +328,13 @@ subroutine ffdev_errors_ffopt_results(error)
     if( EnableEnergyError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%energy
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep
     end if
-    if( EnableSAPT0Error ) then
+    if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_disp
     end if
     if( EnableBondsError ) then
@@ -408,7 +408,7 @@ subroutine ffdev_errors_summary(final)
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
-    if( .not. (PrintEnergyErrorSummary .or. EnableSAPT0Error .or. &
+    if( .not. (PrintEnergyErrorSummary .or. EnableSAPTError .or. &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. EnableChrgPnlError) ) then

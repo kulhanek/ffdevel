@@ -34,14 +34,14 @@ subroutine ffdev_err_sapt_init
     implicit none
     ! --------------------------------------------------------------------------
 
-    EnableSAPT0Error        = .false.
-    PrintSAPT0ErrorSummary  = .false.
+    EnableSAPTError        = .false.
+    PrintSAPTErrorSummary  = .false.
 
-    SAPT0EleErrorWeight     = 1.0
-    SAPT0RepErrorWeight     = 1.0
-    SAPT0DispErrorWeight    = 1.0
+    SAPTEleErrorWeight     = 1.0
+    SAPTRepErrorWeight     = 1.0
+    SAPTDispErrorWeight    = 1.0
 
-    SAPT0ErrorIndToRep      = .true.
+    SAPTErrorIndToRep      = .true.
 
 end subroutine ffdev_err_sapt_init
 
@@ -93,7 +93,7 @@ subroutine ffdev_err_sapt_error(error)
         ! repulsion
             trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
             ! FIXME
-!            if( SAPT0ErrorIndToRep ) then
+!            if( SAPTErrorIndToRep ) then
                 trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
 !            end if
             err = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
@@ -165,7 +165,7 @@ subroutine ffdev_err_sapt_summary
 
         ! repulsion
             trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
-            if( SAPT0ErrorIndToRep ) then
+            if( SAPTErrorIndToRep ) then
                 trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
             end if
             errrep = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
@@ -194,9 +194,9 @@ subroutine ffdev_err_sapt_summary
     end if
 
     write(DEV_OUT,40)  errele, errrep, errdisp
-    write(DEV_OUT,45)  SAPT0EleErrorWeight*errele, SAPT0RepErrorWeight*errrep, SAPT0DispErrorWeight*errdisp
+    write(DEV_OUT,45)  SAPTEleErrorWeight*errele, SAPTRepErrorWeight*errrep, SAPTDispErrorWeight*errdisp
 
- 5 format('# SAPT0 errors')
+ 5 format('# SAPT errors')
 10 format('# SET GeoID Weight   ELE(TGR)    ELE(MM) abs E(Err)   REP(TGR)    REP(MM) abs E(Err)  DISP(TGR)   DISP(MM) abs E(Err)')
 20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
 30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)

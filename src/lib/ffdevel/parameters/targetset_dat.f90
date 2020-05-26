@@ -44,7 +44,7 @@ type TARGETSET
     logical                     :: isref            ! is reference structure
     integer                     :: nrefs            ! number of references
     integer,pointer             :: refs(:)          ! references
-    integer,pointer             :: natomsrefs(:)    ! number of atoms in reference sets for SAPT0 calculations
+    integer,pointer             :: natomsrefs(:)    ! number of atoms in reference sets for SAPT calculations
 end type TARGETSET
 
 integer                     :: nsets    ! number of sets

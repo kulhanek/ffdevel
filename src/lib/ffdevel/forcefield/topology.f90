@@ -1653,7 +1653,7 @@ subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
     ! allocate list
     allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT0 in ffdev_topology_gen_sapt_list!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list!')
     end if
 
     istart = 1

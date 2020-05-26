@@ -142,7 +142,7 @@ subroutine ffdev_targetset_calc_all
         end do
     end do
 
-    ! calculate SAPT0
+    ! calculate SAPT
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( sets(i)%geo(j)%trg_sapt_loaded .and. errors_calc_sapt .and. sets(i)%nrefs .gt. 1 ) then

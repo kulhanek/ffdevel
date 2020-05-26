@@ -81,7 +81,7 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
-! target SAPT0
+! target SAPT
     logical                 :: trg_sapt_loaded
     real(DEVDP)             :: trg_sapt_ele
     real(DEVDP)             :: trg_sapt_exch

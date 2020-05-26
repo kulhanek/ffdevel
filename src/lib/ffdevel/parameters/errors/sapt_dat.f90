@@ -23,14 +23,14 @@ use ffdev_variables
 ! ------------------------------------------------------------------------------
 
 ! initialization in ffdev_err_sapt_init
-logical                 :: EnableSAPT0Error
-logical                 :: PrintSAPT0ErrorSummary
+logical                 :: EnableSAPTError
+logical                 :: PrintSAPTErrorSummary
 
-real(DEVDP)             :: SAPT0EleErrorWeight
-real(DEVDP)             :: SAPT0RepErrorWeight
-real(DEVDP)             :: SAPT0DispErrorWeight
+real(DEVDP)             :: SAPTEleErrorWeight
+real(DEVDP)             :: SAPTRepErrorWeight
+real(DEVDP)             :: SAPTDispErrorWeight
 
-logical                 :: SAPT0ErrorIndToRep   ! include induction to rep
+logical                 :: SAPTErrorIndToRep   ! include induction to rep
 
 ! ------------------------------------------------------------------------------
 
