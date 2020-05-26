@@ -44,7 +44,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_energy_control
     use ffdev_err_rmsd_control
     use ffdev_err_ihess_control
-    use ffdev_err_sapt0_control
+    use ffdev_err_sapt_control
     use ffdev_err_chrgpnl_control
 
     implicit none
@@ -58,7 +58,7 @@ subroutine ffdev_errors_ctrl(fin)
     errors_calc_hess    = .false.
     errors_calc_grad    = .false.
     errors_calc_ene     = .false.
-    errors_calc_sapt0   = .false.
+    errors_calc_sapt   = .false.
 
     ! reset setup by external request
     if( prmfile_open_section(fin,'setdefault') .or. ResetAllSetup ) then
@@ -68,7 +68,7 @@ subroutine ffdev_errors_ctrl(fin)
 
     ! read setup
     call ffdev_err_energy_ctrl(fin)
-    call ffdev_err_sapt0_ctrl(fin)
+    call ffdev_err_sapt_ctrl(fin)
     call ffdev_err_bonds_ctrl(fin)
     call ffdev_err_angles_ctrl(fin)
     call ffdev_err_dihedrals_ctrl(fin)

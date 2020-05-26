@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_sapt0_control
+module ffdev_err_sapt_control
 
 use ffdev_constants
 use ffdev_variables
@@ -23,12 +23,12 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_sapt0_ctrl
+! subroutine ffdev_err_sapt_ctrl
 ! ==============================================================================
 
-subroutine ffdev_err_sapt0_ctrl(fin)
+subroutine ffdev_err_sapt_ctrl(fin)
 
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
     use ffdev_errors_dat
     use ffdev_utils
     use ffdev_errors_utils
@@ -41,7 +41,7 @@ subroutine ffdev_err_sapt0_ctrl(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'sapt0') ) then
+    if( .not. prmfile_open_section(fin,'sapt') ) then
         write(DEV_OUT,115) prmfile_onoff(EnableSAPT0Error)
         write(DEV_OUT,135) prmfile_onoff(PrintSAPT0ErrorSummary)
 
@@ -51,7 +51,7 @@ subroutine ffdev_err_sapt0_ctrl(fin)
 
         write(DEV_OUT,145) prmfile_onoff(SAPT0ErrorIndToRep)
 
-        errors_calc_sapt0 = EnableSAPT0Error
+        errors_calc_sapt = EnableSAPT0Error
         return
     end if
 
@@ -87,9 +87,9 @@ subroutine ffdev_err_sapt0_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(SAPT0ErrorIndToRep)
     end if
 
-    errors_calc_sapt0 = EnableSAPT0Error
+    errors_calc_sapt = EnableSAPT0Error
 
- 10 format('=== [sapt0] ===================================================================')
+ 10 format('=== [sapt] ===================================================================')
 
 110  format ('SAPT0 error (enabled)                  = ',a12)
 115  format ('SAPT0 error (enabled)                  = ',a12,'                  (default)')
@@ -106,8 +106,8 @@ subroutine ffdev_err_sapt0_ctrl(fin)
 140  format ('Induction as repulsion                 = ',a12)
 145  format ('Induction as repulsion                 = ',a12,'                  (default)')
 
-end subroutine ffdev_err_sapt0_ctrl
+end subroutine ffdev_err_sapt_ctrl
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_sapt0_control
+end module ffdev_err_sapt_control

@@ -178,8 +178,8 @@ type TOPOLOGY
     integer                     :: total_charge
 
 ! SAPT0
-    integer                     :: sapt0_size
-    type(NB_PAIR),pointer       :: sapt0_list(:)
+    integer                     :: sapt_size
+    type(NB_PAIR),pointer       :: sapt_list(:)
 end type TOPOLOGY
 
 ! ------------------------------------------------------------------------------

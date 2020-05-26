@@ -41,7 +41,7 @@ subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
     integer         :: ip, i, j, nbt, agti, agtj
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,scale2,c6,c8,c10,rc,rc2,rc6,rc8,rc10
-    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
+    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,pe
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -61,9 +61,9 @@ subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
     do ip=1,top%nb_size
         i = top%nb_list(ip)%ai
         j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
+        nbt   = top%nb_list(ip)%nbt
 
-        pa  = disp_fc * exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+        pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
         pb  = top%nb_types(nbt)%pb
 
         agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
@@ -109,8 +109,10 @@ subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
 
         V_bb = - c6*r6i - c8*r8i - c10*r10i
 
+        pe = (1.0d0 - exp(-disp_fc*r/xdm_pairs(agti,agtj)%rc))
+
         if( top%nb_list(ip)%dt .eq. 0 ) then
-            geo%ele_ene = geo%ele_ene + scale2*crgij/r
+            geo%ele_ene = geo%ele_ene + pe * scale2*crgij/r
             geo%nb_ene  = geo%nb_ene  + V_aa + V_bb
 
             geo%nb_rep  = geo%nb_rep  + V_aa
@@ -119,7 +121,7 @@ subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
             inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
 
-            geo%ele14_ene = geo%ele14_ene + inv_scee*scale2*crgij/r
+            geo%ele14_ene = geo%ele14_ene + pe * inv_scee*scale2*crgij/r
             geo%nb14_ene  = geo%nb14_ene  + inv_scnb*(V_aa + V_bb)
 
             geo%nb_rep    = geo%nb_rep    + inv_scnb*V_aa
@@ -130,10 +132,10 @@ subroutine ffdev_energy_nb_EXP_XDMBJ(top,geo)
 end subroutine ffdev_energy_nb_EXP_XDMBJ
 
 !===============================================================================
-! subroutine ffdev_energy_sapt0_EXP_XDMBJ
+! subroutine ffdev_energy_sapt_EXP_XDMBJ
 !===============================================================================
 
-subroutine ffdev_energy_sapt0_EXP_XDMBJ(top,geo)
+subroutine ffdev_energy_sapt_EXP_XDMBJ(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -147,25 +149,25 @@ subroutine ffdev_energy_sapt0_EXP_XDMBJ(top,geo)
     integer         :: ip, i, j, nbt, agti, agtj
     real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,scale2,c6,c8,c10,rc,rc2,rc6,rc8,rc10
-    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
+    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,pe
     ! --------------------------------------------------------------------------
 
-    geo%sapt0_ele = 0.0d0
-    geo%sapt0_rep = 0.0d0
-    geo%sapt0_disp = 0.0d0
+    geo%sapt_ele = 0.0d0
+    geo%sapt_rep = 0.0d0
+    geo%sapt_disp = 0.0d0
 
     if( .not. xdm_data_loaded ) then
-        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_sapt0_EXP_XDMBJ!')
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_sapt_EXP_XDMBJ!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
 
-    do ip=1,top%sapt0_size
-        i   = top%sapt0_list(ip)%ai
-        j   = top%sapt0_list(ip)%aj
-        nbt = top%sapt0_list(ip)%nbt
+    do ip=1,top%sapt_size
+        i   = top%sapt_list(ip)%ai
+        j   = top%sapt_list(ip)%aj
+        nbt   = top%sapt_list(ip)%nbt
 
-        pa  = disp_fc * exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+        pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
         pb  = top%nb_types(nbt)%pb
 
         agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
@@ -211,13 +213,15 @@ subroutine ffdev_energy_sapt0_EXP_XDMBJ(top,geo)
 
         V_bb = - c6*r6i - c8*r8i - c10*r10i
 
-        geo%sapt0_ele  = geo%sapt0_ele + scale2*crgij/r
-        geo%sapt0_rep  = geo%sapt0_rep + V_aa
-        geo%sapt0_disp = geo%sapt0_disp + V_bb
+        pe = (1.0d0 - exp(-disp_fc*r/xdm_pairs(agti,agtj)%rc))
+
+        geo%sapt_ele  = geo%sapt_ele + pe * scale2*crgij/r
+        geo%sapt_rep  = geo%sapt_rep + V_aa
+        geo%sapt_disp = geo%sapt_disp + V_bb
 
     end do
 
-end subroutine ffdev_energy_sapt0_EXP_XDMBJ
+end subroutine ffdev_energy_sapt_EXP_XDMBJ
 
 ! ------------------------------------------------------------------------------
 

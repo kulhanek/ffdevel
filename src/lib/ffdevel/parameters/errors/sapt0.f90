@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_sapt0
+module ffdev_err_sapt
 
 use ffdev_constants
 use ffdev_variables
@@ -23,12 +23,12 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_sapt0_init
+! subroutine ffdev_err_sapt_init
 ! ==============================================================================
 
-subroutine ffdev_err_sapt0_init
+subroutine ffdev_err_sapt_init
 
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
     use ffdev_errors_dat
 
     implicit none
@@ -43,31 +43,31 @@ subroutine ffdev_err_sapt0_init
 
     SAPT0ErrorIndToRep      = .true.
 
-end subroutine ffdev_err_sapt0_init
+end subroutine ffdev_err_sapt_init
 
 ! ==============================================================================
-! subroutine ffdev_err_sapt0_error
+! subroutine ffdev_err_sapt_error
 ! ==============================================================================
 
-subroutine ffdev_err_sapt0_error(error)
+subroutine ffdev_err_sapt_error(error)
 
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j,nene
-    real(DEVDP)         :: err,serrele,serrrep,serrdisp,trg_sapt0_rep
+    real(DEVDP)         :: err,serrele,serrrep,serrdisp,trg_sapt_rep,trg_sapt_ele
     ! --------------------------------------------------------------------------
 
-    error%sapt0_ele = 0.0d0
-    error%sapt0_rep = 0.0d0
-    error%sapt0_disp = 0.0d0
+    error%sapt_ele = 0.0d0
+    error%sapt_rep = 0.0d0
+    error%sapt_disp = 0.0d0
 
     serrele = 0.0
     serrrep = 0.0
@@ -79,58 +79,62 @@ subroutine ffdev_err_sapt0_error(error)
 
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
-            if( .not. (sets(i)%geo(j)%trg_sapt0_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
+            if( .not. (sets(i)%geo(j)%trg_sapt_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
 
             nene = nene + 1
 
         ! electrostatics
-            err = sets(i)%geo(j)%sapt0_ele - sets(i)%geo(j)%trg_sapt0_ele
+            trg_sapt_ele = sets(i)%geo(j)%trg_sapt_ele
+            ! FIXME
+!            trg_sapt_ele = trg_sapt_ele + sets(i)%geo(j)%trg_sapt_ind
+            err = sets(i)%geo(j)%sapt_ele - trg_sapt_ele
             serrele = serrele + sets(i)%geo(j)%weight * err**2
 
         ! repulsion
-            trg_sapt0_rep = sets(i)%geo(j)%trg_sapt0_exch
-            if( SAPT0ErrorIndToRep ) then
-                trg_sapt0_rep = trg_sapt0_rep + sets(i)%geo(j)%trg_sapt0_ind
-            end if
-            err = sets(i)%geo(j)%sapt0_rep - trg_sapt0_rep
+            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
+            ! FIXME
+!            if( SAPT0ErrorIndToRep ) then
+                trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
+!            end if
+            err = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
             serrrep = serrrep + sets(i)%geo(j)%weight * err**2
 
         ! dispersion
-            err = sets(i)%geo(j)%sapt0_disp - sets(i)%geo(j)%trg_sapt0_disp
+            err = sets(i)%geo(j)%sapt_disp - sets(i)%geo(j)%trg_sapt_disp
             serrdisp = serrdisp + sets(i)%geo(j)%weight * err**2
         end do
     end do
 
     if( nene .gt. 0 ) then
-        error%sapt0_ele  = sqrt(serrele/real(nene))
-        error%sapt0_rep  = sqrt(serrrep/real(nene))
-        error%sapt0_disp = sqrt(serrdisp/real(nene))
+        error%sapt_ele  = sqrt(serrele/real(nene))
+        error%sapt_rep  = sqrt(serrrep/real(nene))
+        error%sapt_disp = sqrt(serrdisp/real(nene))
     end if
 
 
-end subroutine ffdev_err_sapt0_error
+end subroutine ffdev_err_sapt_error
 
 ! ==============================================================================
-! subroutine ffdev_err_sapt0_summary
+! subroutine ffdev_err_sapt_summary
 ! ==============================================================================
 
-subroutine ffdev_err_sapt0_summary
+subroutine ffdev_err_sapt_summary
 
     use ffdev_targetset_dat
     use ffdev_geometry
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
 
     implicit none
     integer             :: i,j,nene
     logical             :: printsum
-    real(DEVDP)         :: serrele,serrrep,serrdisp,trg_sapt0_rep
+    real(DEVDP)         :: serrele,serrrep,serrdisp,trg_sapt_rep
     real(DEVDP)         :: errele,errrep,errdisp
     ! --------------------------------------------------------------------------
 
     printsum = .false.
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_sapt0_loaded .and. (sets(i)%isref .eqv. .false.) ) then
+            if( sets(i)%geo(j)%trg_sapt_loaded .and. (sets(i)%isref .eqv. .false.) ) then
                 printsum = .true.
             end if
         end do
@@ -150,32 +154,32 @@ subroutine ffdev_err_sapt0_summary
     do i=1,nsets
         printsum = .false.
         do j=1,sets(i)%ngeos
-            if( .not. (sets(i)%geo(j)%trg_sapt0_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
+            if( .not. (sets(i)%geo(j)%trg_sapt_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
 
             printsum = .true.
             nene = nene + 1
 
         ! electrostatics
-            errele = sets(i)%geo(j)%sapt0_ele - sets(i)%geo(j)%trg_sapt0_ele
+            errele = sets(i)%geo(j)%sapt_ele - sets(i)%geo(j)%trg_sapt_ele
             serrele = serrele + sets(i)%geo(j)%weight * errele**2
 
         ! repulsion
-            trg_sapt0_rep = sets(i)%geo(j)%trg_sapt0_exch
+            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
             if( SAPT0ErrorIndToRep ) then
-                trg_sapt0_rep = trg_sapt0_rep + sets(i)%geo(j)%trg_sapt0_ind
+                trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
             end if
-            errrep = sets(i)%geo(j)%sapt0_rep - trg_sapt0_rep
+            errrep = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
             serrrep = serrrep + sets(i)%geo(j)%weight * errrep**2
 
         ! dispersion
-            errdisp = sets(i)%geo(j)%sapt0_disp - sets(i)%geo(j)%trg_sapt0_disp
+            errdisp = sets(i)%geo(j)%sapt_disp - sets(i)%geo(j)%trg_sapt_disp
             serrdisp = serrdisp + sets(i)%geo(j)%weight * errdisp**2
 
 
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
-                              sets(i)%geo(j)%trg_sapt0_ele, sets(i)%geo(j)%sapt0_ele, errele, &
-                              trg_sapt0_rep, sets(i)%geo(j)%sapt0_rep, errrep, &
-                              sets(i)%geo(j)%trg_sapt0_disp, sets(i)%geo(j)%sapt0_disp, errdisp
+                              sets(i)%geo(j)%trg_sapt_ele, sets(i)%geo(j)%sapt_ele, errele, &
+                              trg_sapt_rep, sets(i)%geo(j)%sapt_rep, errrep, &
+                              sets(i)%geo(j)%trg_sapt_disp, sets(i)%geo(j)%sapt_disp, errdisp
         end do
         if( printsum ) write(DEV_OUT,20)
     end do
@@ -200,10 +204,10 @@ subroutine ffdev_err_sapt0_summary
 40 format('# Final error (weighted per geometry)  = ',F10.3,23X,F10.3,23X,F10.3)
 45 format('# Final error (all weights)            = ',F10.3,23X,F10.3,23X,F10.3)
 
-end subroutine ffdev_err_sapt0_summary
+end subroutine ffdev_err_sapt_summary
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_sapt0
+end module ffdev_err_sapt
 
 

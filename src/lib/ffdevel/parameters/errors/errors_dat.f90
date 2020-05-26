@@ -43,9 +43,9 @@ type FFERROR_TYPE
     real(DEVDP)         :: ihess_angles
     real(DEVDP)         :: ihess_dihedrals
     real(DEVDP)         :: ihess_impropers
-    real(DEVDP)         :: sapt0_ele
-    real(DEVDP)         :: sapt0_rep
-    real(DEVDP)         :: sapt0_disp
+    real(DEVDP)         :: sapt_ele
+    real(DEVDP)         :: sapt_rep
+    real(DEVDP)         :: sapt_disp
     real(DEVDP)         :: chrgpnl
 end type FFERROR_TYPE
 
@@ -54,7 +54,7 @@ type(FFERROR_TYPE)      :: FFError
 ! ------------------------------------------------------------------------------
 ! internal setup
 logical                 :: errors_calc_ene      = .false.
-logical                 :: errors_calc_sapt0    = .false.
+logical                 :: errors_calc_sapt    = .false.
 logical                 :: errors_calc_grad     = .false.
 logical                 :: errors_calc_hess     = .false.
 

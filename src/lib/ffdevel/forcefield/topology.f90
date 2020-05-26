@@ -48,7 +48,7 @@ subroutine ffdev_topology_init(top)
     top%nb_size = 0
     top%probe_size = 0
     top%nfragments = 0
-    top%sapt0_size = 0
+    top%sapt_size = 0
     top%nsymm_classes = 0
     top%total_charge = 0
 
@@ -1620,7 +1620,7 @@ end function ffdev_topology_z2n
 ! subroutine ffdev_topology_apply_NB_comb_rules_EXP
 ! ==============================================================================
 
-subroutine ffdev_topology_gen_sapt0_list(top,nrefs,natomsrefs)
+subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
 
     use ffdev_utils
 
@@ -1632,11 +1632,11 @@ subroutine ffdev_topology_gen_sapt0_list(top,nrefs,natomsrefs)
     integer         :: m,i,j,ip,alloc_status,istart,iend
     ! --------------------------------------------------------------------------
 
-    if( top%sapt0_size .gt. 0 ) return
+    if( top%sapt_size .gt. 0 ) return
 
     ! calculate size of the list
     istart = 1
-    ip = 0 ! start from zero for sapt0_size
+    ip = 0 ! start from zero for sapt_size
     do m=1,nrefs
         iend = natomsrefs(m)
         do i=istart,istart+iend-1
@@ -1647,13 +1647,13 @@ subroutine ffdev_topology_gen_sapt0_list(top,nrefs,natomsrefs)
         istart = istart + iend
     end do
 
-    top%sapt0_size = ip
-    if( top%sapt0_size .le. 0 ) return
+    top%sapt_size = ip
+    if( top%sapt_size .le. 0 ) return
 
     ! allocate list
-    allocate(top%sapt0_list(top%sapt0_size), stat = alloc_status)
+    allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT0 in ffdev_topology_gen_sapt0_list!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT0 in ffdev_topology_gen_sapt_list!')
     end if
 
     istart = 1
@@ -1662,19 +1662,19 @@ subroutine ffdev_topology_gen_sapt0_list(top,nrefs,natomsrefs)
         iend = natomsrefs(m)
         do i=istart,istart+iend-1
             do j=istart+iend,top%natoms
-                top%sapt0_list(ip)%ai    = i
-                top%sapt0_list(ip)%aj    = j
-                top%sapt0_list(ip)%dt    = 0
-                top%sapt0_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
-                top%sapt0_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
-                top%sapt0_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+                top%sapt_list(ip)%ai    = i
+                top%sapt_list(ip)%aj    = j
+                top%sapt_list(ip)%dt    = 0
+                top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+                top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
+                top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,i,j)
                 ip = ip + 1
             end do
         end do
         istart = istart + iend
     end do
 
-end subroutine ffdev_topology_gen_sapt0_list
+end subroutine ffdev_topology_gen_sapt_list
 
 ! ==============================================================================
 ! subroutine ffdev_topology_qsource_to_string

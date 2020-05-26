@@ -60,9 +60,9 @@ SET(FFDEVEL_SRC
         parameters/errors/energy.f90
         parameters/errors/energy_control.f90
 
-        parameters/errors/sapt0_dat.f90
-        parameters/errors/sapt0.f90
-        parameters/errors/sapt0_control.f90
+        parameters/errors/sapt_dat.f90
+        parameters/errors/sapt.f90
+        parameters/errors/sapt_control.f90
 
         parameters/errors/chrgpnl_dat.f90
         parameters/errors/chrgpnl.f90

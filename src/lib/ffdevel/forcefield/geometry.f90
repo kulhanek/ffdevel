@@ -52,16 +52,16 @@ subroutine ffdev_geometry_init(geo)
     geo%total_ene = 0
     geo%weight = 1.0
 
-    geo%sapt0_ele = 0.0
-    geo%sapt0_rep = 0.0
-    geo%sapt0_disp = 0.0
-    geo%sapt0_total = 0.0
+    geo%sapt_ele = 0.0
+    geo%sapt_rep = 0.0
+    geo%sapt_disp = 0.0
+    geo%sapt_total = 0.0
 
-    geo%trg_sapt0_loaded = .false.
-    geo%trg_sapt0_ele = 0
-    geo%trg_sapt0_exch = 0
-    geo%trg_sapt0_ind = 0
-    geo%trg_sapt0_disp = 0
+    geo%trg_sapt_loaded = .false.
+    geo%trg_sapt_ele = 0
+    geo%trg_sapt_exch = 0
+    geo%trg_sapt_ind = 0
+    geo%trg_sapt_disp = 0
 
     geo%trg_ene_loaded = .false.
     geo%trg_crd_loaded = .false.
@@ -538,20 +538,20 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     end if
                     select case(trim(key))
                         case('Eele')
-                            geo%trg_sapt0_ele = rnum
+                            geo%trg_sapt_ele = rnum
                         case('Eexch')
-                            geo%trg_sapt0_exch = rnum
+                            geo%trg_sapt_exch = rnum
                         case('Eind')
-                            geo%trg_sapt0_ind = rnum
+                            geo%trg_sapt_ind = rnum
                         case('Edisp')
-                            geo%trg_sapt0_disp = rnum
+                            geo%trg_sapt_disp = rnum
                         case default
                             write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! Unrecognized item (' &
                                                    // trim(key) // ') at line = ',i
                             call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end select
                 end do
-                geo%trg_sapt0_loaded = .true.
+                geo%trg_sapt_loaded = .true.
             case('GRADIENT')
                 allocate( geo%trg_grd(3,geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
@@ -1128,7 +1128,7 @@ subroutine ffdev_geometry_info_point(geo)
 
     lname = trim(geo%name)
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_ene_loaded, &
-                      geo%trg_sapt0_loaded, &
+                      geo%trg_sapt_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
 
@@ -1176,12 +1176,12 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
     lname = trim(geo%name)
     if( relative ) then
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt0_loaded, &
+                      geo%trg_sapt_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     else
     write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt0_loaded, &
+                      geo%trg_sapt_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     end if

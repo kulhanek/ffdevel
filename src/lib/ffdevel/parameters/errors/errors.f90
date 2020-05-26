@@ -40,7 +40,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_energy
     use ffdev_err_rmsd
     use ffdev_err_ihess
-    use ffdev_err_sapt0
+    use ffdev_err_sapt
     use ffdev_err_chrgpnl
 
     implicit none
@@ -48,13 +48,13 @@ subroutine ffdev_errors_init_all()
 
     ! clear what should be calculated
     errors_calc_ene     = .false.
-    errors_calc_sapt0   = .false.
+    errors_calc_sapt   = .false.
     errors_calc_grad    = .false.
     errors_calc_hess    = .false.
 
     ! reset all setup
     call ffdev_err_energy_init()
-    call ffdev_err_sapt0_init()
+    call ffdev_err_sapt_init()
 
     call ffdev_err_bonds_init()
     call ffdev_err_angles_init()
@@ -96,8 +96,8 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_rmsd_dat
     use ffdev_err_rmsd
 
-    use ffdev_err_sapt0_dat
-    use ffdev_err_sapt0
+    use ffdev_err_sapt_dat
+    use ffdev_err_sapt
 
     use ffdev_err_chrgpnl_dat
     use ffdev_err_chrgpnl
@@ -122,9 +122,9 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_angles = 0.0d0
     error%ihess_dihedrals = 0.0d0
     error%ihess_impropers = 0.0d0
-    error%sapt0_ele = 0.0d0
-    error%sapt0_rep = 0.0d0
-    error%sapt0_disp = 0.0d0
+    error%sapt_ele = 0.0d0
+    error%sapt_rep = 0.0d0
+    error%sapt_disp = 0.0d0
     error%chrgpnl = 0.0d0
 
 ! energy based errors
@@ -134,10 +134,10 @@ subroutine ffdev_errors_error_only(error)
     end if
 
     if( EnableSAPT0Error ) then
-        call ffdev_err_sapt0_error(error)
-        error%total = error%total + error%sapt0_ele * SAPT0EleErrorWeight &
-                                  + error%sapt0_rep * SAPT0RepErrorWeight &
-                                  + error%sapt0_disp * SAPT0DispErrorWeight
+        call ffdev_err_sapt_error(error)
+        error%total = error%total + error%sapt_ele * SAPT0EleErrorWeight &
+                                  + error%sapt_rep * SAPT0RepErrorWeight &
+                                  + error%sapt_disp * SAPT0DispErrorWeight
     end if
 
 ! geometry based errors
@@ -194,7 +194,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_ihess_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
 
     implicit none
@@ -261,7 +261,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_energy_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
 
     implicit none
@@ -318,7 +318,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_energy_dat
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
-    use ffdev_err_sapt0_dat
+    use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
 
     implicit none
@@ -329,13 +329,13 @@ subroutine ffdev_errors_ffopt_results(error)
         write(DEV_OUT,15,ADVANCE='NO') error%energy
     end if
     if( EnableSAPT0Error ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_ele
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
     end if
     if( EnableSAPT0Error ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_rep
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep
     end if
     if( EnableSAPT0Error ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt0_disp
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_disp
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%bonds
@@ -397,8 +397,8 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_rmsd_dat
     use ffdev_err_rmsd
 
-    use ffdev_err_sapt0_dat
-    use ffdev_err_sapt0
+    use ffdev_err_sapt_dat
+    use ffdev_err_sapt
 
     use ffdev_err_chrgpnl_dat
     use ffdev_err_chrgpnl
@@ -427,7 +427,7 @@ subroutine ffdev_errors_summary(final)
 
     ! individual summaries
     call ffdev_err_energy_summary
-    call ffdev_err_sapt0_summary
+    call ffdev_err_sapt_summary
 
     ! summary per sets
     if( PrintRMSDErrorSummary ) then

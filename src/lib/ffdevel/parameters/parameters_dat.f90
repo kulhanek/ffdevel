@@ -164,8 +164,8 @@ real(DEVDP)     :: MaxVdwAlpha  =      25.0d0
 ! non-bonded ABC
 real(DEVDP)     :: MinVdwPA     =      0.0d0
 real(DEVDP)     :: MaxVdwPA     =     20.0d0
-real(DEVDP)     :: MinVdwPB     =      1.0d0
-real(DEVDP)     :: MaxVdwPB     =      8.0d0
+real(DEVDP)     :: MinVdwPB     =      3.0d0
+real(DEVDP)     :: MaxVdwPB     =      5.0d0
 real(DEVDP)     :: MinVdwC6     =      0.0d0
 real(DEVDP)     :: MaxVdwC6     =      1.0d7
 
@@ -175,10 +175,10 @@ real(DEVDP)     :: MaxEleSQ     =      3.0d0
 
 real(DEVDP)     :: MinDispFA    =      0.0d0
 real(DEVDP)     :: MaxDispFA    =      5.0d0
-real(DEVDP)     :: MinDispFB    =     -9.0d0
-real(DEVDP)     :: MaxDispFB    =      9.0d0
-real(DEVDP)     :: MinDispFC    =     -9.0d0
-real(DEVDP)     :: MaxDispFC    =      9.0d0
+real(DEVDP)     :: MinDispFB    =     -1.0d0
+real(DEVDP)     :: MaxDispFB    =      3.0d0
+real(DEVDP)     :: MinDispFC    =      0.0d0
+real(DEVDP)     :: MaxDispFC    =      3.0d0
 
 ! partial atomic charges
 real(DEVDP)     :: MinPAC       =     -2.0d0

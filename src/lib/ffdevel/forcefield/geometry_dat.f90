@@ -52,11 +52,11 @@ type GEOMETRY
     real(DEVDP)             :: nb_rep           ! total repulsion
     real(DEVDP)             :: nb_disp          ! total dispersion
     real(DEVDP)             :: total_ene        ! total energy from MM
-! sapt0 energies
-    real(DEVDP)             :: sapt0_ele         ! electrostatics
-    real(DEVDP)             :: sapt0_rep         ! NB repulsion
-    real(DEVDP)             :: sapt0_disp        ! NB dispersion
-    real(DEVDP)             :: sapt0_total
+! sapt energies
+    real(DEVDP)             :: sapt_ele         ! electrostatics
+    real(DEVDP)             :: sapt_rep         ! NB repulsion
+    real(DEVDP)             :: sapt_disp        ! NB dispersion
+    real(DEVDP)             :: sapt_total
 ! derivatives, etc.
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer     :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
@@ -82,11 +82,11 @@ type GEOMETRY
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
 ! target SAPT0
-    logical                 :: trg_sapt0_loaded
-    real(DEVDP)             :: trg_sapt0_ele
-    real(DEVDP)             :: trg_sapt0_exch
-    real(DEVDP)             :: trg_sapt0_ind
-    real(DEVDP)             :: trg_sapt0_disp
+    logical                 :: trg_sapt_loaded
+    real(DEVDP)             :: trg_sapt_ele
+    real(DEVDP)             :: trg_sapt_exch
+    real(DEVDP)             :: trg_sapt_ind
+    real(DEVDP)             :: trg_sapt_disp
 ! restraints
     integer                 :: nrst                 ! number of restraints
     type(RESTRAINT),pointer :: rst(:)               ! restraints

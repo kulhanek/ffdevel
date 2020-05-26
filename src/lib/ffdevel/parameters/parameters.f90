@@ -452,6 +452,7 @@ subroutine ffdev_parameters_reinit()
             use_vdw_r0      = .true.
             use_disp_fa     = .true.
             use_disp_fb     = .true.
+            use_disp_fc     = .true.
         case(NB_VDW_EXP_XDMBJ)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.

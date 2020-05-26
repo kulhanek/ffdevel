@@ -120,10 +120,10 @@ subroutine ffdev_energy_all(top,geo,skipnb)
 end subroutine ffdev_energy_all
 
 ! ==============================================================================
-! subroutine ffdev_energy_sapt0
+! subroutine ffdev_energy_sapt
 ! ==============================================================================
 
-subroutine ffdev_energy_sapt0(top,geo)
+subroutine ffdev_energy_sapt(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -142,43 +142,43 @@ subroutine ffdev_energy_sapt0(top,geo)
     ! --------------------------------------------------------------------------
 
     ! reset energy
-    geo%sapt0_ele = 0.0
-    geo%sapt0_rep = 0.0
-    geo%sapt0_disp = 0.0
-    geo%sapt0_total = 0.0
+    geo%sapt_ele = 0.0
+    geo%sapt_rep = 0.0
+    geo%sapt_disp = 0.0
+    geo%sapt_total = 0.0
 
-    if( top%sapt0_size .le. 0 ) return ! no SAPT0 list
+    if( top%sapt_size .le. 0 ) return ! no SAPT0 list
 
     call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
     call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
 
     select case(nb_mode)
         case(NB_VDW_LJ)
-            call ffdev_energy_sapt0_LJ(top,geo)
+            call ffdev_energy_sapt_LJ(top,geo)
 
         case(NB_VDW_12_6)
-            call ffdev_energy_sapt0_12_6(top,geo)
+            call ffdev_energy_sapt_12_6(top,geo)
 
         case(NB_VDW_12_XDMBJ)
-            call ffdev_energy_sapt0_12_XDMBJ(top,geo)
+            call ffdev_energy_sapt_12_XDMBJ(top,geo)
 
         case(NB_VDW_EXP_XDMBJ)
-            call ffdev_energy_sapt0_EXP_XDMBJ(top,geo)
+            call ffdev_energy_sapt_EXP_XDMBJ(top,geo)
 
         case(NB_VDW_12_D3BJ)
-            call ffdev_energy_sapt0_12_D3BJ(top,geo)
+            call ffdev_energy_sapt_12_D3BJ(top,geo)
 
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt0! (' // &
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt! (' // &
                                             ffdev_topology_nb_mode_to_string(nb_mode) // ')')
     end select
 
-    geo%sapt0_total = geo%sapt0_ele + geo%sapt0_rep + geo%sapt0_disp
+    geo%sapt_total = geo%sapt_ele + geo%sapt_rep + geo%sapt_disp
 
     call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
-end subroutine ffdev_energy_sapt0
+end subroutine ffdev_energy_sapt
 
 !===============================================================================
 ! subroutine ffdev_energy_bonds

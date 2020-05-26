@@ -102,10 +102,10 @@ subroutine ffdev_energy_nb_12_6(top,geo)
 end subroutine ffdev_energy_nb_12_6
 
 !===============================================================================
-! subroutine ffdev_energy_sapt0_12_6
+! subroutine ffdev_energy_sapt_12_6
 !===============================================================================
 
-subroutine ffdev_energy_sapt0_12_6(top,geo)
+subroutine ffdev_energy_sapt_12_6(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -121,9 +121,9 @@ subroutine ffdev_energy_sapt0_12_6(top,geo)
     real(DEVDP)     :: r2a,ra,r6a,scale2
     ! --------------------------------------------------------------------------
 
-    geo%sapt0_ele = 0.0d0
-    geo%sapt0_rep = 0.0d0
-    geo%sapt0_disp = 0.0d0
+    geo%sapt_ele = 0.0d0
+    geo%sapt_rep = 0.0d0
+    geo%sapt_disp = 0.0d0
 
     if( .not. xdm_data_loaded ) then
         call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded for ffdev_energy_nb_12_6!')
@@ -131,10 +131,10 @@ subroutine ffdev_energy_sapt0_12_6(top,geo)
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
 
-    do ip=1,top%sapt0_size
-        i   = top%sapt0_list(ip)%ai
-        j   = top%sapt0_list(ip)%aj
-        nbt = top%sapt0_list(ip)%nbt
+    do ip=1,top%sapt_size
+        i   = top%sapt_list(ip)%ai
+        j   = top%sapt_list(ip)%aj
+        nbt = top%sapt_list(ip)%nbt
 
         pa  = exp(top%nb_types(nbt)%pa)
         c6  = top%nb_types(nbt)%c6 * disp_fa
@@ -155,12 +155,12 @@ subroutine ffdev_energy_sapt0_12_6(top,geo)
         ra  = sqrt(r2a)
         r6a = r2a*r2a*r2a
 
-        geo%sapt0_ele  = geo%sapt0_ele  + scale2*crgij*ra
-        geo%sapt0_rep  = geo%sapt0_rep  + pa*r6a*r6a
-        geo%sapt0_disp = geo%sapt0_disp - c6*r6a
+        geo%sapt_ele  = geo%sapt_ele  + scale2*crgij*ra
+        geo%sapt_rep  = geo%sapt_rep  + pa*r6a*r6a
+        geo%sapt_disp = geo%sapt_disp - c6*r6a
     end do
 
-end subroutine ffdev_energy_sapt0_12_6
+end subroutine ffdev_energy_sapt_12_6
 
 ! ------------------------------------------------------------------------------
 

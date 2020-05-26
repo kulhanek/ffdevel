@@ -15,14 +15,14 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_sapt0_dat
+module ffdev_err_sapt_dat
 
 use ffdev_constants
 use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 
-! initialization in ffdev_err_sapt0_init
+! initialization in ffdev_err_sapt_init
 logical                 :: EnableSAPT0Error
 logical                 :: PrintSAPT0ErrorSummary
 
@@ -34,4 +34,4 @@ logical                 :: SAPT0ErrorIndToRep   ! include induction to rep
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_sapt0_dat
+end module ffdev_err_sapt_dat

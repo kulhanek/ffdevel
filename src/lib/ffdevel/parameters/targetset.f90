@@ -145,11 +145,11 @@ subroutine ffdev_targetset_calc_all
     ! calculate SAPT0
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_sapt0_loaded .and. errors_calc_sapt0 .and. sets(i)%nrefs .gt. 1 ) then
-                if( sets(i)%top%sapt0_size .le. 0 ) then
-                    call ffdev_topology_gen_sapt0_list(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
+            if( sets(i)%geo(j)%trg_sapt_loaded .and. errors_calc_sapt .and. sets(i)%nrefs .gt. 1 ) then
+                if( sets(i)%top%sapt_size .le. 0 ) then
+                    call ffdev_topology_gen_sapt_list(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
                 end if
-                call ffdev_energy_sapt0(sets(i)%top,sets(i)%geo(j))
+                call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
             end if
         end do
     end do
