@@ -124,7 +124,7 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_impropers = 0.0d0
     error%sapt_ele = 0.0d0
     error%sapt_rep = 0.0d0
-    error%sapt_disp = 0.0d0
+    error%sapt_dis = 0.0d0
     error%chrgpnl = 0.0d0
 
 ! energy based errors
@@ -137,7 +137,7 @@ subroutine ffdev_errors_error_only(error)
         call ffdev_err_sapt_error(error)
         error%total = error%total + error%sapt_ele * SAPTEleErrorWeight &
                                   + error%sapt_rep * SAPTRepErrorWeight &
-                                  + error%sapt_disp * SAPTDispErrorWeight
+                                  + error%sapt_dis * SAPTDispErrorWeight
     end if
 
 ! geometry based errors
@@ -335,7 +335,7 @@ subroutine ffdev_errors_ffopt_results(error)
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_disp
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_dis
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%bonds

@@ -108,6 +108,13 @@ program ffdev_optimize_program
     ! finalize topologies in sets
     call ffdev_targetset_init_pts()
 
+    ! run mmd3
+    call ffdev_mmd3_init
+    call ffdev_mmd3_run_stat()
+
+    ! run XDM stat if data available
+    call ffdev_xdm_run_stat()
+
 ! ==============================================================================
 ! INITIAL PART - check for syntax errors in control file
 ! ==============================================================================
@@ -128,13 +135,6 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
-
-    ! run mmd3
-    call ffdev_mmd3_init
-    call ffdev_mmd3_run_stat()
-
-    ! run XDM stat if data available
-    call ffdev_xdm_run_stat()
 
     ! do fake input file processing
     rst = prmfile_first_group(fin)

@@ -45,7 +45,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: ihess_impropers
     real(DEVDP)         :: sapt_ele
     real(DEVDP)         :: sapt_rep
-    real(DEVDP)         :: sapt_disp
+    real(DEVDP)         :: sapt_dis
     real(DEVDP)         :: chrgpnl
 end type FFERROR_TYPE
 

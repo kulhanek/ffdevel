@@ -31,6 +31,7 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c10ave
     real(DEVDP)         :: c10sig
     real(DEVDP)         :: Rc       ! critical radius for BJ
+    real(DEVDP)         :: Rvdw     ! van der Waals radius from polarization
     integer             :: num
 end type XDM_PAIR_TYPE
 
@@ -49,6 +50,11 @@ end type XDM_ATOM_TYPE
 logical                         :: xdm_data_loaded = .false.
 type(XDM_ATOM_TYPE),allocatable :: xdm_atoms(:)     ! ntypes
 type(XDM_PAIR_TYPE),allocatable :: xdm_pairs(:,:)   ! ntypes x ntypes
+
+! ------------------------------------------------------------------------------
+
+! DOI: 10.1103/PhysRevLett.121.183401
+real(DEVDP)     :: xdm_pol2rvdw = 2.54d0
 
 ! ------------------------------------------------------------------------------
 

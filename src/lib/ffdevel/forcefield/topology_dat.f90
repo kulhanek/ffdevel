@@ -137,19 +137,6 @@ end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
 
-! dispersion parameters pair
-type DISP_PAIR_TYPE
-    real(DEVDP)         :: c6
-    real(DEVDP)         :: c8
-    real(DEVDP)         :: c10
-    real(DEVDP)         :: Rc
-end type DISP_PAIR_TYPE
-
-logical                             :: disp_pairs_loaded = .false.
-type(DISP_PAIR_TYPE),allocatable    :: disp_pairs(:,:)   ! ntypes x ntypes - global types
-
-! ------------------------------------------------------------------------------
-
 type TOPOLOGY
 ! general info
     character(len=255)          :: name
@@ -202,6 +189,32 @@ logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gam
                                                 ! .false. -> SUM Vn*(1+cos(n*phi-gamma))
 
 ! ==============================================================================
+! ==== dispersion
+! ==============================================================================
+
+integer,parameter   :: NB_CX_NONE       = 0
+integer,parameter   :: NB_CX_XDM        = 1
+integer,parameter   :: NB_CX_MMD3       = 2
+
+integer,parameter   :: NB_RC_NONE       = 0
+integer,parameter   :: NB_RC_XDM        = 1
+integer,parameter   :: NB_RC_XDM_POL    = 2
+integer,parameter   :: NB_RC_MMD3       = 3
+
+! dispersion parameters pair
+type DISP_PAIR_TYPE
+    real(DEVDP)         :: c6
+    real(DEVDP)         :: c8
+    real(DEVDP)         :: c10
+    real(DEVDP)         :: Rc
+end type DISP_PAIR_TYPE
+
+type(DISP_PAIR_TYPE),allocatable    :: disp_pairs(:,:)      ! ntypes x ntypes - global types
+logical                             :: disp_data_loaded     = .false.
+integer                             :: cx_source            = NB_CX_NONE
+integer                             :: rc_source            = NB_RC_NONE
+
+! ==============================================================================
 ! ==== electrostatics
 ! ==============================================================================
 
@@ -226,7 +239,7 @@ real(DEVDP) :: pene_fa      = 1.0d0                     ! penetration energy par
 integer,parameter   :: COMB_RULE_NONE = 05    ! input data
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_LJ        = 1
+integer,parameter   :: NB_VDW_LJ            = 1     ! Lenard-Jones
 ! Lenard-Jones
 ! Form: Enb = eps*( (ro/r)^12 - 2*(r0/r)^6 )
 ! Parameters: eps, r0
@@ -239,8 +252,8 @@ integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
 integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_EXP_DISPBJ    = 5     ! Exp-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT    = 5     ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_EXP_DISPBJ    = 2     ! Exp-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT    = 3     ! Exp-Tang–Toennies
 
 ! Becke-Johnson
 

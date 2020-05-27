@@ -40,7 +40,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     logical                     :: allow_nopoints
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
-    integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints
+    integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints,ai
     logical                     :: data_avail,rst,shift2zero,stream
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
@@ -190,7 +190,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end do
             rst = prmfile_get_string_by_key(fin,'references', string)
             write(DEV_OUT,70) trim(string)
-            ! check size consistency
+        ! check size consistency
             k = 0
             do l=1,sets(i)%nrefs
                 sets(i)%natomsrefs(l) = sets(sets(i)%refs(l))%top%natoms
@@ -199,6 +199,24 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             if( k .ne. sets(i)%top%natoms ) then
                 call ffdev_utils_exit(DEV_ERR,1,'Size (natoms) inconsistency detected between the set and reference systems!')
             end if
+        ! check order consistency - needed for charges
+            ai = 1
+            do l=1,sets(i)%nrefs
+                do k=1,sets(sets(i)%refs(l))%top%natoms
+                    if( trim(sets(sets(i)%refs(l))%top%atoms(k)%name) .ne. trim(sets(i)%top%atoms(ai)%name) ) then
+                        write(string,'(A,I3,A,I3)') 'Inconsistency in order of references (name)! Ref atom: ', &
+                                                     k, ' Set atom: ', ai
+                        call ffdev_utils_exit(DEV_ERR,1,string)
+                    end if
+                    if( trim(sets(sets(i)%refs(l))%top%atoms(k)%resname) .ne. trim(sets(i)%top%atoms(ai)%resname) ) then
+                        write(string,'(A,I3,A,I3)') 'Inconsistency in order of references (resname)! Ref atom: ', &
+                                                    k, ' Set atom: ', ai
+                        call ffdev_utils_exit(DEV_ERR,1,string)
+                    end if
+                    ai = ai + 1
+                end do
+            end do
+
         end if
 
         shift2zero = .false.
@@ -292,13 +310,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,17) trim('-none-')
         else
             write(DEV_OUT,17) trim(sets(i)%final_drvxyz)
-        end if
-
-        ! setup charges, which should be loaded
-        if( .not. prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
-            write(DEV_OUT,235) trim(LoadCharges)
-        else
-            write(DEV_OUT,230) trim(LoadCharges)
         end if
 
 !----------------------
@@ -520,9 +531,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  17 format('Final driving structures (final_drvxyz) = ',A)
  18 format('Initial drv profile (initial_drvene)    = ',A)
  19 format('Initial drv structures (initial_drvxyz) = ',A)
-
-230 format('Load charges (load_charges)             = ',A12)
-235 format('Load charges (load_charges)             = ',A12,'                  (default)')
 
  20 format('Probe size (probesize)                  = ',I12)
  25 format('Probe size (probesize)                  = ',I12,'                  (default)')

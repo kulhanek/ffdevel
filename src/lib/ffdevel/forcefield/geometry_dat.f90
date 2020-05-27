@@ -46,16 +46,18 @@ type GEOMETRY
     real(DEVDP)             :: dih_ene          ! dihedral energy
     real(DEVDP)             :: impropr_ene      ! improper energy
     real(DEVDP)             :: ele14_ene        ! 1-4 electrostatics
-    real(DEVDP)             :: nb14_ene         ! 1-4 vdW
+    real(DEVDP)             :: pel14_ene        ! 1-4 electrostatics - penetration energy
+    real(DEVDP)             :: rep14_ene        ! 1-4 vdW - repulsion
+    real(DEVDP)             :: dis14_ene        ! 1-4 vdW - dispersion
     real(DEVDP)             :: ele_ene          ! electrostatics
-    real(DEVDP)             :: nb_ene           ! vdW
-    real(DEVDP)             :: nb_rep           ! total repulsion
-    real(DEVDP)             :: nb_disp          ! total dispersion
+    real(DEVDP)             :: pel_ene          ! electrostatics - penetration energy
+    real(DEVDP)             :: rep_ene          ! vdW - repulsion
+    real(DEVDP)             :: dis_ene          ! vdW - dispersion
     real(DEVDP)             :: total_ene        ! total energy from MM
 ! sapt energies
     real(DEVDP)             :: sapt_ele         ! electrostatics
     real(DEVDP)             :: sapt_rep         ! NB repulsion
-    real(DEVDP)             :: sapt_disp        ! NB dispersion
+    real(DEVDP)             :: sapt_dis        ! NB dispersion
     real(DEVDP)             :: sapt_total
 ! derivatives, etc.
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
@@ -84,9 +86,9 @@ type GEOMETRY
 ! target SAPT
     logical                 :: trg_sapt_loaded
     real(DEVDP)             :: trg_sapt_ele
-    real(DEVDP)             :: trg_sapt_exch
+    real(DEVDP)             :: trg_sapt_exc
     real(DEVDP)             :: trg_sapt_ind
-    real(DEVDP)             :: trg_sapt_disp
+    real(DEVDP)             :: trg_sapt_dis
 ! restraints
     integer                 :: nrst                 ! number of restraints
     type(RESTRAINT),pointer :: rst(:)               ! restraints

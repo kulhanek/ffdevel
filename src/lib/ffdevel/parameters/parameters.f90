@@ -450,29 +450,8 @@ subroutine ffdev_parameters_reinit()
         case(NB_VDW_LJ)
             use_vdw_eps     = .true.
             use_vdw_r0      = .true.
-        case(NB_VDW_12_6)
-            use_vdw_pa      = .true.
-            use_vdw_c6      = .true.
-            use_disp_s6     = .true.
-            use_pene_fa     = .true.
 
-        case(NB_VDW_12_XDMBJ)
-            use_vdw_pa      = .true.
-            use_damp_fa     = .true.
-            use_damp_fb     = .true.
-            use_disp_s6     = .true.
-            use_disp_s8     = .true.
-            use_disp_s10    = .true.
-            use_pene_fa     = .true.
-        case(NB_VDW_12_D3BJ)
-            use_vdw_pa      = .true.
-            use_damp_fa     = .true.
-            use_damp_fb     = .true.
-            use_disp_s6     = .true.
-            use_disp_s8     = .true.
-            use_pene_fa     = .true.
-
-        case(NB_VDW_EXP_XDMBJ)
+        case(NB_VDW_EXP_DISPBJ)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
             use_damp_fa     = .true.
@@ -481,27 +460,14 @@ subroutine ffdev_parameters_reinit()
             use_disp_s8     = .true.
             use_disp_s10    = .true.
             use_pene_fa     = .true.
-        case(NB_VDW_EXP_D3BJ)
+
+        case(NB_VDW_EXP_DISPTT)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
             use_damp_fa     = .true.
-            use_damp_fb     = .true.
-            use_disp_s6     = .true.
-            use_disp_s8     = .true.
-            use_pene_fa     = .true.
-
-        case(NB_VDW_EXP_XDMTT)
-            use_vdw_pa      = .true.
-            use_vdw_pb      = .true.
             use_disp_s6     = .true.
             use_disp_s8     = .true.
             use_disp_s10    = .true.
-            use_pene_fa     = .true.
-        case(NB_VDW_EXP_D3TT)
-            use_vdw_pa      = .true.
-            use_vdw_pb      = .true.
-            use_disp_s6     = .true.
-            use_disp_s8     = .true.
             use_pene_fa     = .true.
 
         case default

@@ -58,10 +58,17 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     geo%angle_ene = 0.0d0
     geo%dih_ene = 0.0d0
     geo%impropr_ene = 0.0d0
+
     geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
+    geo%pel14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
     geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    geo%pel_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
+
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
@@ -87,11 +94,11 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
                     call ffdev_gradient_nb_lj_qtop(top,geo)
                 end if
 
-            case(NB_VDW_12_DISPBJ)
-                call ffdev_gradient_nb_12_DISPBJ(top,geo)
+            case(NB_VDW_EXP_DISPBJ)
+                call ffdev_gradient_nb_EXP_DISPBJ(top,geo)
 
-            case(NB_VDW_12_DISPTT)
-                call ffdev_gradient_nb_12_DISPTT(top,geo)
+            case(NB_VDW_EXP_DISPTT)
+                call ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_gradient_all!')
@@ -99,9 +106,9 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
         call ffdev_timers_stop_timer(FFDEV_POT_NB_GRADIENT_TIMER)
     end if
 
-    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
-                  + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
-                  + geo%ele_ene + geo%nb_ene
+    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
+                  + geo%ele14_ene + geo%pel14_ene + geo%rep14_ene + geo%dis14_ene  &
+                  + geo%ele_ene + geo%pel_ene + geo%rep_ene + geo%dis_ene
 
     call ffdev_timers_stop_timer(FFDEV_POT_GRADIENT_TIMER)
 

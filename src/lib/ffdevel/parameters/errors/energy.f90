@@ -193,12 +193,14 @@ subroutine ffdev_err_energy_summary
                 lnum  = lnum + 1
             end if
 
-            if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-                call ffdev_geometry_info_ene(sets(i)%geo(j))
-            end if
-
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_energy, sets(i)%geo(j)%total_ene, aerr, rerr*100.0d0, lerr
+
+            if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+                call ffdev_geometry_info_ene(sets(i)%geo(j))
+                write(DEV_OUT,*)
+            end if
+
         end do
         if( printsum ) write(DEV_OUT,20)
     end do

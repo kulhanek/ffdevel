@@ -24,6 +24,809 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
+! subroutine ffdev_parameters_ctrl_control
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_control(fin)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_topology
+    use ffdev_ffopt
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    ! this is for nb_params = normal
+    ApplyCombiningRules = .false.
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'control') ) then
+        select case(NBParamsMode)
+            case(NB_PARAMS_MODE_NORMAL)
+                write(DEV_OUT,25) 'normal'
+            case(NB_PARAMS_MODE_LIKE_ONLY)
+                write(DEV_OUT,25) 'like-only'
+            case(NB_PARAMS_MODE_LIKE_ALL)
+                write(DEV_OUT,25) 'like-all'
+            case(NB_PARAMS_MODE_ALL)
+                write(DEV_OUT,25) 'all'
+        end select
+
+        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+        write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
+        write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
+        write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
+        write(DEV_OUT,235) trim(LoadCharges)
+        write(DEV_OUT,95)  GlbRngSeed
+        write(DEV_OUT,105) Verbosity
+        return
+    end if
+
+    if( prmfile_get_string_by_key(fin,'nb_params', string)) then
+        select case(trim(string))
+            case('normal')
+                NBParamsMode = NB_PARAMS_MODE_NORMAL
+                write(DEV_OUT,20) trim(string)
+            case('like-only')
+                NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
+                ApplyCombiningRules = .true.
+                write(DEV_OUT,20) trim(string)
+            case('like-all')
+                NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
+                ApplyCombiningRules = .true.
+                write(DEV_OUT,20) trim(string)
+            case('all')
+                NBParamsMode = NB_PARAMS_MODE_ALL
+                write(DEV_OUT,20) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
+        end select
+    else
+        select case(NBParamsMode)
+            case(NB_PARAMS_MODE_NORMAL)
+                write(DEV_OUT,25) 'normal'
+            case(NB_PARAMS_MODE_LIKE_ONLY)
+                write(DEV_OUT,25) 'like-only'
+            case(NB_PARAMS_MODE_LIKE_ALL)
+                write(DEV_OUT,25) 'like-all'
+            case(NB_PARAMS_MODE_ALL)
+                write(DEV_OUT,25) 'all'
+        end select
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'pac_as_prms', PACAsPrms)) then
+        write(DEV_OUT,110) prmfile_onoff(PACAsPrms)
+    else
+        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
+        write(DEV_OUT,60) prmfile_onoff(OnlyDefinedDihItems)
+    else
+        write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'lock_dihc_pn1', LockDihC_PN1)) then
+        write(DEV_OUT,70) prmfile_onoff(LockDihC_PN1)
+    else
+        write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'resetallsetup', ResetAllSetup)) then
+        write(DEV_OUT,80) prmfile_onoff(ResetAllSetup)
+    else
+        write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
+    end if
+
+    ! setup charges, which should be loaded
+    if( prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
+        write(DEV_OUT,230) trim(LoadCharges)
+    else
+        write(DEV_OUT,235) trim(LoadCharges)
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'seed', GlbRngSeed)) then
+        write(DEV_OUT,90) GlbRngSeed
+    else
+        write(DEV_OUT,95) GlbRngSeed
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'verbosity', Verbosity)) then
+        write(DEV_OUT,100) Verbosity
+    else
+        write(DEV_OUT,105) Verbosity
+    end if
+
+    ! setup random number generator
+    call random_seed(GlbRngSeed)
+    call ffdev_ffopt_setup_rng(GlbRngSeed)
+
+    return
+
+ 10 format('=== [control] ==================================================================')
+
+ 20  format ('NB parameter assembly mode (nb_params)   = ',a12)
+ 25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
+110  format ('Partial charges as params (pac_as_prms)  = ',a12)
+115  format ('Partial charges as params (pac_as_prms)  = ',a12,'                (default)')
+ 60  format ('Use defined dih items (dih_only_defined) = ',a12)
+ 65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
+ 70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
+ 75  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12,'                (default)')
+ 80  format ('Reset all setup (resetallsetup)          = ',a12)
+ 85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
+ 90  format ('Random number generator seed (seed)      = ',I12)
+ 95  format ('Random number generator seed (seed)      = ',I12,'                (default)')
+100  format ('Verbosity (verbosity)                    = ',I12)
+105  format ('Verbosity (verbosity)                    = ',I12,'                (default)')
+
+230  format ('Load charges (load_charges)              = ',A12)
+235  format ('Load charges (load_charges)              = ',A12,'                (default)')
+
+end subroutine ffdev_parameters_ctrl_control
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine ffdev_parameters_ctrl_files(fin)
+
+    use prmfile
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    ! -----------------------------------------------------------------------------
+
+    write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
+
+    ! input file cannot be setup here
+    ! the correct parametr data can be loaded only after parameters are properly setup
+
+    if(.not. prmfile_open_section(fin,'files')) then
+        write (DEV_OUT,25) trim(OutParamFileName)
+        write (DEV_OUT,35) trim(OutAmberPrmsFileName)
+        return
+    end if
+
+    if(.not. prmfile_get_string_by_key(fin,'final', OutParamFileName)) then
+        write (DEV_OUT,25) trim(OutParamFileName)
+    else
+        write (DEV_OUT,20) trim(OutParamFileName)
+    end if
+
+    if(.not. prmfile_get_string_by_key(fin,'amber', OutAmberPrmsFileName)) then
+        write (DEV_OUT,35) trim(OutAmberPrmsFileName)
+    else
+        write (DEV_OUT,30) trim(OutAmberPrmsFileName)
+    end if
+
+    return
+
+20 format('Final parameters file (final)          = ',a)
+25 format('Final parameters file (final)          = ',a12,'                  (default)')
+30 format('Final AMBER parameters (amber)         = ',a)
+35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
+
+end subroutine ffdev_parameters_ctrl_files
+
+!===============================================================================
+!-------------------------------------------------------------------------------
+!===============================================================================
+
+subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
+
+    use prmfile
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)      :: fin
+    logical                 :: exec
+    ! ---------------------------------------------
+    logical                 :: rst
+    character(MAX_PATH)     :: key
+    character(MAX_PATH)     :: name
+    integer                 :: loaded,ignored
+    ! -----------------------------------------------------------------------------
+
+    if(.not. prmfile_open_section(fin,'files')) then
+        return
+    end if
+
+    write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
+
+    loaded = 0
+    ignored = 0
+
+    rst = prmfile_first_line(fin)
+    do while( rst )
+        rst = prmfile_get_field_on_line(fin,key)
+        select case(trim(key))
+            case('load')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be loaded is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_load(name,loaded,ignored)
+                    call ffdev_parameters_to_tops
+                end if
+            case('save')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be saved is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_save(name)
+                end if
+            case('amber')
+                rst = prmfile_get_field_on_line(fin,name)
+                if( .not. rst ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with AMBER parameters to be saved is not provided!')
+                end if
+                write(DEV_OUT,10) trim(name)
+                if( exec ) then
+                    call ffdev_parameters_save_amber(name)
+                end if
+            case default
+                ! do nothing
+        end select
+        rst = prmfile_next_line(fin)
+    end do
+
+    write(DEV_OUT,12) loaded
+    write(DEV_OUT,14) ignored
+
+    return
+
+10 format('Load parameters file (load)       = ',a)
+12 format('     Number of loaded parameters  = ',I6)
+14 format('     Number of ignored parameters = ',I6)
+
+end subroutine ffdev_parameters_ctrl_files_exec
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_grbf2cos
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_grbf2cos(fin)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_topology
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'grbf2cos') ) then
+        write(DEV_OUT,25) GRBF2COSMaxN
+        write(DEV_OUT,35) GRBF2COSMinV
+        return
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'max_n', GRBF2COSMaxN)) then
+        write(DEV_OUT,20) GRBF2COSMaxN
+    else
+        write(DEV_OUT,25) GRBF2COSMaxN
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'min_v', GRBF2COSMinV)) then
+        write(DEV_OUT,30) GRBF2COSMinV
+    else
+        write(DEV_OUT,35) GRBF2COSMinV
+    end if
+
+    return
+
+ 10 format('=== [grbf2cos] =================================================================')
+
+ 20  format ('Maximum length of cos series (max_n)     = ',i12)
+ 25  format ('Maximum length of cos series (max_n)     = ',i12,'                (default)')
+ 30  format ('Minimum accepted amplitude (min_v)       = ',f12.7)
+ 35  format ('Minimum accepted amplitude (min_v)       = ',f12.7,'                (default)')
+
+end subroutine ffdev_parameters_ctrl_grbf2cos
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_ffmanip
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    logical             :: exec
+    ! --------------------------------------------
+    logical                     :: rst
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'FFMANIP', ':')
+
+    rst = prmfile_first_section(fin)
+    do while( rst )
+
+        ! open set section
+        if( .not. prmfile_get_section_name(fin,string) ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to get section name!')
+        end if
+
+        select case(string)
+            case('bond_r0')
+                call ffdev_parameters_ctrl_bond_r0(fin,exec)
+            case('angle_a0')
+                call ffdev_parameters_ctrl_angle_a0(fin,exec)
+            case('nbsetup')
+                call ffdev_parameters_ctrl_nbsetup(fin,exec)
+            case('parameters')
+                call ffdev_parameters_ctrl_realms(fin)
+            case('nbload')
+                call ffdev_parameters_ctrl_nbload(fin,exec)
+            case('disp')
+                call ffdev_parameters_ctrl_disp(fin,exec)
+            case('files')
+                call ffdev_parameters_ctrl_files_exec(fin,exec)
+        end select
+
+        rst = prmfile_next_section(fin)
+    end do
+
+end subroutine ffdev_parameters_ctrl_ffmanip
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_disp
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_disp(fin,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology_dat
+    use ffdev_topology
+    use ffdev_xdm_dat
+    use ffdev_mmd3_dat
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    logical                     :: exec
+    ! --------------------------------------------
+    integer                     :: alloc_stat
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'disp') ) then
+        write(DEV_OUT,25) ffdev_topology_cxsource_to_string(cx_source)
+        write(DEV_OUT,35) ffdev_topology_rcsource_to_string(rc_source)
+        return
+    end if
+
+    if( prmfile_get_string_by_key(fin,'cx_source', string)) then
+        cx_source = ffdev_topology_cxsource_from_string(string)
+        write(DEV_OUT,20) ffdev_topology_cxsource_to_string(cx_source)
+    else
+        write(DEV_OUT,25) ffdev_topology_cxsource_to_string(cx_source)
+    end if
+
+    if( prmfile_get_string_by_key(fin,'rc_source', string)) then
+        rc_source = ffdev_topology_rcsource_from_string(string)
+        write(DEV_OUT,30) ffdev_topology_rcsource_to_string(rc_source)
+    else
+        write(DEV_OUT,35) ffdev_topology_rcsource_to_string(rc_source)
+    end if
+
+    if( .not. exec ) return
+
+! execute
+    if( .not. disp_data_loaded ) then
+        allocate( disp_pairs(ntypes,ntypes), stat = alloc_stat)
+        if(alloc_stat .ne. 0) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for disp_pairs in ffdev_parameters_ctrl_disp!')
+        end if
+        disp_data_loaded = .true.
+    end if
+
+    disp_pairs(:,:)%c6 = 0.0d0
+    disp_pairs(:,:)%c8 = 0.0d0
+    disp_pairs(:,:)%c10 = 0.0d0
+    disp_pairs(:,:)%rc = 0.0d0
+
+    select case(cx_source)
+        case(NB_CX_XDM)
+            disp_pairs(:,:)%c6  = xdm_pairs(:,:)%c6ave
+            disp_pairs(:,:)%c8  = xdm_pairs(:,:)%c8ave
+            disp_pairs(:,:)%c10 = xdm_pairs(:,:)%c10ave
+        case(NB_CX_MMD3)
+            disp_pairs(:,:)%c6  = mmd3_pairs(:,:)%c6ave
+            disp_pairs(:,:)%c8  = mmd3_pairs(:,:)%c8ave
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_disp I!')
+    end select
+
+    select case(rc_source)
+        case(NB_RC_XDM)
+            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rc
+        case(NB_RC_XDM_POL)
+            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvdw
+        case(NB_RC_MMD3)
+            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rc
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_disp II!')
+    end select
+
+    return
+
+ 10 format('=== [disp] =====================================================================')
+
+ 20  format ('Cx source (cx_source)                    = ',a12)
+ 25  format ('Cx source (cx_source)                    = ',a12,'                (default)')
+
+ 30  format ('Rc source (rc_source)                    = ',a12)
+ 35  format ('Rc source (rc_source)                    = ',a12,'                (default)')
+
+end subroutine ffdev_parameters_ctrl_disp
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbsetup
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+    use ffdev_topology
+    use ffdev_topology_dat
+
+    implicit none
+    type(PRMFILE_TYPE)  :: fin
+    logical             :: exec
+    ! --------------------------------------------
+    logical                     :: rst
+    character(50)               :: key
+    character(PRMFILE_MAX_PATH) :: string
+    integer                     :: mode
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( .not. prmfile_open_section(fin,'nbsetup') ) then
+        write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
+        write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
+        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+    end if
+
+    ! setup
+    if( prmfile_get_string_by_key(fin,'qsource', string)) then
+        mode = ffdev_topology_qsource_from_string(string)
+        write(DEV_OUT,40) ffdev_topology_qsource_to_string(mode)
+        if( exec ) then
+            ele_qsource = mode
+        end if
+    else
+        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+    end if
+
+    ! programmatic NB change (order dependent)
+
+    rst = prmfile_first_line(fin)
+    do while( rst )
+        rst = prmfile_get_field_on_line(fin,key)
+
+        select case(trim(key))
+            case('comb_rules')
+                if( prmfile_get_field_on_line(fin,string) ) then
+                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_ERR,1,'Missing comb_rules rule!')
+                end if
+            case('nb_mode')
+                if( prmfile_get_field_on_line(fin,string) ) then
+                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
+                else
+                    call ffdev_utils_exit(DEV_ERR,1,'Missing nb_mode mode!')
+                end if
+            case('qsource')
+                ! ignore ..., processed earlier
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nbsetup action '//trim(string)//'!')
+        end select
+        rst = prmfile_next_line(fin)
+    end do
+
+ 10 format('=== [nbsetup] ==================================================================')
+ 25 format('NB mode (nb_mode)            = ',A30,' (current)')
+ 35 format('Combining rules (comb_rules) = ',A30,' (current)')
+ 40 format('Source of charges (qsource)  = ',A30)
+ 45 format('Source of charges (qsource)  = ',A30,' (current)')
+
+end subroutine ffdev_parameters_ctrl_nbsetup
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_targetset
+    use ffdev_topology_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    character(PRMFILE_MAX_PATH) :: string
+    logical                     :: exec
+    ! --------------------------------------------
+    integer                     :: i,comb_rules
+    ! --------------------------------------------------------------------------
+
+    comb_rules = ffdev_topology_get_comb_rules_from_string(string)
+
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'NB combining rules', '%')
+    end if
+
+    write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
+
+    if( .not. exec ) return ! do not execute
+
+    do i=1,nsets
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,1)
+        end if
+
+        ! remix parameters
+        call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
+
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end if
+    end do
+
+    ! update nb parameters
+    nb_comb_rules = comb_rules
+    call ffdev_targetset_reinit_nbparams
+
+10 format('New combining rules (comb_rules) = ',A)
+20 format('=== SET ',I2.2)
+
+end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_targetset
+    use ffdev_topology_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    character(PRMFILE_MAX_PATH) :: string
+    logical                     :: exec
+    ! --------------------------------------------
+    integer                     :: i,from_nb_mode,to_nb_mode
+    ! --------------------------------------------------------------------------
+
+    from_nb_mode = nb_mode
+    to_nb_mode = ffdev_topology_nb_mode_from_string(string)
+
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
+    end if
+
+    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(to_nb_mode)
+
+    if( .not. exec ) return ! do not execute
+
+    do i=1,nsets
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,1)
+        end if
+
+        ! switch nb mode
+        call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
+
+        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end if
+    end do
+
+    ! set nb_mode
+    nb_mode = to_nb_mode
+
+    ! update nb parameters
+    call ffdev_parameters_reinit
+    call ffdev_targetset_reinit_nbparams
+
+10 format('New NB mode (nb_mode)        = ',A)
+20 format('=== SET ',I2.2)
+
+end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_nbload
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_nbload(fin,exec)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_topology_dat
+    use ffdev_topology
+    use prmfile
+    use ffdev_utils
+    use ffdev_targetset_dat
+    use ffdev_targetset
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    logical                     :: exec
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
+    real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
+    integer                     :: i
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+! print header
+    write(DEV_OUT,*)
+    write(DEV_OUT,510)
+    write(DEV_OUT,*)
+    write(DEV_OUT,520)
+    write(DEV_OUT,530)
+
+! read lines
+
+    do while( prmfile_get_line(fin,line) )
+
+        ! read nb_mode and types first
+        read(line,*,err=100,end=100) snb_mode, sti, stj
+
+        ! FIXME
+       ! nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
+
+        a = 0.0d0
+        b = 0.0d0
+        c = 0.0d0
+        d = 0.0d0
+        e = 0.0d0
+        f = 0.0d0
+        g = 0.0d0
+        h = 0.0d0
+        u = 0.0d0
+
+        ! read the entire record
+        ! FIXME
+!        select case(lnb_mode)
+!            case(NB_MODE_LJ)
+!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
+!            case(NB_MODE_EXP6)
+!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
+!            case default
+!                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!        end select
+
+        write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
+
+        if( exec ) then
+            ! for each topology update given parameters
+            ! FIXME
+!            do j=1,nsets
+!                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
+!                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
+!                if( nbt .ne. 0 ) then
+!                    select case(nb_mode)
+!                        case(NB_MODE_LJ)
+!                            sets(j)%top%nb_types(nbt)%eps = a
+!                            sets(j)%top%nb_types(nbt)%r0 = b
+!                        case(NB_MODE_EXP6)
+!                            sets(j)%top%nb_types(nbt)%eps = a
+!                            sets(j)%top%nb_types(nbt)%r0 = b
+!                            sets(j)%top%nb_types(nbt)%alpha = c
+!                        case default
+!                            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
+!                    end select
+!
+!                end if
+!            end do
+
+        end if
+
+    end do
+
+    if( .not. exec ) return
+
+    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+    ! print updated parameters
+        do i=1,nsets
+            write(DEV_OUT,*)
+            write(DEV_OUT,20) i
+            ! new set of parameters
+            write(DEV_OUT,*)
+            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+            call ffdev_topology_info_types(sets(i)%top,2)
+        end do
+    end if
+
+! update nb parameters
+    call ffdev_targetset_reinit_nbparams
+
+    return
+
+10 format('=== [nbload] ===================================================================')
+
+20 format('=== SET ',I2.2)
+
+100 call ffdev_utils_exit(DEV_ERR,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
+
+510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+520 format('# NBMode TypA TypB      eps/A             R0/B          alpha/C6             C8       ')
+530 format('# ------ ---- ---- ---------------- ---------------- ----------------  ---------------')
+540 format(2X,A6,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7,1X,F16.7)
+
+end subroutine ffdev_parameters_ctrl_nbload
+
+! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_identities
 ! ==============================================================================
 
@@ -692,369 +1495,6 @@ subroutine change_dih_realm_pn(realmid,enable,options)
 end subroutine change_dih_realm_pn
 
 ! ==============================================================================
-! subroutine ffdev_parameters_ctrl_control
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_control(fin)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-    use ffdev_topology_dat
-    use ffdev_topology
-    use ffdev_ffopt
-
-    implicit none
-    type(PRMFILE_TYPE)          :: fin
-    character(PRMFILE_MAX_PATH) :: string
-    ! --------------------------------------------------------------------------
-
-    ! this is for nb_params = normal
-    ApplyCombiningRules = .false.
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( .not. prmfile_open_section(fin,'control') ) then
-        select case(NBParamsMode)
-            case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,25) 'normal'
-            case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,25) 'like-only'
-            case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,25) 'like-all'
-            case(NB_PARAMS_MODE_ALL)
-                write(DEV_OUT,25) 'all'
-        end select
-
-        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
-        write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
-        write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
-        write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
-        write(DEV_OUT,95)  GlbRngSeed
-        write(DEV_OUT,105) Verbosity
-        return
-    end if
-
-    if( prmfile_get_string_by_key(fin,'nb_params', string)) then
-        select case(trim(string))
-            case('normal')
-                NBParamsMode = NB_PARAMS_MODE_NORMAL
-                write(DEV_OUT,20) trim(string)
-            case('like-only')
-                NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,20) trim(string)
-            case('like-all')
-                NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,20) trim(string)
-            case('all')
-                NBParamsMode = NB_PARAMS_MODE_ALL
-                write(DEV_OUT,20) trim(string)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
-        end select
-    else
-        select case(NBParamsMode)
-            case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,25) 'normal'
-            case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,25) 'like-only'
-            case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,25) 'like-all'
-            case(NB_PARAMS_MODE_ALL)
-                write(DEV_OUT,25) 'all'
-        end select
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'pac_as_prms', PACAsPrms)) then
-        write(DEV_OUT,110) prmfile_onoff(PACAsPrms)
-    else
-        write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
-        write(DEV_OUT,60) prmfile_onoff(OnlyDefinedDihItems)
-    else
-        write(DEV_OUT,65) prmfile_onoff(OnlyDefinedDihItems)
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'lock_dihc_pn1', LockDihC_PN1)) then
-        write(DEV_OUT,70) prmfile_onoff(LockDihC_PN1)
-    else
-        write(DEV_OUT,75) prmfile_onoff(LockDihC_PN1)
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'resetallsetup', ResetAllSetup)) then
-        write(DEV_OUT,80) prmfile_onoff(ResetAllSetup)
-    else
-        write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'seed', GlbRngSeed)) then
-        write(DEV_OUT,90) GlbRngSeed
-    else
-        write(DEV_OUT,95) GlbRngSeed
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'verbosity', Verbosity)) then
-        write(DEV_OUT,100) Verbosity
-    else
-        write(DEV_OUT,105) Verbosity
-    end if
-
-    ! setup random number generator
-    call random_seed(GlbRngSeed)
-    call ffdev_ffopt_setup_rng(GlbRngSeed)
-
-    return
-
- 10 format('=== [control] ==================================================================')
-
- 20  format ('NB parameter assembly mode (nb_params)   = ',a12)
- 25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
-110  format ('Partial charges as params (pac_as_prms)  = ',a12)
-115  format ('Partial charges as params (pac_as_prms)  = ',a12,'                (default)')
- 60  format ('Use defined dih items (dih_only_defined) = ',a12)
- 65  format ('Use defined dih items (dih_only_defined) = ',a12,'                (default)')
- 70  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12)
- 75  format ('Lock PN1 for dih_c (lock_dihc_pn1)       = ',a12,'                (default)')
- 80  format ('Reset all setup (resetallsetup)          = ',a12)
- 85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
- 90  format ('Random number generator seed (seed)      = ',I12)
- 95  format ('Random number generator seed (seed)      = ',I12,'                (default)')
-100  format ('Verbosity (verbosity)                    = ',I12)
-105  format ('Verbosity (verbosity)                    = ',I12,'                (default)')
-
-end subroutine ffdev_parameters_ctrl_control
-
-!===============================================================================
-!-------------------------------------------------------------------------------
-!===============================================================================
-
-subroutine ffdev_parameters_ctrl_files(fin)
-
-    use prmfile
-    use ffdev_parameters_dat
-    use ffdev_utils
-
-    implicit none
-    type(PRMFILE_TYPE)          :: fin
-    ! -----------------------------------------------------------------------------
-
-    write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
-
-    ! input file cannot be setup here
-    ! the correct parametr data can be loaded only after parameters are properly setup
-
-    if(.not. prmfile_open_section(fin,'files')) then
-        write (DEV_OUT,25) trim(OutParamFileName)
-        write (DEV_OUT,35) trim(OutAmberPrmsFileName)
-        return
-    end if
-
-    if(.not. prmfile_get_string_by_key(fin,'final', OutParamFileName)) then
-        write (DEV_OUT,25) trim(OutParamFileName)
-    else
-        write (DEV_OUT,20) trim(OutParamFileName)
-    end if
-
-    if(.not. prmfile_get_string_by_key(fin,'amber', OutAmberPrmsFileName)) then
-        write (DEV_OUT,35) trim(OutAmberPrmsFileName)
-    else
-        write (DEV_OUT,30) trim(OutAmberPrmsFileName)
-    end if
-
-    return
-
-20 format('Final parameters file (final)          = ',a)
-25 format('Final parameters file (final)          = ',a12,'                  (default)')
-30 format('Final AMBER parameters (amber)         = ',a)
-35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
-
-end subroutine ffdev_parameters_ctrl_files
-
-!===============================================================================
-!-------------------------------------------------------------------------------
-!===============================================================================
-
-subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
-
-    use prmfile
-    use ffdev_parameters_dat
-    use ffdev_parameters
-    use ffdev_utils
-
-    implicit none
-    type(PRMFILE_TYPE)      :: fin
-    logical                 :: exec
-    ! ---------------------------------------------
-    logical                 :: rst
-    character(MAX_PATH)     :: key
-    character(MAX_PATH)     :: name
-    integer                 :: loaded,ignored
-    ! -----------------------------------------------------------------------------
-
-    if(.not. prmfile_open_section(fin,'files')) then
-        return
-    end if
-
-    write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
-
-    loaded = 0
-    ignored = 0
-
-    rst = prmfile_first_line(fin)
-    do while( rst )
-        rst = prmfile_get_field_on_line(fin,key)
-        select case(trim(key))
-            case('load')
-                rst = prmfile_get_field_on_line(fin,name)
-                if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be loaded is not provided!')
-                end if
-                write(DEV_OUT,10) trim(name)
-                if( exec ) then
-                    call ffdev_parameters_load(name,loaded,ignored)
-                    call ffdev_parameters_to_tops
-                end if
-            case('save')
-                rst = prmfile_get_field_on_line(fin,name)
-                if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with FFDevel parameters to be saved is not provided!')
-                end if
-                write(DEV_OUT,10) trim(name)
-                if( exec ) then
-                    call ffdev_parameters_save(name)
-                end if
-            case('amber')
-                rst = prmfile_get_field_on_line(fin,name)
-                if( .not. rst ) then
-                    call ffdev_utils_exit(DEV_ERR,1,'Name of the file with AMBER parameters to be saved is not provided!')
-                end if
-                write(DEV_OUT,10) trim(name)
-                if( exec ) then
-                    call ffdev_parameters_save_amber(name)
-                end if
-            case default
-                ! do nothing
-        end select
-        rst = prmfile_next_line(fin)
-    end do
-
-    write(DEV_OUT,12) loaded
-    write(DEV_OUT,14) ignored
-
-    return
-
-10 format('Load parameters file (load)       = ',a)
-12 format('     Number of loaded parameters  = ',I6)
-14 format('     Number of ignored parameters = ',I6)
-
-end subroutine ffdev_parameters_ctrl_files_exec
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_grbf2cos
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_grbf2cos(fin)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-    use ffdev_topology_dat
-    use ffdev_topology
-
-    implicit none
-    type(PRMFILE_TYPE)  :: fin
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( .not. prmfile_open_section(fin,'grbf2cos') ) then
-        write(DEV_OUT,25) GRBF2COSMaxN
-        write(DEV_OUT,35) GRBF2COSMinV
-        return
-    end if
-
-    if( prmfile_get_integer_by_key(fin,'max_n', GRBF2COSMaxN)) then
-        write(DEV_OUT,20) GRBF2COSMaxN
-    else
-        write(DEV_OUT,25) GRBF2COSMaxN
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'min_v', GRBF2COSMinV)) then
-        write(DEV_OUT,30) GRBF2COSMinV
-    else
-        write(DEV_OUT,35) GRBF2COSMinV
-    end if
-
-    return
-
- 10 format('=== [grbf2cos] =================================================================')
-
- 20  format ('Maximum length of cos series (max_n)     = ',i12)
- 25  format ('Maximum length of cos series (max_n)     = ',i12,'                (default)')
- 30  format ('Minimum accepted amplitude (min_v)       = ',f12.7)
- 35  format ('Minimum accepted amplitude (min_v)       = ',f12.7,'                (default)')
-
-end subroutine ffdev_parameters_ctrl_grbf2cos
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_ffmanip
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    type(PRMFILE_TYPE)  :: fin
-    logical             :: exec
-    ! --------------------------------------------
-    logical                     :: rst
-    character(PRMFILE_MAX_PATH) :: string
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'FFMANIP', ':')
-
-    rst = prmfile_first_section(fin)
-    do while( rst )
-
-        ! open set section
-        if( .not. prmfile_get_section_name(fin,string) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to get section name!')
-        end if
-
-        select case(string)
-            case('bond_r0')
-                call ffdev_parameters_ctrl_bond_r0(fin,exec)
-            case('angle_a0')
-                call ffdev_parameters_ctrl_angle_a0(fin,exec)
-            case('nbsetup')
-                call ffdev_parameters_ctrl_nbsetup(fin,exec)
-            case('parameters')
-                call ffdev_parameters_ctrl_realms(fin)
-            case('nbload')
-                call ffdev_parameters_ctrl_nbload(fin,exec)
-            case('files')
-                call ffdev_parameters_ctrl_files_exec(fin,exec)
-        end select
-
-        rst = prmfile_next_section(fin)
-    end do
-
-end subroutine ffdev_parameters_ctrl_ffmanip
-
-! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_bond_r0
 ! ==============================================================================
 
@@ -1202,334 +1642,6 @@ subroutine ffdev_parameters_ctrl_angle_a0(fin,exec)
  25 format(/,'> Init mode = average  [default]')
 
 end subroutine ffdev_parameters_ctrl_angle_a0
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbsetup
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-    use ffdev_topology
-    use ffdev_topology_dat
-
-    implicit none
-    type(PRMFILE_TYPE)  :: fin
-    logical             :: exec
-    ! --------------------------------------------
-    logical                     :: rst
-    character(50)               :: key
-    character(PRMFILE_MAX_PATH) :: string
-    integer                     :: mode
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( .not. prmfile_open_section(fin,'nbsetup') ) then
-        write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
-        write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
-        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
-    end if
-
-    ! setup
-    if( prmfile_get_string_by_key(fin,'qsource', string)) then
-        mode = ffdev_topology_qsource_from_string(string)
-        write(DEV_OUT,40) ffdev_topology_qsource_to_string(mode)
-        if( exec ) then
-            ele_qsource = mode
-        end if
-    else
-        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
-    end if
-
-    ! programmatic NB change (order dependent)
-
-    rst = prmfile_first_line(fin)
-    do while( rst )
-        rst = prmfile_get_field_on_line(fin,key)
-
-        select case(trim(key))
-            case('comb_rules')
-                if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_ERR,1,'Missing comb_rules rule!')
-                end if
-            case('nb_mode')
-                if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_ERR,1,'Missing nb_mode mode!')
-                end if
-            case('qsource')
-                ! ignore ..., processed earlier
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nbsetup action '//trim(string)//'!')
-        end select
-        rst = prmfile_next_line(fin)
-    end do
-
- 10 format('=== [nbsetup] ==================================================================')
- 25 format('NB mode (nb_mode)            = ',A30,' (current)')
- 35 format('Combining rules (comb_rules) = ',A30,' (current)')
- 40 format('Source of charges (qsource)  = ',A30)
- 45 format('Source of charges (qsource)  = ',A30,' (current)')
-
-end subroutine ffdev_parameters_ctrl_nbsetup
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,comb_rules
-    ! --------------------------------------------------------------------------
-
-    comb_rules = ffdev_topology_get_comb_rules_from_string(string)
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'NB combining rules', '%')
-    end if
-
-    write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
-
-    if( .not. exec ) return ! do not execute
-
-    do i=1,nsets
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! remix parameters
-        call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
-
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! update nb parameters
-    nb_comb_rules = comb_rules
-    call ffdev_targetset_reinit_nbparams
-
-10 format('New combining rules (comb_rules) = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,from_nb_mode,to_nb_mode
-    ! --------------------------------------------------------------------------
-
-    from_nb_mode = nb_mode
-    to_nb_mode = ffdev_topology_nb_mode_from_string(string)
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
-    end if
-
-    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(to_nb_mode)
-
-    do i=1,nsets
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! switch nb mode
-        call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
-
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! set nb_mode
-    nb_mode = to_nb_mode
-
-    ! update nb parameters
-    call ffdev_parameters_reinit
-    call ffdev_targetset_reinit_nbparams
-
-10 format('New NB mode (nb_mode)            = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbload
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbload(fin,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_topology_dat
-    use ffdev_topology
-    use prmfile
-    use ffdev_utils
-    use ffdev_targetset_dat
-    use ffdev_targetset
-
-    implicit none
-    type(PRMFILE_TYPE)          :: fin
-    logical                     :: exec
-    ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
-    real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
-    integer                     :: i
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-! print header
-    write(DEV_OUT,*)
-    write(DEV_OUT,510)
-    write(DEV_OUT,*)
-    write(DEV_OUT,520)
-    write(DEV_OUT,530)
-
-! read lines
-
-    do while( prmfile_get_line(fin,line) )
-
-        ! read nb_mode and types first
-        read(line,*,err=100,end=100) snb_mode, sti, stj
-
-        ! FIXME
-       ! nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
-
-        a = 0.0d0
-        b = 0.0d0
-        c = 0.0d0
-        d = 0.0d0
-        e = 0.0d0
-        f = 0.0d0
-        g = 0.0d0
-        h = 0.0d0
-        u = 0.0d0
-
-        ! read the entire record
-        ! FIXME
-!        select case(lnb_mode)
-!            case(NB_MODE_LJ)
-!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
-!            case(NB_MODE_EXP6)
-!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
-!            case default
-!                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-!        end select
-
-        write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
-
-        if( exec ) then
-            ! for each topology update given parameters
-            ! FIXME
-!            do j=1,nsets
-!                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
-!                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
-!                if( nbt .ne. 0 ) then
-!                    select case(nb_mode)
-!                        case(NB_MODE_LJ)
-!                            sets(j)%top%nb_types(nbt)%eps = a
-!                            sets(j)%top%nb_types(nbt)%r0 = b
-!                        case(NB_MODE_EXP6)
-!                            sets(j)%top%nb_types(nbt)%eps = a
-!                            sets(j)%top%nb_types(nbt)%r0 = b
-!                            sets(j)%top%nb_types(nbt)%alpha = c
-!                        case default
-!                            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-!                    end select
-!
-!                end if
-!            end do
-
-        end if
-
-    end do
-
-    if( .not. exec ) return
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-    ! print updated parameters
-        do i=1,nsets
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end do
-    end if
-
-! update nb parameters
-    call ffdev_targetset_reinit_nbparams
-
-    return
-
-10 format('=== [nbload] ===================================================================')
-
-20 format('=== SET ',I2.2)
-
-100 call ffdev_utils_exit(DEV_ERR,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
-
-510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-520 format('# NBMode TypA TypB      eps/A             R0/B          alpha/C6             C8       ')
-530 format('# ------ ---- ---- ---------------- ---------------- ----------------  ---------------')
-540 format(2X,A6,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7,1X,F16.7)
-
-end subroutine ffdev_parameters_ctrl_nbload
 
 ! ------------------------------------------------------------------------------
 

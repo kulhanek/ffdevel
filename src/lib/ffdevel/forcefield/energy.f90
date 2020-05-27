@@ -58,12 +58,17 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     geo%angle_ene = 0.0d0
     geo%dih_ene = 0.0d0
     geo%impropr_ene = 0.0d0
+
     geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
+    geo%pel14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
     geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
-    geo%nb_rep = 0.0d0
-    geo%nb_disp = 0.0d0
+    geo%pel_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
+
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
@@ -97,9 +102,9 @@ subroutine ffdev_energy_all(top,geo,skipnb)
         call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     end if
 
-    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
-                  + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
-                  + geo%ele_ene + geo%nb_ene
+    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
+                  + geo%ele14_ene + geo%pel14_ene + geo%rep14_ene + geo%dis14_ene  &
+                  + geo%ele_ene + geo%pel_ene + geo%rep_ene + geo%dis_ene
 
     call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
@@ -128,7 +133,7 @@ subroutine ffdev_energy_sapt(top,geo)
     ! reset energy
     geo%sapt_ele = 0.0
     geo%sapt_rep = 0.0
-    geo%sapt_disp = 0.0
+    geo%sapt_dis = 0.0
     geo%sapt_total = 0.0
 
     if( top%sapt_size .le. 0 ) return ! no SAPT list
@@ -151,7 +156,7 @@ subroutine ffdev_energy_sapt(top,geo)
                                             ffdev_topology_nb_mode_to_string(nb_mode) // ')')
     end select
 
-    geo%sapt_total = geo%sapt_ele + geo%sapt_rep + geo%sapt_disp
+    geo%sapt_total = geo%sapt_ele + geo%sapt_rep + geo%sapt_dis
 
     call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)

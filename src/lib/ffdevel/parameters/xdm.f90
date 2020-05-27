@@ -82,6 +82,7 @@ subroutine ffdev_xdm_run_stat()
             xdm_pairs(ti,tj)%c10ave = 0.0d0
             xdm_pairs(ti,tj)%c10sig = 0.0d0
             xdm_pairs(ti,tj)%Rc = 0.0d0
+            xdm_pairs(ti,tj)%Rvdw = 0.0d0
             xdm_pairs(ti,tj)%num = 0
         end do
     end do
@@ -215,11 +216,13 @@ subroutine ffdev_xdm_run_stat()
                 xdm_pairs(ti,tj)%c10sig = rms
                 xdm_pairs(ti,tj)%c10ave = xdm_pairs(ti,tj)%c10ave / real(xdm_pairs(ti,tj)%num)
 
-                xdm_pairs(ti,tj)%Rc = sqrt(xdm_pairs(ti,tj)%C8ave/xdm_pairs(ti,tj)%C6ave)
+                xdm_pairs(ti,tj)%Rc = ( sqrt(xdm_pairs(ti,tj)%C8ave/xdm_pairs(ti,tj)%C6ave) &
+                                      + sqrt(xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C8ave) &
+                                      + (xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C6ave)**(1.0/4.0) ) / 3.0d0
 
-!                xdm_pairs(ti,tj)%Rc = ( sqrt(xdm_pairs(ti,tj)%C8ave/xdm_pairs(ti,tj)%C6ave) &
-!                                      + sqrt(xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C8ave) &
-!                                      + (xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C6ave)**(1.0/4.0) ) / 3.0d0
+                ! DOI: 10.1103/PhysRevLett.121.183401
+                xdm_pairs(ti,tj)%Rvdw = DEV_AU2A * 2.0d0 * xdm_pol2rvdw * &
+                                        ((xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)*0.5d0)**(1.0d0/7.0d0)
             end if
 
         end do
@@ -265,7 +268,8 @@ subroutine ffdev_xdm_print()
         write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
                           xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                           xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                          xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, xdm_pairs(ti,tj)%Rc
+                          xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
+                          xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
     end do
     write(DEV_OUT,40)
     do ti=1,ntypes
@@ -273,7 +277,8 @@ subroutine ffdev_xdm_print()
             write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
                               xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                               xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, xdm_pairs(ti,tj)%Rc
+                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
+                              xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
         end do
     end do
     write(DEV_OUT,40)
@@ -338,9 +343,9 @@ subroutine ffdev_xdm_print()
  10 format('>>> No XDM data available ....')
 
  20 format('# Dispersion coefficients ...')
- 30 format('# TypA TypB Number         <C6>  s(C6)         <C8>  s(C8)        <C10> s(C10)     Rc')
- 40 format('# ---- ---- ------ ------------ ------ ------------ ------ ------------ ------ ------')
- 50 format(2X,A4,1X,A4,1X,I6,1X,F12.2,1X,F6.2,1X,F12.2,1X,F6.1,1X,F12.1,1X,F6.1,1X,F6.3,1X,F6.3,1X,F6.3)
+ 30 format('# TypA TypB Number         <C6>  s(C6)         <C8>  s(C8)        <C10> s(C10)     Rc   Rvdw')
+ 40 format('# ---- ---- ------ ------------ ------ ------------ ------ ------------ ------ ------ ------')
+ 50 format(2X,A4,1X,A4,1X,I6,1X,F12.2,1X,F6.2,1X,F12.2,1X,F6.1,1X,F12.1,1X,F6.1,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3)
 
 120 format('# Atomic data ... (all in atomic units)')
 130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol')

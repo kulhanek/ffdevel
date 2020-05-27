@@ -167,8 +167,8 @@ real(DEVDP)     :: MaxVdwAlpha  =      25.0d0
 ! non-bonded ABC
 real(DEVDP)     :: MinVdwPA     =      0.0d0
 real(DEVDP)     :: MaxVdwPA     =     20.0d0
-real(DEVDP)     :: MinVdwPB     =      3.0d0
-real(DEVDP)     :: MaxVdwPB     =      5.0d0
+real(DEVDP)     :: MinVdwPB     =      2.0d0
+real(DEVDP)     :: MaxVdwPB     =      6.0d0
 real(DEVDP)     :: MinVdwC6     =      0.0d0
 real(DEVDP)     :: MaxVdwC6     =      1.0d7
 

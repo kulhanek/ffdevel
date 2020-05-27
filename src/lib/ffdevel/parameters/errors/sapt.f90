@@ -67,7 +67,7 @@ subroutine ffdev_err_sapt_error(error)
 
     error%sapt_ele = 0.0d0
     error%sapt_rep = 0.0d0
-    error%sapt_disp = 0.0d0
+    error%sapt_dis = 0.0d0
 
     serrele = 0.0
     serrrep = 0.0
@@ -91,7 +91,7 @@ subroutine ffdev_err_sapt_error(error)
             serrele = serrele + sets(i)%geo(j)%weight * err**2
 
         ! repulsion
-            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
+            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exc
             ! FIXME
 !            if( SAPTErrorIndToRep ) then
                 trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
@@ -100,7 +100,7 @@ subroutine ffdev_err_sapt_error(error)
             serrrep = serrrep + sets(i)%geo(j)%weight * err**2
 
         ! dispersion
-            err = sets(i)%geo(j)%sapt_disp - sets(i)%geo(j)%trg_sapt_disp
+            err = sets(i)%geo(j)%sapt_dis - sets(i)%geo(j)%trg_sapt_dis
             serrdisp = serrdisp + sets(i)%geo(j)%weight * err**2
         end do
     end do
@@ -108,7 +108,7 @@ subroutine ffdev_err_sapt_error(error)
     if( nene .gt. 0 ) then
         error%sapt_ele  = sqrt(serrele/real(nene))
         error%sapt_rep  = sqrt(serrrep/real(nene))
-        error%sapt_disp = sqrt(serrdisp/real(nene))
+        error%sapt_dis = sqrt(serrdisp/real(nene))
     end if
 
 
@@ -164,7 +164,7 @@ subroutine ffdev_err_sapt_summary
             serrele = serrele + sets(i)%geo(j)%weight * errele**2
 
         ! repulsion
-            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exch
+            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exc
             if( SAPTErrorIndToRep ) then
                 trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
             end if
@@ -172,14 +172,14 @@ subroutine ffdev_err_sapt_summary
             serrrep = serrrep + sets(i)%geo(j)%weight * errrep**2
 
         ! dispersion
-            errdisp = sets(i)%geo(j)%sapt_disp - sets(i)%geo(j)%trg_sapt_disp
+            errdisp = sets(i)%geo(j)%sapt_dis - sets(i)%geo(j)%trg_sapt_dis
             serrdisp = serrdisp + sets(i)%geo(j)%weight * errdisp**2
 
 
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_sapt_ele, sets(i)%geo(j)%sapt_ele, errele, &
                               trg_sapt_rep, sets(i)%geo(j)%sapt_rep, errrep, &
-                              sets(i)%geo(j)%trg_sapt_disp, sets(i)%geo(j)%sapt_disp, errdisp
+                              sets(i)%geo(j)%trg_sapt_dis, sets(i)%geo(j)%sapt_dis, errdisp
         end do
         if( printsum ) write(DEV_OUT,20)
     end do

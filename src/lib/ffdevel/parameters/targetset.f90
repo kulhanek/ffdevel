@@ -72,6 +72,7 @@ subroutine ffdev_targetset_calc_all
     use ffdev_parameters_dat
     use ffdev_utils
     use ffdev_timers
+    use ffdev_geometry
 
     implicit none
     integer         :: i,j,k
@@ -159,17 +160,28 @@ subroutine ffdev_targetset_calc_all
         if( sets(i)%nrefs .gt. 0 ) then
             do j=1,sets(i)%ngeos
                 do k=1,sets(i)%nrefs
-                    sets(i)%geo(j)%bond_ene     = sets(i)%geo(j)%bond_ene - sets( sets(i)%refs(k) )%geo(1)%bond_ene
-                    sets(i)%geo(j)%angle_ene    = sets(i)%geo(j)%angle_ene - sets( sets(i)%refs(k) )%geo(1)%angle_ene
-                    sets(i)%geo(j)%dih_ene      = sets(i)%geo(j)%dih_ene - sets( sets(i)%refs(k) )%geo(1)%dih_ene
+!                    call ffdev_geometry_info_ene(sets(i)%geo(j))
+!                    write(*,*)
+!                    call ffdev_geometry_info_ene(sets( sets(i)%refs(k) )%geo(1))
+!                    write(*,*)
+                    sets(i)%geo(j)%bond_ene     = sets(i)%geo(j)%bond_ene    - sets( sets(i)%refs(k) )%geo(1)%bond_ene
+                    sets(i)%geo(j)%angle_ene    = sets(i)%geo(j)%angle_ene   - sets( sets(i)%refs(k) )%geo(1)%angle_ene
+                    sets(i)%geo(j)%dih_ene      = sets(i)%geo(j)%dih_ene     - sets( sets(i)%refs(k) )%geo(1)%dih_ene
                     sets(i)%geo(j)%impropr_ene  = sets(i)%geo(j)%impropr_ene - sets( sets(i)%refs(k) )%geo(1)%impropr_ene
+
                     sets(i)%geo(j)%ele14_ene    = sets(i)%geo(j)%ele14_ene - sets( sets(i)%refs(k) )%geo(1)%ele14_ene
-                    sets(i)%geo(j)%nb14_ene     = sets(i)%geo(j)%nb14_ene - sets( sets(i)%refs(k) )%geo(1)%nb14_ene
+                    sets(i)%geo(j)%pel14_ene    = sets(i)%geo(j)%pel14_ene - sets( sets(i)%refs(k) )%geo(1)%pel14_ene
+                    sets(i)%geo(j)%rep14_ene    = sets(i)%geo(j)%rep14_ene - sets( sets(i)%refs(k) )%geo(1)%rep14_ene
+                    sets(i)%geo(j)%dis14_ene    = sets(i)%geo(j)%dis14_ene - sets( sets(i)%refs(k) )%geo(1)%dis14_ene
+
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
-                    sets(i)%geo(j)%nb_ene       = sets(i)%geo(j)%nb_ene - sets( sets(i)%refs(k) )%geo(1)%nb_ene
-                    sets(i)%geo(j)%nb_rep       = sets(i)%geo(j)%nb_rep - sets( sets(i)%refs(k) )%geo(1)%nb_rep
-                    sets(i)%geo(j)%nb_disp       = sets(i)%geo(j)%nb_disp - sets( sets(i)%refs(k) )%geo(1)%nb_disp
+                    sets(i)%geo(j)%pel_ene      = sets(i)%geo(j)%pel_ene - sets( sets(i)%refs(k) )%geo(1)%pel_ene
+                    sets(i)%geo(j)%rep_ene      = sets(i)%geo(j)%rep_ene - sets( sets(i)%refs(k) )%geo(1)%rep_ene
+                    sets(i)%geo(j)%dis_ene      = sets(i)%geo(j)%dis_ene - sets( sets(i)%refs(k) )%geo(1)%dis_ene
+
                     sets(i)%geo(j)%total_ene    = sets(i)%geo(j)%total_ene - sets( sets(i)%refs(k) )%geo(1)%total_ene
+!                    call ffdev_geometry_info_ene(sets(i)%geo(j))
+!                    stop
                 end do
             end do
         end if
@@ -500,9 +512,10 @@ subroutine ffdev_targetset_save_drvene(set,name)
         end if
         err = set%geo(i)%total_ene - set%geo(i)%trg_energy
         write(DEV_PROFILE,33,ADVANCE='NO') set%geo(i)%trg_energy, set%geo(i)%total_ene, err
-        write(DEV_PROFILE,34) set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
-                              set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
-                              set%geo(i)%nb_ene, set%geo(i)%nb14_ene
+        ! FIXME
+!        write(DEV_PROFILE,34) set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
+!                              set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
+!                              set%geo(i)%nb_ene, set%geo(i)%nb14_ene
     end do
 
     close(DEV_PROFILE)

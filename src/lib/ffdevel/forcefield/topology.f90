@@ -1623,6 +1623,110 @@ character(80) function ffdev_topology_qsource_to_string(nb_mode)
 end function ffdev_topology_qsource_to_string
 
 ! ==============================================================================
+! subroutine ffdev_topology_cx_source_from_string
+! ==============================================================================
+
+integer function ffdev_topology_cxsource_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('NONE')
+            ffdev_topology_cxsource_from_string = NB_CX_NONE
+        case('XDM')
+            ffdev_topology_cxsource_from_string = NB_CX_XDM
+        case('MMD3')
+            ffdev_topology_cxsource_from_string = NB_CX_MMD3
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_cxsource_from_string!')
+    end select
+
+end function ffdev_topology_cxsource_from_string
+
+! ==============================================================================
+! subroutine ffdev_topology_cxsource_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_cxsource_to_string(nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: nb_mode
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_CX_NONE)
+            ffdev_topology_cxsource_to_string = 'NONE'
+        case(NB_CX_XDM)
+            ffdev_topology_cxsource_to_string = 'XDM'
+        case(NB_CX_MMD3)
+            ffdev_topology_cxsource_to_string = 'MMD3'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_cxsource_to_string!')
+    end select
+
+end function ffdev_topology_cxsource_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_rcsource_from_string
+! ==============================================================================
+
+integer function ffdev_topology_rcsource_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('NONE')
+            ffdev_topology_rcsource_from_string = NB_RC_NONE
+        case('XDM')
+            ffdev_topology_rcsource_from_string = NB_RC_XDM
+        case('XDM-POL')
+            ffdev_topology_rcsource_from_string = NB_RC_XDM_POL
+        case('MMD3')
+            ffdev_topology_rcsource_from_string = NB_RC_MMD3
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_rcsource_from_string!')
+    end select
+
+end function ffdev_topology_rcsource_from_string
+
+! ==============================================================================
+! subroutine ffdev_topology_rcsource_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_rcsource_to_string(nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: nb_mode
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_RC_NONE)
+            ffdev_topology_rcsource_to_string = 'NONE'
+        case(NB_RC_XDM)
+            ffdev_topology_rcsource_to_string = 'XDM'
+        case(NB_RC_XDM_POL)
+            ffdev_topology_rcsource_to_string = 'XDM-POL'
+        case(NB_RC_MMD3)
+            ffdev_topology_rcsource_to_string = 'MMD3'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_rcsource_to_string!')
+    end select
+
+end function ffdev_topology_rcsource_to_string
+
+! ==============================================================================
 ! subroutine ffdev_topology_qsource_from_string
 ! ==============================================================================
 
@@ -1660,18 +1764,10 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
     select case(nb_mode)
         case(NB_VDW_LJ)
             ffdev_topology_nb_mode_to_string = 'LJ - 12-6 Lennard-Jones potential'
-        case(NB_VDW_12_6)
-            ffdev_topology_nb_mode_to_string = '12-6 - 12-6 potential with possibility to scale C6'
-        case(NB_VDW_12_XDMBJ)
-            ffdev_topology_nb_mode_to_string = '12-XDMBJ - 12-XDMBJ potential with XDM dispersion with BJ damping'
-        case(NB_VDW_EXP_XDMBJ)
-            ffdev_topology_nb_mode_to_string = 'EXP-XDMBJ - EXP-XDMBJ potential with XDM dispersion with BJ damping'
-        case(NB_VDW_12_D3BJ)
-            ffdev_topology_nb_mode_to_string = '12-D3BJ - 12-D3BJ potential with MMD3 dispersion with BJ damping'
-        case(NB_VDW_EXP_XDMTT)
-            ffdev_topology_nb_mode_to_string = 'EXP-XDMTT - Tang–Toennis potential with XDM dispersion'
-        case(NB_VDW_EXP_D3TT)
-            ffdev_topology_nb_mode_to_string = 'EXP-D3TT - Tang–Toennis potential with MMD3 dispersion'
+        case(NB_VDW_EXP_DISPBJ)
+            ffdev_topology_nb_mode_to_string = 'EXP-DISPBJ - EXP/dispersion with BJ damping'
+        case(NB_VDW_EXP_DISPTT)
+            ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - EXP/Tang–Toennis potential'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -1693,18 +1789,10 @@ integer function ffdev_topology_nb_mode_from_string(string)
     select case(trim(string))
         case('LJ')
             ffdev_topology_nb_mode_from_string = NB_VDW_LJ
-        case('12-6')
-            ffdev_topology_nb_mode_from_string = NB_VDW_12_6
-        case('12-XDMBJ')
-            ffdev_topology_nb_mode_from_string = NB_VDW_12_XDMBJ
-        case('EXP-XDMBJ')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_XDMBJ
-        case('12-D3BJ')
-            ffdev_topology_nb_mode_from_string = NB_VDW_12_D3BJ
-        case('EXP-XDMTT')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_XDMTT
-        case('EXP-D3TT  ')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_D3TT
+        case('EXP-DISPBJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPBJ
+        case('EXP-DISPTT')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPTT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -1734,39 +1822,9 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
         case(NB_VDW_LJ)
             ! nothing to do
 
-        case(NB_VDW_12_6)
-            do nbt=1,top%nnb_types
-                pa = top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
-                if( pa .gt. 0 ) then
-                    top%nb_types(nbt)%pa = log(pa)
-                else
-                    top%nb_types(nbt)%pa = 0.0
-                end if
-
-                gi = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
-                gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
-
-                !c6 = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-                top%nb_types(nbt)%c6 = mmd3_pairs(gi,gj)%c6ave ! c6
-            end do
-
-        case(NB_VDW_12_XDMBJ,NB_VDW_12_D3BJ)
-            if( .not. xdm_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'XDM data were not loaded - unable to switch to 12_XDMBJ!')
-            end if
-
-            do nbt=1,top%nnb_types
-                pa = top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
-                if( pa .gt. 0 ) then
-                    top%nb_types(nbt)%pa = log(pa)
-                else
-                    top%nb_types(nbt)%pa = 0.0
-                end if
-            end do
-
-        case(NB_VDW_EXP_XDMTT,NB_VDW_EXP_D3TT,NB_VDW_EXP_XDMBJ)
-            if( .not. xdm_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'XDM data were not loaded - unable to switch to TT_XDM!')
+        case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No dispersion data loaded!')
             end if
             ! generate PB from XDM
             do nbt=1,top%nnb_types
@@ -1776,8 +1834,10 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 zj = top%atom_types(top%nb_types(nbt)%tj)%z
                 gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
 
+        ! FIXME
+
                 ! PA - guess from Rc
-                top%nb_types(nbt)%pa = xdm_pairs(gi,gj)%rc
+                top%nb_types(nbt)%pa = disp_pairs(gi,gj)%rc
 
                 ! IP is in eV, convert to atomic units
                 ! pbi and pbj are halves of bii or bjj in atomic units

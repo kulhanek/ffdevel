@@ -485,12 +485,17 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
     real(DEVDP)     :: maxgrad
     integer         :: maxatom
     logical         :: done
+    ! --------------------------------------------
+    real(DEVDP)     :: Ebn, Enb
     ! -----------------------------------------------------------------------------
 
     ! write energies
     if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
-        write(fout,10) istep, geo%total_ene+geo%rst_energy, geo%bond_ene+geo%angle_ene+geo%dih_ene+geo%impropr_ene, &
-                       geo%ele14_ene+geo%nb14_ene+geo%ele_ene+geo%nb_ene,geo%rst_energy,rmsg,maxgrad,maxatom
+        Ebn = geo%bond_ene +geo%angle_ene+geo%dih_ene+geo%impropr_ene
+        Enb = geo%ele14_ene+geo%pel14_ene+geo%rep14_ene+geo%dis14_ene + &
+              geo%ele_ene+geo%pel_ene+geo%rep_ene+geo%dis_ene
+        write(fout,10) istep, geo%total_ene+geo%rst_energy,Ebn, &
+                       Enb,geo%rst_energy,rmsg,maxgrad,maxatom
     end if
 
     ! write trajectory

@@ -54,10 +54,17 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
     geo%angle_ene = 0.0d0
     geo%dih_ene = 0.0d0
     geo%impropr_ene = 0.0d0
+
     geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
+    geo%pel14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
     geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    geo%pel_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
+
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
@@ -88,10 +95,9 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
 !        end select
 !    end if
 
-    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
-                  + geo%impropr_ene + geo%ele14_ene + geo%nb14_ene &
-                  + geo%ele_ene + geo%nb_ene
-
+    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
+                  + geo%ele14_ene + geo%pel14_ene + geo%rep14_ene + geo%dis14_ene  &
+                  + geo%ele_ene + geo%pel_ene + geo%rep_ene + geo%dis_ene
 
     call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
 
@@ -120,10 +126,17 @@ subroutine ffdev_hessian_ihess_bonded(top,geo)
     geo%angle_ene = 0.0d0
     geo%dih_ene = 0.0d0
     geo%impropr_ene = 0.0d0
+
     geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
+    geo%pel14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
     geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    geo%pel_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
+
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
@@ -2809,132 +2822,139 @@ subroutine ffdev_hessian_nb_lj(top,geo,fac)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%nb14_ene = 0.0d0
+    geo%pel14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
     geo%ele_ene = 0.0d0
-    geo%nb_ene = 0.0d0
+    geo%pel_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
 
-    do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
-        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
-        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-        crgij = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+    ! FIXME
 
-        ! calculate dx, r and r2
-        rij(:) = geo%crd(:,i) - geo%crd(:,j)
-
-        r2a = rij(1)**2 + rij(2)**2 + rij(3)**2
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
-
-        Vela = crgij*ra
-        V_aa = aLJa*r6a*r6a
-        V_ba = bLJa*r6a
-
-        ! calculate energy
-        if( top%nb_list(ip)%dt .eq. 0 ) then
-            inv_scee = 1.0d0
-            inv_scnb = 1.0d0
-            geo%ele_ene  = geo%ele_ene + Vela
-            geo%nb_ene  = geo%nb_ene + V_aa - V_ba
-            dva   = r2a*(Vela + 12.0d0*V_aa - 6.0d0*V_ba)
-        else
-            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-            geo%ele14_ene  = geo%ele14_ene + inv_scee*Vela
-            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa - V_ba)
-            dva   = r2a*(inv_scee*Vela + inv_scnb*(12.0d0*V_aa - 6.0d0*V_ba))
-        end if
-
-        ! calculate gradient
-        geo%grd(:,i) = geo%grd(:,i) - rij(:)*dva
-        geo%grd(:,j) = geo%grd(:,j) + rij(:)*dva
-
-        dn1 = ra*r2a
-        dn2 = ra*r2a*r2a
-        dn3 = r2a**7
-        dn4 = dn3*r2a
-        dn5 = r2a**4
-        dn6 = dn5*r2a
-
-        ! calculate hessian
-        ! ----------------------------------------
-        hxx = 3.0d0*inv_scee*crgij*dn2 + 168.0d0*inv_scnb*aLJa*dn4 - 48.0d0*inv_scnb*bLJa*dn6
-        hyy = crgij*inv_scee*dn1 + 12.0d0*inv_scnb*aLJa*dn3 - 6.0d0*inv_scnb*bLJa*dn5
-
-        ! calculate hessian - diagonals
-        h11 = hxx*rij(1)**2 - hyy
-        h22 = hxx*rij(2)**2 - hyy
-        h33 = hxx*rij(3)**2 - hyy
-
-        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + fac*h11
-        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + fac*h22
-        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + fac*h33
-
-        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + fac*h11
-        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + fac*h22
-        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + fac*h33
-
-        ! calculate hessian - off-diagonals - common
-        h12 = hxx*rij(1)*rij(2)
-        h13 = hxx*rij(1)*rij(3)
-        h23 = hxx*rij(2)*rij(3)
-
-        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + fac*h12
-        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + fac*h13
-        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + fac*h23
-
-        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + fac*h12
-        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + fac*h13
-        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + fac*h23
-
-        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + fac*h12
-        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + fac*h13
-        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + fac*h23
-
-        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + fac*h12
-        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + fac*h13
-        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + fac*h23
-
-       ! calculate hessian - off-diagonals - cross
-        h11 = hyy - hxx*rij(1)*rij(1)
-        h12 =     - hxx*rij(1)*rij(2)
-        h13 =     - hxx*rij(1)*rij(3)
-
-        h21 =     - hxx*rij(2)*rij(1)
-        h22 = hyy - hxx*rij(2)*rij(2)
-        h23 =     - hxx*rij(2)*rij(3)
-
-        h31 =     - hxx*rij(3)*rij(1)
-        h32 =     - hxx*rij(3)*rij(2)
-        h33 = hyy - hxx*rij(3)*rij(3)
-
-        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + fac*h11
-        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + fac*h12
-        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + fac*h13
-
-        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + fac*h21
-        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + fac*h22
-        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + fac*h23
-
-        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + fac*h31
-        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + fac*h32
-        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + fac*h33
-
-        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + fac*h11
-        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + fac*h21
-        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + fac*h31
-
-        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + fac*h12
-        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + fac*h22
-        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + fac*h32
-
-        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + fac*h13
-        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + fac*h23
-        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + fac*h33
-    end do
+!    do ip=1,top%nb_size
+!        i = top%nb_list(ip)%ai
+!        j = top%nb_list(ip)%aj
+!        nbt = top%nb_list(ip)%nbt
+!        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
+!        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
+!        crgij = top%atoms(i)%charge*top%atoms(j)%charge*332.05221729d0
+!
+!        ! calculate dx, r and r2
+!        rij(:) = geo%crd(:,i) - geo%crd(:,j)
+!
+!        r2a = rij(1)**2 + rij(2)**2 + rij(3)**2
+!        r2a = 1.0d0/r2a
+!        ra  = sqrt(r2a)
+!        r6a = r2a*r2a*r2a
+!
+!        Vela = crgij*ra
+!        V_aa = aLJa*r6a*r6a
+!        V_ba = bLJa*r6a
+!
+!        ! calculate energy
+!        if( top%nb_list(ip)%dt .eq. 0 ) then
+!            inv_scee = 1.0d0
+!            inv_scnb = 1.0d0
+!            geo%ele_ene  = geo%ele_ene + Vela
+!            geo%nb_ene  = geo%nb_ene + V_aa - V_ba
+!            dva   = r2a*(Vela + 12.0d0*V_aa - 6.0d0*V_ba)
+!        else
+!            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
+!            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
+!            geo%ele14_ene  = geo%ele14_ene + inv_scee*Vela
+!            geo%nb14_ene  = geo%nb14_ene + inv_scnb*(V_aa - V_ba)
+!            dva   = r2a*(inv_scee*Vela + inv_scnb*(12.0d0*V_aa - 6.0d0*V_ba))
+!        end if
+!
+!        ! calculate gradient
+!        geo%grd(:,i) = geo%grd(:,i) - rij(:)*dva
+!        geo%grd(:,j) = geo%grd(:,j) + rij(:)*dva
+!
+!        dn1 = ra*r2a
+!        dn2 = ra*r2a*r2a
+!        dn3 = r2a**7
+!        dn4 = dn3*r2a
+!        dn5 = r2a**4
+!        dn6 = dn5*r2a
+!
+!        ! calculate hessian
+!        ! ----------------------------------------
+!        hxx = 3.0d0*inv_scee*crgij*dn2 + 168.0d0*inv_scnb*aLJa*dn4 - 48.0d0*inv_scnb*bLJa*dn6
+!        hyy = crgij*inv_scee*dn1 + 12.0d0*inv_scnb*aLJa*dn3 - 6.0d0*inv_scnb*bLJa*dn5
+!
+!        ! calculate hessian - diagonals
+!        h11 = hxx*rij(1)**2 - hyy
+!        h22 = hxx*rij(2)**2 - hyy
+!        h33 = hxx*rij(3)**2 - hyy
+!
+!        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + fac*h11
+!        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + fac*h22
+!        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + fac*h33
+!
+!        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + fac*h11
+!        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + fac*h22
+!        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + fac*h33
+!
+!        ! calculate hessian - off-diagonals - common
+!        h12 = hxx*rij(1)*rij(2)
+!        h13 = hxx*rij(1)*rij(3)
+!        h23 = hxx*rij(2)*rij(3)
+!
+!        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + fac*h12
+!        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + fac*h13
+!        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + fac*h23
+!
+!        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + fac*h12
+!        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + fac*h13
+!        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + fac*h23
+!
+!        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + fac*h12
+!        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + fac*h13
+!        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + fac*h23
+!
+!        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + fac*h12
+!        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + fac*h13
+!        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + fac*h23
+!
+!       ! calculate hessian - off-diagonals - cross
+!        h11 = hyy - hxx*rij(1)*rij(1)
+!        h12 =     - hxx*rij(1)*rij(2)
+!        h13 =     - hxx*rij(1)*rij(3)
+!
+!        h21 =     - hxx*rij(2)*rij(1)
+!        h22 = hyy - hxx*rij(2)*rij(2)
+!        h23 =     - hxx*rij(2)*rij(3)
+!
+!        h31 =     - hxx*rij(3)*rij(1)
+!        h32 =     - hxx*rij(3)*rij(2)
+!        h33 = hyy - hxx*rij(3)*rij(3)
+!
+!        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + fac*h11
+!        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + fac*h12
+!        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + fac*h13
+!
+!        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + fac*h21
+!        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + fac*h22
+!        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + fac*h23
+!
+!        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + fac*h31
+!        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + fac*h32
+!        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + fac*h33
+!
+!        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + fac*h11
+!        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + fac*h21
+!        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + fac*h31
+!
+!        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + fac*h12
+!        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + fac*h22
+!        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + fac*h32
+!
+!        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + fac*h13
+!        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + fac*h23
+!        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + fac*h33
+!    end do
 
 end subroutine ffdev_hessian_nb_lj
 
