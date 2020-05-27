@@ -56,7 +56,7 @@ subroutine ffdev_err_rmsd_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q
+    integer             :: i,j
     real(DEVDP)         :: rmsd,seterrrmsd
     real(DEVDP)         :: swsum
     ! --------------------------------------------------------------------------

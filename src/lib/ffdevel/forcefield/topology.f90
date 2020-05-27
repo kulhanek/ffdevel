@@ -823,83 +823,6 @@ subroutine ffdev_topology_info(top)
 end subroutine ffdev_topology_info
 
 ! ==============================================================================
-! subroutine ffdev_topology_comb_rules_to_string
-! ==============================================================================
-
-character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    integer  :: comb_rules
-    ! --------------------------------------------------------------------------
-
-    select case(comb_rules)
-        case(COMB_RULE_NONE)
-            ffdev_topology_comb_rules_to_string = 'none (input data)'
-        ! LJ potential
-        case(COMB_RULE_LB)
-            ffdev_topology_comb_rules_to_string = 'LB (Lorentz-Berthelot)'
-        case(COMB_RULE_WH)
-            ffdev_topology_comb_rules_to_string = 'WH (Waldman-Hagler)'
-        case(COMB_RULE_KG)
-            ffdev_topology_comb_rules_to_string = 'KG (Kong)'
-        case(COMB_RULE_FB)
-            ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
-
-        case(COMB_RULE_12V1)
-            ffdev_topology_comb_rules_to_string = '12V1 (12 repulsion, v1)'
-
-        case(COMB_RULE_EXPV1)
-            ffdev_topology_comb_rules_to_string = 'EXPV1 (Pauli repulsion, v1)'
-        case(COMB_RULE_EXPV2)
-            ffdev_topology_comb_rules_to_string = 'EXPV2 (Pauli repulsion, v2)'
-
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
-    end select
-
-end function ffdev_topology_comb_rules_to_string
-
-! ==============================================================================
-! function ffdev_topology_get_comb_rules_from_string
-! ==============================================================================
-
-integer function ffdev_topology_get_comb_rules_from_string(string)
-
-    use ffdev_utils
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('IN')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_NONE
-
-        case('LB')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_LB
-        case('WH')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_WH
-        case('KG')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
-        case('FB')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
-
-        case('12V1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_12V1
-        case('EXPV1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV1
-        case('EXPV2')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV2
-
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
-    end select
-
-end function ffdev_topology_get_comb_rules_from_string
-
-! ==============================================================================
 ! subroutine ffdev_topology_info_types
 ! ==============================================================================
 
@@ -1745,10 +1668,10 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = 'EXP-XDMBJ - EXP-XDMBJ potential with XDM dispersion with BJ damping'
         case(NB_VDW_12_D3BJ)
             ffdev_topology_nb_mode_to_string = '12-D3BJ - 12-D3BJ potential with MMD3 dispersion with BJ damping'
-        case(NB_VDW_EXP_TTXDM)
-            ffdev_topology_nb_mode_to_string = 'EXP-TTXDM - Tang–Toennis potential with XDM dispersion'
-        case(NB_VDW_EXP_TTD3)
-            ffdev_topology_nb_mode_to_string = 'EXP-TTD3 - Tang–Toennis potential with MMD3 dispersion'
+        case(NB_VDW_EXP_XDMTT)
+            ffdev_topology_nb_mode_to_string = 'EXP-XDMTT - Tang–Toennis potential with XDM dispersion'
+        case(NB_VDW_EXP_D3TT)
+            ffdev_topology_nb_mode_to_string = 'EXP-D3TT - Tang–Toennis potential with MMD3 dispersion'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -1778,10 +1701,10 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_VDW_EXP_XDMBJ
         case('12-D3BJ')
             ffdev_topology_nb_mode_from_string = NB_VDW_12_D3BJ
-        case('EXP-TTXDM')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_TTXDM
-        case('EXP-TTD3')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_TTD3
+        case('EXP-XDMTT')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_XDMTT
+        case('EXP-D3TT  ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_D3TT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -1841,7 +1764,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 end if
             end do
 
-        case(NB_VDW_EXP_TTXDM,NB_VDW_EXP_TTD3,NB_VDW_EXP_XDMBJ)
+        case(NB_VDW_EXP_XDMTT,NB_VDW_EXP_D3TT,NB_VDW_EXP_XDMBJ)
             if( .not. xdm_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1,'XDM data were not loaded - unable to switch to TT_XDM!')
             end if
@@ -1875,6 +1798,78 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
 end subroutine ffdev_topology_switch_nbmode
 
 ! ==============================================================================
+! subroutine ffdev_topology_comb_rules_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: comb_rules
+    ! --------------------------------------------------------------------------
+
+    select case(comb_rules)
+        case(COMB_RULE_NONE)
+            ffdev_topology_comb_rules_to_string = 'none (input data)'
+        ! LJ potential
+        case(COMB_RULE_LB)
+            ffdev_topology_comb_rules_to_string = 'LB (Lorentz-Berthelot)'
+        case(COMB_RULE_WH)
+            ffdev_topology_comb_rules_to_string = 'WH (Waldman-Hagler)'
+        case(COMB_RULE_KG)
+            ffdev_topology_comb_rules_to_string = 'KG (Kong)'
+        case(COMB_RULE_FB)
+            ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
+
+        case(COMB_RULE_EXPV1)
+            ffdev_topology_comb_rules_to_string = 'EXPV1 (Pauli repulsion, v1)'
+        case(COMB_RULE_EXPV2)
+            ffdev_topology_comb_rules_to_string = 'EXPV2 (Pauli repulsion, v2)'
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
+    end select
+
+end function ffdev_topology_comb_rules_to_string
+
+! ==============================================================================
+! function ffdev_topology_get_comb_rules_from_string
+! ==============================================================================
+
+integer function ffdev_topology_get_comb_rules_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('IN')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_NONE
+
+        case('LB')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_LB
+        case('WH')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_WH
+        case('KG')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
+        case('FB')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
+
+        case('EXPV1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV1
+        case('EXPV2')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV2
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
+    end select
+
+end function ffdev_topology_get_comb_rules_from_string
+
+! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules
 ! ==============================================================================
 
@@ -1890,17 +1885,9 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     select case(nb_mode)
         case(NB_VDW_LJ)
             call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
-        case(NB_VDW_12_6)
-            call ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
-        case(NB_VDW_12_XDMBJ)
-            call ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
-        case(NB_VDW_EXP_XDMBJ)
+        case(NB_VDW_EXP_DISPBJ)
             call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
-        case(NB_VDW_12_D3BJ)
-            call ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
-        case(NB_VDW_EXP_TTXDM)
-            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
-        case(NB_VDW_EXP_TTD3)
+        case(NB_VDW_EXP_DISPTT)
             call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
@@ -1964,162 +1951,6 @@ subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
     end do
 
 end subroutine ffdev_topology_apply_NB_comb_rules_LJ
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_12_6
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_12_6(top,comb_rules)
-
-    use ffdev_utils
-    use ffdev_xdm_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj,agti,agtj
-    real(DEVDP)     :: paii,paij,pajj,aLJii,aLJjj,bLJii,bLJjj,r0ij,epsij
-    real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,k,l
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            agti = top%atom_types(top%nb_types(i)%ti)%glbtypeid
-            agtj = top%atom_types(top%nb_types(i)%tj)%glbtypeid
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii  = top%nb_types(nbii)%pa
-            pajj  = top%nb_types(nbjj)%pa
-
-            ! convert to ERA
-            aLJii = exp(paii)
-            bLJii = top%nb_types(nbii)%c6 * disp_fa
-            call ffdev_topology_LJ_AB2ER(aLJii,bLJii,epsii,r0ii)
-
-            aLJjj = exp(pajj)
-            bLJjj = top%nb_types(nbjj)%c6 * disp_fa
-            call ffdev_topology_LJ_AB2ER(aLJjj,bLJjj,epsjj,r0jj)
-
-            select case(comb_rules)
-                case(COMB_RULE_12V1)
-                    paij = (paii + pajj)*0.5d0
-
-                case(COMB_RULE_LB)
-                    ! mix
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = sqrt(epsii*epsjj)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_WH)
-                    ! mix
-                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
-                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
-
-                   ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_KG)
-                    ! mix
-                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
-                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
-                    r0ij = (l/k)**(1.0d0/6.0d0)
-                    epsij = k / (r0ij**6)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case(COMB_RULE_FB)
-                    ! mix
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
-
-                    ! convert to ABC
-                    paij =  epsij * r0ij**12
-                    if( paij .gt. 0 ) then
-                        paij = log(paij)
-                    else
-                        paij = 0.0
-                    end if
-
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12_XDMC6!')
-            end select
-
-            top%nb_types(i)%pa = paij
-
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_12_6
-
-! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_12
-! ==============================================================================
-
-subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: comb_rules
-    ! --------------------------------------------
-    integer         :: i,nbii,nbjj
-    real(DEVDP)     :: paii,paij,pajj
-    real(DEVDP)     :: r0ii,r0jj,r0ij
-    ! --------------------------------------------------------------------------
-
-    ! apply combining rules
-    do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-
-            paii = top%nb_types(nbii)%pa
-            pajj = top%nb_types(nbjj)%pa
-
-            r0ii = top%nb_types(nbii)%r0
-            r0jj = top%nb_types(nbjj)%r0
-
-            select case(comb_rules)
-                case(COMB_RULE_12V1)
-                    paij = (paii+pajj)*0.5d0
-                    r0ij = (r0ii+r0jj)*0.5d0
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12!')
-            end select
-
-            top%nb_types(i)%pa = paij
-            top%nb_types(i)%r0 = r0ij
-        end if
-    end do
-
-end subroutine ffdev_topology_apply_NB_comb_rules_12
 
 ! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules_EXP

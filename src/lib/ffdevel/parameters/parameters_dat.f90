@@ -43,17 +43,20 @@ integer,parameter       :: REALM_VDW_ALPHA  = 15
 integer,parameter       :: REALM_VDW_PA     = 16
 integer,parameter       :: REALM_VDW_PB     = 17
 integer,parameter       :: REALM_VDW_C6     = 18
-! non-bonded scaling factors
-integer,parameter       :: REALM_ELE_SQ     = 19 ! charges
-! dispersion parameters
-integer,parameter       :: REALM_DISP_FA    = 20
-integer,parameter       :: REALM_DISP_FB    = 21
-integer,parameter       :: REALM_DISP_FC    = 22
-! partial atomic charges
-integer,parameter       :: REALM_PAC        = 23
+! non-bonded - electrostatics
+integer,parameter       :: REALM_PAC        = 19
+integer,parameter       :: REALM_ELE_SQ     = 20 ! charges
+integer,parameter       :: REALM_PENE_FA    = 21
+
+! non-bonded - vdW setup
+integer,parameter       :: REALM_DISP_S6    = 22
+integer,parameter       :: REALM_DISP_S8    = 23
+integer,parameter       :: REALM_DISP_S10   = 24
+integer,parameter       :: REALM_DAMP_FA    = 25
+integer,parameter       :: REALM_DAMP_FB    = 26
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_DISP_FC
+integer,parameter       :: REALM_LAST    = REALM_DAMP_FB
 
 ! ------------------------------------------------------------------------------
 
@@ -173,16 +176,27 @@ real(DEVDP)     :: MaxVdwC6     =      1.0d7
 real(DEVDP)     :: MinEleSQ     =      0.0d0
 real(DEVDP)     :: MaxEleSQ     =      3.0d0
 
-real(DEVDP)     :: MinDispFA    =      0.0d0
-real(DEVDP)     :: MaxDispFA    =      5.0d0
-real(DEVDP)     :: MinDispFB    =     -1.0d0
-real(DEVDP)     :: MaxDispFB    =      3.0d0
-real(DEVDP)     :: MinDispFC    =      0.0d0
-real(DEVDP)     :: MaxDispFC    =      3.0d0
+! penetration energy
+real(DEVDP)     :: MinPeneFA    =      0.0d0
+real(DEVDP)     :: MaxPeneFA    =      6.0d0
 
 ! partial atomic charges
 real(DEVDP)     :: MinPAC       =     -2.0d0
 real(DEVDP)     :: MaxPAC       =      2.0d0
+
+! vdW interactions
+real(DEVDP)     :: MinDampFA    =      0.0d0
+real(DEVDP)     :: MaxDampFA    =      5.0d0
+real(DEVDP)     :: MinDampFB    =     -1.0d0
+real(DEVDP)     :: MaxDampFB    =      3.0d0
+
+! dispersion scaling
+real(DEVDP)     :: MinDispS6    =      0.0d0
+real(DEVDP)     :: MaxDispS6    =     10.0d0
+real(DEVDP)     :: MinDispS8    =      0.0d0
+real(DEVDP)     :: MaxDispS8    =     10.0d0
+real(DEVDP)     :: MinDispS10   =      0.0d0
+real(DEVDP)     :: MaxDispS10   =     10.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
