@@ -135,7 +135,9 @@ subroutine ffdev_targetset_calc_all
             if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
                 ! calculate hessian
                 call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
-            else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
+        ! for zerograd error we do not need trg_grd_loaded
+        ! else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
+        else if( errors_calc_grad ) then
                 call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
             else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
                 call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))

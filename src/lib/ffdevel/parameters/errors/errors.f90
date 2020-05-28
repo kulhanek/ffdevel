@@ -42,6 +42,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_ihess
     use ffdev_err_sapt
     use ffdev_err_chrgpnl
+    use ffdev_err_zerograd
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -63,6 +64,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_nbdists_init()
     call ffdev_err_rmsd_init()
     call ffdev_err_chrgpnl_init()
+    call ffdev_err_zerograd_init()
 
 end subroutine ffdev_errors_init_all
 
@@ -83,6 +85,7 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
+    use ffdev_err_zerograd_dat
 
     implicit none
     logical         :: opterror
@@ -97,9 +100,11 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     if( opterror ) then
         errors_calc_ene  = EnableEnergyError
         errors_calc_sapt = EnableSAPTError
+        errors_calc_grad = EnableZeroGradError
     else
         errors_calc_ene  = EnableEnergyError .or. PrintEnergyErrorSummary
         errors_calc_sapt = EnableSAPTError .or. PrintSAPTErrorSummary
+        errors_calc_grad = EnableZeroGradError .or. PrintZeroGradErrorSummary
     end if
 
 end subroutine ffdev_errors_error_setup_domains
@@ -140,6 +145,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_chrgpnl_dat
     use ffdev_err_chrgpnl
 
+    use ffdev_err_zerograd_dat
+    use ffdev_err_zerograd
+
     use ffdev_timers
 
     implicit none
@@ -163,6 +171,7 @@ subroutine ffdev_errors_error_only(error)
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
     error%chrgpnl = 0.0d0
+    error%zerograd = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
@@ -212,6 +221,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%chrgpnl*ChrgPnlErrorWeight
     end if
 
+    if( EnableZeroGradError ) then
+        call ffdev_err_zerograd_error(error)
+        error%total = error%total + error%zerograd*ZeroGradErrorWeight
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
@@ -232,6 +246,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
+    use ffdev_err_zerograd_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -266,6 +281,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableChrgPnlError ) then
         write(DEV_OUT,43,ADVANCE='NO')
     end if
+    if( EnableZeroGradError ) then
+        write(DEV_OUT,44,ADVANCE='NO')
+    end if
 
  30 format('       Energy')
  33 format('        Bonds')
@@ -277,6 +295,7 @@ subroutine ffdev_errors_ffopt_header_I()
  41 format('    SAPT(Rep)')
  42 format('   SAPT(Disp)')
  43 format('  ChrgPenalty')
+ 44 format(' ZeroGradient')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -295,6 +314,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
+    use ffdev_err_zerograd_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -329,6 +349,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableChrgPnlError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableZeroGradError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
  50 format(' ------------')
 
@@ -349,6 +372,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
+    use ffdev_err_zerograd_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -383,6 +407,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableChrgPnlError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%chrgpnl
+    end if
+    if( EnableZeroGradError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%zerograd
     end if
 
  15 format(1X,E12.5)
@@ -429,15 +456,18 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_chrgpnl_dat
     use ffdev_err_chrgpnl
 
+    use ffdev_err_zerograd_dat
+    use ffdev_err_zerograd
+
     implicit none
     logical     :: final, printme, printsum
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
-    if( .not. (PrintEnergyErrorSummary .or. EnableSAPTError .or. &
+    if( .not. (PrintEnergyErrorSummary .or. PrintSAPTErrorSummary .or. PrintZeroGradErrorSummary .or.  &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. &
-            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. EnableChrgPnlError) ) then
+            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary) ) then
         ! no error to report
         return
     end if
@@ -454,6 +484,7 @@ subroutine ffdev_errors_summary(final)
     ! individual summaries
     call ffdev_err_energy_summary
     call ffdev_err_sapt_summary
+    call ffdev_err_zerograd_summary
 
     ! summary per sets
     if( PrintRMSDErrorSummary ) then
@@ -483,7 +514,7 @@ subroutine ffdev_errors_summary(final)
     ! summary per points
     if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
         PrintImpropersErrorSummary .or. &
-        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. EnableChrgPnlError) then
+        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary) then
 
         write(DEV_OUT,*)
         write(DEV_OUT,20)

@@ -53,18 +53,18 @@ SET(FFDEVEL_SRC
         parameters/errors/ihess_dat.f90
         parameters/errors/ihess.f90
         parameters/errors/ihess_control.f90
-
         parameters/errors/energy_dat.f90
         parameters/errors/energy.f90
         parameters/errors/energy_control.f90
-
         parameters/errors/sapt_dat.f90
         parameters/errors/sapt.f90
         parameters/errors/sapt_control.f90
-
         parameters/errors/chrgpnl_dat.f90
         parameters/errors/chrgpnl.f90
         parameters/errors/chrgpnl_control.f90
+        parameters/errors/zerograd_dat.f90
+        parameters/errors/zerograd.f90
+        parameters/errors/zerograd_control.f90
 
         parameters/xdm_dat.f90
         parameters/xdm.f90

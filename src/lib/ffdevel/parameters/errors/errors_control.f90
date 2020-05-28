@@ -46,6 +46,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_ihess_control
     use ffdev_err_sapt_control
     use ffdev_err_chrgpnl_control
+    use ffdev_err_zerograd_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -77,6 +78,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_ihess_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
     call ffdev_err_chrgpnl_ctrl(fin)
+    call ffdev_err_zerograd_ctrl(fin)
 
 end subroutine ffdev_errors_ctrl
 

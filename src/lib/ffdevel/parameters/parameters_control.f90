@@ -526,6 +526,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
         write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+        return
     end if
 
     ! setup
@@ -567,10 +568,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end do
 
  10 format('=== [nbsetup] ==================================================================')
- 25 format('NB mode (nb_mode)            = ',A30,' (current)')
- 35 format('Combining rules (comb_rules) = ',A30,' (current)')
- 40 format('Source of charges (qsource)  = ',A30)
- 45 format('Source of charges (qsource)  = ',A30,' (current)')
+ 25 format('NB mode (nb_mode)            = ',A39,' (current)')
+ 35 format('Combining rules (comb_rules) = ',A39,' (current)')
+ 40 format('Source of charges (qsource)  = ',A39)
+ 45 format('Source of charges (qsource)  = ',A39,' (current)')
 
 end subroutine ffdev_parameters_ctrl_nbsetup
 
