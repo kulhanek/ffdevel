@@ -1799,6 +1799,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 end if
                 top%nb_types(nbt)%pa = pa
                 top%nb_types(nbt)%pb = alpha / top%nb_types(nbt)%r0
+                top%nb_types(nbt)%pb = 3.0d0
             end do
 
         case default
