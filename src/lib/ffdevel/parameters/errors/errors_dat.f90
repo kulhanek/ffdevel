@@ -43,7 +43,6 @@ type FFERROR_TYPE
     real(DEVDP)         :: ihess_angles
     real(DEVDP)         :: ihess_dihedrals
     real(DEVDP)         :: ihess_impropers
-    real(DEVDP)         :: sapt_ele
     real(DEVDP)         :: sapt_rep
     real(DEVDP)         :: sapt_dis
     real(DEVDP)         :: chrgpnl

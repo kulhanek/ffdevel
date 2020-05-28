@@ -42,12 +42,10 @@ subroutine ffdev_energy_nb_LJ_qtop(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -111,12 +109,10 @@ subroutine ffdev_energy_nb_LJ_qgeo(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -136,10 +132,10 @@ subroutine ffdev_energy_nb_LJ_qgeo(top,geo)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
+        r2a  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0/r2a
+        ra   = sqrt(r2a)
+        r6a  = r2a*r2a*r2a
 
         V_ee =   scale2*crgij*ra
         V_aa =   aLJa*r6a*r6a
@@ -176,7 +172,7 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
     ! --------------------------------------------
     integer         :: ip, i, j, nbt
     real(DEVDP)     :: aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a,scale2
+    real(DEVDP)     :: r2a,ra,r6a,scale2,V_ee,V_aa,V_bb
     ! --------------------------------------------------------------------------
 
     geo%sapt_ele = 0.0d0
@@ -189,8 +185,6 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
         i   = top%sapt_list(ip)%ai
         j   = top%sapt_list(ip)%aj
         nbt = top%sapt_list(ip)%nbt
-
-        ! write(*,*) ip,i,j,nbt
 
         aLJa  = top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
         bLJa  = 2.0d0*top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
@@ -206,14 +200,18 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
+        r2a  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0/r2a
+        ra   = sqrt(r2a)
+        r6a  = r2a*r2a*r2a
 
-        geo%sapt_ele  = geo%sapt_ele  + scale2*crgij*ra
-        geo%sapt_rep  = geo%sapt_rep  + aLJa*r6a*r6a
-        geo%sapt_dis = geo%sapt_dis - bLJa*r6a
+        V_ee =   scale2*crgij*ra
+        V_aa =   aLJa*r6a*r6a
+        V_bb = - bLJa*r6a
+
+        geo%sapt_ele = geo%sapt_ele + V_ee
+        geo%sapt_rep = geo%sapt_rep + V_aa
+        geo%sapt_dis = geo%sapt_dis + V_bb
     end do
 
 end subroutine ffdev_energy_sapt_LJ
@@ -237,23 +235,23 @@ subroutine ffdev_gradient_nb_lj_qtop(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
 
     do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
+        i     = top%nb_list(ip)%ai
+        j     = top%nb_list(ip)%aj
+        nbt   = top%nb_list(ip)%nbt
+
         aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
         bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
+
         crgij = top%atoms(i)%charge * top%atoms(j)%charge
 
         ! calculate dx, r and r2
@@ -261,10 +259,10 @@ subroutine ffdev_gradient_nb_lj_qtop(top,geo)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
+        r2a  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0/r2a
+        ra   = sqrt(r2a)
+        r6a  = r2a*r2a*r2a
 
         V_ee =   scale2*crgij*ra
         V_aa =   aLJa*r6a*r6a
@@ -288,13 +286,15 @@ subroutine ffdev_gradient_nb_lj_qtop(top,geo)
             dva = r2a*(inv_scee*V_ee + inv_scnb*(12.0d0*V_aa + 6.0d0*V_bb))
         end if
 
-        ! calculate gradient
+        ! gradient
         dxa1 = dva*dxa1
         dxa2 = dva*dxa2
         dxa3 = dva*dxa3
+
         geo%grd(1,i) = geo%grd(1,i) - dxa1
         geo%grd(2,i) = geo%grd(2,i) - dxa2
         geo%grd(3,i) = geo%grd(3,i) - dxa3
+
         geo%grd(1,j) = geo%grd(1,j) + dxa1
         geo%grd(2,j) = geo%grd(2,j) + dxa2
         geo%grd(3,j) = geo%grd(3,j) + dxa3
@@ -321,21 +321,20 @@ subroutine ffdev_gradient_nb_lj_qgeo(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
 
     do ip=1,top%nb_size
-        i = top%nb_list(ip)%ai
-        j = top%nb_list(ip)%aj
-        nbt = top%nb_list(ip)%nbt
+        i     = top%nb_list(ip)%ai
+        j     = top%nb_list(ip)%aj
+        nbt   = top%nb_list(ip)%nbt
+
         aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
         bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
         crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
@@ -345,10 +344,10 @@ subroutine ffdev_gradient_nb_lj_qgeo(top,geo)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a = 1.0d0/r2a
-        ra  = sqrt(r2a)
-        r6a = r2a*r2a*r2a
+        r2a  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0/r2a
+        ra   = sqrt(r2a)
+        r6a  = r2a*r2a*r2a
 
         V_ee =   scale2*crgij*ra
         V_aa =   aLJa*r6a*r6a
@@ -372,7 +371,7 @@ subroutine ffdev_gradient_nb_lj_qgeo(top,geo)
             dva   = r2a*(inv_scee*V_ee + inv_scnb*(12.0d0*V_aa + 6.0d0*V_bb))
         end if
 
-        ! calculate gradient
+        ! gradient
         dxa1 = dva*dxa1
         dxa2 = dva*dxa2
         dxa3 = dva*dxa3

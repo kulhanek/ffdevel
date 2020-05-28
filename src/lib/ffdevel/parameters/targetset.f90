@@ -126,7 +126,7 @@ subroutine ffdev_targetset_calc_all
     !$omp end parallel
 
     if( georeseted .gt. 0 ) then
-        write(DEV_OUT,*) '>>> Geometries (',georeseted,') reseted at ', evalcounter
+        write(DEV_OUT,*) '>>> Geometries (',georeseted,') reset at ', evalcounter
     end if
 
     ! calculate all energies, gradients, hessians
@@ -160,28 +160,20 @@ subroutine ffdev_targetset_calc_all
         if( sets(i)%nrefs .gt. 0 ) then
             do j=1,sets(i)%ngeos
                 do k=1,sets(i)%nrefs
-!                    call ffdev_geometry_info_ene(sets(i)%geo(j))
-!                    write(*,*)
-!                    call ffdev_geometry_info_ene(sets( sets(i)%refs(k) )%geo(1))
-!                    write(*,*)
                     sets(i)%geo(j)%bond_ene     = sets(i)%geo(j)%bond_ene    - sets( sets(i)%refs(k) )%geo(1)%bond_ene
                     sets(i)%geo(j)%angle_ene    = sets(i)%geo(j)%angle_ene   - sets( sets(i)%refs(k) )%geo(1)%angle_ene
                     sets(i)%geo(j)%dih_ene      = sets(i)%geo(j)%dih_ene     - sets( sets(i)%refs(k) )%geo(1)%dih_ene
                     sets(i)%geo(j)%impropr_ene  = sets(i)%geo(j)%impropr_ene - sets( sets(i)%refs(k) )%geo(1)%impropr_ene
 
                     sets(i)%geo(j)%ele14_ene    = sets(i)%geo(j)%ele14_ene - sets( sets(i)%refs(k) )%geo(1)%ele14_ene
-                    sets(i)%geo(j)%pel14_ene    = sets(i)%geo(j)%pel14_ene - sets( sets(i)%refs(k) )%geo(1)%pel14_ene
                     sets(i)%geo(j)%rep14_ene    = sets(i)%geo(j)%rep14_ene - sets( sets(i)%refs(k) )%geo(1)%rep14_ene
                     sets(i)%geo(j)%dis14_ene    = sets(i)%geo(j)%dis14_ene - sets( sets(i)%refs(k) )%geo(1)%dis14_ene
 
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
-                    sets(i)%geo(j)%pel_ene      = sets(i)%geo(j)%pel_ene - sets( sets(i)%refs(k) )%geo(1)%pel_ene
                     sets(i)%geo(j)%rep_ene      = sets(i)%geo(j)%rep_ene - sets( sets(i)%refs(k) )%geo(1)%rep_ene
                     sets(i)%geo(j)%dis_ene      = sets(i)%geo(j)%dis_ene - sets( sets(i)%refs(k) )%geo(1)%dis_ene
 
                     sets(i)%geo(j)%total_ene    = sets(i)%geo(j)%total_ene - sets( sets(i)%refs(k) )%geo(1)%total_ene
-!                    call ffdev_geometry_info_ene(sets(i)%geo(j))
-!                    stop
                 end do
             end do
         end if
@@ -219,14 +211,12 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
                 case(REALM_VDW_R0)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
-                case(REALM_VDW_ALPHA)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
                 case(REALM_VDW_PA)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
                 case(REALM_VDW_PB)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
-                case(REALM_VDW_C6)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%C6
+                case(REALM_VDW_RC)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%RC
                     ! nothing to be here
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_targetset_reinit_nbparams!')

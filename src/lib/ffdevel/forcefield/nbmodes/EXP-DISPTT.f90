@@ -45,17 +45,15 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
     if( .not. disp_data_loaded ) then
-        call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_energy_nb_EXP_DISPBJ!')
+        call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_energy_nb_12_DISPBJ!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
@@ -92,7 +90,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
 
         upe = exp(-pb*r)
 
-        arg = damp_fa * pb*r
+        arg = damp_pb * pb*r
         pe = exp(-arg)
 
     ! 6
@@ -124,12 +122,8 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         V_aa = pa*upe
         V_bb = - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
 
-        ! FIXME
-        pe = (1.0d0 - exp(-pene_fa*r/disp_pairs(agti,agtj)%rc))
-
         if( top%nb_list(ip)%dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + V_ee
-            geo%pel_ene = geo%pel_ene + pe * V_ee
             geo%rep_ene = geo%rep_ene + V_aa
             geo%dis_ene = geo%dis_ene + V_bb
         else
@@ -137,7 +131,6 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
             inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
 
             geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
-            geo%pel14_ene = geo%pel14_ene + inv_scee * pe * V_ee
             geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
             geo%dis14_ene = geo%dis14_ene + inv_scnb * V_bb
         end if
@@ -173,7 +166,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
     geo%sapt_dis = 0.0d0
 
     if( .not. disp_data_loaded ) then
-        call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_energy_sapt_EXP_DISPBJ!')
+        call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_energy_sapt_12_DISPBJ!')
     end if
 
     scale2 = ele_qscale*ele_qscale*332.05221729d0
@@ -210,7 +203,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
 
         upe = exp(-pb*r)
 
-        arg = damp_fa * pb*r
+        arg = damp_pb * pb*r
         pe = exp(-arg)
 
     ! 6
@@ -242,10 +235,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         V_aa = pa*upe
         V_bb = - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
 
-        ! FIXME
-        pe = (1.0d0 - exp(-pene_fa*r/disp_pairs(agti,agtj)%rc))
-
-        geo%sapt_ele = geo%sapt_ele + V_ee * (1.0d0 + pe)
+        geo%sapt_ele = geo%sapt_ele + V_ee
         geo%sapt_rep = geo%sapt_rep + V_aa
         geo%sapt_dis = geo%sapt_dis + V_bb
 
@@ -272,12 +262,10 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 

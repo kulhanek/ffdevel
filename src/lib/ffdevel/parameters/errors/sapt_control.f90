@@ -45,13 +45,12 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableSAPTError)
         write(DEV_OUT,135) prmfile_onoff(PrintSAPTErrorSummary)
 
-        write(DEV_OUT,125) SAPTEleErrorWeight
         write(DEV_OUT,225) SAPTRepErrorWeight
         write(DEV_OUT,325) SAPTDispErrorWeight
 
+        write(DEV_OUT,155) prmfile_onoff(SAPTErrorPenToRep)
         write(DEV_OUT,145) prmfile_onoff(SAPTErrorIndToRep)
 
-        errors_calc_sapt = EnableSAPTError
         return
     end if
 
@@ -66,11 +65,6 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintSAPTErrorSummary)
     end if
 
-    if( prmfile_get_real8_by_key(fin,'weight_ele', SAPTEleErrorWeight)) then
-        write(DEV_OUT,120) SAPTEleErrorWeight
-    else
-        write(DEV_OUT,125) SAPTEleErrorWeight
-    end if
     if( prmfile_get_real8_by_key(fin,'weight_rep', SAPTRepErrorWeight)) then
         write(DEV_OUT,220) SAPTRepErrorWeight
     else
@@ -81,13 +75,18 @@ subroutine ffdev_err_sapt_ctrl(fin)
     else
         write(DEV_OUT,325) SAPTDispErrorWeight
     end if
+
+    if( prmfile_get_logical_by_key(fin,'penasrep', SAPTErrorPenToRep)) then
+        write(DEV_OUT,150) prmfile_onoff(SAPTErrorPenToRep)
+    else
+        write(DEV_OUT,155) prmfile_onoff(SAPTErrorPenToRep)
+    end if
+
     if( prmfile_get_logical_by_key(fin,'indasrep', SAPTErrorIndToRep)) then
         write(DEV_OUT,140) prmfile_onoff(SAPTErrorIndToRep)
     else
         write(DEV_OUT,145) prmfile_onoff(SAPTErrorIndToRep)
     end if
-
-    errors_calc_sapt = EnableSAPTError
 
  10 format('=== [sapt] ====================================================================')
 
@@ -96,8 +95,6 @@ subroutine ffdev_err_sapt_ctrl(fin)
 130  format ('Print SAPT summary (summary)           = ',a12)
 135  format ('Print SAPT summary (summary)           = ',a12,'                  (default)')
 
-120  format ('SAPT error weight (weight_ele)         = ',f21.8)
-125  format ('SAPT error weight (weight_ele)         = ',f21.8,'         (default)')
 220  format ('SAPT error weight (weight_rep)         = ',f21.8)
 225  format ('SAPT error weight (weight_rep)         = ',f21.8,'         (default)')
 320  format ('SAPT error weight (weight_disp)        = ',f21.8)
@@ -105,6 +102,9 @@ subroutine ffdev_err_sapt_ctrl(fin)
 
 140  format ('Induction as repulsion                 = ',a12)
 145  format ('Induction as repulsion                 = ',a12,'                  (default)')
+150  format ('Penetration as repulsion               = ',a12)
+155  format ('Penetration as repulsion               = ',a12,'                  (default)')
+
 
 end subroutine ffdev_err_sapt_ctrl
 

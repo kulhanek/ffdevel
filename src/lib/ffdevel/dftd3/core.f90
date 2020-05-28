@@ -199,10 +199,10 @@ contains
       case ("b2-plyp")
            rs6 =0.486434
            s18 =0.672820
-           rs18=3.656466                                                                                                                                              
-           s6  =0.640000                                                                                                                                              
-      case ("b3-lyp")                                                                                                                                                 
-           rs6 =0.278672                                                                                                                                              
+           rs18=3.656466
+           s6  =0.640000
+      case ("b3-lyp")
+           rs6 =0.278672
            s18 =1.466677
            rs18=4.606311
       case ("b97-d")
@@ -1115,14 +1115,14 @@ contains
             damp6 =1.d0/( 1.d0+6.d0*t6 )
             t8 = (r/(rs8*R0))**(-alp8)
             damp8 =1.d0/( 1.d0+6.d0*t8 )
-  
+
             tmp1=s6*6.d0*damp6*C6/r7
             tmp2=s8*6.d0*C6*r42*damp8/r9
             ! d(r^(-6))/d(r_ij)
             drij(linij)=drij(linij)-tmp1 &
                 & -4.d0*tmp2
-  
-  
+
+
             drij(linij)=drij(linij) &
                 & +tmp1*alp6*t6*damp6 &
                 & +3.d0*tmp2*alp8*t8*damp8
@@ -1133,16 +1133,16 @@ contains
             damp6 =1.d0/( 1.d0+6.d0*t6 )
             t8 = (r/R0+R0*rs8)**(-alp8)
             damp8 =1.d0/( 1.d0+6.d0*t8 )
-  
+
             tmp1=s6*6.d0*damp6*C6/r7
             tmp2=s8*6.d0*C6*r42*damp8/r9
             ! d(r^(-6))/d(r_ij)
-            drij(linij)=drij(linij)-tmp1 &  
+            drij(linij)=drij(linij)-tmp1 &
                 &  -4.d0*tmp2
-  
-  
+
+
             drij(linij)=drij(linij) &
-                & +tmp1*alp6*t6*damp6*r/(r+rs6*R0*R0*rs8) & 
+                & +tmp1*alp6*t6*damp6*r/(r+rs6*R0*R0*rs8) &
                 & +3.d0*tmp2*alp8*t8*damp8*r/(r+R0*R0*rs8)
             !d(f_dmp)/d(r_ij)
 
@@ -2675,7 +2675,7 @@ contains
               R0=r0ab(iz(jat),iz(iat))
               rr=R0/r
 
-              ! damping 
+              ! damping
               if(version.eq.3)then
                 ! DFT-D3 zero-damp
                 tmp=rs6*rr
@@ -2820,10 +2820,10 @@ contains
   subroutine pbcthreebody(max_elem,xyz,lat,n,iz,repv,cnthr,cc6ab,&
       & r0ab,eabc)
     integer max_elem
-    INTEGER :: n,i,j,k,jtaux,jtauy,jtauz,iat,jat,kat
+    INTEGER :: n,k,jtaux,jtauy,jtauz,iat,jat,kat
     INTEGER :: ktaux,ktauy,ktauz,counter,ij,ik,jk,idum
-    REAL(WP) :: dx,dy,dz,rij2,rik2,rjk2,c9,rr0ij,rr0ik
-    REAL(WP) :: rr0jk,geomean,fdamp,rik,rjk,rij
+    REAL(WP) :: rij2,rik2,rjk2,c9,rr0ij,rr0ik
+    REAL(WP) :: rr0jk,geomean,fdamp
     REAL(WP) :: r0ij,r0ik,r0jk
     REAL(WP),INTENT(OUT)::eabc
     REAL(WP) :: tmp,tmp1,tmp2,tmp3,tmp4,ang
@@ -2831,7 +2831,7 @@ contains
     REAL(WP) ,DIMENSION(3,3),INTENT(IN)::lat
     REAL(WP) ,DIMENSION(3,*),INTENT(IN) :: xyz
     INTEGER,DIMENSION(*),INTENT(IN)::iz
-    REAL(WP),DIMENSION(3):: jtau,ktau,jxyz,kxyz,ijvec,ikvec,jkvec,dumvec
+    REAL(WP),DIMENSION(3):: jtau,ktau,ijvec,ikvec,jkvec,dumvec
     INTEGER,DIMENSION(3):: repv
     REAL(WP),INTENT(IN) ::cnthr
     REAL(WP),DIMENSION(n*n),INTENT(IN)::cc6ab
@@ -3165,7 +3165,7 @@ contains
     ! coversion factors
 
     integer iat,jat,i,j,kat,my,ny,a,b,idum,tau2
-    real(wp) R0,C6,alp,R42,disp,x1,y1,z1,x2,y2,z2,rr,e6abc,fdum
+    real(wp) R0,C6,alp,R42,disp,rr,e6abc,fdum,x1
     real(wp) dx,dy,dz,r2,r,r4,r6,r8,r10,r12,t6,t8,t10,damp1
     real(wp) damp6,damp8,damp9,e6,e8,e10,e12,gnorm,tmp1
     real(wp) s10,s8,gC6(3),term,step,dispr,displ,r235,tmp2
@@ -3478,13 +3478,13 @@ contains
                   damp6 =1.d0/( 1.d0+6.d0*t6 )
                   t8 = (r/(R0)+R0*rs8)**(-alp8)
                   damp8 =1.d0/( 1.d0+6.d0*t8 )
-  
+
                   tmp1=s6*6.d0*damp6*C6/r7
                   tmp2=s8*6.d0*C6*r42*damp8/r9
                   drij(tauz,tauy,taux,lin(iat,iat))=drij(tauz,tauy,taux,lin(iat, &
                       & iat)) - (tmp1 +4.d0*tmp2)*0.5d0               ! d(r^(-6))/d(r_ij)
-  
-  
+
+
                   drij(tauz,tauy,taux,lin(iat,iat))=drij(tauz,tauy,taux,lin(iat, &
                       & iat)) +(tmp1*alp6*t6*damp6*r/(r+rs6*R0*R0*rs8) &
                       & +3.d0*tmp2*alp8*t8*damp8*r/(r+R0*R0*rs8))*0.5d0  !d(f_dmp)/d(r_ij)
@@ -3571,15 +3571,15 @@ contains
                   damp6 =1.d0/( 1.d0+6.d0*t6 )
                   t8 = (r/(R0)+R0*rs8)**(-alp8)
                   damp8 =1.d0/( 1.d0+6.d0*t8 )
-  
+
                   tmp1=s6*6.d0*damp6*C6/r7
                   tmp2=s8*6.d0*C6*r42*damp8/r9
                   drij(tauz,tauy,taux,linij)=drij(tauz,tauy,taux, &
                       & linij) - (tmp1 +4.d0*tmp2)  ! d(r^(-6))/d(r_ij)
-  
-  
+
+
                   drij(tauz,tauy,taux,linij)=drij(tauz,tauy,taux,linij) &
-                      & +(tmp1*alp6*t6*damp6*r/(r+rs6*R0*R0*rs8) & 
+                      & +(tmp1*alp6*t6*damp6*r/(r+rs6*R0*R0*rs8) &
                       & +3.d0*tmp2*alp8*t8*damp8*r/(r+R0*R0*rs8)) !d(f_dmp)/d(r_ij)
                 endif
                 !
@@ -4680,8 +4680,8 @@ contains
 
     character*1  atmp
     character*80 btmp
-    real(wp)  x,y,f,cn1,cn2,cmax,xx(10)
-    integer iat,jat,i,n,l,j,k,il,iadr,jadr,nn,kk
+    real(wp)  x,f,cn1,cn2,cmax
+    integer iat,jat,i,n,iadr,jadr,nn,kk
     logical special
 
     call init_pars()
@@ -4964,7 +4964,7 @@ contains
     det = aa(1,1) * (aa(2,2) * aa(3,3) - aa(3,2) * aa(2,3))&
         & - aa(1,2) * (aa(2,1) * aa(3,3) - aa(3,1) * aa(2,3))&
         & + aa(1,3) * (aa(2,1) * aa(3,2) - aa(3,1) * aa(2,2))
-    
+
   end function determinant
 
 

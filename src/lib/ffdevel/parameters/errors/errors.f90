@@ -67,6 +67,44 @@ subroutine ffdev_errors_init_all()
 end subroutine ffdev_errors_init_all
 
 ! ==============================================================================
+! subroutine ffdev_errors_error_setup_domains
+! ==============================================================================
+
+subroutine ffdev_errors_error_setup_domains(opterror)
+
+    use ffdev_errors_dat
+    use ffdev_err_bonds_dat
+    use ffdev_err_angles_dat
+    use ffdev_err_dihedrals_dat
+    use ffdev_err_nbdists_dat
+    use ffdev_err_energy_dat
+    use ffdev_err_ihess_dat
+    use ffdev_err_impropers_dat
+    use ffdev_err_rmsd_dat
+    use ffdev_err_sapt_dat
+    use ffdev_err_chrgpnl_dat
+
+    implicit none
+    logical         :: opterror
+    ! --------------------------------------------------------------------------
+
+    ! clear what should be calculated
+    errors_calc_ene     = .false.
+    errors_calc_sapt   = .false.
+    errors_calc_grad    = .false.
+    errors_calc_hess    = .false.
+
+    if( opterror ) then
+        errors_calc_ene  = EnableEnergyError
+        errors_calc_sapt = EnableSAPTError
+    else
+        errors_calc_ene  = EnableEnergyError .or. PrintEnergyErrorSummary
+        errors_calc_sapt = EnableSAPTError .or. PrintSAPTErrorSummary
+    end if
+
+end subroutine ffdev_errors_error_setup_domains
+
+! ==============================================================================
 ! subroutine ffdev_errors_error_only
 ! ==============================================================================
 
@@ -122,7 +160,6 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_angles = 0.0d0
     error%ihess_dihedrals = 0.0d0
     error%ihess_impropers = 0.0d0
-    error%sapt_ele = 0.0d0
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
     error%chrgpnl = 0.0d0
@@ -135,8 +172,7 @@ subroutine ffdev_errors_error_only(error)
 
     if( EnableSAPTError ) then
         call ffdev_err_sapt_error(error)
-        error%total = error%total + error%sapt_ele * SAPTEleErrorWeight &
-                                  + error%sapt_rep * SAPTRepErrorWeight &
+        error%total = error%total + error%sapt_rep * SAPTRepErrorWeight &
                                   + error%sapt_dis * SAPTDispErrorWeight
     end if
 
@@ -204,9 +240,6 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,30,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,40,ADVANCE='NO')
-    end if
-    if( EnableSAPTError ) then
         write(DEV_OUT,41,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
@@ -241,7 +274,6 @@ subroutine ffdev_errors_ffopt_header_I()
  36 format('       d(NBs)')
  38 format('    Impropers')
  39 format('         RMSD')
- 40 format('    SAPT(Ele)')
  41 format('    SAPT(Rep)')
  42 format('   SAPT(Disp)')
  43 format('  ChrgPenalty')
@@ -268,9 +300,6 @@ subroutine ffdev_errors_ffopt_header_II()
     ! --------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
-        write(DEV_OUT,50,ADVANCE='NO')
-    end if
-    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
@@ -327,9 +356,6 @@ subroutine ffdev_errors_ffopt_results(error)
 
     if( EnableEnergyError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%energy
-    end if
-    if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep

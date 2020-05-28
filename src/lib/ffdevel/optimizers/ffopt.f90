@@ -207,7 +207,7 @@ subroutine ffdev_ffopt_single_point()
     call ffdev_parameters_gather(FFParams)
 
     ! get error
-    call ffdev_parameters_error_only(FFParams,error)
+    call ffdev_parameters_error_only(FFParams,error,.false.)
 
     ! print error statistics
     call ffdev_ffopt_write_error_sumlogs(.true.)
@@ -255,12 +255,9 @@ subroutine ffdev_ffopt_run()
     ! get initial parameters
     call ffdev_parameters_gather(FFParams)
 
-    if( (OptimizationMethod .ne. MINIMIZATION_SHARK) .or. &
-        ( (OptimizationMethod .eq. MINIMIZATION_SHARK) .and. (Shark_NRuns .eq. 1))  ) then
-        ! initial statistics
-        call ffdev_parameters_error_only(FFParams,FFError)
-        call ffdev_ffopt_write_error_sumlogs(.false.)
-    end if
+    ! initial statistics
+    call ffdev_parameters_error_only(FFParams,FFError,.false.)
+    call ffdev_ffopt_write_error_sumlogs(.false.)
 
     write(DEV_OUT,*)
     write(DEV_OUT,1)
@@ -294,7 +291,7 @@ subroutine ffdev_ffopt_run()
 
     ! return finial statistics
     ! wee need to recalculate error due to nrun shark mode
-    call ffdev_parameters_error_only(FFParams,FFError)
+    call ffdev_parameters_error_only(FFParams,FFError,.false.)
     call ffdev_ffopt_write_error_sumlogs(.true.)
 
     deallocate(FFParams,FFParamsGrd)
@@ -316,12 +313,14 @@ subroutine ffdev_ffopt_write_error_sumlogs(final)
     use ffdev_utils
     use ffdev_parameters_dat
     use ffdev_parameters
+    use ffdev_errors_dat
 
     implicit none
     logical                 :: final
     ! --------------------------------------------
     character(len=MAX_PATH) :: sname
     character(len=MAX_PATH) :: progname
+    type(FFERROR_TYPE)      :: error
     ! --------------------------------------------------------------------------
 
     if( SaveSumLogs ) then
@@ -340,6 +339,26 @@ subroutine ffdev_ffopt_write_error_sumlogs(final)
         ! print all parameters
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
+        write(DEV_OUT,*)
+        write(DEV_OUT,1)
+        if( final ) then
+            call ffdev_utils_heading(DEV_OUT,'Final Error Summary',':')
+        else
+            call ffdev_utils_heading(DEV_OUT,'Initial Error Summary',':')
+        end if
+        write(DEV_OUT,1)
+
+        call ffdev_errors_error_only(error)
+
+        ! print error summary
+        write(DEV_OUT,*)
+        call ffdev_errors_ffopt_header_I
+        write(DEV_OUT,*)
+        call ffdev_errors_ffopt_header_II
+        write(DEV_OUT,*)
+        call ffdev_errors_ffopt_results(error)
+        write(DEV_OUT,*)
+
         ! print error statistics
         call ffdev_errors_summary(final)
 
@@ -352,6 +371,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(final)
         call ffdev_errors_summary(final)
     end if
 
+  1 format('# ==============================================================================')
  10 format('errorsum',I3.3)
  30 format('>>> Error summary written to: ',A)
 
@@ -722,7 +742,7 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
         grad(:) = FFParamsGrd(:)
     else
         FFParamsGrd(:) = 0.0d0
-        call ffdev_parameters_error_only(FFParams,FFError)
+        call ffdev_parameters_error_only(FFParams,FFError,.true.)
         value = FFError%Total
     end if
 
@@ -906,7 +926,7 @@ subroutine opt_shark
     call shark_create(nactparms,Shark_Method,Shark_InitialStep,tmp_xg)
 
     ! initial error
-    call ffdev_parameters_error_only(FFParams,FFError)
+    call ffdev_parameters_error_only(FFParams,FFError,.true.)
 
     istep = 0
 
@@ -956,7 +976,7 @@ lasterror = error
         FFParams(:) = tmp_xg(:)
     end if
 
-    call ffdev_parameters_error_only(FFParams,FFError)
+    call ffdev_parameters_error_only(FFParams,FFError,.true.)
 
     write(DEV_OUT,10)
     call write_header(.false.)
@@ -1242,7 +1262,7 @@ subroutine opt_shark_fce(n, x, value)
     else
         FFParams(:) = x(:)
     end if
-    call ffdev_parameters_error_only(FFParams,FFError)
+    call ffdev_parameters_error_only(FFParams,FFError,.true.)
 
     value = FFError%Total
 

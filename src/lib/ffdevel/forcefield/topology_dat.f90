@@ -129,10 +129,11 @@ end type ATOM_TYPE
 ! ------------------------------------------------------------------------------
 
 type NB_TYPE
-    integer             :: ti,tj                    ! atom types
-    real(DEVDP)         :: eps, r0, alpha           ! ERA - non-bonded parameters (LJ/EXP6 vdW parameters)
-    real(DEVDP)         :: PA, PB, C6               ! ABC - non-bonded parameters
-    logical             :: ffoptactive              ! this type is subject of ffopt
+    integer             :: ti,tj                ! atom types
+    real(DEVDP)         :: eps, r0              ! LJ parameters
+    real(DEVDP)         :: PA, PB               ! repulsion parameters
+    real(DEVDP)         :: RC                   ! damping radius
+    logical             :: ffoptactive          ! this type is subject of ffopt
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -252,18 +253,22 @@ integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
 integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_EXP_DISPBJ    = 2     ! Exp-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT    = 3     ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_12_DISPBJ    = 2     ! 12-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT   = 3     ! Exp-Tang–Toennies
 
 ! Becke-Johnson
 
+integer,parameter   :: DISP_BJ_DRC  = 1     ! radii from Cx
+integer,parameter   :: DISP_BJ_ORC  = 2     ! optimized radii
+
+integer     :: dispbj_mode  = DISP_BJ_ORC
 
 ! Tang–Toennis
 ! Form: Enb = exp(PA*PB)*exp(-PB*r) - disp_s6*fd6*C6/r^6 - disp_s8*fd8*C8/r^8 - disp_s6*fd10*C10/r^10
 ! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_fa for PB in fd6, fd8, fd8
 ! Provides: energy, gradient
 
-! combining rules - applicable for NB_VDW_EXP_DISPBJ/NB_VDW_EXP_DISPTT
+! combining rules - applicable for NB_VDW_12_DISPBJ/NB_VDW_EXP_DISPTT
 integer,parameter   :: COMB_RULE_EXPV1 = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
                                               ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
 integer,parameter   :: COMB_RULE_EXPV2 = 18
@@ -284,6 +289,7 @@ real(DEVDP) :: disp_s10 = 1.0d0
 ! damping
 real(DEVDP) :: damp_fa  = 1.0d0
 real(DEVDP) :: damp_fb  = 0.0d0
+real(DEVDP) :: damp_pb  = 1.0d0
 
 ! ------------------------------------------------------------------------------
 

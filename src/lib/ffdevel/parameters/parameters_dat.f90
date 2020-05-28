@@ -35,28 +35,31 @@ integer,parameter       :: REALM_DIH_SCNB   = 9
 integer,parameter       :: REALM_IMPR_V     = 10
 integer,parameter       :: REALM_IMPR_G     = 11
 integer,parameter       :: REALM_DIH_C      = 12
-! ERA - non-bonded parameters
+
+! non-bonded - vdW setup - LJ parameters
 integer,parameter       :: REALM_VDW_EPS    = 13
 integer,parameter       :: REALM_VDW_R0     = 14
-integer,parameter       :: REALM_VDW_ALPHA  = 15
-! ABC - non-bonded parameters
-integer,parameter       :: REALM_VDW_PA     = 16
-integer,parameter       :: REALM_VDW_PB     = 17
-integer,parameter       :: REALM_VDW_C6     = 18
-! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 19
-integer,parameter       :: REALM_ELE_SQ     = 20 ! charges
-integer,parameter       :: REALM_PENE_FA    = 21
 
-! non-bonded - vdW setup
-integer,parameter       :: REALM_DISP_S6    = 22
-integer,parameter       :: REALM_DISP_S8    = 23
-integer,parameter       :: REALM_DISP_S10   = 24
-integer,parameter       :: REALM_DAMP_FA    = 25
-integer,parameter       :: REALM_DAMP_FB    = 26
+! non-bonded - vdW setup - repulsion
+integer,parameter       :: REALM_VDW_PA     = 15
+integer,parameter       :: REALM_VDW_PB     = 16
+integer,parameter       :: REALM_VDW_RC     = 17
+
+! non-bonded - vdW setup - dispersion
+integer,parameter       :: REALM_DISP_S6    = 18
+integer,parameter       :: REALM_DISP_S8    = 19
+integer,parameter       :: REALM_DISP_S10   = 20
+
+integer,parameter       :: REALM_DAMP_FA    = 21
+integer,parameter       :: REALM_DAMP_FB    = 22
+integer,parameter       :: REALM_DAMP_PB    = 23
+
+! non-bonded - electrostatics
+integer,parameter       :: REALM_PAC        = 24
+integer,parameter       :: REALM_ELE_SQ     = 25 ! charges
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_DAMP_FB
+integer,parameter       :: REALM_LAST    = REALM_ELE_SQ
 
 ! ------------------------------------------------------------------------------
 
@@ -161,24 +164,20 @@ real(DEVDP)     :: MinVdwEps    =       0.0d0
 real(DEVDP)     :: MaxVdwEps    =       2.0d0
 real(DEVDP)     :: MinVdwR0     =       0.5d0
 real(DEVDP)     :: MaxVdwR0     =       6.0d0
-real(DEVDP)     :: MinVdwAlpha  =      10.0d0
-real(DEVDP)     :: MaxVdwAlpha  =      25.0d0
 
 ! non-bonded ABC
 real(DEVDP)     :: MinVdwPA     =      0.0d0
 real(DEVDP)     :: MaxVdwPA     =     20.0d0
-real(DEVDP)     :: MinVdwPB     =      2.0d0
-real(DEVDP)     :: MaxVdwPB     =      6.0d0
-real(DEVDP)     :: MinVdwC6     =      0.0d0
-real(DEVDP)     :: MaxVdwC6     =      1.0d7
+
+real(DEVDP)     :: MinVdwPB     =      2.5d0
+real(DEVDP)     :: MaxVdwPB     =      5.5d0
+
+real(DEVDP)     :: MinVdwRC     =      0.0d0
+real(DEVDP)     :: MaxVdwRC     =      4.0d0
 
 ! non-bonded scaling factors
 real(DEVDP)     :: MinEleSQ     =      0.0d0
 real(DEVDP)     :: MaxEleSQ     =      3.0d0
-
-! penetration energy
-real(DEVDP)     :: MinPeneFA    =      0.0d0
-real(DEVDP)     :: MaxPeneFA    =      6.0d0
 
 ! partial atomic charges
 real(DEVDP)     :: MinPAC       =     -2.0d0
@@ -186,9 +185,11 @@ real(DEVDP)     :: MaxPAC       =      2.0d0
 
 ! vdW interactions
 real(DEVDP)     :: MinDampFA    =      0.0d0
-real(DEVDP)     :: MaxDampFA    =      5.0d0
+real(DEVDP)     :: MaxDampFA    =      2.0d0
 real(DEVDP)     :: MinDampFB    =     -1.0d0
-real(DEVDP)     :: MaxDampFB    =      3.0d0
+real(DEVDP)     :: MaxDampFB    =      4.0d0
+real(DEVDP)     :: MinDampPB    =      0.5d0
+real(DEVDP)     :: MaxDampPB    =      1.5d0
 
 ! dispersion scaling
 real(DEVDP)     :: MinDispS6    =      0.0d0

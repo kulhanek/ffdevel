@@ -291,7 +291,7 @@
 			<Option weight="5" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/EXP-DISPBJ.f90">
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/12-DISPBJ.f90">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/EXP-DISPTT.f90">

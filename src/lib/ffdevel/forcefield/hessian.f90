@@ -56,12 +56,10 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
     geo%impropr_ene = 0.0d0
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -96,8 +94,8 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
 !    end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
-                  + geo%ele14_ene + geo%pel14_ene + geo%rep14_ene + geo%dis14_ene  &
-                  + geo%ele_ene + geo%pel_ene + geo%rep_ene + geo%dis_ene
+                  + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
+                  + geo%ele_ene + geo%rep_ene + geo%dis_ene
 
     call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
 
@@ -128,13 +126,9 @@ subroutine ffdev_hessian_ihess_bonded(top,geo)
     geo%impropr_ene = 0.0d0
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
-    geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
-    geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
     geo%total_ene = 0.0d0
@@ -2822,12 +2816,10 @@ subroutine ffdev_hessian_nb_lj(top,geo,fac)
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 

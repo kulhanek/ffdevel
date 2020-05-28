@@ -540,10 +540,9 @@ subroutine ffdev_topology_load(top,name)
             call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [nb_types] section!')
         end if
 
-        top%nb_types(i)%alpha = 0.0d0
         top%nb_types(i)%pa = 0.0d0
         top%nb_types(i)%pb = 0.0d0
-        top%nb_types(i)%c6 = 0.0d0
+        top%nb_types(i)%rc = 0.0d0
 
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
@@ -759,9 +758,9 @@ subroutine ffdev_topology_save(top,name)
     write(DEV_TOP,10) 'nb_types'
     do i=1,top%nnb_types
         write(DEV_TOP,125)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
-                               top%nb_types(i)%eps, top%nb_types(i)%r0, top%nb_types(i)%alpha
+                               top%nb_types(i)%eps, top%nb_types(i)%r0
     end do
-125 format(I7,1X,I5,1X,I5,1X,F13.7,1X,F13.7,1X,F13.7)
+125 format(I7,1X,I5,1X,I5,1X,F13.7,1X,F13.7)
 
     write(DEV_TOP,10) 'nb_list'
     do i=1,top%nb_size
@@ -1370,38 +1369,6 @@ subroutine ffdev_topology_LJ_AB2ER(pa,c6,eps,r0)
 end subroutine ffdev_topology_LJ_AB2ER
 
 ! ==============================================================================
-! function ffdev_topology_get_nbprms
-! ==============================================================================
-
-subroutine ffdev_topology_get_nbprms(top,ti,tj,eps,r0,alpha)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: ti,tj
-    real(DEVDP)     :: eps,r0,alpha
-    ! --------------------------------------------
-    integer         :: i
-    ! --------------------------------------------------------------------------
-
-    do i=1,top%nnb_types
-        if( ((top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj)) .or. &
-            ((top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti)) ) then
-            eps = top%nb_types(i)%eps
-            r0 = top%nb_types(i)%r0
-            alpha = top%nb_types(i)%alpha
-            return
-        end if
-    end do
-
-    eps = 0.0d0
-    r0 = 0.0d0
-    alpha = 0.0d0
-
-end subroutine ffdev_topology_get_nbprms
-
-! ==============================================================================
 ! function ffdev_topology_switch_to_probe_mode
 ! ==============================================================================
 
@@ -1481,12 +1448,11 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
         if( NBParamsMode .eq. NB_PARAMS_MODE_NORMAL ) then
             do i=1,top%nnb_types
                 if( top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe ) cycle
-                top%nb_types(i)%eps   = 0.0d0
-                top%nb_types(i)%r0    = 0.0d0
-                top%nb_types(i)%alpha = 0.0d0
-                top%nb_types(i)%pa    = 0.0d0
-                top%nb_types(i)%pb    = 0.0d0
-                top%nb_types(i)%c6 = 0.0d0
+                top%nb_types(i)%eps = 0.0d0
+                top%nb_types(i)%r0  = 0.0d0
+                top%nb_types(i)%pa  = 0.0d0
+                top%nb_types(i)%pb  = 0.0d0
+                top%nb_types(i)%rc  = 0.0d0
             end do
         end if
     end if
@@ -1764,8 +1730,8 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
     select case(nb_mode)
         case(NB_VDW_LJ)
             ffdev_topology_nb_mode_to_string = 'LJ - 12-6 Lennard-Jones potential'
-        case(NB_VDW_EXP_DISPBJ)
-            ffdev_topology_nb_mode_to_string = 'EXP-DISPBJ - EXP/dispersion with BJ damping'
+        case(NB_VDW_12_DISPBJ)
+            ffdev_topology_nb_mode_to_string = '12-DISPBJ - 12/dispersion with BJ damping'
         case(NB_VDW_EXP_DISPTT)
             ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - EXP/Tang–Toennis potential'
         case default
@@ -1789,8 +1755,8 @@ integer function ffdev_topology_nb_mode_from_string(string)
     select case(trim(string))
         case('LJ')
             ffdev_topology_nb_mode_from_string = NB_VDW_LJ
-        case('EXP-DISPBJ')
-            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPBJ
+        case('12-DISPBJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_12_DISPBJ
         case('EXP-DISPTT')
             ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPTT
         case default
@@ -1814,41 +1780,25 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
     type(TOPOLOGY)  :: top
     integer         :: from_nb_mode,to_nb_mode
     ! --------------------------------------------
-    integer         :: nbt,zi,zj,gi,gj
-    real(DEVDP)     :: pbi,pbj,pb,pa
+    integer         :: nbt
+    real(DEVDP)     :: pa,alpha
     ! --------------------------------------------------------------------------
 
     select case(to_nb_mode)
         case(NB_VDW_LJ)
             ! nothing to do
 
-        case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
-            if( .not. disp_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No dispersion data loaded!')
-            end if
-            ! generate PB from XDM
+        case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ)
+            alpha = 12.0
             do nbt=1,top%nnb_types
-                zi = top%atom_types(top%nb_types(nbt)%ti)%z
-                gi = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
-
-                zj = top%atom_types(top%nb_types(nbt)%tj)%z
-                gj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
-
-        ! FIXME
-
-                ! PA - guess from Rc
-                top%nb_types(nbt)%pa = disp_pairs(gi,gj)%rc
-
-                ! IP is in eV, convert to atomic units
-                ! pbi and pbj are halves of bii or bjj in atomic units
-                pbi = sqrt(2.0*xdm_ip(zi)*DEV_eV2KCL*DEV_KCL2HARTREE) * (xdm_atoms(gi)%v0ave / xdm_atoms(gi)%vave)**(1.0/3.0)
-                pbj = sqrt(2.0*xdm_ip(zj)*DEV_eV2KCL*DEV_KCL2HARTREE) * (xdm_atoms(gj)%v0ave / xdm_atoms(gj)%vave)**(1.0/3.0)
-
-                ! sum two halves
-                pb  = pbi+pbj
-
-                ! convert to Ang^-1
-                top%nb_types(nbt)%pb = pb / DEV_AU2A
+                pa = top%nb_types(nbt)%eps*top%nb_types(nbt)%eps * 6.0d0/(alpha - 6.0d0) * exp(alpha)
+                if( pa .gt. 0 ) then
+                    pa = log(pa)
+                else
+                    pa = 1.0d0
+                end if
+                top%nb_types(nbt)%pa = pa
+                top%nb_types(nbt)%pb = alpha / top%nb_types(nbt)%r0
             end do
 
         case default
@@ -1945,7 +1895,7 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
     select case(nb_mode)
         case(NB_VDW_LJ)
             call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
-        case(NB_VDW_EXP_DISPBJ)
+        case(NB_VDW_12_DISPBJ)
             call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
         case(NB_VDW_EXP_DISPTT)
             call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
@@ -2027,6 +1977,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
     integer         :: i,nbii,nbjj
     real(DEVDP)     :: paii,paij,pajj
     real(DEVDP)     :: pbii,pbij,pbjj
+    real(DEVDP)     :: rcii,rcij,rcjj
     ! --------------------------------------------------------------------------
 
     ! apply combining rules
@@ -2043,19 +1994,25 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
             pajj = top%nb_types(nbjj)%pa
             pbjj = top%nb_types(nbjj)%pb
 
+            rcii = top%nb_types(nbjj)%rc
+            rcjj = top%nb_types(nbjj)%rc
+
             select case(comb_rules)
                 case(COMB_RULE_EXPV1)
                     paij = (paii+pajj)*0.5d0
                     pbij = (pbii+pbjj)*0.5d0
+                    rcij = (rcii+rcjj)*0.5d0
                 case(COMB_RULE_EXPV2)
                     paij = (paii+pajj)*0.5d0
                     pbij = 2.0d0*pbii*pbjj/(pbii+pbjj)
+                    rcij = (rcii+rcjj)*0.5d0
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXP!')
             end select
 
             top%nb_types(i)%pa = paij
             top%nb_types(i)%pb = pbij
+            top%nb_types(i)%rc = rcij
 
         end if
     end do

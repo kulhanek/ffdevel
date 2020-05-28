@@ -26,11 +26,11 @@ use ffdev_variables
 logical                 :: EnableSAPTError
 logical                 :: PrintSAPTErrorSummary
 
-real(DEVDP)             :: SAPTEleErrorWeight
 real(DEVDP)             :: SAPTRepErrorWeight
 real(DEVDP)             :: SAPTDispErrorWeight
 
 logical                 :: SAPTErrorIndToRep   ! include induction to rep
+logical                 :: SAPTErrorPenToRep   ! include penetration energy to rep
 
 ! ------------------------------------------------------------------------------
 

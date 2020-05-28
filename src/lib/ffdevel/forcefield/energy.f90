@@ -35,7 +35,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     use ffdev_timers
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_EXP_DISPBJ
+    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 
     implicit none
@@ -60,12 +60,10 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     geo%impropr_ene = 0.0d0
 
     geo%ele14_ene = 0.0d0
-    geo%pel14_ene = 0.0d0
     geo%rep14_ene = 0.0d0
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
-    geo%pel_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -90,8 +88,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
                     call ffdev_energy_nb_LJ_qtop(top,geo)
                 end if
 
-            case(NB_VDW_EXP_DISPBJ)
-                call ffdev_energy_nb_EXP_DISPBJ(top,geo)
+            case(NB_VDW_12_DISPBJ)
+                call ffdev_energy_nb_12_DISPBJ(top,geo)
 
             case(NB_VDW_EXP_DISPTT)
                 call ffdev_energy_nb_EXP_DISPTT(top,geo)
@@ -103,8 +101,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
-                  + geo%ele14_ene + geo%pel14_ene + geo%rep14_ene + geo%dis14_ene  &
-                  + geo%ele_ene + geo%pel_ene + geo%rep_ene + geo%dis_ene
+                  + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
+                  + geo%ele_ene + geo%rep_ene + geo%dis_ene
 
     call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
@@ -122,7 +120,7 @@ subroutine ffdev_energy_sapt(top,geo)
     use ffdev_timers
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_EXP_DISPBJ
+    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 
     implicit none
@@ -145,8 +143,8 @@ subroutine ffdev_energy_sapt(top,geo)
         case(NB_VDW_LJ)
             call ffdev_energy_sapt_LJ(top,geo)
 
-        case(NB_VDW_EXP_DISPBJ)
-            call ffdev_energy_sapt_EXP_DISPBJ(top,geo)
+        case(NB_VDW_12_DISPBJ)
+            call ffdev_energy_sapt_12_DISPBJ(top,geo)
 
         case(NB_VDW_EXP_DISPTT)
             call ffdev_energy_sapt_EXP_DISPTT(top,geo)

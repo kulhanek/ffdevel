@@ -46,11 +46,9 @@ type GEOMETRY
     real(DEVDP)             :: dih_ene          ! dihedral energy
     real(DEVDP)             :: impropr_ene      ! improper energy
     real(DEVDP)             :: ele14_ene        ! 1-4 electrostatics
-    real(DEVDP)             :: pel14_ene        ! 1-4 electrostatics - penetration energy
     real(DEVDP)             :: rep14_ene        ! 1-4 vdW - repulsion
     real(DEVDP)             :: dis14_ene        ! 1-4 vdW - dispersion
     real(DEVDP)             :: ele_ene          ! electrostatics
-    real(DEVDP)             :: pel_ene          ! electrostatics - penetration energy
     real(DEVDP)             :: rep_ene          ! vdW - repulsion
     real(DEVDP)             :: dis_ene          ! vdW - dispersion
     real(DEVDP)             :: total_ene        ! total energy from MM

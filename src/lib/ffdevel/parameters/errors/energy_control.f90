@@ -52,7 +52,6 @@ subroutine ffdev_err_energy_ctrl(fin)
         write(DEV_OUT,165) MaxTargetEnergy
         write(DEV_OUT,175) prmfile_onoff(EnableMinFilter)
         write(DEV_OUT,185) MinTargetEnergy
-        errors_calc_ene = EnableEnergyError
         return
     end if
 
@@ -99,8 +98,6 @@ subroutine ffdev_err_energy_ctrl(fin)
     else
         write(DEV_OUT,185) MinTargetEnergy
     end if
-
-    errors_calc_ene = EnableEnergyError
 
  10 format('=== [energy] ===================================================================')
 
