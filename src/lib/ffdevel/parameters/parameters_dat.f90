@@ -44,19 +44,20 @@ integer,parameter       :: REALM_VDW_R0     = 14
 integer,parameter       :: REALM_VDW_PA     = 15
 integer,parameter       :: REALM_VDW_PB     = 16
 integer,parameter       :: REALM_VDW_RC     = 17
+integer,parameter       :: REALM_VDW_TB     = 18
 
 ! non-bonded - vdW setup - dispersion
-integer,parameter       :: REALM_DISP_S6    = 18
-integer,parameter       :: REALM_DISP_S8    = 19
-integer,parameter       :: REALM_DISP_S10   = 20
+integer,parameter       :: REALM_DISP_S6    = 19
+integer,parameter       :: REALM_DISP_S8    = 20
+integer,parameter       :: REALM_DISP_S10   = 21
 
-integer,parameter       :: REALM_DAMP_FA    = 21
-integer,parameter       :: REALM_DAMP_FB    = 22
-integer,parameter       :: REALM_DAMP_PB    = 23
+integer,parameter       :: REALM_DAMP_FA    = 22
+integer,parameter       :: REALM_DAMP_FB    = 23
+integer,parameter       :: REALM_DAMP_PB    = 24
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 24
-integer,parameter       :: REALM_ELE_SQ     = 25 ! charges
+integer,parameter       :: REALM_PAC        = 25
+integer,parameter       :: REALM_ELE_SQ     = 26
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_ELE_SQ
@@ -173,7 +174,10 @@ real(DEVDP)     :: MinVdwPB     =      2.5d0
 real(DEVDP)     :: MaxVdwPB     =      5.5d0
 
 real(DEVDP)     :: MinVdwRC     =      0.0d0
-real(DEVDP)     :: MaxVdwRC     =      4.0d0
+real(DEVDP)     :: MaxVdwRC     =      5.0d0
+
+real(DEVDP)     :: MinVdwTB     =      2.5d0
+real(DEVDP)     :: MaxVdwTB     =      5.5d0
 
 ! non-bonded scaling factors
 real(DEVDP)     :: MinEleSQ     =      0.0d0

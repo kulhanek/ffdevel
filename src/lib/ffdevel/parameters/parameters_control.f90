@@ -508,15 +508,16 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     use ffdev_utils
     use ffdev_topology
     use ffdev_topology_dat
+    use ffdev_targetset
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
     logical             :: exec
     ! --------------------------------------------
-    logical                     :: rst
+    logical                     :: rst,changed
     character(50)               :: key
     character(PRMFILE_MAX_PATH) :: string
-    integer                     :: mode
+    integer                     :: mode,ldampbj_mode,ldamptt_mode
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -525,19 +526,38 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     if( .not. prmfile_open_section(fin,'nbsetup') ) then
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
-        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+        write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
+        write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
         return
     end if
 
-    ! setup
-    if( prmfile_get_string_by_key(fin,'qsource', string)) then
-        mode = ffdev_topology_qsource_from_string(string)
-        write(DEV_OUT,40) ffdev_topology_qsource_to_string(mode)
+    changed = .false.
+
+    if( prmfile_get_string_by_key(fin,'dampbj_mode', string)) then
+        ldampbj_mode = ffdev_topology_dampbj_mode_from_string(string)
+        write(DEV_OUT,40) ffdev_topology_dampbj_mode_to_string(ldampbj_mode)
         if( exec ) then
-            ele_qsource = mode
+            dampbj_mode = ldampbj_mode
+            changed = .true.
         end if
     else
-        write(DEV_OUT,45) ffdev_topology_qsource_to_string(ele_qsource)
+        write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
+    end if
+
+    if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
+        ldamptt_mode = ffdev_topology_damptt_mode_from_string(string)
+        write(DEV_OUT,50) ffdev_topology_damptt_mode_to_string(ldamptt_mode)
+        if( exec ) then
+            damptt_mode = ldamptt_mode
+            changed = .true.
+        end if
+    else
+        write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
+    end if
+
+    if( exec .and. changed ) then
+        call ffdev_parameters_reinit
+        call ffdev_targetset_reinit_nbparams
     end if
 
     ! programmatic NB change (order dependent)
@@ -559,7 +579,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
                 else
                     call ffdev_utils_exit(DEV_ERR,1,'Missing nb_mode mode!')
                 end if
-            case('qsource')
+            case('dampbj_mode','damptt_mode')
                 ! ignore ..., processed earlier
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported nbsetup action '//trim(string)//'!')
@@ -568,10 +588,12 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end do
 
  10 format('=== [nbsetup] ==================================================================')
- 25 format('NB mode (nb_mode)            = ',A39,' (current)')
- 35 format('Combining rules (comb_rules) = ',A39,' (current)')
- 40 format('Source of charges (qsource)  = ',A39)
- 45 format('Source of charges (qsource)  = ',A39,' (current)')
+ 25 format('NB mode (nb_mode)             = ',A38,' (current)')
+ 35 format('Combining rules (comb_rules)  = ',A38,' (current)')
+ 40 format('BJ damping mode (dampbj_mode) = ',A38)
+ 45 format('BJ damping mode (dampbj_mode) = ',A38,' (current)')
+ 50 format('TT damping mode (damptt_mode) = ',A38)
+ 55 format('TT damping mode (damptt_mode) = ',A38,' (current)')
 
 end subroutine ffdev_parameters_ctrl_nbsetup
 

@@ -61,6 +61,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
         end select
         write(DEV_OUT,25) NOptSteps
         write(DEV_OUT,75) OutSamples
+        write(DEV_OUT,85) IntSamples
         write(DEV_OUT,55) MinErrorChange
 
         select case(OptimizationMethod)
@@ -119,6 +120,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
     else
         write(DEV_OUT,25) NOptSteps
     end if
+!----------------------
     if( prmfile_get_integer_by_key(fin,'outsamples', OutSamples)) then
         write(DEV_OUT,70) OutSamples
         if( OutSamples .lt. 0 ) then
@@ -128,13 +130,23 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
         write(DEV_OUT,75) OutSamples
     end if
     if( OutSamples .eq. 0 ) OutSamples = -1
-
+!----------------------
+    if( prmfile_get_integer_by_key(fin,'intsamples', IntSamples)) then
+        write(DEV_OUT,80) IntSamples
+        if( IntSamples .lt. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'intsamples has to be grater than or equal zero!')
+        end if
+    else
+        write(DEV_OUT,85) IntSamples
+    end if
+    if( IntSamples .eq. 0 ) IntSamples = -1
+!----------------------
     if( prmfile_get_real8_by_key(fin,'minerrorchange', MinErrorChange)) then
         write(DEV_OUT,50) MinErrorChange
     else
         write(DEV_OUT,55) MinErrorChange
     end if
-
+!----------------------
     select case(OptimizationMethod)
         case(MINIMIZATION_STEEPEST_DESCENT,MINIMIZATION_LBFGS)
             if( prmfile_get_real8_by_key(fin,'maxrmsg', MaxRMSG)) then
@@ -164,7 +176,7 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unknown minimization method!')
     end select
-
+!----------------------
     call read_opt_method(fin)
 
     return
@@ -183,6 +195,8 @@ subroutine ffdev_ffopt_ctrl_minimize(fin)
  65  format ('Print final gradient (printfinalgrad)  = ',a12,'                  (default)')
  70  format ('Opt summary samples (outsamples)       = ',i12)
  75  format ('Opt summary samples (outsamples)       = ',i12,'                  (default)')
+ 80  format ('Intermed. summlog samples (intsamples) = ',i12)
+ 85  format ('Intermed. summlog samples (intsamples) = ',i12,'                  (default)')
 
 end subroutine ffdev_ffopt_ctrl_minimize
 

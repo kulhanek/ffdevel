@@ -51,6 +51,7 @@ subroutine ffdev_topology_init(top)
     top%sapt_size = 0
     top%nsymm_classes = 0
     top%total_charge = 0
+    top%nb_params_update = .true.
 
 end subroutine ffdev_topology_init
 
@@ -523,6 +524,17 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_list(i)%dt .lt. 0) .or. (top%nb_list(i)%dt .gt. top%ndihedral_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Dihedral type out-of-legal range in [nb_list] section!')
         end if
+
+       top%nb_list(i)%crgij = 0.0d0
+       top%nb_list(i)%pa    = 0.0d0
+       top%nb_list(i)%pb    = 0.0d0
+       top%nb_list(i)%c6    = 0.0d0
+       top%nb_list(i)%c8    = 0.0d0
+       top%nb_list(i)%c10   = 0.0d0
+       top%nb_list(i)%rc6   = 0.0d0
+       top%nb_list(i)%rc8   = 0.0d0
+       top%nb_list(i)%rc10  = 0.0d0
+       top%nb_list(i)%tb    = 0.0d0
     end do
 
     ! read NB types ------------------------------------
@@ -543,6 +555,7 @@ subroutine ffdev_topology_load(top,name)
         top%nb_types(i)%pa = 0.0d0
         top%nb_types(i)%pb = 0.0d0
         top%nb_types(i)%rc = 0.0d0
+        top%nb_types(i)%tb = 0.0d0
 
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
@@ -571,6 +584,9 @@ subroutine ffdev_topology_load(top,name)
 
     ! call init nbi and nbj in nb_pairs
     call ffdev_topology_init_nbij(top)
+
+    ! we need to update nb parameters before they are used
+    top%nb_params_update = .true.
 
     return
 
@@ -1566,10 +1582,10 @@ subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
 end subroutine ffdev_topology_gen_sapt_list
 
 ! ==============================================================================
-! subroutine ffdev_topology_qsource_to_string
+! subroutine ffdev_topology_damptt_mode_to_string
 ! ==============================================================================
 
-character(80) function ffdev_topology_qsource_to_string(nb_mode)
+character(80) function ffdev_topology_damptt_mode_to_string(nb_mode)
 
     use ffdev_utils
 
@@ -1578,15 +1594,84 @@ character(80) function ffdev_topology_qsource_to_string(nb_mode)
     ! --------------------------------------------------------------------------
 
     select case(nb_mode)
-        case(NB_ELE_QTOP)
-            ffdev_topology_qsource_to_string = 'QTOP - topology charges'
-        case(NB_ELE_QGEO)
-            ffdev_topology_qsource_to_string = 'QGEO - geometry charges'
+        case(DAMP_TT_COUPLED)
+            ffdev_topology_damptt_mode_to_string = 'COUPLED - TB coupled by damp_pb to PB'
+        case(DAMP_TT_FREEOPT)
+            ffdev_topology_damptt_mode_to_string = 'FREEOPT - Use optimized TB per type'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_qsource_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_damptt_mode_to_string!')
     end select
 
-end function ffdev_topology_qsource_to_string
+end function ffdev_topology_damptt_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_damptt_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_damptt_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('COUPLED')
+            ffdev_topology_damptt_mode_from_string = DAMP_TT_COUPLED
+        case('FREEOPT')
+            ffdev_topology_damptt_mode_from_string = DAMP_TT_FREEOPT
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_damptt_mode_from_string!')
+    end select
+
+end function ffdev_topology_damptt_mode_from_string
+
+! ==============================================================================
+! subroutine ffdev_topology_dampbj_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_dampbj_mode_to_string(nb_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: nb_mode
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(DAMP_BJ_DRC)
+            ffdev_topology_dampbj_mode_to_string = 'DRC - Use Rc from dispersion data'
+        case(DAMP_BJ_ORC)
+            ffdev_topology_dampbj_mode_to_string = 'ORC - Use optimized Rc per type'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_dampbj_mode_to_string!')
+    end select
+
+end function ffdev_topology_dampbj_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_dampbj_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_dampbj_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('DRC')
+            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_DRC
+        case('ORC')
+            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ORC
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_dampbj_mode_from_string!')
+    end select
+
+end function ffdev_topology_dampbj_mode_from_string
 
 ! ==============================================================================
 ! subroutine ffdev_topology_cx_source_from_string
@@ -1691,29 +1776,6 @@ character(80) function ffdev_topology_rcsource_to_string(nb_mode)
     end select
 
 end function ffdev_topology_rcsource_to_string
-
-! ==============================================================================
-! subroutine ffdev_topology_qsource_from_string
-! ==============================================================================
-
-integer function ffdev_topology_qsource_from_string(string)
-
-    use ffdev_utils
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('QTOP')
-            ffdev_topology_qsource_from_string = NB_ELE_QTOP
-        case('QGEO')
-            ffdev_topology_qsource_from_string = NB_ELE_QGEO
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_qsource_from_string!')
-    end select
-
-end function ffdev_topology_qsource_from_string
 
 ! ==============================================================================
 ! subroutine ffdev_topology_nb_mode_to_string
@@ -1833,10 +1895,10 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
 
-        case(COMB_RULE_EXPV1)
-            ffdev_topology_comb_rules_to_string = 'EXPV1 (Pauli repulsion, v1)'
-        case(COMB_RULE_EXPV2)
-            ffdev_topology_comb_rules_to_string = 'EXPV2 (Pauli repulsion, v2)'
+        case(COMB_RULE_CB1)
+            ffdev_topology_comb_rules_to_string = 'CB1'
+        case(COMB_RULE_CB2)
+            ffdev_topology_comb_rules_to_string = 'CB2'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
@@ -1869,10 +1931,10 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
         case('FB')
             ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
 
-        case('EXPV1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV1
-        case('EXPV2')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_EXPV2
+        case('CB1')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_CB1
+        case('CB2')
+            ffdev_topology_get_comb_rules_from_string = COMB_RULE_CB2
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
@@ -1897,9 +1959,9 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
         case(NB_VDW_LJ)
             call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
         case(NB_VDW_12_DISPBJ)
-            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+            call ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+            call ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
     end select
@@ -1964,10 +2026,10 @@ subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
 end subroutine ffdev_topology_apply_NB_comb_rules_LJ
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! subroutine ffdev_topology_apply_NB_comb_rules_CBn
 ! ==============================================================================
 
-subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
+subroutine ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
 
     use ffdev_utils
 
@@ -1979,6 +2041,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
     real(DEVDP)     :: paii,paij,pajj
     real(DEVDP)     :: pbii,pbij,pbjj
     real(DEVDP)     :: rcii,rcij,rcjj
+    real(DEVDP)     :: tbii,tbij,tbjj
     ! --------------------------------------------------------------------------
 
     ! apply combining rules
@@ -1991,22 +2054,27 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
 
             paii = top%nb_types(nbii)%pa
             pbii = top%nb_types(nbii)%pb
+            rcii = top%nb_types(nbii)%rc
+            tbii = top%nb_types(nbii)%tb
 
             pajj = top%nb_types(nbjj)%pa
             pbjj = top%nb_types(nbjj)%pb
-
-            rcii = top%nb_types(nbjj)%rc
             rcjj = top%nb_types(nbjj)%rc
+            tbjj = top%nb_types(nbjj)%tb
 
             select case(comb_rules)
-                case(COMB_RULE_EXPV1)
-                    paij = (paii+pajj)*0.5d0
-                    pbij = (pbii+pbjj)*0.5d0
-                    rcij = (rcii+rcjj)*0.5d0
-                case(COMB_RULE_EXPV2)
-                    paij = (paii+pajj)*0.5d0
-                    pbij = 2.0d0*pbii*pbjj/(pbii+pbjj)
-                    rcij = (rcii+rcjj)*0.5d0
+
+                case(COMB_RULE_CB1)
+                    paij = 0.5d0 * (paii+pajj)
+                    pbij = 0.5d0 * (pbii+pbjj)
+                    rcij = 0.5d0 * (rcii+rcjj)
+
+                case(COMB_RULE_CB2)
+                    paij = 0.5d0 * (paii+pajj)
+                    pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    rcij = 0.5d0 * (rcii+rcjj)
+                    tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
+
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXP!')
             end select
@@ -2014,11 +2082,158 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXP(top,comb_rules)
             top%nb_types(i)%pa = paij
             top%nb_types(i)%pb = pbij
             top%nb_types(i)%rc = rcij
+            top%nb_types(i)%tb = tbij
 
         end if
     end do
 
-end subroutine ffdev_topology_apply_NB_comb_rules_EXP
+end subroutine ffdev_topology_apply_NB_comb_rules_CBn
+
+!===============================================================================
+! subroutine ffdev_topology_update_nb_params
+!===============================================================================
+
+subroutine ffdev_topology_update_nb_params(top)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: ip
+    ! --------------------------------------------------------------------------
+
+    ! write(*,*) 'NB updated'
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            ! nothing to do
+        case(NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPTT)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_topology_update_nb_params!')
+            end if
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_params!')
+    end select
+
+    ! regular NB list
+    do ip=1,top%nb_size
+        call ffdev_topology_update_nbpair_prms(top,top%nb_list(ip))
+    end do
+
+    ! SAPT
+    do ip=1,top%sapt_size
+        call ffdev_topology_update_nbpair_prms(top,top%sapt_list(ip))
+    end do
+
+    ! turn off the update
+    top%nb_params_update = .false.
+
+end subroutine ffdev_topology_update_nb_params
+
+!===============================================================================
+! subroutine ffdev_topology_update_nb_params
+!===============================================================================
+
+subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(NB_PAIR)   :: nbpair
+    ! --------------------------------------------
+    integer         :: i,j,nbt,agti,agtj
+    real(DEVDP)     :: rc
+    ! --------------------------------------------------------------------------
+
+    nbpair%crgij = 0.0d0
+    nbpair%pa    = 0.0d0
+    nbpair%pb    = 0.0d0
+    nbpair%c6    = 0.0d0
+    nbpair%c8    = 0.0d0
+    nbpair%c10   = 0.0d0
+    nbpair%rc6   = 0.0d0
+    nbpair%rc8   = 0.0d0
+    nbpair%rc10  = 0.0d0
+    nbpair%tb    = 0.0d0
+
+    i   = nbpair%ai
+    j   = nbpair%aj
+    nbt = nbpair%nbt
+
+    ! electrostatics
+    ! FIXME - better value
+    nbpair%crgij = 332.05221729d0 * top%atoms(i)%charge * top%atoms(j)%charge * ele_qscale * ele_qscale
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            ! LJ parameters
+            nbpair%pa =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
+            nbpair%c6 = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+
+        case(NB_VDW_12_DISPBJ)
+            ! Pauli repulsion
+            nbpair%pa  = exp(top%nb_types(nbt)%pa)
+            nbpair%pb  = top%nb_types(nbt)%pb
+
+            ! dispersion coefficients
+            agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+            agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+            nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
+            nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
+            nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+
+            ! RC for BJ damping
+            rc  = 0.0d0
+            select case(dampbj_mode)
+                case(DAMP_BJ_DRC)
+                    rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
+                case(DAMP_BJ_ORC)
+                    rc = top%nb_types(nbt)%rc
+                case default
+                    if( .not. disp_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
+                    end if
+            end select
+
+            nbpair%rc6  = rc**6
+            nbpair%rc8  = rc**8
+            nbpair%rc10 = rc**10
+
+        case(NB_VDW_EXP_DISPTT)
+            ! Pauli repulsion
+            nbpair%pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+            nbpair%pb  = top%nb_types(nbt)%pb
+
+            ! dispersion coefficients
+            agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+            agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+            nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
+            nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
+            nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+
+            ! TT damping
+            select case(damptt_mode)
+                case(DAMP_TT_COUPLED)
+                    nbpair%tb  = damp_pb * nbpair%pb
+                case(DAMP_TT_FREEOPT)
+                    nbpair%tb  = nbpair%tb
+                case default
+                    if( .not. disp_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_update_nbpair_prms!')
+                    end if
+            end select
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')
+    end select
+
+end subroutine ffdev_topology_update_nbpair_prms
 
 ! ------------------------------------------------------------------------------
 

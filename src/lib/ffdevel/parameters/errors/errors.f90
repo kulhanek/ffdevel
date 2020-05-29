@@ -49,7 +49,7 @@ subroutine ffdev_errors_init_all()
 
     ! clear what should be calculated
     errors_calc_ene     = .false.
-    errors_calc_sapt   = .false.
+    errors_calc_sapt    = .false.
     errors_calc_grad    = .false.
     errors_calc_hess    = .false.
 
@@ -420,7 +420,7 @@ end subroutine ffdev_errors_ffopt_results
 ! subroutine ffdev_errors_summary
 ! ==============================================================================
 
-subroutine ffdev_errors_summary(final)
+subroutine ffdev_errors_summary(logmode)
 
     use ffdev_targetset_dat
     use ffdev_geometry
@@ -460,7 +460,8 @@ subroutine ffdev_errors_summary(final)
     use ffdev_err_zerograd
 
     implicit none
-    logical     :: final, printme, printsum
+    integer     :: logmode
+    logical     :: printme, printsum
     integer     :: i,j
     ! --------------------------------------------------------------------------
 
@@ -474,17 +475,28 @@ subroutine ffdev_errors_summary(final)
 
     write(DEV_OUT,*)
     write(DEV_OUT,1)
-    if( final ) then
-        call ffdev_utils_heading(DEV_OUT,'Final Error Statistics',':')
-    else
-        call ffdev_utils_heading(DEV_OUT,'Initial Error Statistics',':')
-    end if
+    select case(logmode)
+        case(SMMLOG_INITIAL)
+            call ffdev_utils_heading(DEV_OUT,'Initial Error Statistics',':')
+        case(SMMLOG_INTERMEDIATE)
+            call ffdev_utils_heading(DEV_OUT,'Intermediate Error Statistics',':')
+        case(SMMLOG_FINAL)
+            call ffdev_utils_heading(DEV_OUT,'Final Error Statistics',':')
+    end select
     write(DEV_OUT,1)
 
     ! individual summaries
-    call ffdev_err_energy_summary
-    call ffdev_err_sapt_summary
-    call ffdev_err_zerograd_summary
+    if( PrintEnergyErrorSummary ) then
+        call ffdev_err_energy_summary
+    end if
+
+    if( PrintSAPTErrorSummary ) then
+        call ffdev_err_sapt_summary
+    end if
+
+    if( PrintZeroGradErrorSummary ) then
+        call ffdev_err_zerograd_summary
+    end if
 
     ! summary per sets
     if( PrintRMSDErrorSummary ) then

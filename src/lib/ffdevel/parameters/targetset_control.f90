@@ -219,6 +219,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         end if
 
+        if( sets(i)%nrefs .ge. 2 ) then
+            ! gen SAPT list
+            call ffdev_topology_gen_sapt_list(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
+        end if
+
         shift2zero = .false.
         if( sets(i)%nrefs .eq. 0 ) then
             if( .not. prmfile_get_logical_by_key(fin,'shift2zero',shift2zero) ) then

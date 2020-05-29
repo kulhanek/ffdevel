@@ -51,8 +51,6 @@ subroutine ffdev_energy_all(top,geo,skipnb)
         calcnb = .not. skipnb
     end if
 
-    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
-
     ! reset energy
     geo%bond_ene = 0.0d0
     geo%angle_ene = 0.0d0
@@ -70,6 +68,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
+    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
+
     ! bonded terms
     if( top%probe_size .eq. 0 ) then
         call ffdev_energy_bonds(top,geo)
@@ -80,13 +80,14 @@ subroutine ffdev_energy_all(top,geo,skipnb)
 
     if( calcnb ) then
         call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
+
+        if( top%nb_params_update ) then
+            call ffdev_topology_update_nb_params(top)
+        end if
+
         select case(nb_mode)
             case(NB_VDW_LJ)
-                if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
-                    call ffdev_energy_nb_LJ_qgeo(top,geo)
-                else
-                    call ffdev_energy_nb_LJ_qtop(top,geo)
-                end if
+                call ffdev_energy_nb_LJ(top,geo)
 
             case(NB_VDW_12_DISPBJ)
                 call ffdev_energy_nb_12_DISPBJ(top,geo)
@@ -95,8 +96,10 @@ subroutine ffdev_energy_all(top,geo,skipnb)
                 call ffdev_energy_nb_EXP_DISPTT(top,geo)
 
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt! (' // &
+                                ffdev_topology_nb_mode_to_string(nb_mode) // ')')
         end select
+
         call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     end if
 
@@ -138,6 +141,10 @@ subroutine ffdev_energy_sapt(top,geo)
 
     call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
     call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
+
+    if( top%nb_params_update ) then
+        call ffdev_topology_update_nb_params(top)
+    end if
 
     select case(nb_mode)
         case(NB_VDW_LJ)

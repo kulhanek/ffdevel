@@ -52,6 +52,12 @@ end type FFERROR_TYPE
 type(FFERROR_TYPE)      :: FFError
 
 ! ------------------------------------------------------------------------------
+
+integer, parameter      :: SMMLOG_INITIAL       = 1
+integer, parameter      :: SMMLOG_INTERMEDIATE  = 2
+integer, parameter      :: SMMLOG_FINAL         = 3
+
+! ------------------------------------------------------------------------------
 ! internal setup
 logical                 :: errors_calc_ene      = .false.
 logical                 :: errors_calc_sapt    = .false.

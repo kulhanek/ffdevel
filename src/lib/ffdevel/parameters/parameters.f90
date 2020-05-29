@@ -76,7 +76,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 5*sets(i)%top%nnb_types       ! 5 NB: eps, r0, pa, pb, rc
+        maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 6 NB: eps, r0, pa, pb, rc, tb
     end do
     maxnparams = maxnparams + 7 ! ele_sq/dips_s6/disp_s8/disp_s10/disp_fa/disp_fb/disp_fc
 
@@ -127,7 +127,7 @@ subroutine ffdev_parameters_reinit()
     implicit none
     integer     :: i, j, k, parmid, ai, refid
     logical     :: use_vdw_eps, use_vdw_r0
-    logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc
+    logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc, use_vdw_tb
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10
     ! --------------------------------------------------------------------------
@@ -433,6 +433,7 @@ subroutine ffdev_parameters_reinit()
     use_vdw_pa      = .false.
     use_vdw_pb      = .false.
     use_vdw_rc      = .false.
+    use_vdw_tb      = .false.
 
     use_ele_sq      = .true.
 
@@ -452,10 +453,18 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_12_DISPBJ)
             use_vdw_pa      = .true.
-            use_vdw_rc      = .true.
 
-            use_damp_fa     = .true.
-            use_damp_fb     = .true.
+           select case(dampbj_mode)
+                case(DAMP_BJ_DRC)
+                    use_damp_fa     = .true.
+                    use_damp_fb     = .true.
+                case(DAMP_BJ_ORC)
+                    use_vdw_rc      = .true.
+                case default
+                    if( .not. disp_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
+                    end if
+            end select
 
             use_disp_s6     = .true.
             use_disp_s8     = .true.
@@ -465,7 +474,16 @@ subroutine ffdev_parameters_reinit()
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
 
-            use_damp_pb     = .true.
+            select case(damptt_mode)
+                case(DAMP_TT_COUPLED)
+                    use_damp_pb     = .true.
+                case(DAMP_TT_FREEOPT)
+                    use_vdw_tb      = .true.
+                case default
+                    if( .not. disp_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
+                    end if
+            end select
 
             use_disp_s6     = .true.
             use_disp_s8     = .true.
@@ -591,6 +609,33 @@ subroutine ffdev_parameters_reinit()
                     nparams = nparams + 1
                     params(nparams)%value = sets(i)%top%nb_types(j)%RC
                     params(nparams)%realm = REALM_VDW_RC
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_vdw_tb ) then
+        ! =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_TB)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    ! add new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%TB
+                    params(nparams)%realm = REALM_VDW_TB
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -858,7 +903,7 @@ integer function find_parameter(top,id,pn,realm)
         case(REALM_VDW_EPS,REALM_VDW_R0)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
-        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
+        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
         case default
@@ -900,7 +945,7 @@ integer function find_parameter(top,id,pn,realm)
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -970,7 +1015,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter_by_ids = i
@@ -1797,6 +1842,8 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_VDW_PB
         case('vdw_rc')
             ffdev_parameters_get_realmid = REALM_VDW_RC
+        case('vdw_tb')
+            ffdev_parameters_get_realmid = REALM_VDW_TB
 
         case('ele_sq')
             ffdev_parameters_get_realmid = REALM_ELE_SQ
@@ -1872,6 +1919,8 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'vdw_pb'
         case(REALM_VDW_RC)
             ffdev_parameters_get_realm_name = 'vdw_rc'
+        case(REALM_VDW_TB)
+            ffdev_parameters_get_realm_name = 'vdw_tb'
 
         case(REALM_ELE_SQ)
             ffdev_parameters_get_realm_name = 'ele_sq'
@@ -1928,7 +1977,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ffdev_parameters_get_realm_scaling = DEV_R2D
         case(REALM_VDW_EPS,REALM_VDW_R0)
             ! nothing to do
-        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
+        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
             ! nothing to do
         case(REALM_ELE_SQ,REALM_PAC)
             ! nothing to do
@@ -2332,6 +2381,13 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+            case(REALM_VDW_TB)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%TB = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                    end if
+                end do
 
         ! single parameters
             case(REALM_ELE_SQ)
@@ -2416,6 +2472,11 @@ subroutine ffdev_parameters_to_tops
         end do
     end if
 
+    ! mark NB params for update
+    do i=1,nsets
+        sets(i)%top%nb_params_update = .true.
+    end do
+
 end subroutine ffdev_parameters_to_tops
 
 ! ==============================================================================
@@ -2493,6 +2554,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinVdwPB
         case(REALM_VDW_RC)
             ffdev_params_get_lower_bound = MinVdwRC
+        case(REALM_VDW_TB)
+            ffdev_params_get_lower_bound = MinVdwTB
 
         case(REALM_ELE_SQ)
             ffdev_params_get_lower_bound = MinEleSQ
@@ -2595,6 +2658,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxVdwPB
         case(REALM_VDW_RC)
             ffdev_params_get_upper_bound = MaxVdwRC
+        case(REALM_VDW_TB)
+            ffdev_params_get_upper_bound = MaxVdwTB
 
         case(REALM_ELE_SQ)
             ffdev_params_get_upper_bound = MaxEleSQ

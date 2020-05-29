@@ -41,7 +41,8 @@ real(DEVDP),allocatable :: FFParamsGrd(:)
 ! === [minimization] ===========================================================
 integer         :: OptimizationMethod
 integer         :: NOptSteps            ! max number of steps
-integer         :: OutSamples           ! how often write results
+integer         :: OutSamples           ! how often to write results
+integer         :: IntSamples           ! how often to write intermediate sumlogs
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
 real(DEVDP)     :: MaxRMSG

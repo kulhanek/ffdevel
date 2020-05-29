@@ -83,14 +83,15 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
     if( calcnb ) then
         call ffdev_timers_start_timer(FFDEV_POT_NB_GRADIENT_TIMER)
+
+        if( top%nb_params_update ) then
+            call ffdev_topology_update_nb_params(top)
+        end if
+
         ! non-bonded terms
         select case(nb_mode)
             case(NB_VDW_LJ)
-                if( (geo%sup_chrg_loaded .eqv. .true.) .and. (ele_qsource .eq. NB_ELE_QGEO) ) then
-                    call ffdev_gradient_nb_lj_qgeo(top,geo)
-                else
-                    call ffdev_gradient_nb_lj_qtop(top,geo)
-                end if
+                call ffdev_gradient_nb_LJ(top,geo)
 
             case(NB_VDW_12_DISPBJ)
                 call ffdev_gradient_nb_12_DISPBJ(top,geo)
