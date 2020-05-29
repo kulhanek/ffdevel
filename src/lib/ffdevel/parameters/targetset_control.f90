@@ -718,7 +718,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 155  format ('Save error summary (savesumlogs)          = ',a12,'               (default)')
 
 160  format ('Save error summary path (savesumlogspath) = ',a25)
-165  format ('Save error summary path (savesumlogspath) = ',a25,'     (default)')
+165  format ('Save error summary path (savesumlogspath) = ',a25,'  (default)')
 
 end subroutine ffdev_targetset_ctrl_setup
 
