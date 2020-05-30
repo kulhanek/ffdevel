@@ -145,6 +145,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,105) Verbosity
     end if
 
+    if( GlbRngSeed .le. 0 ) then
+        write(DEV_OUT,*)
+        call system_clock(GlbRngSeed)
+        write(DEV_OUT,96)  GlbRngSeed
+    end if
+
     ! setup random number generator
     call random_seed(GlbRngSeed)
     call ffdev_ffopt_setup_rng(GlbRngSeed)
@@ -165,6 +171,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
  85  format ('Reset all setup (resetallsetup)          = ',a12,'                (default)')
  90  format ('Random number generator seed (seed)      = ',I12)
  95  format ('Random number generator seed (seed)      = ',I12,'                (default)')
+ 96  format ('Random number generator seed (seed)      = ',I12,'      (from system clock)')
 100  format ('Verbosity (verbosity)                    = ',I12)
 105  format ('Verbosity (verbosity)                    = ',I12,'                (default)')
 
@@ -1030,41 +1037,11 @@ subroutine ffdev_parameters_ctrl_realms(fin)
         select case(key)
             case('enable')
                 read(string,*,err=556,end=556) key, realm
-                select case(trim(realm))
-                    case('pauli_a')
-                        call change_realms('pauli_a1',.true.,string,nchanged)
-                        call change_realms('pauli_a2',.true.,string,nchanged)
-                        call change_realms('pauli_a3',.true.,string,nchanged)
-                    case('pauli_b')
-                        call change_realms('pauli_b1',.true.,string,nchanged)
-                        call change_realms('pauli_b2',.true.,string,nchanged)
-                        call change_realms('pauli_b3',.true.,string,nchanged)
-                    case('pauli_c')
-                        call change_realms('pauli_c1',.true.,string,nchanged)
-                        call change_realms('pauli_c2',.true.,string,nchanged)
-                        call change_realms('pauli_c3',.true.,string,nchanged)
-                    case default
-                        call change_realms(realm,.true.,string,nchanged)
-                end select
+                call change_realms(realm,.true.,string,nchanged)
                 write(DEV_OUT,30) nchanged,trim(string)
             case('disable')
                 read(string,*,err=556,end=556) key, realm
-                select case(trim(realm))
-                    case('pauli_a')
-                        call change_realms('pauli_a1',.false.,string,nchanged)
-                        call change_realms('pauli_a2',.false.,string,nchanged)
-                        call change_realms('pauli_a3',.false.,string,nchanged)
-                    case('pauli_b')
-                        call change_realms('pauli_b1',.false.,string,nchanged)
-                        call change_realms('pauli_b2',.false.,string,nchanged)
-                        call change_realms('pauli_b3',.false.,string,nchanged)
-                    case('pauli_c')
-                        call change_realms('pauli_c1',.false.,string,nchanged)
-                        call change_realms('pauli_c2',.false.,string,nchanged)
-                        call change_realms('pauli_c3',.false.,string,nchanged)
-                    case default
-                        call change_realms(realm,.false.,string,nchanged)
-                end select
+                call change_realms(realm,.false.,string,nchanged)
                 write(DEV_OUT,30) nchanged,trim(string)
             case('randomize')
                 nchanged = 0

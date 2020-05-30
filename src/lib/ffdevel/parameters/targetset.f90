@@ -214,6 +214,8 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
                 case(REALM_VDW_PB)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
+                case(REALM_VDW_TB)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%TB
                 case(REALM_VDW_RC)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%RC
                     ! nothing to be here

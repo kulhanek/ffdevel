@@ -61,10 +61,13 @@ subroutine ffdev_errors_ctrl(fin)
     errors_calc_ene     = .false.
     errors_calc_sapt   = .false.
 
-    ! reset setup by external request
-    if( prmfile_open_section(fin,'setdefault') .or. ResetAllSetup ) then
-        ! reset all setup
+    ! reset setup by external request or default setup
+    if( ResetAllSetup ) then
         call ffdev_errors_init_all()
+        write(DEV_OUT,10)
+    else if ( prmfile_open_section(fin,'setdefault') ) then
+        call ffdev_errors_init_all()
+        write(DEV_OUT,20)
     end if
 
     ! read setup
@@ -79,6 +82,9 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
     call ffdev_err_chrgpnl_ctrl(fin)
     call ffdev_err_zerograd_ctrl(fin)
+
+ 10 format('>>> INFO: All errors disabled by default (resetallsetup=on)!')
+ 20 format('>>> INFO: All errors disabled by the explicit request ([setdefault])!')
 
 end subroutine ffdev_errors_ctrl
 
