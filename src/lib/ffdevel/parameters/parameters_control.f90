@@ -509,220 +509,150 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     use ffdev_topology
     use ffdev_topology_dat
     use ffdev_targetset
+    use ffdev_targetset_dat
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
     logical             :: exec
     ! --------------------------------------------
-    logical                     :: rst,changed
+    logical                     :: rst,changed,lcouple_pa_pb_forA
     character(50)               :: key
     character(PRMFILE_MAX_PATH) :: string
+    integer                     :: i
     integer                     :: mode,ldampbj_mode,ldamptt_mode
+    integer                     :: from_nb_mode,lnb_mode
+    integer                     :: lcomb_rules
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'nbsetup') ) then
+        if( nb_mode .eq. NB_VDW_12_DISPBJ ) then
+            write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
+        end if
+        if( nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+            write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
+            write(DEV_OUT,65) prmfile_onoff(couple_pa_pb_forA)
+        end if
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
-        write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
-        write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
         return
     end if
 
     changed = .false.
 
-    if( prmfile_get_string_by_key(fin,'dampbj_mode', string)) then
-        ldampbj_mode = ffdev_topology_dampbj_mode_from_string(string)
-        write(DEV_OUT,40) ffdev_topology_dampbj_mode_to_string(ldampbj_mode)
+! ---------------------------
+    if( prmfile_get_string_by_key(fin,'nb_mode', string)) then
+        lnb_mode = ffdev_topology_nb_mode_from_string(string)
+        write(DEV_OUT,20) ffdev_topology_nb_mode_to_string(lnb_mode)
         if( exec ) then
-            dampbj_mode = ldampbj_mode
+            from_nb_mode = nb_mode
+            nb_mode = lnb_mode
             changed = .true.
         end if
     else
-        write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
+        write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
     end if
 
-    if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
-        ldamptt_mode = ffdev_topology_damptt_mode_from_string(string)
-        write(DEV_OUT,50) ffdev_topology_damptt_mode_to_string(ldamptt_mode)
+! ---------------------------
+    if( prmfile_get_string_by_key(fin,'comb_rules', string)) then
+        lcomb_rules = ffdev_topology_comb_rules_from_string(string)
+        write(DEV_OUT,20) ffdev_topology_comb_rules_to_string(lcomb_rules)
         if( exec ) then
-            damptt_mode = ldamptt_mode
+            nb_comb_rules = lcomb_rules
             changed = .true.
         end if
     else
-        write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
+        write(DEV_OUT,25) ffdev_topology_comb_rules_to_string(nb_comb_rules)
     end if
 
+! ---------------------------
+    if( nb_mode .eq. NB_VDW_12_DISPBJ .or. lnb_mode .eq. NB_VDW_12_DISPBJ ) then
+        if( prmfile_get_string_by_key(fin,'dampbj_mode', string)) then
+            ldampbj_mode = ffdev_topology_dampbj_mode_from_string(string)
+            write(DEV_OUT,40) ffdev_topology_dampbj_mode_to_string(ldampbj_mode)
+            if( exec ) then
+                dampbj_mode = ldampbj_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
+        end if
+    end if
+
+! ---------------------------
+    if( nb_mode .eq. NB_VDW_EXP_DISPTT .or. lnb_mode .eq. NB_VDW_EXP_DISPTT ) then
+        if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
+            ldamptt_mode = ffdev_topology_damptt_mode_from_string(string)
+            write(DEV_OUT,50) ffdev_topology_damptt_mode_to_string(ldamptt_mode)
+            if( exec ) then
+                damptt_mode = ldamptt_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
+        end if
+        if( prmfile_get_logical_by_key(fin,'papb_as_A', lcouple_pa_pb_forA)) then
+            if( exec ) then
+                write(DEV_OUT,60) prmfile_onoff(lcouple_pa_pb_forA)
+                couple_pa_pb_forA = lcouple_pa_pb_forA
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,65) prmfile_onoff(couple_pa_pb_forA)
+        end if
+    end if
+
+! ---------------------------
     if( exec .and. changed ) then
+        do i=1,nsets
+            if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+                write(DEV_OUT,*)
+                write(DEV_OUT,15) i
+                write(DEV_OUT,*)
+                call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
+                call ffdev_topology_info_types(sets(i)%top,1)
+            end if
+
+            ! switch mode
+            call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,nb_mode)
+
+            ! switch comb rules
+            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
+
+            if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
+                ! new set of parameters
+                write(DEV_OUT,*)
+                call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
+                call ffdev_topology_info_types(sets(i)%top,2)
+            end if
+        end do
+
         call ffdev_parameters_reinit
         call ffdev_targetset_reinit_nbparams
     end if
 
-    ! programmatic NB change (order dependent)
-
-    rst = prmfile_first_line(fin)
-    do while( rst )
-        rst = prmfile_get_field_on_line(fin,key)
-
-        select case(trim(key))
-            case('comb_rules')
-                if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_ERR,1,'Missing comb_rules rule!')
-                end if
-            case('nb_mode')
-                if( prmfile_get_field_on_line(fin,string) ) then
-                    call ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
-                else
-                    call ffdev_utils_exit(DEV_ERR,1,'Missing nb_mode mode!')
-                end if
-            case('dampbj_mode','damptt_mode')
-                ! ignore ..., processed earlier
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nbsetup action '//trim(string)//'!')
-        end select
-        rst = prmfile_next_line(fin)
-    end do
-
  10 format('=== [nbsetup] ==================================================================')
- 25 format('NB mode (nb_mode)             = ',A38,' (current)')
- 35 format('Combining rules (comb_rules)  = ',A38,' (current)')
- 40 format('BJ damping mode (dampbj_mode) = ',A38)
- 45 format('BJ damping mode (dampbj_mode) = ',A38,' (current)')
- 50 format('TT damping mode (damptt_mode) = ',A38)
- 55 format('TT damping mode (damptt_mode) = ',A38,' (current)')
+
+ 20 format('New NB mode (nb_mode)            = ',A)
+ 25 format('NB mode (nb_mode)                = ',A35,' (current)')
+
+ 30 format('New combining rules (comb_rules) = ',A)
+ 35 format('Combining rules (comb_rules)     = ',A35,' (current)')
+
+ 40 format('BJ damping mode (dampbj_mode)    = ',A)
+ 45 format('BJ damping mode (dampbj_mode)    = ',A35,' (current)')
+
+ 50 format('TT damping mode (damptt_mode)    = ',A)
+ 55 format('TT damping mode (damptt_mode)    = ',A35,' (current)')
+
+ 60 format('PA*PB as A (papb_as_A)           = ',A)
+ 65 format('PA*PB as A (papb_as_A)           = ',A35,' (current)')
+
+ 15 format('=== SET ',I2.2)
 
 end subroutine ffdev_parameters_ctrl_nbsetup
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbmanip_comb_rules(string,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,comb_rules
-    ! --------------------------------------------------------------------------
-
-    comb_rules = ffdev_topology_get_comb_rules_from_string(string)
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'NB combining rules', '%')
-    end if
-
-    write(DEV_OUT,10)  ffdev_topology_comb_rules_to_string(comb_rules)
-
-    if( .not. exec ) return ! do not execute
-
-    do i=1,nsets
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! remix parameters
-        call ffdev_topology_apply_NB_comb_rules(sets(i)%top,comb_rules)
-
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! update nb parameters
-    nb_comb_rules = comb_rules
-    call ffdev_targetset_reinit_nbparams
-
-10 format('New combining rules (comb_rules) = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_parameters_ctrl_nbmanip_comb_rules
-
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
-! ==============================================================================
-
-subroutine ffdev_parameters_ctrl_nbmanip_nb_mode(string,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_targetset
-    use ffdev_topology_dat
-    use prmfile
-    use ffdev_utils
-
-    implicit none
-    character(PRMFILE_MAX_PATH) :: string
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: i,from_nb_mode,to_nb_mode
-    ! --------------------------------------------------------------------------
-
-    from_nb_mode = nb_mode
-    to_nb_mode = ffdev_topology_nb_mode_from_string(string)
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'NB mode', '%')
-    end if
-
-    write(DEV_OUT,10)  ffdev_topology_nb_mode_to_string(to_nb_mode)
-
-    if( .not. exec ) return ! do not execute
-
-    do i=1,nsets
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,1)
-        end if
-
-        ! switch nb mode
-        call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
-
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end if
-    end do
-
-    ! set nb_mode
-    nb_mode = to_nb_mode
-
-    ! update nb parameters
-    call ffdev_parameters_reinit
-    call ffdev_targetset_reinit_nbparams
-
-10 format('New NB mode (nb_mode)        = ',A)
-20 format('=== SET ',I2.2)
-
-end subroutine ffdev_parameters_ctrl_nbmanip_nb_mode
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbload

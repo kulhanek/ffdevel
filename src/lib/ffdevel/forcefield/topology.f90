@@ -1448,10 +1448,10 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
     ip = 1
     do i=1,top%natoms - top%probe_size
         do j=top%natoms - top%probe_size+1,top%natoms
-            top%nb_list(ip)%ai = i
-            top%nb_list(ip)%aj = j
-            top%nb_list(ip)%dt = 0
-            top%nb_list(ip)%nbt = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+            top%nb_list(ip)%ai    = i
+            top%nb_list(ip)%aj    = j
+            top%nb_list(ip)%dt    = 0
+            top%nb_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
             ip = ip + 1
         end do
     end do
@@ -1522,10 +1522,10 @@ integer function ffdev_topology_z2n(z)
 end function ffdev_topology_z2n
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! subroutine ffdev_topology_gen_sapt_list_for_refs
 ! ==============================================================================
 
-subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
+subroutine ffdev_topology_gen_sapt_list_for_refs(top,nrefs,natomsrefs)
 
     use ffdev_utils
 
@@ -1537,6 +1537,7 @@ subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
     integer         :: m,i,j,ip,alloc_status,istart,iend
     ! --------------------------------------------------------------------------
 
+    if( top%probe_size .gt. 0 ) return        !
     if( top%sapt_size .gt. 0 ) return
 
     ! calculate size of the list
@@ -1558,7 +1559,7 @@ subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
     ! allocate list
     allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
     if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list_for_refs!')
     end if
 
     istart = 1
@@ -1572,14 +1573,54 @@ subroutine ffdev_topology_gen_sapt_list(top,nrefs,natomsrefs)
                 top%sapt_list(ip)%dt    = 0
                 top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
                 top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
-                top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+                top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,j,j)
                 ip = ip + 1
             end do
         end do
         istart = istart + iend
     end do
 
-end subroutine ffdev_topology_gen_sapt_list
+end subroutine ffdev_topology_gen_sapt_list_for_refs
+
+! ==============================================================================
+! subroutine ffdev_topology_gen_sapt_list_for_probes
+! ==============================================================================
+
+subroutine ffdev_topology_gen_sapt_list_for_probes(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: m,i,j,ip,alloc_status,istart,iend
+    ! --------------------------------------------------------------------------
+
+    if( top%probe_size .le. 0 ) return        !
+    if( top%sapt_size .gt. 0 ) return
+
+    ! calculate size of SAPT list
+    top%sapt_size = (top%natoms - top%probe_size)*top%probe_size
+
+    allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
+    if( alloc_status .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list_for_probes!')
+    end if
+
+    ip = 1
+    do i=1,top%natoms - top%probe_size
+        do j=top%natoms - top%probe_size+1,top%natoms
+            top%sapt_list(ip)%ai    = i
+            top%sapt_list(ip)%aj    = j
+            top%sapt_list(ip)%dt    = 0
+            top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+            top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
+            top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,j,j)
+            ip = ip + 1
+        end do
+    end do
+
+end subroutine ffdev_topology_gen_sapt_list_for_probes
 
 ! ==============================================================================
 ! subroutine ffdev_topology_damptt_mode_to_string
@@ -1795,7 +1836,7 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
         case(NB_VDW_12_DISPBJ)
             ffdev_topology_nb_mode_to_string = '12-DISPBJ - 12/dispersion with BJ damping'
         case(NB_VDW_EXP_DISPTT)
-            ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - EXP/Tang–Toennis potential'
+            ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - EXP/Tang–Toennies potential'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -1868,6 +1909,8 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
     end select
 
+    top%nb_params_update = .true.
+
 end subroutine ffdev_topology_switch_nbmode
 
 ! ==============================================================================
@@ -1907,10 +1950,10 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
 end function ffdev_topology_comb_rules_to_string
 
 ! ==============================================================================
-! function ffdev_topology_get_comb_rules_from_string
+! function ffdev_topology_comb_rules_from_string
 ! ==============================================================================
 
-integer function ffdev_topology_get_comb_rules_from_string(string)
+integer function ffdev_topology_comb_rules_from_string(string)
 
     use ffdev_utils
 
@@ -1920,27 +1963,27 @@ integer function ffdev_topology_get_comb_rules_from_string(string)
 
     select case(trim(string))
         case('IN')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_NONE
+            ffdev_topology_comb_rules_from_string = COMB_RULE_NONE
 
         case('LB')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_LB
+            ffdev_topology_comb_rules_from_string = COMB_RULE_LB
         case('WH')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_WH
+            ffdev_topology_comb_rules_from_string = COMB_RULE_WH
         case('KG')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_KG
+            ffdev_topology_comb_rules_from_string = COMB_RULE_KG
         case('FB')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_FB
+            ffdev_topology_comb_rules_from_string = COMB_RULE_FB
 
         case('CB1')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_CB1
+            ffdev_topology_comb_rules_from_string = COMB_RULE_CB1
         case('CB2')
-            ffdev_topology_get_comb_rules_from_string = COMB_RULE_CB2
+            ffdev_topology_comb_rules_from_string = COMB_RULE_CB2
 
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_get_comb_rules_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_comb_rules_from_string!')
     end select
 
-end function ffdev_topology_get_comb_rules_from_string
+end function ffdev_topology_comb_rules_from_string
 
 ! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules
@@ -1965,6 +2008,8 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
     end select
+
+    top%nb_params_update = .true.
 
 end subroutine ffdev_topology_apply_NB_comb_rules
 
@@ -2206,7 +2251,11 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
 
         case(NB_VDW_EXP_DISPTT)
             ! Pauli repulsion
-            nbpair%pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+            if( couple_pa_pb_forA ) then
+                nbpair%pa  = exp(top%nb_types(nbt)%pa * top%nb_types(nbt)%pb)
+            else
+                nbpair%pa  = exp(top%nb_types(nbt)%pa)
+            end if
             nbpair%pb  = top%nb_types(nbt)%pb
 
             ! dispersion coefficients

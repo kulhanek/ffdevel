@@ -41,7 +41,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
     integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints,ai
-    logical                     :: data_avail,rst,shift2zero,stream
+    logical                     :: data_avail,rst,shift2zero,stream,has_sapt
     real(DEVDP)                 :: minenergy,weight
     logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
@@ -217,11 +217,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 end do
             end do
 
-        end if
-
-        if( sets(i)%nrefs .ge. 2 ) then
-            ! gen SAPT list
-            call ffdev_topology_gen_sapt_list(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
         end if
 
         shift2zero = .false.
@@ -526,6 +521,25 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         rst = prmfile_next_section(fin)
 
+    end do
+
+    ! build SAPT list for sets with SAPT data
+    do i=1,nsets
+        has_sapt = .false.
+        do j=1,sets(i)%ngeos
+            if( sets(i)%geo(j)%trg_sapt_loaded ) then
+                has_sapt = .true.
+                exit
+            end if
+        end do
+        if( has_sapt ) then
+            ! gen SAPT list
+            if( sets(i)%top%probe_size .gt. 0 ) then
+                call ffdev_topology_gen_sapt_list_for_probes(sets(i)%top)
+            else if( sets(i)%nrefs .ge. 2 ) then
+                call ffdev_topology_gen_sapt_list_for_refs(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
+            end if
+        end if
     end do
 
   1 format('=== [SET] #',I2.2,' ==================================================================')

@@ -235,61 +235,63 @@ integer                             :: rc_source            = NB_RC_NONE
 ! ==== electrostatics
 ! ==============================================================================
 
-real(DEVDP) :: ele_qscale   = 1.0d0         ! scaling factor for charges
+real(DEVDP) :: ele_qscale                   = 1.0d0         ! scaling factor for charges
 
 ! ==============================================================================
 ! ==== vdW modes
 ! ==============================================================================
 
 ! combining rules for nb_mode
-integer,parameter   :: COMB_RULE_NONE = 05  ! input data
+integer,parameter   :: COMB_RULE_NONE       = 05  ! input data
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_LJ           = 1     ! Lenard-Jones
+integer,parameter   :: NB_VDW_LJ            = 1     ! Lenard-Jones
 ! Lenard-Jones
 ! Form: Enb = eps*( (ro/r)^12 - 2*(r0/r)^6 )
 ! Parameters: eps, r0
 ! Provides: energy, gradient, Hessian, sapt
 
 ! combining rules - applicable for NB_MODE_LJ
-integer,parameter   :: COMB_RULE_LB = 11    ! LB (Lorentz-Berthelot)
-integer,parameter   :: COMB_RULE_WH = 12    ! WH (Waldman-Hagler)
-integer,parameter   :: COMB_RULE_KG = 13    ! KG (Kong)
-integer,parameter   :: COMB_RULE_FB = 14    ! FB (Fender-Halsey-Berthelot)
+integer,parameter   :: COMB_RULE_LB         = 11    ! LB (Lorentz-Berthelot)
+integer,parameter   :: COMB_RULE_WH         = 12    ! WH (Waldman-Hagler)
+integer,parameter   :: COMB_RULE_KG         = 13    ! KG (Kong)
+integer,parameter   :: COMB_RULE_FB         = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_12_DISPBJ    = 2     ! 12-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT   = 3     ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_12_DISPBJ     = 2     ! 12-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT    = 3     ! Exp-Tang–Toennies
 
-! Becke-Johnson
+! Pauli repulsion
+logical             :: couple_pa_pb_forA    = .true.
 
-integer,parameter   :: DAMP_BJ_DRC  = 201       ! radii from Cx
-integer,parameter   :: DAMP_BJ_ORC  = 202       ! optimized radii
+! Becke-Johnson damping
+integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
+integer,parameter   :: DAMP_BJ_ORC          = 202       ! optimized radii
 
-integer     :: dampbj_mode  = DAMP_BJ_DRC
+integer     :: dampbj_mode                  = DAMP_BJ_DRC
 
-! Tang–Toennis
+! Tang–Toennies damping
 ! Form: Enb = exp(PA*PB)*exp(-PB*r) - disp_s6*fd6*C6/r^6 - disp_s8*fd8*C8/r^8 - disp_s6*fd10*C10/r^10
 ! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_fa for PB in fd6, fd8, fd8
 ! Provides: energy, gradient, sapt
 
-integer,parameter   :: DAMP_TT_COUPLED  = 101   ! pb and tb coupled via damp_pb
-integer,parameter   :: DAMP_TT_FREEOPT  = 102   ! tb free to optimize
+integer,parameter   :: DAMP_TT_COUPLED      = 101   ! pb and tb coupled via damp_pb
+integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
 
-integer     :: damptt_mode  = DAMP_TT_COUPLED
+integer     :: damptt_mode                  = DAMP_TT_COUPLED
 
 ! applicable combination rules
 
 ! combining rules - applicable for NB_VDW_12_DISPBJ a NB_VDW_EXP_DISPTT
-integer,parameter   :: COMB_RULE_CB1 = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
+integer,parameter   :: COMB_RULE_CB1        = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
                                             ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
-integer,parameter   :: COMB_RULE_CB2 = 18
+integer,parameter   :: COMB_RULE_CB2        = 18
 
 ! ==============================================================================
 
 ! employed method for NB interactions
-integer     :: nb_mode          = NB_VDW_LJ
-integer     :: nb_comb_rules    = COMB_RULE_LB
+integer     :: nb_mode                      = NB_VDW_LJ
+integer     :: nb_comb_rules                = COMB_RULE_LB
 
 ! ------------------------------------------------------------------------------
 

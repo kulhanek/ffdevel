@@ -40,7 +40,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe,tb
-    real(DEVDP)     :: r2,r,r6,r8,r10,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
+    real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
     real(DEVDP)     :: V_aa,V_bb,V_ee
     ! --------------------------------------------------------------------------
 
@@ -77,8 +77,9 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
-        r2 = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r  = sqrt(r2)
+        r2  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a = 1.0d0/r2
+        r   = sqrt(r2)
 
         upe = exp(-pb*r)
 
@@ -86,7 +87,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         pe  = exp(-arg)
 
     ! 6
-        r6 = r2*r2*r2
+        r6a = r2a*r2a*r2a
         fd6 = 1.0d0 - pe
         sump = 1.0d0
         do k=1,6
@@ -95,15 +96,15 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         end do
 
     ! 8
-        r8 = r6*r2
-        fd8 = fd6
+        r8a   = r6a*r2a
+        fd8  = fd6
         sump = sump * arg / real(7,DEVDP)
-        fd8 = fd8 - pe*sump
+        fd8  = fd8 - pe*sump
         sump = sump * arg / real(8,DEVDP)
-        fd8 = fd8 - pe*sump
+        fd8  = fd8 - pe*sump
 
     ! 10
-        r10 = r8*r2
+        r10a = r8a*r2a
         fd10 = fd8
         sump = sump * arg / real(9,DEVDP)
         fd10 = fd10 - pe*sump
@@ -112,7 +113,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
 
         V_ee = crgij/r
         V_aa = pa*upe
-        V_bb = - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
+        V_bb = - fd6*c6*r6a - fd8*c8*r8a - fd10*c10*r10a
 
         if( dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + V_ee
@@ -126,7 +127,6 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
             geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
             geo%dis14_ene = geo%dis14_ene + inv_scnb * V_bb
         end if
-
     end do
 
 end subroutine ffdev_energy_nb_EXP_DISPTT
@@ -148,8 +148,8 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
     ! --------------------------------------------
     integer         :: ip,i,j,k
     real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3,tb
-    real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10
-    real(DEVDP)     :: V_aa,V_bb,pe,V_ee,arg,upe,sump
+    real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10
+    real(DEVDP)     :: V_aa,V_bb,pe,V_ee,arg,upe,sump,suma
     real(DEVDP)     :: fd6,fd8,fd10
     ! --------------------------------------------------------------------------
 
@@ -182,6 +182,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
         r2   = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0/r2
         r    = sqrt(r2)
 
         upe  = exp(-pb*r)
@@ -190,33 +191,34 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         pe   = exp(-arg)
 
     ! 6
-        r6   = r2*r2*r2
-        fd6  = 1.0d0 - pe
+        r6a  = r2a*r2a*r2a
         sump = 1.0d0
+        suma = 1.0d0
         do k=1,6
             sump = sump * arg / real(k,DEVDP)
-            fd6 = fd6 - pe*sump
+            suma = suma + sump
         end do
+        fd6  = 1.0d0 - pe*suma
 
     ! 8
-        r8   = r6*r2
-        fd8  = fd6
+        r8a  = r6a*r2a
         sump = sump * arg / real(7,DEVDP)
-        fd8  = fd8 - pe*sump
+        suma = suma + sump
         sump = sump * arg / real(8,DEVDP)
-        fd8  = fd8 - pe*sump
+        suma = suma + sump
+        fd8  = 1.0d0 - pe*suma
 
     ! 10
-        r10  = r8*r2
-        fd10 = fd8
+        r10a = r8a*r2a
         sump = sump * arg / real(9,DEVDP)
-        fd10 = fd10 - pe*sump
+        suma = suma + sump
         sump = sump * arg / real(10,DEVDP)
-        fd10 = fd10 - pe*sump
+        suma = suma + sump
+        fd8  = 1.0d0 - pe*suma
 
         V_ee = crgij/r
         V_aa = pa*upe
-        V_bb = - fd6*c6/r6 - fd8*c8/r8 - fd10*c10/r10
+        V_bb = - fd6*c6*r6a - fd8*c8*r8a - fd10*c10*r10a
 
         geo%sapt_ele = geo%sapt_ele + V_ee
         geo%sapt_rep = geo%sapt_rep + V_aa
@@ -234,14 +236,17 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
+    use ffdev_utils
+    use ffdev_topology_dat
 
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         :: ip, i, j, nbt
-    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2a,ra,r6a,Vela,V_aa,V_ba,dva,scale2
+    integer         :: ip,i,j,k,dt
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe,tb
+    real(DEVDP)     :: r2,r,r6a,r8a,r10a,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
+    real(DEVDP)     :: V_aa,V_b6,V_b8,V_b10,V_ee,dva,r2a,dfd6,dfd8,dfd10,sumd,suma
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -252,63 +257,121 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
-!    scale2 = ele_qscale*ele_qscale*332.05221729d0
-!
-!    do ip=1,top%nb_size
-!        i = top%nb_list(ip)%ai
-!        j = top%nb_list(ip)%aj
-!        nbt = top%nb_list(ip)%nbt
-!        aLJa  = top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**12
-!        bLJa  = 2.0d0*top%nb_types(nbt)%eps*top%nb_types(nbt)%r0**6
-!        crgij =  geo%sup_chrg(i) * geo%sup_chrg(j)
-!
-!        ! calculate dx, r and r2
-!        dxa1 = geo%crd(1,i) - geo%crd(1,j)
-!        dxa2 = geo%crd(2,i) - geo%crd(2,j)
-!        dxa3 = geo%crd(3,i) - geo%crd(3,j)
-!
-!        r2a = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-!        r2a = 1.0d0/r2a
-!        ra  = sqrt(r2a)
-!        r6a = r2a*r2a*r2a
-!
-!        Vela = scale2*crgij*ra
-!        V_aa = aLJa*r6a*r6a
-!        V_ba = bLJa*r6a
-!
-!        ! calculate energy
-!        if( top%nb_list(ip)%dt .eq. 0 ) then
-!            geo%ele_ene  = geo%ele_ene + Vela
-!            geo%nb_ene   = geo%nb_ene + V_aa - V_ba
-!
-!            geo%nb_rep   = geo%nb_rep   + V_aa
-!            geo%nb_disp  = geo%nb_disp  - V_ba
-!
-!            dva = r2a*(Vela + 12.0d0*V_aa - 6.0d0*V_ba)
-!        else
-!            inv_scee = top%dihedral_types(top%nb_list(ip)%dt)%inv_scee
-!            inv_scnb = top%dihedral_types(top%nb_list(ip)%dt)%inv_scnb
-!
-!            geo%ele14_ene   = geo%ele14_ene + inv_scee*Vela
-!            geo%nb14_ene    = geo%nb14_ene  + inv_scnb*(V_aa - V_ba)
-!
-!            geo%nb_rep      = geo%nb_rep    + inv_scnb*V_aa
-!            geo%nb_disp     = geo%nb_disp   - inv_scnb*V_ba
-!
-!            dva   = r2a*(inv_scee*Vela + inv_scnb*(12.0d0*V_aa - 6.0d0*V_ba))
-!        end if
-!
-!        ! calculate gradient
-!        dxa1 = dva*dxa1
-!        dxa2 = dva*dxa2
-!        dxa3 = dva*dxa3
-!        geo%grd(1,i) = geo%grd(1,i) - dxa1
-!        geo%grd(2,i) = geo%grd(2,i) - dxa2
-!        geo%grd(3,i) = geo%grd(3,i) - dxa3
-!        geo%grd(1,j) = geo%grd(1,j) + dxa1
-!        geo%grd(2,j) = geo%grd(2,j) + dxa2
-!        geo%grd(3,j) = geo%grd(3,j) + dxa3
-!    end do
+    do ip=1,top%nb_size
+        i    = top%nb_list(ip)%ai
+        j    = top%nb_list(ip)%aj
+        dt   = top%nb_list(ip)%dt
+
+        ! electrostatics
+        crgij = top%nb_list(ip)%crgij
+
+        ! repulsion
+        pa   = top%nb_list(ip)%pa
+        pb   = top%nb_list(ip)%pb
+
+        ! dispersion coefficients
+        c6   = top%nb_list(ip)%c6
+        c8   = top%nb_list(ip)%c8
+        c10  = top%nb_list(ip)%c10
+
+        ! TT damping factor
+        tb   = top%nb_list(ip)%tb
+
+        ! calculate dx, r and r2
+        dxa1 = geo%crd(1,i) - geo%crd(1,j)
+        dxa2 = geo%crd(2,i) - geo%crd(2,j)
+        dxa3 = geo%crd(3,i) - geo%crd(3,j)
+
+        r2   = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r2a  = 1.0d0 / r2
+        r    = sqrt(r2)
+
+        upe  = exp(-pb*r)
+
+        arg  = tb*r
+        pe   = exp(-arg)
+
+    ! 6
+        r6a  = r2a*r2a*r2a
+        fd6  = 1.0d0
+        dfd6 = 0.0d0
+        sump = 1.0d0
+        suma = 1.0d0
+        sumd = 0.0d0
+        do k=1,6
+            sumd = sumd + sump ! sump is one item delayed in derivatives
+            sump = sump * arg / real(k,DEVDP)
+            suma = suma + sump
+            dfd6 = dfd6 + real(k,DEVDP)*sump
+        end do
+        fd6   = 1.0d0 - pe*suma
+        dfd6  = (pe*suma - pe*sumd)*arg
+
+    ! 8
+        r8a   = r6a*r2a
+        sumd  = sumd  + sump ! sump is one item delayed in derivatives
+        sump  = sump  * arg / real(7,DEVDP)
+        suma  = suma  + sump
+        sumd  = sumd  + sump ! sump is one item delayed in derivatives
+        sump  = sump  * arg / real(8,DEVDP)
+        suma  = suma  + sump
+        fd8   = 1.0d0 - pe*suma
+        dfd8  = (pe*suma - pe*sumd)*arg
+
+    ! 10
+        r10a  = r8a*r2a
+        sumd  = sumd  + sump ! sump is one item delayed in derivatives
+        sump  = sump  * arg / real(9,DEVDP)
+        suma  = suma  + sump
+        sumd  = sumd  + sump ! sump is one item delayed in derivatives
+        sump  = sump  * arg / real(10,DEVDP)
+        suma  = suma  + sump
+        fd10  = 1.0d0 - pe*suma
+        dfd10 = (pe*suma - pe*sumd)*arg
+
+        V_ee  = crgij/r
+        V_aa  = pa*upe
+        V_b6  = - fd6*c6*r6a
+        V_b8  = - fd8*c8*r8a
+        V_b10 = - fd10*c10*r10a
+
+        if( dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + V_ee
+            geo%rep_ene = geo%rep_ene + V_aa
+            geo%dis_ene = geo%dis_ene + V_b6 + V_b8 + V_b10
+
+            dva = r2a*( V_ee + V_aa*pb*r &
+                  + 6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10  &
+                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 &
+                  )
+        else
+            inv_scee = top%dihedral_types(dt)%inv_scee
+            inv_scnb = top%dihedral_types(dt)%inv_scnb
+
+            geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
+            geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
+            geo%dis14_ene = geo%dis14_ene + inv_scnb * (V_b6 + V_b8 + V_b10)
+
+            dva = r2a*( inv_scee*V_ee + inv_scnb*( V_aa*pb*r &
+                  + 6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10   &
+                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 &
+                  ) )
+        end if
+
+        ! calculate gradient
+        dxa1 = dva*dxa1
+        dxa2 = dva*dxa2
+        dxa3 = dva*dxa3
+
+        geo%grd(1,i) = geo%grd(1,i) - dxa1
+        geo%grd(2,i) = geo%grd(2,i) - dxa2
+        geo%grd(3,i) = geo%grd(3,i) - dxa3
+
+        geo%grd(1,j) = geo%grd(1,j) + dxa1
+        geo%grd(2,j) = geo%grd(2,j) + dxa2
+        geo%grd(3,j) = geo%grd(3,j) + dxa3
+
+    end do
 
 end subroutine ffdev_gradient_nb_EXP_DISPTT
 

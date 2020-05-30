@@ -543,6 +543,10 @@ subroutine execute_check_gradient(grpin,exec)
             call ffdev_gradient_num_all(sets(i)%top,ngeo)
             call ffdev_geometry_info_ene(ngeo)
 
+            if( abs(ageo%total_ene - ngeo%total_ene) .gt. 1e-6 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Analytical and numerical total energies do not match!')
+            end if
+
             if( .not. ffdev_gradient_test(ageo,ngeo,1.0d-3) ) then
                 write(DEV_OUT,*)
                 call ffdev_utils_heading(DEV_OUT,'Analytical FF Gradient','=')
