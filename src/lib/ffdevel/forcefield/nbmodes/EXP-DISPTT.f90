@@ -305,7 +305,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
             dfd6 = dfd6 + real(k,DEVDP)*sump
         end do
         fd6   = 1.0d0 - pe*suma
-        dfd6  = (pe*suma - pe*sumd)*arg
+        dfd6  = (pe*suma - pe*sumd)*arg ! extra r in arg is due to r2a factor in dva
 
     ! 8
         r8a   = r6a*r2a
@@ -316,7 +316,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         sump  = sump  * arg / real(8,DEVDP)
         suma  = suma  + sump
         fd8   = 1.0d0 - pe*suma
-        dfd8  = (pe*suma - pe*sumd)*arg
+        dfd8  = (pe*suma - pe*sumd)*arg ! extra r in arg is due to r2a factor in dva
 
     ! 10
         r10a  = r8a*r2a
@@ -327,7 +327,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         sump  = sump  * arg / real(10,DEVDP)
         suma  = suma  + sump
         fd10  = 1.0d0 - pe*suma
-        dfd10 = (pe*suma - pe*sumd)*arg
+        dfd10 = (pe*suma - pe*sumd)*arg ! extra r in arg is due to r2a factor in dva
 
         V_ee  = crgij/r
         V_aa  = pa*upe
@@ -342,8 +342,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
             dva = r2a*( V_ee + V_aa*pb*r &
                   + 6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10  &
-                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 &
-                  )
+                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 )
         else
             inv_scee = top%dihedral_types(dt)%inv_scee
             inv_scnb = top%dihedral_types(dt)%inv_scnb
@@ -354,8 +353,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
             dva = r2a*( inv_scee*V_ee + inv_scnb*( V_aa*pb*r &
                   + 6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10   &
-                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 &
-                  ) )
+                  + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10 ) )
         end if
 
         ! calculate gradient
