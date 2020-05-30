@@ -355,6 +355,9 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
         ! print all parameters
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
+        ! print only active
+        call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
+
         write(DEV_OUT,*)
         write(DEV_OUT,1)
         select case(logmode)
