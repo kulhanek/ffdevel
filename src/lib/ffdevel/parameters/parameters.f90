@@ -78,7 +78,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 6 NB: eps, r0, pa, pb, rc, tb
     end do
-    maxnparams = maxnparams + 7 ! ele_sq/dips_s6/disp_s8/disp_s10/disp_fa/disp_fb/disp_fc
+    maxnparams = maxnparams + 9 ! ele_sq/dips_s6/disp_s8/disp_s10/disp_fa/disp_fb/disp_fc,glb_iscee,glb_iscnb
 
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
@@ -808,6 +808,30 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%tk   = 0
         params(nparams)%tl   = 0
     end if
+
+    nparams = nparams + 1
+    params(nparams)%value = glb_iscee
+    params(nparams)%realm = REALM_GLB_ISCEE
+    params(nparams)%enabled = .false.
+    params(nparams)%identity = 0
+    params(nparams)%pn    = 0
+    params(nparams)%ids(:) = 0
+    params(nparams)%ti   = 0
+    params(nparams)%tj   = 0
+    params(nparams)%tk   = 0
+    params(nparams)%tl   = 0
+
+    nparams = nparams + 1
+    params(nparams)%value = glb_iscnb
+    params(nparams)%realm = REALM_GLB_ISCNB
+    params(nparams)%enabled = .false.
+    params(nparams)%identity = 0
+    params(nparams)%pn    = 0
+    params(nparams)%ids(:) = 0
+    params(nparams)%ti   = 0
+    params(nparams)%tj   = 0
+    params(nparams)%tk   = 0
+    params(nparams)%tl   = 0
 
     ! charges
     if( PACAsPrms ) then
@@ -1917,6 +1941,12 @@ integer function ffdev_parameters_get_realmid(realm)
         case('pac')
             ffdev_parameters_get_realmid = REALM_PAC
 
+        case('glb_iscee')
+            ffdev_parameters_get_realmid = REALM_GLB_ISCEE
+
+        case('glb_iscnb')
+            ffdev_parameters_get_realmid = REALM_GLB_ISCNB
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
     end select
@@ -1993,6 +2023,11 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_DISP_S10)
             ffdev_parameters_get_realm_name = 'disp_s10'
 
+        case(REALM_GLB_ISCEE)
+            ffdev_parameters_get_realm_name = 'glb_iscee'
+        case(REALM_GLB_ISCNB)
+            ffdev_parameters_get_realm_name = 'glb_iscnb'
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
     end select
@@ -2036,6 +2071,8 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
         case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB)
             ! nothing to do
         case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
+            ! nothing to do
+        case(REALM_GLB_ISCEE,REALM_GLB_ISCNB)
             ! nothing to do
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
@@ -2459,6 +2496,11 @@ subroutine ffdev_parameters_to_tops
             case(REALM_DISP_S10)
                 disp_s10 = params(i)%value
 
+            case(REALM_GLB_ISCEE)
+                glb_iscee = params(i)%value
+            case(REALM_GLB_ISCNB)
+                glb_iscnb = params(i)%value
+
         ! PAC - partial atomic charges
             case(REALM_PAC)
                 ! update independent charges in all sets
@@ -2626,6 +2668,11 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_DISP_S10)
             ffdev_params_get_lower_bound = MinDispS10
 
+        case(REALM_GLB_ISCEE)
+            ffdev_params_get_lower_bound = MinGlbISCEE
+        case(REALM_GLB_ISCNB)
+            ffdev_params_get_lower_bound = MinGlbISCNB
+
         case(REALM_PAC)
             ffdev_params_get_lower_bound = MinPAC
 
@@ -2729,6 +2776,11 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDispS8
         case(REALM_DISP_S10)
             ffdev_params_get_upper_bound = MaxDispS10
+
+        case(REALM_GLB_ISCEE)
+            ffdev_params_get_upper_bound = MaxGlbISCEE
+        case(REALM_GLB_ISCNB)
+            ffdev_params_get_upper_bound = MaxGlbISCNB
 
         case(REALM_PAC)
             ffdev_params_get_upper_bound = MaxPAC

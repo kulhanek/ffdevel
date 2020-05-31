@@ -98,8 +98,8 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
             geo%rep_ene = geo%rep_ene + V_aa
             geo%dis_ene = geo%dis_ene + V_bb
         else
-            inv_scee = top%dihedral_types(dt)%inv_scee
-            inv_scnb = top%dihedral_types(dt)%inv_scnb
+            inv_scee = glb_iscee * top%dihedral_types(dt)%inv_scee
+            inv_scnb = glb_iscnb * top%dihedral_types(dt)%inv_scnb
 
             geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
             geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
@@ -260,8 +260,8 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
             dva = r2a*(V_ee +  V_aa*pb*r &
                        - 6.0d0*c6*r6i*r6i*r6 - 8.0d0*c8*r8i*r8i*r8 - 10.0d0*c10*r10i*r10i*r10)
         else
-            inv_scee = top%dihedral_types(dt)%inv_scee
-            inv_scnb = top%dihedral_types(dt)%inv_scnb
+            inv_scee = glb_iscee * top%dihedral_types(dt)%inv_scee
+            inv_scnb = glb_iscnb * top%dihedral_types(dt)%inv_scnb
 
             geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
             geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa

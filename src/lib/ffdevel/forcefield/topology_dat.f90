@@ -236,6 +236,7 @@ integer                             :: rc_source            = NB_RC_NONE
 ! ==============================================================================
 
 real(DEVDP) :: ele_qscale                   = 1.0d0         ! scaling factor for charges
+real(DEVDP) :: glb_iscee                    = 1.0d0         ! global scaling for 1-4 electrostatics
 
 ! ==============================================================================
 ! ==== vdW modes
@@ -298,6 +299,8 @@ integer     :: nb_mode                      = NB_VDW_LJ
 integer     :: nb_comb_rules                = COMB_RULE_LB
 
 ! ------------------------------------------------------------------------------
+
+real(DEVDP) :: glb_iscnb                    = 1.0d0         ! global scaling for 1-4 NB interactions
 
 ! tuneable parameters
 real(DEVDP) :: disp_s6  = 1.0d0

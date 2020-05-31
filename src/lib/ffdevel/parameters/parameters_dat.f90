@@ -59,8 +59,12 @@ integer,parameter       :: REALM_DAMP_PB    = 24
 integer,parameter       :: REALM_PAC        = 25
 integer,parameter       :: REALM_ELE_SQ     = 26
 
+! non-bonded - electrostatics
+integer,parameter       :: REALM_GLB_ISCEE  = 27
+integer,parameter       :: REALM_GLB_ISCNB  = 28
+
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_ELE_SQ
+integer,parameter       :: REALM_LAST    = REALM_GLB_ISCNB
 
 ! ------------------------------------------------------------------------------
 
@@ -192,7 +196,7 @@ real(DEVDP)     :: MinDampFA    =      0.0d0
 real(DEVDP)     :: MaxDampFA    =      2.0d0
 real(DEVDP)     :: MinDampFB    =     -1.0d0
 real(DEVDP)     :: MaxDampFB    =      4.0d0
-real(DEVDP)     :: MinDampPB    =      0.5d0
+real(DEVDP)     :: MinDampPB    =      1.0d0
 real(DEVDP)     :: MaxDampPB    =      2.0d0
 
 ! dispersion scaling
@@ -202,6 +206,11 @@ real(DEVDP)     :: MinDispS8    =      0.0d0
 real(DEVDP)     :: MaxDispS8    =     10.0d0
 real(DEVDP)     :: MinDispS10   =      0.0d0
 real(DEVDP)     :: MaxDispS10   =     10.0d0
+
+real(DEVDP)     :: MinGlbISCEE  =      0.0d0
+real(DEVDP)     :: MaxGlbISCEE  =      2.0d0
+real(DEVDP)     :: MinGlbISCNB  =      0.0d0
+real(DEVDP)     :: MaxGlbISCNB  =      2.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

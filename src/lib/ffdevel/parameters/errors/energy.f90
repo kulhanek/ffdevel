@@ -159,8 +159,10 @@ subroutine ffdev_err_energy_summary
 
     write(DEV_OUT,*)
     write(DEV_OUT,5)
-    write(DEV_OUT,10)
-    write(DEV_OUT,20)
+    write(DEV_OUT,10,ADVANCE='NO')
+    write(DEV_OUT,50)
+    write(DEV_OUT,20,ADVANCE='NO')
+    write(DEV_OUT,60)
 
     aserr = 0.0d0
     anum = 0
@@ -198,8 +200,19 @@ subroutine ffdev_err_energy_summary
                 lnum  = lnum + 1
             end if
 
-            write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
+            write(DEV_OUT,30,ADVANCE='NO') i, j, sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_energy, sets(i)%geo(j)%total_ene, aerr, rerr*100.0d0, lerr
+
+            write(DEV_OUT,70) sets(i)%geo(j)%bond_ene, sets(i)%geo(j)%angle_ene, sets(i)%geo(j)%dih_ene, &
+                              sets(i)%geo(j)%impropr_ene, sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
+                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%ele14_ene, sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%ele14_ene, &
+                              sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%rep14_ene, sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene, &
+                              sets(i)%geo(j)%dis_ene, sets(i)%geo(j)%dis14_ene, sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene, &
+                              sets(i)%geo(j)%bond_ene + sets(i)%geo(j)%angle_ene + &
+                              sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
+                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%ele14_ene + &
+                              sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene + &
+                              sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene
 
             if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
                 call ffdev_geometry_info_ene(sets(i)%geo(j))
@@ -207,7 +220,10 @@ subroutine ffdev_err_energy_summary
             end if
 
         end do
-        if( printsum ) write(DEV_OUT,20)
+        if( printsum ) then
+            write(DEV_OUT,20,ADVANCE='NO')
+            write(DEV_OUT,60)
+        end if
     end do
 
     if( anum .gt. 0 ) then
@@ -224,11 +240,18 @@ subroutine ffdev_err_energy_summary
     write(DEV_OUT,45)  EnergyErrorWeight*aserr, EnergyErrorWeight*rserr*100.0d0, EnergyErrorWeight*lserr
 
  5 format('# Energy errors')
-10 format('# SET GeoID Weight     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)')
-20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ----------')
-30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+10 format('# SET GeoID Weight     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)  ')
+20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ----------  ')
+30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,2X)
 40 format('# Final error (weighted per geometry) =  ',F10.3,1X,F10.3,1X,F10.3)
 45 format('# Final error (all weights)           =  ',F10.3,1X,F10.3,1X,F10.3)
+
+50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
+          '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Enb        Ebn')
+60 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
+          ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+70 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2, &
+          1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
 
 end subroutine ffdev_err_energy_summary
 
