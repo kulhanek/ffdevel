@@ -2090,7 +2090,7 @@ end subroutine ffdev_topology_apply_NB_comb_rules_LJ
 ! subroutine ffdev_topology_apply_NB_comb_rules_12
 ! ==============================================================================
 
-subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
+subroutine ffdev_topology_apply_NB_comb_rules_12BJ(top,comb_rules)
 
     use ffdev_utils
 
@@ -2128,7 +2128,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
                     rcij = (0.5d0 * (rcii**6+rcjj**6))**(1.0d0/6.0d0)
 
                 case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12BJ!')
             end select
 
             top%nb_types(i)%pa = paij
@@ -2137,7 +2137,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
         end if
     end do
 
-end subroutine ffdev_topology_apply_NB_comb_rules_12
+end subroutine ffdev_topology_apply_NB_comb_rules_12BJ
 
 ! ==============================================================================
 ! subroutine ffdev_topology_apply_NB_comb_rules_EXPBJ
