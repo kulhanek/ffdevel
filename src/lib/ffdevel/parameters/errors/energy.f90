@@ -71,7 +71,9 @@ subroutine ffdev_err_energy_error(error)
     nene = 0
 
     do i=1,nsets
-        if( sets(i)%isref ) cycle ! ignore reference sets
+        ! use only sets, which can provide reliable energy
+        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
@@ -168,9 +170,12 @@ subroutine ffdev_err_energy_summary
     lnum = 0
 
     do i=1,nsets
+        ! use only sets, which can provide reliable energy
+        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+
         do j=1,sets(i)%ngeos
             printsum = .false.
-            if( .not. (sets(i)%geo(j)%trg_ene_loaded .and. sets(i)%nrefs .ge. 1) ) cycle
+            if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
 
             printsum = .true.
 

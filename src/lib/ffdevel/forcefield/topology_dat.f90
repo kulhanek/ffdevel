@@ -258,11 +258,12 @@ integer,parameter   :: COMB_RULE_KG         = 13    ! KG (Kong)
 integer,parameter   :: COMB_RULE_FB         = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_12_DISPBJ     = 2     ! 12-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT    = 3     ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_12_DISPBJ     = 20    ! 12-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
 
 ! Pauli repulsion
-logical             :: couple_pa_pb_forA    = .true.
+logical             :: couple_pa_pb_forA    = .false.
 
 ! Becke-Johnson damping
 integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
@@ -283,9 +284,12 @@ integer     :: damptt_mode                  = DAMP_TT_COUPLED
 ! applicable combination rules
 
 ! combining rules - applicable for NB_VDW_12_DISPBJ a NB_VDW_EXP_DISPTT
-integer,parameter   :: COMB_RULE_CB1        = 17   ! geometric mean:  exp(PAIJ) = sqrt(exp(PAII)*exp(PAJJ))
-                                            ! arithmetic mean: PBIJ=(PBII+PBJJ)/2
-integer,parameter   :: COMB_RULE_CB2        = 18
+integer,parameter   :: COMB_RULE_AM         = 17    ! arithmetic means
+
+! combining rules - applicable for NB_VDW_EXP_DISPTT
+integer,parameter   :: COMB_RULE_GS         = 90    ! Gilbert-Smith
+integer,parameter   :: COMB_RULE_BA         = 91    ! Bohm-Ahlrichs
+integer,parameter   :: COMB_RULE_VS         = 92    ! Vleet- Schmidt
 
 ! ==============================================================================
 

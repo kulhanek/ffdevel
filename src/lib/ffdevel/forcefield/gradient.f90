@@ -36,6 +36,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
     use ffdev_nbmode_LJ
     use ffdev_nbmode_12_DISPBJ
+    use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 
     implicit none
@@ -95,6 +96,9 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
             case(NB_VDW_12_DISPBJ)
                 call ffdev_gradient_nb_12_DISPBJ(top,geo)
+
+            case(NB_VDW_EXP_DISPBJ)
+                call ffdev_gradient_nb_EXP_DISPBJ(top,geo)
 
             case(NB_VDW_EXP_DISPTT)
                 call ffdev_gradient_nb_EXP_DISPTT(top,geo)

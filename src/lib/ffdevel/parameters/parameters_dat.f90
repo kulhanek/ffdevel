@@ -170,14 +170,14 @@ real(DEVDP)     :: MaxVdwR0     =       6.0d0
 real(DEVDP)     :: MinVdwPA     =      0.0d0
 real(DEVDP)     :: MaxVdwPA     =     20.0d0
 
-real(DEVDP)     :: MinVdwPB     =      2.5d0
-real(DEVDP)     :: MaxVdwPB     =      5.5d0
+real(DEVDP)     :: MinVdwPB     =      3.0d0
+real(DEVDP)     :: MaxVdwPB     =      4.0d0
 
 real(DEVDP)     :: MinVdwRC     =      0.0d0
 real(DEVDP)     :: MaxVdwRC     =      5.0d0
 
-real(DEVDP)     :: MinVdwTB     =      2.5d0
-real(DEVDP)     :: MaxVdwTB     =      5.5d0
+real(DEVDP)     :: MinVdwTB     =      3.0d0
+real(DEVDP)     :: MaxVdwTB     =      4.0d0
 
 ! non-bonded scaling factors
 real(DEVDP)     :: MinEleSQ     =      0.0d0
@@ -193,7 +193,7 @@ real(DEVDP)     :: MaxDampFA    =      2.0d0
 real(DEVDP)     :: MinDampFB    =     -1.0d0
 real(DEVDP)     :: MaxDampFB    =      4.0d0
 real(DEVDP)     :: MinDampPB    =      0.5d0
-real(DEVDP)     :: MaxDampPB    =      1.5d0
+real(DEVDP)     :: MaxDampPB    =      2.0d0
 
 ! dispersion scaling
 real(DEVDP)     :: MinDispS6    =      0.0d0

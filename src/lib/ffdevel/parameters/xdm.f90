@@ -272,16 +272,19 @@ subroutine ffdev_xdm_print()
                           xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
     end do
     write(DEV_OUT,40)
-    do ti=1,ntypes
-        do tj=ti+1,ntypes
-            write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
-                              xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
-                              xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
-                              xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
-                              xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
+
+    if( ntypes .gt. 1 ) then
+        do ti=1,ntypes
+            do tj=ti+1,ntypes
+                write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),xdm_pairs(ti,tj)%num, &
+                                  xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
+                                  xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
+                                  xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
+                                  xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
+            end do
         end do
-    end do
-    write(DEV_OUT,40)
+        write(DEV_OUT,40)
+    end if
 
     ! atomic data ----------------------------
     write(DEV_OUT,*)
@@ -324,20 +327,24 @@ subroutine ffdev_xdm_print()
 
     end do
     write(DEV_OUT,240)
-    do ti=1,ntypes
-        do tj=ti+1,ntypes
-            f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
-            f1sum = f1sum + f1
-            f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
-            f2sum = f2sum + f2
-            nfsum = nfsum + 1
-            write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name), &
-                              xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%Rc,  &
-                              mmd3_pairs(ti,tj)%c6ave, mmd3_pairs(ti,tj)%c8ave, mmd3_pairs(ti,tj)%Rc, &
-                              fflj_pairs(ti,tj)%c6,f1,f2
+
+    if( ntypes .gt. 1 ) then
+        do ti=1,ntypes
+            do tj=ti+1,ntypes
+                f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
+                f1sum = f1sum + f1
+                f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
+                f2sum = f2sum + f2
+                nfsum = nfsum + 1
+                write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name), &
+                                  xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%Rc,  &
+                                  mmd3_pairs(ti,tj)%c6ave, mmd3_pairs(ti,tj)%c8ave, mmd3_pairs(ti,tj)%Rc, &
+                                  fflj_pairs(ti,tj)%c6,f1,f2
+            end do
         end do
-    end do
-    write(DEV_OUT,240)
+        write(DEV_OUT,240)
+    end if
+
     write(DEV_OUT,260) f1sum/nfsum, f2sum/nfsum
 
  10 format('>>> No XDM data available ....')

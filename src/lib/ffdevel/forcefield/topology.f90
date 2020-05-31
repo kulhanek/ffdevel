@@ -1593,7 +1593,7 @@ subroutine ffdev_topology_gen_sapt_list_for_probes(top)
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: m,i,j,ip,alloc_status,istart,iend
+    integer         :: i,j,ip,alloc_status
     ! --------------------------------------------------------------------------
 
     if( top%probe_size .le. 0 ) return        !
@@ -1834,9 +1834,11 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
         case(NB_VDW_LJ)
             ffdev_topology_nb_mode_to_string = 'LJ - 12-6 Lennard-Jones potential'
         case(NB_VDW_12_DISPBJ)
-            ffdev_topology_nb_mode_to_string = '12-DISPBJ - 12/dispersion with BJ damping'
+            ffdev_topology_nb_mode_to_string = '12-DISPBJ - 12/Disp with BJ damping'
+        case(NB_VDW_EXP_DISPBJ)
+            ffdev_topology_nb_mode_to_string = 'EXP-DISPBJ - Exp/Disp with BJ damping'
         case(NB_VDW_EXP_DISPTT)
-            ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - EXP/Tang–Toennies potential'
+            ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - Exp/Disp with TT damping'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -1860,6 +1862,8 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_VDW_LJ
         case('12-DISPBJ')
             ffdev_topology_nb_mode_from_string = NB_VDW_12_DISPBJ
+        case('EXP-DISPBJ')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPBJ
         case('EXP-DISPTT')
             ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPTT
         case default
@@ -1891,7 +1895,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
         case(NB_VDW_LJ)
             ! nothing to do
 
-        case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ)
+        case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
             alpha = 12.0
             do nbt=1,top%nnb_types
                 pa = top%nb_types(nbt)%eps*top%nb_types(nbt)%eps * 6.0d0/(alpha - 6.0d0) * exp(alpha)
@@ -1938,10 +1942,15 @@ character(80) function ffdev_topology_comb_rules_to_string(comb_rules)
         case(COMB_RULE_FB)
             ffdev_topology_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
 
-        case(COMB_RULE_CB1)
-            ffdev_topology_comb_rules_to_string = 'CB1'
-        case(COMB_RULE_CB2)
-            ffdev_topology_comb_rules_to_string = 'CB2'
+        case(COMB_RULE_AM)
+            ffdev_topology_comb_rules_to_string = 'AM (Arithmetic mean)'
+
+        case(COMB_RULE_GS)
+            ffdev_topology_comb_rules_to_string = 'GS (Gilbert-Smith)'
+        case(COMB_RULE_BA)
+            ffdev_topology_comb_rules_to_string = 'BA (Bohm-Ahlrichs)'
+        case(COMB_RULE_VS)
+            ffdev_topology_comb_rules_to_string = 'VS (Vleet- Schmidt)'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_comb_rules_to_string!')
@@ -1974,10 +1983,15 @@ integer function ffdev_topology_comb_rules_from_string(string)
         case('FB')
             ffdev_topology_comb_rules_from_string = COMB_RULE_FB
 
-        case('CB1')
-            ffdev_topology_comb_rules_from_string = COMB_RULE_CB1
-        case('CB2')
-            ffdev_topology_comb_rules_from_string = COMB_RULE_CB2
+        case('AM')
+            ffdev_topology_comb_rules_from_string = COMB_RULE_AM
+
+        case('GS')
+            ffdev_topology_comb_rules_from_string = COMB_RULE_GS
+        case('BA')
+            ffdev_topology_comb_rules_from_string = COMB_RULE_BA
+        case('VS')
+            ffdev_topology_comb_rules_from_string = COMB_RULE_VS
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_comb_rules_from_string!')
@@ -2002,9 +2016,11 @@ subroutine ffdev_topology_apply_NB_comb_rules(top,comb_rules)
         case(NB_VDW_LJ)
             call ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
         case(NB_VDW_12_DISPBJ)
-            call ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
+            call ffdev_topology_apply_NB_comb_rules_12BJ(top,comb_rules)
+        case(NB_VDW_EXP_DISPBJ)
+            call ffdev_topology_apply_NB_comb_rules_EXPBJ(top,comb_rules)
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
+            call ffdev_topology_apply_NB_comb_rules_EXPTT(top,comb_rules)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
     end select
@@ -2071,10 +2087,63 @@ subroutine ffdev_topology_apply_NB_comb_rules_LJ(top,comb_rules)
 end subroutine ffdev_topology_apply_NB_comb_rules_LJ
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_CBn
+! subroutine ffdev_topology_apply_NB_comb_rules_12
 ! ==============================================================================
 
-subroutine ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
+subroutine ffdev_topology_apply_NB_comb_rules_12(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: paii,paij,pajj
+    real(DEVDP)     :: rcii,rcij,rcjj
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii = top%nb_types(nbii)%pa
+            rcii = top%nb_types(nbii)%rc
+
+            pajj = top%nb_types(nbjj)%pa
+            rcjj = top%nb_types(nbjj)%rc
+
+            select case(comb_rules)
+
+                case(COMB_RULE_AM)
+                    paij = 0.5d0 * (paii+pajj)
+                    rcij = 0.5d0 * (rcii+rcjj)
+
+                case(COMB_RULE_WH)
+                    paij = 0.5d0 * (paii+pajj)
+                    rcij = (0.5d0 * (rcii**6+rcjj**6))**(1.0d0/6.0d0)
+
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_12!')
+            end select
+
+            top%nb_types(i)%pa = paij
+            top%nb_types(i)%rc = rcij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_12
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_EXPBJ
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_EXPBJ(top,comb_rules)
 
     use ffdev_utils
 
@@ -2086,7 +2155,7 @@ subroutine ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
     real(DEVDP)     :: paii,paij,pajj
     real(DEVDP)     :: pbii,pbij,pbjj
     real(DEVDP)     :: rcii,rcij,rcjj
-    real(DEVDP)     :: tbii,tbij,tbjj
+    real(DEVDP)     :: eaii,eaij,eajj
     ! --------------------------------------------------------------------------
 
     ! apply combining rules
@@ -2100,39 +2169,164 @@ subroutine ffdev_topology_apply_NB_comb_rules_CBn(top,comb_rules)
             paii = top%nb_types(nbii)%pa
             pbii = top%nb_types(nbii)%pb
             rcii = top%nb_types(nbii)%rc
-            tbii = top%nb_types(nbii)%tb
 
             pajj = top%nb_types(nbjj)%pa
             pbjj = top%nb_types(nbjj)%pb
             rcjj = top%nb_types(nbjj)%rc
-            tbjj = top%nb_types(nbjj)%tb
 
             select case(comb_rules)
 
-                case(COMB_RULE_CB1)
+                case(COMB_RULE_AM)
                     paij = 0.5d0 * (paii+pajj)
                     pbij = 0.5d0 * (pbii+pbjj)
                     rcij = 0.5d0 * (rcii+rcjj)
 
-                case(COMB_RULE_CB2)
+                case(COMB_RULE_VS)
                     paij = 0.5d0 * (paii+pajj)
-                    pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    pbij = sqrt(pbii*pbjj)
                     rcij = 0.5d0 * (rcii+rcjj)
-                    tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
+
+                case(COMB_RULE_BA)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
+                    paij = log(eaij)
+
+                    rcij = 0.5d0 * (rcii+rcjj)
+
+                case(COMB_RULE_GS)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
+                    paij = log(eaij)
+
+                    rcij = 0.5d0 * (rcii+rcjj)
 
                 case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXP!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXPBJ!')
             end select
 
             top%nb_types(i)%pa = paij
             top%nb_types(i)%pb = pbij
             top%nb_types(i)%rc = rcij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_apply_NB_comb_rules_EXPBJ
+
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! ==============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_EXPTT(top,comb_rules)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: comb_rules
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: paii,paij,pajj
+    real(DEVDP)     :: pbii,pbij,pbjj
+    real(DEVDP)     :: tbii,tbij,tbjj
+    real(DEVDP)     :: eaii,eaij,eajj
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii = top%nb_types(nbii)%pa
+            pbii = top%nb_types(nbii)%pb
+            tbii = top%nb_types(nbii)%tb
+
+            pajj = top%nb_types(nbjj)%pa
+            pbjj = top%nb_types(nbjj)%pb
+            tbjj = top%nb_types(nbjj)%tb
+
+            select case(comb_rules)
+
+                case(COMB_RULE_AM)
+                    paij = 0.5d0 * (paii+pajj)
+                    pbij = 0.5d0 * (pbii+pbjj)
+                    tbij = 0.5d0 * (tbii+tbjj)
+
+                case(COMB_RULE_GS)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
+                    paij = log(eaij)
+
+                    if( tbii+tbjj .gt. 0 ) then
+                        tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
+                    else
+                        tbij = 0.5d0 * (tbii+tbjj)
+                    end if
+
+                case(COMB_RULE_BA)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
+                    paij = log(eaij)
+
+                    if( tbii+tbjj .gt. 0 ) then
+                        tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
+                    else
+                        tbij = 0.5d0 * (tbii+tbjj)
+                    end if
+
+                case(COMB_RULE_VS)
+                    ! DOI:10.1021/acs.jctc.6b00209J. Chem. Theory Comput.2016, 12, 3851−3870
+                    paij = 0.5d0 * (paii + pajj)  ! paij is exponential of Aij, etc. ...
+                    pbij = sqrt(pbii*pbjj)
+                    tbij = sqrt(tbii*tbjj)
+
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXPTT!')
+            end select
+
+            top%nb_types(i)%pa = paij
+            top%nb_types(i)%pb = pbij
             top%nb_types(i)%tb = tbij
 
         end if
     end do
 
-end subroutine ffdev_topology_apply_NB_comb_rules_CBn
+end subroutine ffdev_topology_apply_NB_comb_rules_EXPTT
 
 !===============================================================================
 ! subroutine ffdev_topology_update_nb_params
@@ -2154,7 +2348,7 @@ subroutine ffdev_topology_update_nb_params(top)
     select case(nb_mode)
         case(NB_VDW_LJ)
             ! nothing to do
-        case(NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPTT)
+        case(NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
             if( .not. disp_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_topology_update_nb_params!')
             end if
@@ -2220,6 +2414,35 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c6 = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
 
         case(NB_VDW_12_DISPBJ)
+            ! ^12 repulsion
+            nbpair%pa  = exp(top%nb_types(nbt)%pa)
+
+            ! dispersion coefficients
+            agti = top%atom_types(top%atoms(i)%typeid)%glbtypeid
+            agtj = top%atom_types(top%atoms(j)%typeid)%glbtypeid
+
+            nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
+            nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
+            nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+
+            ! RC for BJ damping
+            rc  = 0.0d0
+            select case(dampbj_mode)
+                case(DAMP_BJ_DRC)
+                    rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
+                case(DAMP_BJ_ORC)
+                    rc = top%nb_types(nbt)%rc
+                case default
+                    if( .not. disp_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
+                    end if
+            end select
+
+            nbpair%rc6  = rc**6
+            nbpair%rc8  = rc**8
+            nbpair%rc10 = rc**10
+
+        case(NB_VDW_EXP_DISPBJ)
             ! Pauli repulsion
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
             nbpair%pb  = top%nb_types(nbt)%pb
@@ -2271,7 +2494,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_TT_COUPLED)
                     nbpair%tb  = damp_pb * nbpair%pb
                 case(DAMP_TT_FREEOPT)
-                    nbpair%tb  = nbpair%tb
+                    nbpair%tb  = top%nb_types(nbt)%tb
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_update_nbpair_prms!')

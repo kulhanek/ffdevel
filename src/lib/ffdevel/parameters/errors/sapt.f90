@@ -73,11 +73,11 @@ subroutine ffdev_err_sapt_error(error)
     nene = 0
 
     do i=1,nsets
-        if( sets(i)%isref ) cycle ! ignore reference sets
+        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
 
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
-            if( .not. (sets(i)%geo(j)%trg_sapt_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
+            if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
 
             nene = nene + 1
 
@@ -148,8 +148,10 @@ subroutine ffdev_err_sapt_summary
 
     do i=1,nsets
         printsum = .false.
+        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+
         do j=1,sets(i)%ngeos
-            if( .not. (sets(i)%geo(j)%trg_sapt_loaded .and. sets(i)%nrefs .gt. 1) ) cycle
+            if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
 
             printsum = .true.
             nene = nene + 1

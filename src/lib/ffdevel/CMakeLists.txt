@@ -25,6 +25,7 @@ SET(FFDEVEL_SRC
 
         forcefield/nbmodes/LJ.f90
         forcefield/nbmodes/12-DISPBJ.f90
+        forcefield/nbmodes/EXP-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPTT.f90
 
         parameters/errors/errors.f90

@@ -40,7 +40,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe,tb
-    real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
+    real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
     real(DEVDP)     :: V_aa,V_bb,V_ee
     ! --------------------------------------------------------------------------
 
@@ -78,6 +78,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
         r2  = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+
         r2a = 1.0d0/r2
         r   = sqrt(r2)
 
@@ -214,7 +215,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         suma = suma + sump
         sump = sump * arg / real(10,DEVDP)
         suma = suma + sump
-        fd8  = 1.0d0 - pe*suma
+        fd10 = 1.0d0 - pe*suma
 
         V_ee = crgij/r
         V_aa = pa*upe
@@ -245,7 +246,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe,tb
-    real(DEVDP)     :: r2,r,r6a,r8a,r10a,scale2,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
+    real(DEVDP)     :: r2,r,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
     real(DEVDP)     :: V_aa,V_b6,V_b8,V_b10,V_ee,dva,r2a,dfd6,dfd8,dfd10,sumd,suma
     ! --------------------------------------------------------------------------
 

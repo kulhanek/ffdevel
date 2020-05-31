@@ -486,7 +486,7 @@ subroutine ffdev_parameters_ctrl_disp(fin,exec)
         case(NB_RC_XDM_POL)
             disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvdw
         case(NB_RC_MMD3)
-            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rc
+            disp_pairs(:,:)%Rc  = mmd3_pairs(:,:)%Rc
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_disp II!')
     end select
@@ -522,11 +522,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     type(PRMFILE_TYPE)  :: fin
     logical             :: exec
     ! --------------------------------------------
-    logical                     :: rst,changed,lcouple_pa_pb_forA
-    character(50)               :: key
+    logical                     :: changed,lcouple_pa_pb_forA
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
-    integer                     :: mode,ldampbj_mode,ldamptt_mode
+    integer                     :: ldampbj_mode,ldamptt_mode
     integer                     :: from_nb_mode,lnb_mode
     integer                     :: lcomb_rules
     ! --------------------------------------------------------------------------
@@ -535,7 +534,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'nbsetup') ) then
-        if( nb_mode .eq. NB_VDW_12_DISPBJ ) then
+        if( nb_mode .eq. NB_VDW_12_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
             write(DEV_OUT,45) ffdev_topology_dampbj_mode_to_string(dampbj_mode)
         end if
         if( nb_mode .eq. NB_VDW_EXP_DISPTT ) then
@@ -543,7 +542,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             write(DEV_OUT,65) prmfile_onoff(couple_pa_pb_forA)
         end if
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
-        write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
+        if( ApplyCombiningRules ) then
+            write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
+        end if
         return
     end if
 
@@ -563,19 +564,22 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
-    if( prmfile_get_string_by_key(fin,'comb_rules', string)) then
-        lcomb_rules = ffdev_topology_comb_rules_from_string(string)
-        write(DEV_OUT,20) ffdev_topology_comb_rules_to_string(lcomb_rules)
-        if( exec ) then
-            nb_comb_rules = lcomb_rules
-            changed = .true.
+    if( ApplyCombiningRules ) then
+        if( prmfile_get_string_by_key(fin,'comb_rules', string)) then
+            lcomb_rules = ffdev_topology_comb_rules_from_string(string)
+            write(DEV_OUT,30) ffdev_topology_comb_rules_to_string(lcomb_rules)
+            if( exec ) then
+                nb_comb_rules = lcomb_rules
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,35) ffdev_topology_comb_rules_to_string(nb_comb_rules)
         end if
-    else
-        write(DEV_OUT,25) ffdev_topology_comb_rules_to_string(nb_comb_rules)
     end if
 
 ! ---------------------------
-    if( nb_mode .eq. NB_VDW_12_DISPBJ .or. lnb_mode .eq. NB_VDW_12_DISPBJ ) then
+    if( nb_mode .eq. NB_VDW_12_DISPBJ .or. lnb_mode .eq. NB_VDW_12_DISPBJ .or. &
+        nb_mode .eq. NB_VDW_EXP_DISPBJ .or. lnb_mode .eq. NB_VDW_EXP_DISPBJ) then
         if( prmfile_get_string_by_key(fin,'dampbj_mode', string)) then
             ldampbj_mode = ffdev_topology_dampbj_mode_from_string(string)
             write(DEV_OUT,40) ffdev_topology_dampbj_mode_to_string(ldampbj_mode)
@@ -625,8 +629,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             ! switch mode
             call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,nb_mode)
 
-            ! switch comb rules
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
+            ! apply comb rules
+            if( ApplyCombiningRules ) then
+                call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
+            end if
 
             if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
                 ! new set of parameters

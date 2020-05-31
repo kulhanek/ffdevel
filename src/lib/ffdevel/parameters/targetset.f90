@@ -147,10 +147,10 @@ subroutine ffdev_targetset_calc_all
 
     ! calculate SAPT
     do i=1,nsets
+        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_sapt_loaded .and. errors_calc_sapt .and. sets(i)%nrefs .gt. 1 ) then
-                call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
-            end if
+            if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
+            call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
         end do
     end do
 
@@ -503,10 +503,15 @@ subroutine ffdev_targetset_save_drvene(set,name)
         end if
         err = set%geo(i)%total_ene - set%geo(i)%trg_energy
         write(DEV_PROFILE,33,ADVANCE='NO') set%geo(i)%trg_energy, set%geo(i)%total_ene, err
-        ! FIXME
-!        write(DEV_PROFILE,34) set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
-!                              set%geo(i)%impropr_ene, set%geo(i)%ele_ene, set%geo(i)%ele14_ene, &
-!                              set%geo(i)%nb_ene, set%geo(i)%nb14_ene
+        write(DEV_PROFILE,34) set%geo(i)%bond_ene, set%geo(i)%angle_ene, set%geo(i)%dih_ene, &
+                              set%geo(i)%impropr_ene, set%geo(i)%dih_ene + set%geo(i)%impropr_ene, &
+                              set%geo(i)%ele_ene, set%geo(i)%ele14_ene, set%geo(i)%ele_ene + set%geo(i)%ele14_ene, &
+                              set%geo(i)%rep_ene, set%geo(i)%rep14_ene, set%geo(i)%rep_ene + set%geo(i)%rep14_ene, &
+                              set%geo(i)%dis_ene, set%geo(i)%dis14_ene, set%geo(i)%dis_ene + set%geo(i)%dis14_ene, &
+                              set%geo(i)%bond_ene + set%geo(i)%angle_ene + set%geo(i)%dih_ene + set%geo(i)%impropr_ene, &
+                              set%geo(i)%ele_ene + set%geo(i)%ele14_ene + set%geo(i)%rep_ene + set%geo(i)%rep14_ene + &
+                              set%geo(i)%dis_ene + set%geo(i)%dis14_ene
+
     end do
 
     close(DEV_PROFILE)
@@ -514,16 +519,19 @@ subroutine ffdev_targetset_save_drvene(set,name)
  10 format('# IDX')
  11 format('       CV',I2.2)
  12 format('   E(TRG,1)    E(MM,2)     E(2-1)')
- 13 format('     Ebonds    Eangles      Etors    Eimprps       Eeel      E14el        Enb      E14nb')
+ 13 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
+           '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Enb        Ebn')
  20 format('# ---')
  21 format(' ----------')
  22 format(' ---------- ---------- ----------')
- 23 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+ 23 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
+           ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
  30 format(I5)
  31 format(1X,F10.4)
  32 format(1X,F10.1)
  33 format(1X,F10.2,1X,F10.2,1X,F10.2)
- 34 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
+ 34 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2, &
+           1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
 
 end subroutine ffdev_targetset_save_drvene
 

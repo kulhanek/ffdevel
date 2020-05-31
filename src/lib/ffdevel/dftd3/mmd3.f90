@@ -423,6 +423,9 @@ subroutine ffdev_mmd3_print()
                           mmd3_pairs(ti,tj)%c8ave, mmd3_pairs(ti,tj)%c8sig, mmd3_pairs(ti,tj)%Rc
     end do
     write(DEV_OUT,40)
+
+    if( ntypes .eq. 1 ) return
+
     do ti=1,ntypes
         do tj=ti+1,ntypes
         write(DEV_OUT,50) trim(types(ti)%name),trim(types(tj)%name),mmd3_pairs(ti,tj)%num, &
