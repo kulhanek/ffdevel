@@ -520,7 +520,7 @@ subroutine ffdev_targetset_save_drvene(set,name)
  11 format('       CV',I2.2)
  12 format('   E(TRG,1)    E(MM,2)     E(2-1)')
  13 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
-           '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Enb        Ebn')
+           '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')
  20 format('# ---')
  21 format(' ----------')
  22 format(' ---------- ---------- ----------')

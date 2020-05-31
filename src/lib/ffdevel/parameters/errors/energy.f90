@@ -247,7 +247,7 @@ subroutine ffdev_err_energy_summary
 45 format('# Final error (all weights)           =  ',F10.3,1X,F10.3,1X,F10.3)
 
 50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
-          '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Enb        Ebn')
+          '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')
 60 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
           ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
 70 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2, &
