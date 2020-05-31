@@ -393,8 +393,8 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_parameters_ctrl_nbsetup(fin,exec)
             case('parameters')
                 call ffdev_parameters_ctrl_realms(fin)
-            case('nbload')
-                call ffdev_parameters_ctrl_nbload(fin,exec)
+            case('setprms')
+                call ffdev_parameters_ctrl_setprms(fin,exec)
             case('disp')
                 call ffdev_parameters_ctrl_disp(fin,exec)
             case('files')
@@ -668,10 +668,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 end subroutine ffdev_parameters_ctrl_nbsetup
 
 ! ==============================================================================
-! subroutine ffdev_parameters_ctrl_nbload
+! subroutine ffdev_parameters_ctrl_setprms
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_nbload(fin,exec)
+subroutine ffdev_parameters_ctrl_setprms(fin,exec)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -686,111 +686,91 @@ subroutine ffdev_parameters_ctrl_nbload(fin,exec)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: exec
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: line, sti, stj, snb_mode
-    real(DEVDP)                 :: a, b, c, d, e, f, g, h, u
-    integer                     :: i
+    character(PRMFILE_MAX_PATH) :: line, sti, stj, stk, stl, realm
+    real(DEVDP)                 :: lvalue
+    integer                     :: i, pn, realmid, ti, tj, tk, tl, parmid
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-! print header
-    write(DEV_OUT,*)
-    write(DEV_OUT,510)
-    write(DEV_OUT,*)
-    write(DEV_OUT,520)
-    write(DEV_OUT,530)
-
 ! read lines
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,15)
+    write(DEV_OUT,20)
 
     do while( prmfile_get_line(fin,line) )
 
-        ! read nb_mode and types first
-        read(line,*,err=100,end=100) snb_mode, sti, stj
+        ! read realm
+        read(line,*,err=100,end=100) realm
+        realmid = ffdev_parameters_get_realmid(realm)
 
-        ! FIXME
-       ! nb_mode = ffdev_topology_nb_mode_from_string(snb_mode)
+        sti = ''
+        stj = ''
+        stk = ''
+        stl = ''
+        pn  = 0
 
-        a = 0.0d0
-        b = 0.0d0
-        c = 0.0d0
-        d = 0.0d0
-        e = 0.0d0
-        f = 0.0d0
-        g = 0.0d0
-        h = 0.0d0
-        u = 0.0d0
-
-        ! read the entire record
-        ! FIXME
-!        select case(lnb_mode)
-!            case(NB_MODE_LJ)
-!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b
-!            case(NB_MODE_EXP6)
-!                read(line,*,err=100,end=100) snb_mode, sti, stj, a, b, c
-!            case default
-!                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-!        end select
-
-        write(DEV_OUT,540) trim(snb_mode),trim(sti),trim(stj), a,b,c,d
+        select case(realmid)
+            case(REALM_BOND_D0,REALM_BOND_K)
+                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+            case(REALM_ANGLE_A0,REALM_ANGLE_K)
+                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
+                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+            case(REALM_DIH_SCEE,REALM_DIH_SCNB)
+                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+            case(REALM_IMPR_V,REALM_IMPR_G)
+                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+            case(REALM_VDW_EPS,REALM_VDW_R0)
+                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
+                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+            case(REALM_ELE_SQ)
+                read(line,*,err=100,end=100) realm, lvalue
+            case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB)
+                read(line,*,err=100,end=100) realm, lvalue
+            case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
+                read(line,*,err=100,end=100) realm, lvalue
+            case(REALM_GLB_SCEE,REALM_GLB_SCNB)
+                read(line,*,err=100,end=100) realm, lvalue
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
+        end select
 
         if( exec ) then
-            ! for each topology update given parameters
-            ! FIXME
-!            do j=1,nsets
-!                if( sets(j)%top%nb_mode .ne. nb_mode ) cycle ! skip topologies with different nb_mode
-!                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,sti,stj)
-!                if( nbt .ne. 0 ) then
-!                    select case(nb_mode)
-!                        case(NB_MODE_LJ)
-!                            sets(j)%top%nb_types(nbt)%eps = a
-!                            sets(j)%top%nb_types(nbt)%r0 = b
-!                        case(NB_MODE_EXP6)
-!                            sets(j)%top%nb_types(nbt)%eps = a
-!                            sets(j)%top%nb_types(nbt)%r0 = b
-!                            sets(j)%top%nb_types(nbt)%alpha = c
-!                        case default
-!                            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_parameters_ctrl_nbload!')
-!                    end select
-!
-!                end if
-!            end do
+            ti = get_common_type_from_name(sti)
+            tj = get_common_type_from_name(stj)
+            tk = get_common_type_from_name(stk)
+            tl = get_common_type_from_name(stl)
+
+            parmid = find_parameter_by_ids(realmid,pn,ti,tj,tk,tl)
+
+            write(DEV_OUT,30) parmid, trim(realm), trim(sti), trim(stj), trim(stk), trim(stl), pn, lvalue
+
+            if( parmid .le. 0 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to find the parameter!')
+            end if
+
+            params(parmid)%value = lvalue / ffdev_parameters_get_realm_scaling(realmid)
 
         end if
 
     end do
 
-    if( .not. exec ) return
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-    ! print updated parameters
-        do i=1,nsets
-            write(DEV_OUT,*)
-            write(DEV_OUT,20) i
-            ! new set of parameters
-            write(DEV_OUT,*)
-            call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
-            call ffdev_topology_info_types(sets(i)%top,2)
-        end do
-    end if
-
-! update nb parameters
-    call ffdev_targetset_reinit_nbparams
-
     return
 
-10 format('=== [nbload] ===================================================================')
+ 10 format('=== [setprms] ==================================================================')
 
-20 format('=== SET ',I2.2)
+ 15 format('# ID    Realm    TI TJ TK TL PN       Value     ')
+ 20 format('# -- ----------- -- -- -- -- -- ----------------')
+ 30 format(I4,1X,A11,1X,A2,1X,A2,1X,A2,1X,A2,1X,I2,1X,F16.4)
 
-100 call ffdev_utils_exit(DEV_ERR,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_nbload!')
+100 call ffdev_utils_exit(DEV_ERR,1,'Unable parse line "' // trim(line) // '" in ffdev_parameters_ctrl_setprms!')
 
-510 format('# ~~~~~~~~~~~~~~~~~ NB types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-520 format('# NBMode TypA TypB      eps/A             R0/B          alpha/C6             C8       ')
-530 format('# ------ ---- ---- ---------------- ---------------- ----------------  ---------------')
-540 format(2X,A6,1X,A4,1X,A4,1X,F16.7,1X,F16.7,1X,F16.7,1X,F16.7)
 
-end subroutine ffdev_parameters_ctrl_nbload
+end subroutine ffdev_parameters_ctrl_setprms
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_identities

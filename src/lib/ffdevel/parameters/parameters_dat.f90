@@ -60,11 +60,11 @@ integer,parameter       :: REALM_PAC        = 25
 integer,parameter       :: REALM_ELE_SQ     = 26
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_GLB_ISCEE  = 27
-integer,parameter       :: REALM_GLB_ISCNB  = 28
+integer,parameter       :: REALM_GLB_SCEE   = 27
+integer,parameter       :: REALM_GLB_SCNB   = 28
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_GLB_ISCNB
+integer,parameter       :: REALM_LAST    = REALM_GLB_SCNB
 
 ! ------------------------------------------------------------------------------
 
@@ -207,10 +207,10 @@ real(DEVDP)     :: MaxDispS8    =     10.0d0
 real(DEVDP)     :: MinDispS10   =      0.0d0
 real(DEVDP)     :: MaxDispS10   =     10.0d0
 
-real(DEVDP)     :: MinGlbISCEE  =      0.0d0
-real(DEVDP)     :: MaxGlbISCEE  =      2.0d0
-real(DEVDP)     :: MinGlbISCNB  =      0.0d0
-real(DEVDP)     :: MaxGlbISCNB  =      2.0d0
+real(DEVDP)     :: MinGlbSCEE  =      0.0d0
+real(DEVDP)     :: MaxGlbSCEE  =      4.0d0
+real(DEVDP)     :: MinGlbSCNB  =      0.0d0
+real(DEVDP)     :: MaxGlbSCNB  =      4.0d0
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

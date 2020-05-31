@@ -810,8 +810,12 @@ subroutine ffdev_parameters_reinit()
     end if
 
     nparams = nparams + 1
-    params(nparams)%value = glb_iscee
-    params(nparams)%realm = REALM_GLB_ISCEE
+    if( glb_iscee .ne. 0.0d0 ) then
+        params(nparams)%value = 1.0d0 / glb_iscee
+    else
+        params(nparams)%value = 0.0d0
+    end if
+    params(nparams)%realm = REALM_GLB_SCEE
     params(nparams)%enabled = .false.
     params(nparams)%identity = 0
     params(nparams)%pn    = 0
@@ -822,8 +826,12 @@ subroutine ffdev_parameters_reinit()
     params(nparams)%tl   = 0
 
     nparams = nparams + 1
-    params(nparams)%value = glb_iscnb
-    params(nparams)%realm = REALM_GLB_ISCNB
+    if( glb_iscnb .ne. 0.0d0 ) then
+        params(nparams)%value = 1.0d0 / glb_iscnb
+    else
+        params(nparams)%value = 0.0d0
+    end if
+    params(nparams)%realm = REALM_GLB_SCNB
     params(nparams)%enabled = .false.
     params(nparams)%identity = 0
     params(nparams)%pn    = 0
@@ -1097,7 +1105,9 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-           case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
+           case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB, &
+                REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10, &
+                REALM_GLB_SCEE,REALM_GLB_SCNB)
                 find_parameter_by_ids = i
                 return
             case default
@@ -1941,11 +1951,11 @@ integer function ffdev_parameters_get_realmid(realm)
         case('pac')
             ffdev_parameters_get_realmid = REALM_PAC
 
-        case('glb_iscee')
-            ffdev_parameters_get_realmid = REALM_GLB_ISCEE
+        case('glb_scee')
+            ffdev_parameters_get_realmid = REALM_GLB_SCEE
 
-        case('glb_iscnb')
-            ffdev_parameters_get_realmid = REALM_GLB_ISCNB
+        case('glb_scnb')
+            ffdev_parameters_get_realmid = REALM_GLB_SCNB
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
@@ -2023,10 +2033,10 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_DISP_S10)
             ffdev_parameters_get_realm_name = 'disp_s10'
 
-        case(REALM_GLB_ISCEE)
-            ffdev_parameters_get_realm_name = 'glb_iscee'
-        case(REALM_GLB_ISCNB)
-            ffdev_parameters_get_realm_name = 'glb_iscnb'
+        case(REALM_GLB_SCEE)
+            ffdev_parameters_get_realm_name = 'glb_scee'
+        case(REALM_GLB_SCNB)
+            ffdev_parameters_get_realm_name = 'glb_scnb'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
@@ -2072,7 +2082,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
             ! nothing to do
-        case(REALM_GLB_ISCEE,REALM_GLB_ISCNB)
+        case(REALM_GLB_SCEE,REALM_GLB_SCNB)
             ! nothing to do
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
@@ -2496,10 +2506,18 @@ subroutine ffdev_parameters_to_tops
             case(REALM_DISP_S10)
                 disp_s10 = params(i)%value
 
-            case(REALM_GLB_ISCEE)
-                glb_iscee = params(i)%value
-            case(REALM_GLB_ISCNB)
-                glb_iscnb = params(i)%value
+            case(REALM_GLB_SCEE)
+                if( params(i)%value .ne. 0.0d0 ) then
+                    glb_iscee = 1.0d0 / params(i)%value
+                else
+                    glb_iscee = 0.0d0
+                end if
+            case(REALM_GLB_SCNB)
+                if( params(i)%value .ne. 0.0d0 ) then
+                    glb_iscnb = 1.0d0 / params(i)%value
+                else
+                    glb_iscnb = 0.0d0
+                end if
 
         ! PAC - partial atomic charges
             case(REALM_PAC)
@@ -2668,10 +2686,10 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_DISP_S10)
             ffdev_params_get_lower_bound = MinDispS10
 
-        case(REALM_GLB_ISCEE)
-            ffdev_params_get_lower_bound = MinGlbISCEE
-        case(REALM_GLB_ISCNB)
-            ffdev_params_get_lower_bound = MinGlbISCNB
+        case(REALM_GLB_SCEE)
+            ffdev_params_get_lower_bound = MinGlbSCEE
+        case(REALM_GLB_SCNB)
+            ffdev_params_get_lower_bound = MinGlbSCNB
 
         case(REALM_PAC)
             ffdev_params_get_lower_bound = MinPAC
@@ -2777,10 +2795,10 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
         case(REALM_DISP_S10)
             ffdev_params_get_upper_bound = MaxDispS10
 
-        case(REALM_GLB_ISCEE)
-            ffdev_params_get_upper_bound = MaxGlbISCEE
-        case(REALM_GLB_ISCNB)
-            ffdev_params_get_upper_bound = MaxGlbISCNB
+        case(REALM_GLB_SCEE)
+            ffdev_params_get_upper_bound = MaxGlbSCEE
+        case(REALM_GLB_SCNB)
+            ffdev_params_get_upper_bound = MaxGlbSCNB
 
         case(REALM_PAC)
             ffdev_params_get_upper_bound = MaxPAC
