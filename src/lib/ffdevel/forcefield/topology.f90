@@ -1685,6 +1685,8 @@ character(80) function ffdev_topology_dampbj_mode_to_string(nb_mode)
             ffdev_topology_dampbj_mode_to_string = 'DRC - Use Rc from dispersion data'
         case(DAMP_BJ_ORC)
             ffdev_topology_dampbj_mode_to_string = 'ORC - Use optimized Rc per type'
+        case(DAMP_BJ_SRC)
+            ffdev_topology_dampbj_mode_to_string = 'SRC - Use scaled optimized Rc per type'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_dampbj_mode_to_string!')
     end select
@@ -1708,6 +1710,8 @@ integer function ffdev_topology_dampbj_mode_from_string(string)
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_DRC
         case('ORC')
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ORC
+        case('SRC')
+            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_SRC
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_dampbj_mode_from_string!')
     end select
@@ -1783,6 +1787,8 @@ integer function ffdev_topology_rcsource_from_string(string)
             ffdev_topology_rcsource_from_string = NB_RC_XDM
         case('XDM-POL')
             ffdev_topology_rcsource_from_string = NB_RC_XDM_POL
+        case('XDM-VOL')
+            ffdev_topology_rcsource_from_string = NB_RC_XDM_VOL
         case('MMD3')
             ffdev_topology_rcsource_from_string = NB_RC_MMD3
         case default
@@ -1810,6 +1816,8 @@ character(80) function ffdev_topology_rcsource_to_string(nb_mode)
             ffdev_topology_rcsource_to_string = 'XDM'
         case(NB_RC_XDM_POL)
             ffdev_topology_rcsource_to_string = 'XDM-POL'
+        case(NB_RC_XDM_VOL)
+            ffdev_topology_rcsource_to_string = 'XDM-VOL'
         case(NB_RC_MMD3)
             ffdev_topology_rcsource_to_string = 'MMD3'
         case default
@@ -1906,7 +1914,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 end if
                 top%nb_types(nbt)%pa = pa
                 top%nb_types(nbt)%pb = alpha / top%nb_types(nbt)%r0
-                top%nb_types(nbt)%rc = 3.0d0
+                top%nb_types(nbt)%rc = 1.5d0
             end do
 
         case default
@@ -2432,6 +2440,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
                 case(DAMP_BJ_ORC)
                     rc = top%nb_types(nbt)%rc
+                case(DAMP_BJ_SRC)
+                    rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2462,6 +2472,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
                 case(DAMP_BJ_ORC)
                     rc = top%nb_types(nbt)%rc
+                case(DAMP_BJ_SRC)
+                    rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')

@@ -118,6 +118,7 @@ private:
     bool GeneratorMSMSRandomPerAll(void);
     bool GeneratorMSMSRandomPerAllWithMinPreFilter(void);
     bool GeneratorSphereMinRepulsion(void);
+    bool GeneratorSphereMaxDistance(void);
     bool GeneratorVSEPR(void);
 
     /// filters

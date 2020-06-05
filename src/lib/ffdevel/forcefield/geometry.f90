@@ -81,6 +81,10 @@ subroutine ffdev_geometry_init(geo)
     geo%sup_surf_loaded = .false.
     geo%sup_chrg_loaded = .false.
 
+    geo%trg_probe_ene_loaded = .false.
+    geo%trg_probe_ene = 0.0d0
+    geo%trg_probe_ene_mode = 0
+
     geo%nrst        = 0
     geo%rst_energy  = 0.0
 
@@ -534,6 +538,22 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to read point energy!')
                 end if
                 geo%trg_ene_loaded = .true.
+            case('PROBE-ENERGY')
+                read(DEV_GEO,*,iostat = read_stat) key, geo%trg_probe_ene
+                if( read_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to read point probe-energy!')
+                end if
+                select case(trim(key))
+                    case('Erep')
+                        geo%trg_probe_ene_mode = GEO_PROBE_ENE_REP
+                    case('Etot')
+                        geo%trg_probe_ene_mode = GEO_PROBE_ENE_TOT
+                    case default
+                        write(buffer,'(A,I3)') 'Unsupported probe mode (' &
+                                               // trim(key) // ') at line = ',i
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                end select
+                geo%trg_probe_ene_loaded = .true.
             case('SAPT0')
                 do i=1,4
                     read(DEV_GEO,*,iostat = read_stat) key, rnum
@@ -1114,8 +1134,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight E S G H P X A C')
-40 format('# ---- ---------------------------------------- ------ - - - - - - - -')
+30 format('# ID   File                                     Weight E S V G H P X A C')
+40 format('# ---- ---------------------------------------- ------ - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1133,12 +1153,12 @@ subroutine ffdev_geometry_info_point(geo)
 
     lname = trim(geo%name)
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, &
+                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,1L,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 
@@ -1159,9 +1179,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight   Rel Energy E S G H P X A C')
-35 format('# ID   File                                     Weight       Energy E S G H P X A C')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - -')
+30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C')
+35 format('# ID   File                                     Weight       Energy E S V G H P X A C')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1181,19 +1201,19 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
     lname = trim(geo%name)
     if( relative ) then
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, &
+                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     else
     write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, &
+                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                       geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
     end if
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
-  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
 
 end subroutine ffdev_geometry_info_point_ext
 

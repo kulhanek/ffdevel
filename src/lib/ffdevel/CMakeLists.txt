@@ -66,6 +66,9 @@ SET(FFDEVEL_SRC
         parameters/errors/zerograd_dat.f90
         parameters/errors/zerograd.f90
         parameters/errors/zerograd_control.f90
+        parameters/errors/probe_dat.f90
+        parameters/errors/probe.f90
+        parameters/errors/probe_control.f90
 
         parameters/xdm_dat.f90
         parameters/xdm.f90

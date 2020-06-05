@@ -97,6 +97,7 @@ subroutine ffdev_targetset_calc_all
     !$omp single
     ! optimize geometry
     do i=1,nsets
+        if( sets(i)%top%probe_size .gt. 0 ) cycle ! do not optimize probed structures
         do j=1,sets(i)%ngeos
             sets(i)%geo(j)%trg_crd_optimized = .false.
             if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
@@ -149,7 +150,8 @@ subroutine ffdev_targetset_calc_all
     do i=1,nsets
         if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
         do j=1,sets(i)%ngeos
-            if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
+            if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
+                        .and. errors_calc_sapt ) ) cycle
             call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
         end do
     end do

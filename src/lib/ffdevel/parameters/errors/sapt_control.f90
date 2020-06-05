@@ -88,7 +88,7 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(SAPTErrorIndToRep)
     end if
 
- 10 format('=== [sapt] ====================================================================')
+ 10 format('=== [sapt] =====================================================================')
 
 110  format ('SAPT error (enabled)                   = ',a12)
 115  format ('SAPT error (enabled)                   = ',a12,'                  (default)')

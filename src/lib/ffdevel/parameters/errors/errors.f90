@@ -43,6 +43,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_sapt
     use ffdev_err_chrgpnl
     use ffdev_err_zerograd
+    use ffdev_err_probe
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -56,6 +57,7 @@ subroutine ffdev_errors_init_all()
     ! reset all setup
     call ffdev_err_energy_init()
     call ffdev_err_sapt_init()
+    call ffdev_err_probe_init()
 
     call ffdev_err_bonds_init()
     call ffdev_err_angles_init()
@@ -86,6 +88,7 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
+    use ffdev_err_probe_dat
 
     implicit none
     logical         :: opterror
@@ -93,17 +96,17 @@ subroutine ffdev_errors_error_setup_domains(opterror)
 
     ! clear what should be calculated
     errors_calc_ene     = .false.
-    errors_calc_sapt   = .false.
+    errors_calc_sapt    = .false.
     errors_calc_grad    = .false.
     errors_calc_hess    = .false.
 
     if( opterror ) then
         errors_calc_ene  = EnableEnergyError
-        errors_calc_sapt = EnableSAPTError
+        errors_calc_sapt = EnableSAPTError .or. EnableProbeError
         errors_calc_grad = EnableZeroGradError
     else
         errors_calc_ene  = EnableEnergyError .or. PrintEnergyErrorSummary
-        errors_calc_sapt = EnableSAPTError .or. PrintSAPTErrorSummary
+        errors_calc_sapt = EnableSAPTError .or. PrintSAPTErrorSummary .or. EnableProbeError
         errors_calc_grad = EnableZeroGradError .or. PrintZeroGradErrorSummary
     end if
 
@@ -148,6 +151,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_zerograd_dat
     use ffdev_err_zerograd
 
+    use ffdev_err_probe_dat
+    use ffdev_err_probe
+
     use ffdev_timers
 
     implicit none
@@ -170,6 +176,7 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_impropers = 0.0d0
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
+    error%probe_ene = 0.0d0
     error%chrgpnl = 0.0d0
     error%zerograd = 0.0d0
 
@@ -183,6 +190,11 @@ subroutine ffdev_errors_error_only(error)
         call ffdev_err_sapt_error(error)
         error%total = error%total + error%sapt_rep * SAPTRepErrorWeight &
                                   + error%sapt_dis * SAPTDispErrorWeight
+    end if
+
+    if( EnableProbeError ) then
+        call ffdev_err_probe_error(error)
+        error%total = error%total + error%probe_ene * ProbeErrorWeight
     end if
 
 ! geometry based errors
@@ -247,6 +259,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
+    use ffdev_err_probe_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -259,6 +272,9 @@ subroutine ffdev_errors_ffopt_header_I()
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,42,ADVANCE='NO')
+    end if
+    if( EnableProbeError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,33,ADVANCE='NO')
@@ -296,6 +312,7 @@ subroutine ffdev_errors_ffopt_header_I()
  42 format('   SAPT(Disp)')
  43 format('  ChrgPenalty')
  44 format(' ZeroGradient')
+ 50 format('     ProbeEne')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -315,6 +332,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
+    use ffdev_err_probe_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -326,6 +344,9 @@ subroutine ffdev_errors_ffopt_header_II()
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableProbeError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableBondsError ) then
@@ -373,6 +394,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_sapt_dat
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
+    use ffdev_err_probe_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -386,6 +408,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_dis
+    end if
+    if( EnableProbeError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%probe_ene
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%bonds
@@ -459,6 +484,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_zerograd_dat
     use ffdev_err_zerograd
 
+    use ffdev_err_probe_dat
+    use ffdev_err_probe
+
     implicit none
     integer     :: logmode
     logical     :: printme, printsum
@@ -467,7 +495,7 @@ subroutine ffdev_errors_summary(logmode)
 
     if( .not. (PrintEnergyErrorSummary .or. PrintSAPTErrorSummary .or. PrintZeroGradErrorSummary .or.  &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
-            PrintImpropersErrorSummary .or. &
+            PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary) ) then
         ! no error to report
         return
@@ -492,6 +520,10 @@ subroutine ffdev_errors_summary(logmode)
 
     if( PrintSAPTErrorSummary ) then
         call ffdev_err_sapt_summary
+    end if
+
+    if( PrintProbeErrorSummary ) then
+        call ffdev_err_probe_summary
     end if
 
     if( PrintZeroGradErrorSummary ) then

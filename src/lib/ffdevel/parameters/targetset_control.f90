@@ -452,6 +452,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
                 ! do we have data for point
                 data_avail = sets(i)%geo(j)%trg_ene_loaded .or. &
+                             sets(i)%geo(j)%trg_sapt_loaded .or. &
+                             sets(i)%geo(j)%trg_probe_ene_loaded .or. &
                              sets(i)%geo(j)%trg_grd_loaded .or. &
                              sets(i)%geo(j)%trg_hess_loaded .or. &
                              sets(i)%optgeo .or. sets(i)%isref
@@ -500,8 +502,10 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             end if
         end do
         sets(i)%mineneid = minj
-        write(DEV_OUT,*)
-        write(DEV_OUT,300) sets(i)%mineneid,minenergy
+        if( sets(i)%mineneid .gt. 0 ) then
+            write(DEV_OUT,*)
+            write(DEV_OUT,300) sets(i)%mineneid,minenergy
+        end if
 
         if( (sets(i)%mineneid .gt. 0) .and. (sets(i)%nrefs .eq. 0) ) then
             if( shift2zero ) then
@@ -523,11 +527,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
     end do
 
-    ! build SAPT list for sets with SAPT data
+    ! build SAPT or Probe list for sets with SAPT data
     do i=1,nsets
         has_sapt = .false.
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_sapt_loaded ) then
+            if( sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded ) then
                 has_sapt = .true.
                 exit
             end if

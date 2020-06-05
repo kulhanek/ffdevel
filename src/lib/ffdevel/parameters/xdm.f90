@@ -223,6 +223,9 @@ subroutine ffdev_xdm_run_stat()
                 ! DOI: 10.1103/PhysRevLett.121.183401
                 xdm_pairs(ti,tj)%Rvdw = DEV_AU2A * 2.0d0 * xdm_pol2rvdw * &
                                         ((xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)*0.5d0)**(1.0d0/7.0d0)
+
+                xdm_pairs(ti,tj)%Rvol = DEV_AU2A * ( (3.0d0 * xdm_atoms(ti)%vave / (4.0d0 * DEV_PI))**(1.0d0/3.0d0) + &
+                                                     (3.0d0 * xdm_atoms(tj)%vave / (4.0d0 * DEV_PI))**(1.0d0/3.0d0) )
             end if
 
         end do
@@ -269,7 +272,7 @@ subroutine ffdev_xdm_print()
                           xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                           xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
                           xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
-                          xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
+                          xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw, xdm_pairs(ti,tj)%Rvol
     end do
     write(DEV_OUT,40)
 
@@ -280,7 +283,7 @@ subroutine ffdev_xdm_print()
                                   xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c6sig, &
                                   xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%c8sig, &
                                   xdm_pairs(ti,tj)%c10ave, xdm_pairs(ti,tj)%c10sig, &
-                                  xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw
+                                  xdm_pairs(ti,tj)%Rc, xdm_pairs(ti,tj)%Rvdw, xdm_pairs(ti,tj)%Rvol
             end do
         end do
         write(DEV_OUT,40)
@@ -350,9 +353,9 @@ subroutine ffdev_xdm_print()
  10 format('>>> No XDM data available ....')
 
  20 format('# Dispersion coefficients ...')
- 30 format('# TypA TypB Number         <C6>  s(C6)         <C8>  s(C8)        <C10> s(C10)     Rc   Rvdw')
- 40 format('# ---- ---- ------ ------------ ------ ------------ ------ ------------ ------ ------ ------')
- 50 format(2X,A4,1X,A4,1X,I6,1X,F12.2,1X,F6.2,1X,F12.2,1X,F6.1,1X,F12.1,1X,F6.1,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3)
+ 30 format('# TypA TypB Number         <C6>  s(C6)         <C8>  s(C8)        <C10> s(C10)     Rc   Rvdw   Rvol')
+ 40 format('# ---- ---- ------ ------------ ------ ------------ ------ ------------ ------ ------ ------ ------')
+ 50 format(2X,A4,1X,A4,1X,I6,1X,F12.2,1X,F6.2,1X,F12.2,1X,F6.1,1X,F12.1,1X,F6.1,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3)
 
 120 format('# Atomic data ... (all in atomic units)')
 130 format('# TypA Number       <pol0>      s(pol0)         <V0>        s(V0)          <V>         s(V)          pol')

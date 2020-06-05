@@ -32,6 +32,7 @@ type XDM_PAIR_TYPE
     real(DEVDP)         :: c10sig
     real(DEVDP)         :: Rc       ! critical radius for BJ
     real(DEVDP)         :: Rvdw     ! van der Waals radius from polarization
+    real(DEVDP)         :: Rvol     ! from volume
     integer             :: num
 end type XDM_PAIR_TYPE
 

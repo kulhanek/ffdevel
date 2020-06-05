@@ -47,6 +47,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: sapt_dis
     real(DEVDP)         :: chrgpnl
     real(DEVDP)         :: zerograd
+    real(DEVDP)         :: probe_ene
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError

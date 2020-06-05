@@ -47,6 +47,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_sapt_control
     use ffdev_err_chrgpnl_control
     use ffdev_err_zerograd_control
+    use ffdev_err_probe_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -73,6 +74,7 @@ subroutine ffdev_errors_ctrl(fin)
     ! read setup
     call ffdev_err_energy_ctrl(fin)
     call ffdev_err_sapt_ctrl(fin)
+    call ffdev_err_probe_ctrl(fin)
     call ffdev_err_bonds_ctrl(fin)
     call ffdev_err_angles_ctrl(fin)
     call ffdev_err_dihedrals_ctrl(fin)

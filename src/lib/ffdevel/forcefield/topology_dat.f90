@@ -216,7 +216,8 @@ integer,parameter   :: NB_CX_MMD3       = 2
 integer,parameter   :: NB_RC_NONE       = 0
 integer,parameter   :: NB_RC_XDM        = 1
 integer,parameter   :: NB_RC_XDM_POL    = 2
-integer,parameter   :: NB_RC_MMD3       = 3
+integer,parameter   :: NB_RC_XDM_VOL    = 3
+integer,parameter   :: NB_RC_MMD3       = 4
 
 ! dispersion parameters pair
 type DISP_PAIR_TYPE
@@ -269,6 +270,7 @@ logical             :: couple_pa_pb_forA    = .false.
 ! Becke-Johnson damping
 integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
 integer,parameter   :: DAMP_BJ_ORC          = 202       ! optimized radii
+integer,parameter   :: DAMP_BJ_SRC          = 203       ! scaled optimized radii
 
 integer     :: dampbj_mode                  = DAMP_BJ_DRC
 

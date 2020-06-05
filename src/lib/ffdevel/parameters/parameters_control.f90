@@ -485,6 +485,8 @@ subroutine ffdev_parameters_ctrl_disp(fin,exec)
             disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rc
         case(NB_RC_XDM_POL)
             disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvdw
+        case(NB_RC_XDM_VOL)
+            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvol
         case(NB_RC_MMD3)
             disp_pairs(:,:)%Rc  = mmd3_pairs(:,:)%Rc
         case default

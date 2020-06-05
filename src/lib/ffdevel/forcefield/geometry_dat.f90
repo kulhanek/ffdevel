@@ -31,6 +31,11 @@ end type RESTRAINT
 
 ! ------------------------------------------------------------------------------
 
+integer,parameter   :: GEO_PROBE_ENE_REP    = 1
+integer,parameter   :: GEO_PROBE_ENE_TOT    = 2
+
+! ------------------------------------------------------------------------------
+
 type GEOMETRY
     integer                 :: id
     integer                 :: natoms           ! number of atoms
@@ -81,6 +86,10 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer                 :: esp_npoints          ! number of ESP points
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
+! probe energy
+    logical                 :: trg_probe_ene_loaded
+    real(DEVDP)             :: trg_probe_ene
+    integer                 :: trg_probe_ene_mode
 ! target SAPT
     logical                 :: trg_sapt_loaded
     real(DEVDP)             :: trg_sapt_ele

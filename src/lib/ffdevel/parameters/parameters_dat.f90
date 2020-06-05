@@ -174,8 +174,8 @@ real(DEVDP)     :: MaxVdwR0     =       6.0d0
 real(DEVDP)     :: MinVdwPA     =      0.0d0
 real(DEVDP)     :: MaxVdwPA     =     20.0d0
 
-real(DEVDP)     :: MinVdwPB     =      3.0d0
-real(DEVDP)     :: MaxVdwPB     =      4.0d0
+real(DEVDP)     :: MinVdwPB     =      2.0d0
+real(DEVDP)     :: MaxVdwPB     =      5.0d0
 
 real(DEVDP)     :: MinVdwRC     =      0.0d0
 real(DEVDP)     :: MaxVdwRC     =      5.0d0
