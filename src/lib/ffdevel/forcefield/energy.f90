@@ -17,7 +17,6 @@
 
 module ffdev_energy
 
-use ffdev_geometry_dat
 use ffdev_constants
 use ffdev_variables
 
@@ -29,8 +28,9 @@ contains
 
 subroutine ffdev_energy_all(top,geo,skipnb)
 
+    use ffdev_topology_dat
     use ffdev_topology
-    use ffdev_geometry
+    use ffdev_geometry_dat
     use ffdev_utils
     use ffdev_timers
 
@@ -100,8 +100,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
                 call ffdev_energy_nb_EXP_DISPTT(top,geo)
 
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt! (' // &
-                                ffdev_topology_nb_mode_to_string(nb_mode) // ')')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
         end select
 
         call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
@@ -121,8 +120,9 @@ end subroutine ffdev_energy_all
 
 subroutine ffdev_energy_sapt(top,geo)
 
+    use ffdev_topology_dat
     use ffdev_topology
-    use ffdev_geometry
+    use ffdev_geometry_dat
     use ffdev_utils
     use ffdev_timers
 
@@ -165,8 +165,7 @@ subroutine ffdev_energy_sapt(top,geo)
             call ffdev_energy_sapt_EXP_DISPTT(top,geo)
 
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt! (' // &
-                                            ffdev_topology_nb_mode_to_string(nb_mode) // ')')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt!')
     end select
 
     geo%sapt_total = geo%sapt_ele + geo%sapt_rep + geo%sapt_dis
@@ -182,8 +181,8 @@ end subroutine ffdev_energy_sapt
 
 subroutine ffdev_energy_bonds(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -218,8 +217,8 @@ end subroutine ffdev_energy_bonds
 
 subroutine ffdev_energy_angles(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -272,7 +271,8 @@ end subroutine ffdev_energy_angles
 
 subroutine ffdev_energy_dihedrals(top,geo)
 
-    use ffdev_topology
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
     use ffdev_geometry
     use ffdev_utils
 
@@ -359,8 +359,8 @@ end subroutine ffdev_energy_dihedrals
 
 subroutine ffdev_energy_impropers(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top

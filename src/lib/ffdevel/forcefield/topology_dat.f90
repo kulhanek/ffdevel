@@ -112,7 +112,7 @@ end type IMPROPER_TYPE
 type NB_PAIR
     integer     ::  ai,aj       ! pair
     integer     ::  nbt         ! NB type
-    integer     ::  nbtii,nbtjj ! NB types of correponding like atoms
+    integer     ::  nbtii,nbtjj ! NB types of corresponding like atoms
     integer     ::  dt          ! dihedral type for scaling factors
     ! acceleration data -  do not use for regular use
     ! these data are updated when nb_params_update .eqv. .true.
@@ -293,6 +293,13 @@ integer,parameter   :: COMB_RULE_AM         = 17    ! arithmetic means
 integer,parameter   :: COMB_RULE_GS         = 90    ! Gilbert-Smith
 integer,parameter   :: COMB_RULE_BA         = 91    ! Bohm-Ahlrichs
 integer,parameter   :: COMB_RULE_VS         = 92    ! Vleet- Schmidt
+
+! ==============================================================================
+
+! possible values for lj2exp6_alpha
+real(DEVDP) :: lj2exp6_alpha    = 12.0d0    ! alpha for lj to exp-6 potential conversion
+                                            ! 12.0                           - identical long-range
+                                            ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
 
 ! ==============================================================================
 

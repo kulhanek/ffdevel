@@ -711,12 +711,13 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 end do
                 geo%sup_surf_loaded = .true.
           case('CHARGES')
-                read(DEV_GEO,*,iostat = read_stat) geo%sup_chrg_type
+                read(DEV_GEO,*,iostat = read_stat) key
                 if( read_stat .ne. 0 ) then
                     write(buffer,'(A,I3)') 'Unable to read CHARGES type entry! CHARGES line = ',i
                     call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                 end if
-                if( trim(geo%sup_chrg_type) .eq. trim(LoadCharges) ) then
+                if( trim(key) .eq. trim(LoadCharges) ) then
+                    geo%sup_chrg_type = key
                     allocate( geo%sup_chrg(geo%natoms), stat = alloc_stat )
                     if( alloc_stat .ne. 0 ) then
                         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for CHARGES!')

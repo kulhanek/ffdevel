@@ -17,7 +17,6 @@
 
 module ffdev_nbmode_LJ
 
-use ffdev_geometry_dat
 use ffdev_constants
 use ffdev_variables
 
@@ -29,8 +28,8 @@ contains
 
 subroutine ffdev_energy_nb_LJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -93,8 +92,8 @@ end subroutine ffdev_energy_nb_LJ
 
 subroutine ffdev_energy_sapt_LJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -138,13 +137,45 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
 end subroutine ffdev_energy_sapt_LJ
 
 !===============================================================================
+! subroutine ffdev_energy_nbpair_LJ
+!===============================================================================
+
+real(DEVDP) function ffdev_energy_nbpair_LJ(top,nbt,r)
+
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    real(DEVDP)     :: r
+    ! --------------------------------------------
+    real(DEVDP)     :: aLJa,bLJa
+    real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb
+    ! --------------------------------------------------------------------------
+
+    aLJa =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
+    bLJa = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+
+    r2    = r**2
+    r2a   = 1.0d0/r2
+    r6a   = r2a*r2a*r2a
+
+    V_aa  =   aLJa*r6a*r6a
+    V_bb  = - bLJa*r6a
+
+    ffdev_energy_nbpair_LJ = V_aa + V_bb
+
+end function ffdev_energy_nbpair_LJ
+
+!===============================================================================
 ! subroutine ffdev_gradient_nb_LJ
 !===============================================================================
 
 subroutine ffdev_gradient_nb_LJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
 
     implicit none
     type(TOPOLOGY)  :: top

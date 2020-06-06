@@ -80,6 +80,26 @@ program ffdev_optimize_program
     call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
 
+    ! process control file -----------------------------------------------------
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Reading control file', ':')
+    write(DEV_OUT,'(a,a)') 'Control file name : ',trim(ctrlname)
+
+    call prmfile_init(fin)
+
+    if( .not. prmfile_read(fin,ctrlname) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
+    end if
+
+    ! read configuration
+    if( prmfile_open_group(fin,'FFPARAMS') ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'{FFPARAMS}',':')
+        call ffdev_parameters_ctrl_control(fin)
+        call ffdev_parameters_ctrl_files(fin)
+        call ffdev_parameters_ctrl_grbf2cos(fin)
+    end if
+
     ! process target set file --------------------------------------------------
     if( trgsname .ne. ctrlname ) then
         write(DEV_OUT,*)
@@ -103,26 +123,6 @@ program ffdev_optimize_program
         end if
 
         call prmfile_clear(trgfin)
-    end if
-
-    ! process control file -----------------------------------------------------
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'Reading control file', ':')
-    write(DEV_OUT,'(a,a)') 'Control file name : ',trim(ctrlname)
-
-    call prmfile_init(fin)
-
-    if( .not. prmfile_read(fin,ctrlname) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Specified control file cannot be opened!')
-    end if
-
-    ! read configuration
-    if( prmfile_open_group(fin,'FFPARAMS') ) then
-        write(DEV_OUT,*)
-        call ffdev_utils_heading(DEV_OUT,'{FFPARAMS}',':')
-        call ffdev_parameters_ctrl_control(fin)
-        call ffdev_parameters_ctrl_files(fin)
-        call ffdev_parameters_ctrl_grbf2cos(fin)
     end if
 
     if( trgsname .eq. ctrlname ) then

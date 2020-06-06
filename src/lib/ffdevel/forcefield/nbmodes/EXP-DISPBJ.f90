@@ -17,7 +17,6 @@
 
 module ffdev_nbmode_EXP_DISPBJ
 
-use ffdev_geometry_dat
 use ffdev_constants
 use ffdev_variables
 
@@ -29,10 +28,9 @@ contains
 
 subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_utils
     use ffdev_topology_dat
+    use ffdev_geometry_dat
+    use ffdev_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -115,10 +113,9 @@ end subroutine ffdev_energy_nb_EXP_DISPBJ
 
 subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_utils
     use ffdev_topology_dat
+    use ffdev_geometry_dat
+    use ffdev_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -183,13 +180,82 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
 end subroutine ffdev_energy_sapt_EXP_DISPBJ
 
 !===============================================================================
+! subroutine ffdev_energy_nbpair_EXP_DISPBJ
+!===============================================================================
+
+real(DEVDP) function ffdev_energy_nbpair_EXP_DISPBJ(top,nbt,r)
+
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    real(DEVDP)     :: r
+    ! --------------------------------------------
+    integer         :: agti,agtj
+    real(DEVDP)     :: pa,pb
+    real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10,rc
+    real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
+    ! --------------------------------------------------------------------------
+
+    ! Pauli repulsion
+    pa  = exp(top%nb_types(nbt)%pa)
+    pb  = top%nb_types(nbt)%pb
+
+    ! dispersion coefficients
+    agti = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
+    agtj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
+
+    c6  = disp_s6  * disp_pairs(agti,agtj)%c6
+    c8  = disp_s8  * disp_pairs(agti,agtj)%c8
+    c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+
+    ! RC for BJ damping
+    rc  = 0.0d0
+    select case(dampbj_mode)
+        case(DAMP_BJ_DRC)
+            rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
+        case(DAMP_BJ_ORC)
+            rc = top%nb_types(nbt)%rc
+        case(DAMP_BJ_SRC)
+            rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
+        case default
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_energy_nbpair_EXP_DISPBJ!')
+            end if
+    end select
+
+    rc6  = rc**6
+    rc8  = rc**8
+    rc10 = rc**10
+
+    r2   = r**2
+
+    r6   = r2*r2*r2
+    r8   = r6*r2
+    r10  = r8*r2
+
+    r6i  = 1.0d0/(r6+rc6)
+    r8i  = 1.0d0/(r8+rc8)
+    r10i = 1.0d0/(r10+rc10)
+
+    V_aa =   pa*exp(-pb*r)
+    V_bb = - c6*r6i - c8*r8i - c10*r10i
+
+    ffdev_energy_nbpair_EXP_DISPBJ = V_aa + V_bb
+
+end function ffdev_energy_nbpair_EXP_DISPBJ
+
+!===============================================================================
 ! subroutine ffdev_gradient_nb_EXP_DISPBJ
 !===============================================================================
 
 subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
 
-    use ffdev_topology
-    use ffdev_geometry
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
     use ffdev_utils
 
     implicit none

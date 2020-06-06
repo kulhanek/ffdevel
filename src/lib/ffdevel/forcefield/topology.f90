@@ -1886,10 +1886,8 @@ end function ffdev_topology_nb_mode_from_string
 
 subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
 
-    use ffdev_utils
     use ffdev_topology_dat
-    use ffdev_xdm_dat
-    use ffdev_mmd3_dat
+    use ffdev_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1899,31 +1897,137 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
     real(DEVDP)     :: pa,alpha
     ! --------------------------------------------------------------------------
 
-    select case(to_nb_mode)
+    select case(from_nb_mode)
+    !---------------------------------------------
         case(NB_VDW_LJ)
-            ! nothing to do
+            select case(to_nb_mode)
+                case(NB_VDW_LJ)
+                    ! nothing to do
 
+                case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
+                    do nbt=1,top%nnb_types
+                        pa = 6.0d0 * top%nb_types(nbt)%eps * exp(lj2exp6_alpha)/(lj2exp6_alpha - 6.0d0)
+                        if( pa .gt. 0 ) then
+                            pa = log(pa)
+                        else
+                            pa = 1.0d0
+                        end if
+                        top%nb_types(nbt)%pa = pa
+                        top%nb_types(nbt)%pb = lj2exp6_alpha / top%nb_types(nbt)%r0
+                        top%nb_types(nbt)%rc = 2.6d0
+                    end do
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_topology_switch_nbmode!')
+            end select
+    !---------------------------------------------
         case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
-            alpha = 12.0
-            do nbt=1,top%nnb_types
-                pa = top%nb_types(nbt)%eps*top%nb_types(nbt)%eps * 6.0d0/(alpha - 6.0d0) * exp(alpha)
-                if( pa .gt. 0 ) then
-                    pa = log(pa)
-                else
-                    pa = 1.0d0
-                end if
-                top%nb_types(nbt)%pa = pa
-                top%nb_types(nbt)%pb = alpha / top%nb_types(nbt)%r0
-                top%nb_types(nbt)%rc = 1.5d0
-            end do
+            select case(to_nb_mode)
+                case(NB_VDW_LJ)
+                    do nbt=1,top%nnb_types
+                        call ffdev_topology_find_min_for_nbpair(top,nbt,from_nb_mode, &
+                                                                top%nb_types(nbt)%eps,top%nb_types(nbt)%r0)
+                    end do
 
+                case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
+                    ! nothing to do
+
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_topology_switch_nbmode!')
+            end select
+    !---------------------------------------------
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_switch_nbmode!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(from) in ffdev_topology_switch_nbmode!')
     end select
 
     top%nb_params_update = .true.
 
 end subroutine ffdev_topology_switch_nbmode
+
+! ==============================================================================
+! function ffdev_topology_nbpair
+! ==============================================================================
+
+real(DEVDP) function ffdev_topology_nbpair(top,nbt,lnbmode,r)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    use ffdev_nbmode_LJ
+    use ffdev_nbmode_12_DISPBJ
+    use ffdev_nbmode_EXP_DISPBJ
+    use ffdev_nbmode_EXP_DISPTT
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    integer         :: lnbmode
+    real(DEVDP)     :: r
+    ! --------------------------------------------------------------------------
+
+    ffdev_topology_nbpair = 0.0d0
+
+    select case(lnbmode)
+        case(NB_VDW_LJ)
+            ffdev_topology_nbpair = ffdev_energy_nbpair_LJ(top,nbt,r)
+
+        case(NB_VDW_12_DISPBJ)
+            ffdev_topology_nbpair = ffdev_energy_nbpair_12_DISPBJ(top,nbt,r)
+
+        case(NB_VDW_EXP_DISPBJ)
+            ffdev_topology_nbpair = ffdev_energy_nbpair_EXP_DISPBJ(top,nbt,r)
+
+        case(NB_VDW_EXP_DISPTT)
+            ffdev_topology_nbpair = ffdev_energy_nbpair_EXP_DISPTT(top,nbt,r)
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_nbpair!')
+    end select
+
+end function ffdev_topology_nbpair
+
+! ==============================================================================
+! subroutine ffdev_topology_find_min_for_nbpair
+! ==============================================================================
+
+subroutine ffdev_topology_find_min_for_nbpair(top,nbt,lnbmode,r0,eps)
+
+    use ffdev_topology_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    integer         :: lnbmode
+    real(DEVDP)     :: r0,eps
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: r1,r2,r3,r4,gr,f2,f3
+    ! --------------------------------------------------------------------------
+
+    ! Golden-section search
+    ! https://en.wikipedia.org/wiki/Golden-section_search
+
+    r1 = 1.0d0
+    r4 = 10.0d0
+    gr = (1.0d0 + sqrt(5.0d0)) * 0.5d0
+
+    do i=1,1000
+        r2 = r4 - (r4 - r1) / gr
+        r3 = r1 + (r4 - r1) / gr
+        f2 = ffdev_topology_nbpair(top,nbt,lnbmode,r2)
+        f3 = ffdev_topology_nbpair(top,nbt,lnbmode,r3)
+        if( f2 .lt. f3 ) then
+            r4 = r3
+        else
+            r1 = r2
+        end if
+    end do
+
+    r0  = (r1+r4)*0.5d0
+    eps = - ffdev_topology_nbpair(top,nbt,lnbmode,r0)
+
+!    write(*,*) eps,r0,e,r,er
+
+end subroutine ffdev_topology_find_min_for_nbpair
 
 ! ==============================================================================
 ! subroutine ffdev_topology_comb_rules_to_string
