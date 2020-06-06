@@ -63,27 +63,28 @@ subroutine ffdev_geometry_init(geo)
     geo%sapt_total = 0.0
 
     geo%trg_sapt_loaded = .false.
-    geo%trg_sapt_ele = 0
-    geo%trg_sapt_exc = 0
-    geo%trg_sapt_ind = 0
-    geo%trg_sapt_dis = 0
+    geo%trg_sapt_ele    = 0
+    geo%trg_sapt_exc    = 0
+    geo%trg_sapt_ind    = 0
+    geo%trg_sapt_dis    = 0
 
-    geo%trg_ene_loaded = .false.
-    geo%trg_crd_loaded = .false.
-    geo%trg_grd_loaded = .false.
-    geo%trg_hess_loaded = .false.
-    geo%trg_freq_loaded = .false.
-    geo%trg_esp_loaded = .false.
-    geo%trg_crd_optimized = .false.
-    geo%esp_npoints = 0
+    geo%trg_ene_loaded      = .false.
+    geo%trg_crd_loaded      = .false.
+    geo%trg_grd_loaded      = .false.
+    geo%trg_hess_loaded     = .false.
+    geo%trg_freq_loaded     = .false.
+    geo%trg_esp_loaded      = .false.
+    geo%trg_crd_optimized   = .false.
+    geo%esp_npoints         = 0
 
-    geo%sup_xdm_loaded = .false.
+    geo%sup_xdm_loaded  = .false.
     geo%sup_surf_loaded = .false.
     geo%sup_chrg_loaded = .false.
+    geo%sup_chrg_type   = ''
 
-    geo%trg_probe_ene_loaded = .false.
-    geo%trg_probe_ene = 0.0d0
-    geo%trg_probe_ene_mode = 0
+    geo%trg_probe_ene_loaded    = .false.
+    geo%trg_probe_ene           = 0.0d0
+    geo%trg_probe_ene_mode      = 0
 
     geo%nrst        = 0
     geo%rst_energy  = 0.0
@@ -1134,8 +1135,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight E S V G H P X A C')
-40 format('# ---- ---------------------------------------- ------ - - - - - - - - -')
+30 format('# ID   File                                     Weight E S V G H P X A C Charges')
+40 format('# ---- ---------------------------------------- ------ - - - - - - - - - -------')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1155,10 +1156,11 @@ subroutine ffdev_geometry_info_point(geo)
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_ene_loaded, &
                       geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
+                      trim(geo%sup_chrg_type)
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
 
 end subroutine ffdev_geometry_info_point
 
@@ -1179,9 +1181,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C')
-35 format('# ID   File                                     Weight       Energy E S V G H P X A C')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - -')
+30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C Charges')
+35 format('# ID   File                                     Weight       Energy E S V G H P X A C Charges')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - - -------')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1203,17 +1205,19 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
     write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
                       geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
+                      trim(geo%sup_chrg_type)
     else
     write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
                       geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
+                      trim(geo%sup_chrg_type)
     end if
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
-  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
+  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
 
 end subroutine ffdev_geometry_info_point_ext
 

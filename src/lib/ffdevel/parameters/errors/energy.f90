@@ -141,7 +141,7 @@ subroutine ffdev_err_energy_summary
     implicit none
     real(DEVDP)         :: aerr,aserr
     real(DEVDP)         :: rerr,rserr
-    real(DEVDP)         :: lerr,lserr
+    real(DEVDP)         :: lerr,lserr,maxerr
     integer             :: anum,rnum,lnum
     integer             :: i,j
     logical             :: printsum
@@ -171,6 +171,8 @@ subroutine ffdev_err_energy_summary
     lserr = 0.0d0
     lnum = 0
 
+    maxerr = 0.0d0
+
     do i=1,nsets
         ! use only sets, which can provide reliable energy
         if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
@@ -182,13 +184,18 @@ subroutine ffdev_err_energy_summary
             printsum = .true.
 
             ! absolute
-            aerr  = sets(i)%geo(j)%total_ene- sets(i)%geo(j)%trg_energy
+            aerr  = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
             aserr = aserr + sets(i)%geo(j)%weight * aerr**2
             anum  = anum + 1
+
+            if( abs(aerr) .gt. abs(maxerr) ) then
+                maxerr = aerr
+            end if
+
             ! relative
             rerr  = 0.0
             if( sets(i)%geo(j)%trg_energy .ne. 0 ) then
-                rerr  = (sets(i)%geo(j)%total_ene- sets(i)%geo(j)%trg_energy)/sets(i)%geo(j)%trg_energy
+                rerr  = (sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)/sets(i)%geo(j)%trg_energy
                 rserr = rserr + sets(i)%geo(j)%weight * rerr**2
                 rnum  = rnum + 1
             end if
@@ -236,15 +243,18 @@ subroutine ffdev_err_energy_summary
         lserr = sqrt(lserr / real(lnum))
     end if
 
+    write(DEV_OUT,35)  maxerr
     write(DEV_OUT,40)  aserr, rserr*100.0d0, lserr
     write(DEV_OUT,45)  EnergyErrorWeight*aserr, EnergyErrorWeight*rserr*100.0d0, EnergyErrorWeight*lserr
 
  5 format('# Energy errors')
-10 format('# SET GeoID Weight     E(TGR)      E(MM) abs E(Err) rel%E(Err) log E(Err)  ')
+10 format('# SET GeoID Weight     E(TGR)      E(MM)     Err(E) relErr%(E)  logErr(E)  ')
 20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ----------  ')
 30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,2X)
-40 format('# Final error (weighted per geometry) =  ',F10.3,1X,F10.3,1X,F10.3)
-45 format('# Final error (all weights)           =  ',F10.3,1X,F10.3,1X,F10.3)
+
+35 format('# Maximum signed error (MSE)          =  ',F10.3)
+40 format('# Root mean square error (RMSE)       =  ',F10.3,1X,F10.3,1X,F10.3)
+45 format('# Final RMSE (all weights)            =  ',F10.3,1X,F10.3,1X,F10.3)
 
 50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
           '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')

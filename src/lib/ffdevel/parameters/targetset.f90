@@ -97,7 +97,8 @@ subroutine ffdev_targetset_calc_all
     !$omp single
     ! optimize geometry
     do i=1,nsets
-        if( sets(i)%top%probe_size .gt. 0 ) cycle ! do not optimize probed structures
+        if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
+        if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
         do j=1,sets(i)%ngeos
             sets(i)%geo(j)%trg_crd_optimized = .false.
             if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
@@ -158,7 +159,7 @@ subroutine ffdev_targetset_calc_all
 
    ! update energies
     do i=1,nsets
-        if( sets(i)%nrefs .gt. 0 ) then
+        if( (sets(i)%nrefs .gt. 0) .and. (sets(i)%top%probe_size .le. 0) ) then
             do j=1,sets(i)%ngeos
                 do k=1,sets(i)%nrefs
                     sets(i)%geo(j)%bond_ene     = sets(i)%geo(j)%bond_ene    - sets( sets(i)%refs(k) )%geo(1)%bond_ene

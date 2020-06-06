@@ -124,7 +124,7 @@ subroutine ffdev_err_sapt_summary
     integer             :: i,j,nene
     logical             :: printsum
     real(DEVDP)         :: serrrep,serrdisp,trg_sapt_rep
-    real(DEVDP)         :: errrep,errdisp,pen_guess
+    real(DEVDP)         :: errrep,errdisp,pen_guess,maxrep,maxdisp
     ! --------------------------------------------------------------------------
 
     printsum = .false.
@@ -145,6 +145,9 @@ subroutine ffdev_err_sapt_summary
     serrrep = 0.0
     serrdisp = 0.0
     nene = 0
+
+    maxrep = 0.0d0
+    maxdisp = 0.0d0
 
     do i=1,nsets
         printsum = .false.
@@ -169,10 +172,16 @@ subroutine ffdev_err_sapt_summary
                 trg_sapt_rep = trg_sapt_rep + pen_guess
             end if
             errrep = trg_sapt_rep - sets(i)%geo(j)%sapt_rep
+            if( abs(errrep) .gt. abs(maxrep) ) then
+                maxrep = errrep
+            end if
             serrrep = serrrep + sets(i)%geo(j)%weight * errrep**2
 
         ! dispersion
             errdisp = sets(i)%geo(j)%trg_sapt_dis - sets(i)%geo(j)%sapt_dis
+            if( abs(errdisp) .gt. abs(maxdisp) ) then
+                maxdisp = errdisp
+            end if
             serrdisp = serrdisp + sets(i)%geo(j)%weight * errdisp**2
 
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
@@ -191,19 +200,21 @@ subroutine ffdev_err_sapt_summary
         errdisp = sqrt(serrdisp/real(nene))
     end if
 
+    write(DEV_OUT,35)  maxrep, maxdisp
     write(DEV_OUT,40)  errrep, errdisp
     write(DEV_OUT,45)  SAPTRepErrorWeight*errrep, SAPTDispErrorWeight*errdisp
 
  5 format('# SAPT errors')
 10 format('# SET GeoID Weight   ELE(TGR)    ELE(MM) PEN(GUESS)   IND(TGR)   EXC(TGR)   REP(TRG)' &
-          '    REP(MM) abs E(Err)  DISP(TGR)   DISP(MM) abs E(Err)')
+          '    REP(MM)  Err(Erep)  DISP(TGR)   DISP(MM) Err(Edisp)')
 20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ---------- ----------' &
           ' ---------- ---------- ---------- ---------- ----------')
 30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,&
          1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 
-40 format('# Final error (weighted per geometry)  = ',55X,F10.3,23X,F10.3)
-45 format('# Final error (all weights)            = ',55X,F10.3,23X,F10.3)
+35 format('# Maximum signed error (MSE)           = ',55X,F10.3,23X,F10.3)
+40 format('# Root mean square error (RMSE)        = ',55X,F10.3,23X,F10.3)
+45 format('# Final RMSE (all weights)             = ',55X,F10.3,23X,F10.3)
 
 end subroutine ffdev_err_sapt_summary
 

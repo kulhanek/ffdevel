@@ -36,7 +36,9 @@ program ffdev_optimize_program
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
+    character(len=MAX_PATH)     :: trgsname     ! input target set file name
     type(PRMFILE_TYPE)          :: fin
+    type(PRMFILE_TYPE)          :: trgfin
     type(PRMFILE_TYPE)          :: tmpfin
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
@@ -51,12 +53,18 @@ program ffdev_optimize_program
     call ffdev_timers_start_timer(FFDEV_INITIALIZATION_TIMER)
 
     ! test number of input arguments
-    if( command_argument_count() .ne. 1 ) then
+    if( (command_argument_count() .ne. 1) .and. (command_argument_count() .ne. 2) ) then
         call print_usage()
-        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one expected)!')
+        call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (one/two expected)!')
     end if
 
-    call get_command_argument(1, ctrlname)
+    if( command_argument_count() .eq. 2 ) then
+        call get_command_argument(1, trgsname)
+        call get_command_argument(2, ctrlname)
+    else
+        call get_command_argument(1, ctrlname)
+        trgsname = ctrlname
+    end if
 
     ! open dev null
     call ffdev_utils_open(DEV_NULL,'/dev/null','O')
@@ -71,6 +79,31 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
     call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
+
+    ! process target set file --------------------------------------------------
+    if( trgsname .ne. ctrlname ) then
+        write(DEV_OUT,*)
+        call ffdev_utils_heading(DEV_OUT,'Reading target sets file file', ':')
+        write(DEV_OUT,'(a,a)') 'Target set file name : ',trim(trgsname)
+
+        call prmfile_init(trgfin)
+
+        if( .not. prmfile_read(trgfin,trgsname) ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Specified target sets file cannot be opened!')
+        end if
+
+        ! read target sets
+        call ffdev_targetset_ctrl(trgfin,.false.)
+
+        ! check if everything was read for TARGETS
+        if( prmfile_count_ulines(trgfin,'TARGETS') .ne. 0 ) then
+            write(DEV_OUT,*)
+            call prmfile_dump_group(trgfin,DEV_OUT,'TARGETS',.true.)
+            call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the target sets file!')
+        end if
+
+        call prmfile_clear(trgfin)
+    end if
 
     ! process control file -----------------------------------------------------
     write(DEV_OUT,*)
@@ -92,14 +125,22 @@ program ffdev_optimize_program
         call ffdev_parameters_ctrl_grbf2cos(fin)
     end if
 
-    ! read target sets
-    call ffdev_targetset_ctrl(fin,.false.)
+    if( trgsname .eq. ctrlname ) then
+        ! read target sets
+        call ffdev_targetset_ctrl(fin,.false.)
 
-    ! check if everything was read for TARGETS
-    if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
-        write(DEV_OUT,*)
-        call prmfile_dump_group(fin,DEV_OUT,'TARGETS',.true.)
-        call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
+        ! check if everything was read for TARGETS
+        if( prmfile_count_ulines(fin,'TARGETS') .ne. 0 ) then
+            write(DEV_OUT,*)
+            call prmfile_dump_group(fin,DEV_OUT,'TARGETS',.true.)
+            call ffdev_utils_exit(DEV_ERR,1,'Unprocessed lines found in the control file!')
+        end if
+    else
+        ! test TARGETS group
+        if( prmfile_open_group(fin,'TARGETS') ) then
+            call ffdev_utils_exit(DEV_ERR,1, &
+                 '{TARGETS} can be specified only once, either in the control file or the target sets file!')
+        end if
     end if
 
     ! generate parameters from target topologies
@@ -352,7 +393,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffoptimize <controlfile>')
+10 format('    ffoptimize [targetsetsfile] <controlfile>')
 
 end subroutine print_usage
 

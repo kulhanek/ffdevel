@@ -414,10 +414,15 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 sets(i)%geo(j)%weight = weight
                 ! always load trg_crd as the geo optimization can be switched on any later
                 sets(i)%geo(j)%trg_crd_loaded  = .true.
-                sets(i)%geo(j)%name = geoname
+                if( stream ) then
+                    write(string,'(I5.5)') k
+                    sets(i)%geo(j)%name = trim(geoname)//':'//trim(string)
+                else
+                    sets(i)%geo(j)%name = geoname
+                end if
                 call ffdev_geometry_load_1point(sets(i)%geo(j),stream)
 
-                ! calculate traget freqs and normal mode if needed
+                ! calculate target freqs and normal mode if needed
                 if(  (.not. sets(i)%nofreq) .and. sets(i)%geo(j)%trg_hess_loaded ) then
                     call ffdev_hessian_calc_trg_freqs(sets(i)%geo(j))
                     sets(i)%geo(j)%trg_freq_loaded =  .true.
@@ -546,7 +551,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end if
     end do
 
-  1 format('=== [SET] #',I2.2,' ==================================================================')
+  1 format('=== [SET#',I5.5,'] =================================================================')
   5 format('Set name (name)                         = ',A)
  12 format('Input topology name (topology)          = ',A)
  15 format('Final topology name (final_topology)    = ',A)

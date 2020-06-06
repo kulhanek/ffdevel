@@ -65,7 +65,7 @@ subroutine ffdev_err_probe_ctrl(fin)
         write(DEV_OUT,225) ProbeErrorWeight
     end if
 
- 10 format('=== [probe] ===================================================================')
+ 10 format('=== [probe] ====================================================================')
 
 110  format ('Probe error (enabled)                   = ',a12)
 115  format ('Probe error (enabled)                   = ',a12,'                  (default)')
