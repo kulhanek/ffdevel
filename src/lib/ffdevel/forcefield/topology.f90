@@ -1925,7 +1925,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
                 case(NB_VDW_LJ)
                     do nbt=1,top%nnb_types
                         call ffdev_topology_find_min_for_nbpair(top,nbt,from_nb_mode, &
-                                                                top%nb_types(nbt)%eps,top%nb_types(nbt)%r0)
+                                                                top%nb_types(nbt)%r0,top%nb_types(nbt)%eps)
                     end do
 
                 case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
