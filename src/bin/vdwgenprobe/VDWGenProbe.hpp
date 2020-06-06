@@ -85,18 +85,19 @@ public:
 
 // section of private data -----------------------------------------------------
 private:
-    CVDWGenProbeOptions     Options;            // program options
-    CXYZStructure           Structure;          // input structure
-    std::vector<CProbe>     MSMSProbes;         // probes from MSMS surface
-    std::vector<bool>       SelectedAtoms;      // consider only these atoms
-    std::vector<double>     Weighths;           // point weights
-    std::set<int>           SelectedAtomIds;
-    FILE*                   OutputFile;         // output file
-    CXYZStructure           StructureWithProbe; // output structure
-    CPoint                  Min,Max;            // min/max conners
-    std::vector<EFilter>    Filters;
-    int                     NumOfProbes;
-    OBMol                   Mol;
+    CVDWGenProbeOptions         Options;            // program options
+    CXYZStructure               Structure;          // input structure
+    std::vector<CProbe>         MSMSProbes;         // probes from MSMS surface
+    std::vector<bool>           SelectedAtoms;      // consider only these atoms
+    std::vector<double>         Weighths;           // point weights
+    std::set<int>               SelectedAtomIds;
+    std::vector<unsigned int>   SymmClasses;
+    FILE*                       OutputFile;         // output file
+    CXYZStructure               StructureWithProbe; // output structure
+    CPoint                      Min,Max;            // min/max conners
+    std::vector<EFilter>        Filters;
+    int                         NumOfProbes;
+    OBMol                       Mol;
 
 
     // output ------------------------------------

@@ -87,6 +87,7 @@ public:
     CSO_OPT(CSmallString,ProbeSymbol)
     CSO_OPT(CSmallString,SelectedAtoms)
     CSO_OPT(bool,Append)
+    CSO_OPT(bool,AllWithinSymmClass)
     CSO_OPT(CSmallString,Generator)
     CSO_OPT(CSmallString,Filters)
     CSO_OPT(CSmallString,MSMSSurfaceVertices)
@@ -201,6 +202,15 @@ public:
                 "append",                      /* long option name */
                 NULL,                           /* parametr name */
                 "append structures to the output file if it exists")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(bool,                           /* option type */
+                AllWithinSymmClass,                        /* option name */
+                false,                          /* default value */
+                false,                          /* is option mandatory */
+                0,                           /* short option name */
+                "withinsymmclass",                      /* long option name */
+                NULL,                           /* parametr name */
+                "consider all atoms within the same symmetry class")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(CSmallString,                           /* option type */
                 Generator,                        /* option name */

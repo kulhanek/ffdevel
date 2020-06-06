@@ -341,18 +341,19 @@ bool CVDWGenProbe::LoadStructure(void)
 
         // generate symmetry classes
         OBGraphSym  graph_sym(&Mol);
-        std::vector<unsigned int> symclasses;
-        graph_sym.GetSymmetry(symclasses);
 
-        if( symclasses.size() != Structure.GetNumberOfAtoms() ){
-            vout << "<red>>>> ERROR: Symmetry clases: " << symclasses.size() << " != number of atoms: " << Structure.GetNumberOfAtoms() << "!</red>" << endl;
+        SymmClasses.clear();
+        graph_sym.GetSymmetry(SymmClasses);
+
+        if( SymmClasses.size() != Structure.GetNumberOfAtoms() ){
+            vout << "<red>>>> ERROR: Symmetry clases: " << SymmClasses.size() << " != number of atoms: " << Structure.GetNumberOfAtoms() << "!</red>" << endl;
             return(false);
         }
 
         // make list of unique classes
         std::set<unsigned int>  unique_classes;
         for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
-            unique_classes.insert(symclasses[i]);
+            unique_classes.insert(SymmClasses[i]);
         }
 
         // for each class find closest atom to previously selected atoms
@@ -368,7 +369,7 @@ bool CVDWGenProbe::LoadStructure(void)
             unsigned int ssc = *it;
             int      da = -1;
             for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
-                unsigned int asc = symclasses[i];
+                unsigned int asc = SymmClasses[i];
                 if( asc != ssc ) continue;
                 if( com_num == 0 ){
                     da = i;
@@ -390,7 +391,7 @@ bool CVDWGenProbe::LoadStructure(void)
 
             double  nst = 0;
             for(int i=0; i< Structure.GetNumberOfAtoms(); i++){
-                unsigned int asc = symclasses[i];
+                unsigned int asc = SymmClasses[i];
                 if( asc != ssc ) continue;
                 nst++;
             }
@@ -415,7 +416,7 @@ bool CVDWGenProbe::LoadStructure(void)
 
             while( it != ie ){
                 int     atomid = *it;
-                int     asc = symclasses[atomid];
+                int     asc = SymmClasses[atomid];
                 OBAtom* p_atom = Mol.GetAtom(atomid+1);
                 it++;
 
@@ -433,7 +434,7 @@ bool CVDWGenProbe::LoadStructure(void)
                 while( p_sa != NULL ){
                     if( p_sa != p_atom ){
                         int da = p_sa->GetIdx()-1;
-                        if( symclasses[da] == asc ){
+                        if( SymmClasses[da] == asc ){
                             ext++;
                         }
                     }
@@ -447,7 +448,7 @@ bool CVDWGenProbe::LoadStructure(void)
                 while( p_sa != NULL ){
                     if( p_sa != p_atom ){
                         int da = p_sa->GetIdx()-1;
-                        if( symclasses[da] == asc ){
+                        if( SymmClasses[da] == asc ){
                             SelectedAtomIds.insert(da);
                             SelectedAtoms[da] = true;
                             Weighths[da] = Weighths[atomid];
@@ -830,37 +831,67 @@ bool CVDWGenProbe::GeneratorSphereMinRepulsion(void)
     double rprobe = PeriodicTable.GetVdWRadius(PeriodicTable.SearchZBySymbol(Options.GetOptProbeSymbol()));
 
     while( it != ie ){
-        int atomid = *it;
-        CPoint origin = Structure.GetPosition(atomid);
-        int    vertex;
-        double min;
-        for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
-            double interaction = 0.0;
-            for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
-                CPoint v1 = sphere.GetVertice(i,origin,r);
-                for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
-                    double rvdw = PeriodicTable.GetVdWRadius(z[j]);
-                    CPoint apos = Structure.GetPosition(j);
-                    double d = Size(apos - v1);
-                    double r0 = rprobe + rvdw;
-                    interaction = interaction + pow(r0/d,12); // - 2.0*pow(r0/d,6);
+        int    vertex = -1;
+        CPoint origin;
+
+        if( Options.GetOptAllWithinSymmClass() == true ) {
+            double min = std::numeric_limits<double>::max();
+            for(int atomid=0; atomid <= Structure.GetNumberOfAtoms(); atomid++ ) {
+                if( SymmClasses[atomid] != SymmClasses[*it] ) continue; // consider atoms from the same symmetry class
+                CPoint lorigin = Structure.GetPosition(atomid);
+                for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
+                    double interaction = 0.0;
+                    for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+                        CPoint v1 = sphere.GetVertice(i,lorigin,r);
+                        for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+                            double rvdw = PeriodicTable.GetVdWRadius(z[j]);
+                            CPoint apos = Structure.GetPosition(j);
+                            double d = Size(apos - v1);
+                            double r0 = rprobe + rvdw;
+                            interaction = interaction + pow(r0/d,12);
+                        }
+                    }
+                    if( min > interaction ){
+                        vertex = i;
+                        min = interaction;
+                        origin = lorigin;
+                    }
                 }
             }
-            if( (i == 0) || (min > interaction) ){
-                vertex = i;
-                min = interaction;
-            }
-        }
-        for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
-            CPoint probe = sphere.GetVertice(vertex,origin,r);
-            EFilterResult result = FilterProbe(probe);
-            if( result == EFR_STOP ) return(false);
-            if( result == EFR_OK ){
-                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
-                if( SaveStructure() == false ) return(false);
+        } else {
+            int atomid = *it;
+            origin = Structure.GetPosition(atomid);
+            double min = std::numeric_limits<double>::max();
+            for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
+                double interaction = 0.0;
+                for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+                    CPoint v1 = sphere.GetVertice(i,origin,r);
+                    for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
+                        double rvdw = PeriodicTable.GetVdWRadius(z[j]);
+                        CPoint apos = Structure.GetPosition(j);
+                        double d = Size(apos - v1);
+                        double r0 = rprobe + rvdw;
+                        interaction = interaction + pow(r0/d,12);
+                    }
+                }
+                if( min > interaction ){
+                    vertex = i;
+                    min = interaction;
+                }
             }
         }
 
+        if( vertex >= 0 ) {
+            for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
+                CPoint probe = sphere.GetVertice(vertex,origin,r);
+                EFilterResult result = FilterProbe(probe);
+                if( result == EFR_STOP ) return(false);
+                if( result == EFR_OK ){
+                    StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
+                    if( SaveStructure() == false ) return(false);
+                }
+            }
+        }
         it++;
     }
 
@@ -923,76 +954,6 @@ bool CVDWGenProbe::GeneratorSphereMaxDistance(void)
         }
     it++;
     }
-//
-//
-//        CPoint prev;
-//        bool   first = true;
-//        for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
-//            double maxd = 0.0;
-//            int    maxi = -1;
-//            for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
-//                CPoint probe = sphere.GetVertice(i,origin,r);
-//                EFilterResult result = FilterProbe(probe);
-//                if( result == EFR_STOP ) return(false);
-//
-//                if( result == EFR_OK ){
-//                    double dmin = std::numeric_limits<double>::max();
-//                    for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
-//                        if( j == atomid ) continue;
-//                        CPoint apos = Structure.GetPosition(j);
-//                        double d = Size(probe - apos);
-//                        if( d < dmin ){
-//                            dmin = d;
-//                        }
-//                    }
-//                    if( ! first ) dmin -= Size(prev - probe)      ;
-//                    if( dmin > maxd ){
-//                        maxd = dmin;
-//                        maxi = i;
-//                    }
-//                }
-//            }
-//            if( maxi >= 0 ){
-//                CPoint probe = sphere.GetVertice(maxi,origin,r);
-//                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
-//                if( SaveStructure() == false ) return(false);
-//                prev = probe;
-//                first = false;
-//            }
-//        }
-//        it++;
-//    }
-
-//        int    vertex;
-//        double min;
-//        for(unsigned int i=0; i < sphere.GetNumberOfVertices(); i++){
-//            double distance = 0.0;
-//            for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
-//                CPoint v1 = sphere.GetVertice(i,origin,r);
-//                for(int j=0; j < Structure.GetNumberOfAtoms(); j++){
-//                    CPoint apos = Structure.GetPosition(j);
-//                    double d = Size(apos - v1);
-//                    double r0 = rprobe + rvdw;
-//                    interaction = interaction + pow(r0/d,12); // - 2.0*pow(r0/d,6);
-//                }
-//            }
-//            if( (i == 0) || (min > interaction) ){
-//                vertex = i;
-//                min = interaction;
-//            }
-//        }
-//        for(double r = Options.GetOptRMin(); r <= Options.GetOptRMax(); r += Options.GetOptSpacing()){
-//            CPoint probe = sphere.GetVertice(vertex,origin,r);
-//            EFilterResult result = FilterProbe(probe);
-//            if( result == EFR_STOP ) return(false);
-//            if( result == EFR_OK ){
-//                StructureWithProbe.SetPosition(Structure.GetNumberOfAtoms(),probe);
-//                if( SaveStructure() == false ) return(false);
-//            }
-//        }
-//
-//        it++;
-//    }
 
     return(true);
 
