@@ -11,6 +11,7 @@ SET(FFDEVEL_SRC
         utils.f90
         timers.F90
 
+        forcefield/disp_dat.f90
         forcefield/topology_dat.f90
         forcefield/topology.f90
         forcefield/geometry_dat.f90
@@ -69,6 +70,9 @@ SET(FFDEVEL_SRC
         parameters/errors/probe_dat.f90
         parameters/errors/probe.f90
         parameters/errors/probe_control.f90
+        parameters/errors/pbpnl_dat.f90
+        parameters/errors/pbpnl.f90
+        parameters/errors/pbpnl_control.f90
 
         parameters/xdm_dat.f90
         parameters/xdm.f90

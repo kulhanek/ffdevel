@@ -91,6 +91,8 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
         V_aa =   pa*exp(-pb*r)
         V_bb = - c6*r6i - c8*r8i - c10*r10i
 
+        ! write(*,*) 'ENE  : ',ip,r,pa,pb,c6,c8,c10,rc6,rc8,rc10,V_aa,V_bb
+
         if( dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + V_ee
             geo%rep_ene = geo%rep_ene + V_aa
@@ -171,6 +173,8 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
         V_aa =   pa*exp(-pb*r)
         V_bb = - c6*r6i - c8*r8i - c10*r10i
 
+        ! write(*,*) 'SAPT: ',ip,r,pa,pb,c6,c8,c10,rc6,rc8,rc10,V_aa,V_bb
+
         geo%sapt_ele = geo%sapt_ele + V_ee
         geo%sapt_rep = geo%sapt_rep + V_aa
         geo%sapt_dis = geo%sapt_dis + V_bb
@@ -183,54 +187,33 @@ end subroutine ffdev_energy_sapt_EXP_DISPBJ
 ! subroutine ffdev_energy_nbpair_EXP_DISPBJ
 !===============================================================================
 
-real(DEVDP) function ffdev_energy_nbpair_EXP_DISPBJ(top,nbt,r)
+real(DEVDP) function ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r)
 
     use ffdev_topology_dat
-    use ffdev_geometry_dat
-    use ffdev_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: nbt
+    type(NB_PAIR)   :: nbpair
     real(DEVDP)     :: r
     ! --------------------------------------------
-    integer         :: agti,agtj
     real(DEVDP)     :: pa,pb
-    real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10,rc
+    real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
     ! --------------------------------------------------------------------------
 
-    ! Pauli repulsion
-    pa  = exp(top%nb_types(nbt)%pa)
-    pb  = top%nb_types(nbt)%pb
+    ! repulsion
+    pa   = nbpair%pa
+    pb   = nbpair%pb
 
     ! dispersion coefficients
-    agti = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
-    agtj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
+    c6   = nbpair%c6
+    c8   = nbpair%c8
+    c10  = nbpair%c10
 
-    c6  = disp_s6  * disp_pairs(agti,agtj)%c6
-    c8  = disp_s8  * disp_pairs(agti,agtj)%c8
-    c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+    rc6  = nbpair%rc6
+    rc8  = nbpair%rc8
+    rc10 = nbpair%rc10
 
-    ! RC for BJ damping
-    rc  = 0.0d0
-    select case(dampbj_mode)
-        case(DAMP_BJ_DRC)
-            rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
-        case(DAMP_BJ_ORC)
-            rc = top%nb_types(nbt)%rc
-        case(DAMP_BJ_SRC)
-            rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
-        case default
-            if( .not. disp_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_energy_nbpair_EXP_DISPBJ!')
-            end if
-    end select
-
-    rc6  = rc**6
-    rc8  = rc**8
-    rc10 = rc**10
-
+    ! calculate distances
     r2   = r**2
 
     r6   = r2*r2*r2

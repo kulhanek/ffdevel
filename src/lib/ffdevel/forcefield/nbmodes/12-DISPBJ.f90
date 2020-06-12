@@ -181,53 +181,32 @@ end subroutine ffdev_energy_sapt_12_DISPBJ
 ! subroutine ffdev_energy_nbpair_12_DISPBJ
 !===============================================================================
 
-real(DEVDP) function ffdev_energy_nbpair_12_DISPBJ(top,nbt,r)
+real(DEVDP) function ffdev_energy_nbpair_12_DISPBJ(nbpair,r)
 
     use ffdev_topology_dat
-    use ffdev_geometry_dat
-    use ffdev_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: nbt
+    type(NB_PAIR)   :: nbpair
     real(DEVDP)     :: r
     ! --------------------------------------------
-    integer         :: agti, agtj
     real(DEVDP)     :: pa
-    real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10,rc
+    real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i
     ! --------------------------------------------------------------------------
 
-    ! ^12 repulsion
-    pa  = exp(top%nb_types(nbt)%pa)
+    ! repulsion
+    pa   = nbpair%pa
 
     ! dispersion coefficients
-    agti = top%atom_types(top%nb_types(nbt)%ti)%glbtypeid
-    agtj = top%atom_types(top%nb_types(nbt)%tj)%glbtypeid
+    c6   = nbpair%c6
+    c8   = nbpair%c8
+    c10  = nbpair%c10
 
-    c6  = disp_s6  * disp_pairs(agti,agtj)%c6
-    c8  = disp_s8  * disp_pairs(agti,agtj)%c8
-    c10 = disp_s10 * disp_pairs(agti,agtj)%c10
+    rc6  = nbpair%rc6
+    rc8  = nbpair%rc8
+    rc10 = nbpair%rc10
 
-    ! RC for BJ damping
-    rc  = 0.0d0
-    select case(dampbj_mode)
-        case(DAMP_BJ_DRC)
-            rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
-        case(DAMP_BJ_ORC)
-            rc = top%nb_types(nbt)%rc
-        case(DAMP_BJ_SRC)
-            rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
-        case default
-            if( .not. disp_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_energy_nbpair_12_DISPBJ!')
-            end if
-    end select
-
-    rc6  = rc**6
-    rc8  = rc**8
-    rc10 = rc**10
-
+    ! calculate distances
     r2   = r**2
 
     r6   = r2*r2*r2

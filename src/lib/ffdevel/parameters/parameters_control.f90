@@ -420,6 +420,7 @@ subroutine ffdev_parameters_ctrl_disp(fin,exec)
     use ffdev_topology
     use ffdev_xdm_dat
     use ffdev_mmd3_dat
+    use ffdev_disp_dat
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -528,7 +529,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
     integer                     :: ldampbj_mode,ldamptt_mode
-    integer                     :: from_nb_mode,lnb_mode
+    integer                     :: from_nb_mode,to_nb_mode
     integer                     :: lcomb_rules
     ! --------------------------------------------------------------------------
 
@@ -553,16 +554,24 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     changed = .false.
 
 ! ---------------------------
+    to_nb_mode = nb_mode
     if( prmfile_get_string_by_key(fin,'nb_mode', string)) then
-        lnb_mode = ffdev_topology_nb_mode_from_string(string)
-        write(DEV_OUT,20) ffdev_topology_nb_mode_to_string(lnb_mode)
+        to_nb_mode = ffdev_topology_nb_mode_from_string(string)
+        write(DEV_OUT,20) ffdev_topology_nb_mode_to_string(to_nb_mode)
         if( exec ) then
             from_nb_mode = nb_mode
-            nb_mode = lnb_mode
             changed = .true.
         end if
     else
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
+    end if
+
+    if( exec .and. changed ) then
+        do i=1,nsets
+            ! switch mode
+            call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
+        end do
+        nb_mode = to_nb_mode
     end if
 
 ! ---------------------------
@@ -580,8 +589,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
-    if( nb_mode .eq. NB_VDW_12_DISPBJ .or. lnb_mode .eq. NB_VDW_12_DISPBJ .or. &
-        nb_mode .eq. NB_VDW_EXP_DISPBJ .or. lnb_mode .eq. NB_VDW_EXP_DISPBJ) then
+    if( to_nb_mode .eq. NB_VDW_12_DISPBJ  .or. &
+        to_nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
         if( prmfile_get_string_by_key(fin,'dampbj_mode', string)) then
             ldampbj_mode = ffdev_topology_dampbj_mode_from_string(string)
             write(DEV_OUT,40) ffdev_topology_dampbj_mode_to_string(ldampbj_mode)
@@ -595,7 +604,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
-    if( nb_mode .eq. NB_VDW_EXP_DISPTT .or. lnb_mode .eq. NB_VDW_EXP_DISPTT ) then
+    if( to_nb_mode .eq. NB_VDW_EXP_DISPTT ) then
         if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
             ldamptt_mode = ffdev_topology_damptt_mode_from_string(string)
             write(DEV_OUT,50) ffdev_topology_damptt_mode_to_string(ldamptt_mode)
@@ -620,17 +629,6 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 ! ---------------------------
     if( exec .and. changed ) then
         do i=1,nsets
-            if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-                write(DEV_OUT,*)
-                write(DEV_OUT,15) i
-                write(DEV_OUT,*)
-                call ffdev_utils_heading(DEV_OUT,'Original NB parameters', '*')
-                call ffdev_topology_info_types(sets(i)%top,1)
-            end if
-
-            ! switch mode
-            call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,nb_mode)
-
             ! apply comb rules
             if( ApplyCombiningRules ) then
                 call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)

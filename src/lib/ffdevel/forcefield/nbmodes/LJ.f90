@@ -140,22 +140,20 @@ end subroutine ffdev_energy_sapt_LJ
 ! subroutine ffdev_energy_nbpair_LJ
 !===============================================================================
 
-real(DEVDP) function ffdev_energy_nbpair_LJ(top,nbt,r)
+real(DEVDP) function ffdev_energy_nbpair_LJ(nbpair,r)
 
     use ffdev_topology_dat
-    use ffdev_geometry_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: nbt
+    type(NB_PAIR)   :: nbpair
     real(DEVDP)     :: r
     ! --------------------------------------------
     real(DEVDP)     :: aLJa,bLJa
     real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb
     ! --------------------------------------------------------------------------
 
-    aLJa =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
-    bLJa = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+    aLJa  = nbpair%pa
+    bLJa  = nbpair%c6
 
     r2    = r**2
     r2a   = 1.0d0/r2

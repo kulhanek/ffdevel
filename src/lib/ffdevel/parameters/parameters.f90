@@ -123,6 +123,7 @@ subroutine ffdev_parameters_reinit()
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
+    use ffdev_disp_dat
 
     implicit none
     integer     :: i, j, k, parmid, ai, refid
@@ -521,9 +522,7 @@ subroutine ffdev_parameters_reinit()
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
                 case default
-                    if( .not. disp_data_loaded ) then
-                        call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
-                    end if
+                    call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
             end select
 
             use_disp_s6     = .true.
@@ -539,10 +538,15 @@ subroutine ffdev_parameters_reinit()
                     use_damp_pb     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
+                case(DAMP_TT_CONST)
+                    use_damp_fa     = .true.
+                case(DAMP_TT_BFAC)
+                    use_damp_fa     = .true.
+                case(DAMP_TT_BFAC_XDM)
+                    use_damp_fa     = .true.
+                    use_damp_fb     = .true.
                 case default
-                    if( .not. disp_data_loaded ) then
-                        call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
-                    end if
+                    call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select
 
             use_disp_s6     = .true.
