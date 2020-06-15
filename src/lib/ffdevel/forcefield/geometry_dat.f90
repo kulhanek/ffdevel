@@ -111,6 +111,7 @@ type GEOMETRY
     logical                 :: sup_surf_loaded
     real(DEVDP),pointer     :: sup_surf_ses(:)      ! atomic radii for molecular surface
     real(DEVDP),pointer     :: sup_surf_sas(:)      ! atomic surface contribution
+    real(DEVDP),pointer     :: sup_surf_atr(:)      ! atom radii
     logical                 :: sup_chrg_loaded
     character(len=MAX_PATH) :: sup_chrg_type
     real(DEVDP),pointer     :: sup_chrg(:)          ! partial atomic charges

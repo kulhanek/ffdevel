@@ -244,6 +244,7 @@ logical             :: couple_pa_pb_forA    = .false.
 integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
 integer,parameter   :: DAMP_BJ_ORC          = 202       ! optimized radii
 integer,parameter   :: DAMP_BJ_SRC          = 203       ! scaled optimized radii
+integer,parameter   :: DAMP_BJ_ATDENS       = 204
 
 integer     :: dampbj_mode                  = DAMP_BJ_DRC
 

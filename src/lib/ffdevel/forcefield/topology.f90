@@ -1703,6 +1703,8 @@ character(80) function ffdev_topology_dampbj_mode_to_string(nb_mode)
             ffdev_topology_dampbj_mode_to_string = 'ORC - Use optimized Rc per type'
         case(DAMP_BJ_SRC)
             ffdev_topology_dampbj_mode_to_string = 'SRC - Use scaled optimized Rc per type'
+        case(DAMP_BJ_ATDENS)
+            ffdev_topology_dampbj_mode_to_string = 'ATDENS - Derived form atom densities'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_dampbj_mode_to_string!')
     end select
@@ -1728,123 +1730,13 @@ integer function ffdev_topology_dampbj_mode_from_string(string)
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ORC
         case('SRC')
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_SRC
+        case('ATDENS')
+            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ATDENS
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_dampbj_mode_from_string!')
     end select
 
 end function ffdev_topology_dampbj_mode_from_string
-
-! ==============================================================================
-! subroutine ffdev_topology_cx_source_from_string
-! ==============================================================================
-
-integer function ffdev_topology_cxsource_from_string(string)
-
-    use ffdev_utils
-    use ffdev_disp_dat
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('NONE')
-            ffdev_topology_cxsource_from_string = NB_CX_NONE
-        case('XDM')
-            ffdev_topology_cxsource_from_string = NB_CX_XDM
-        case('MMD3')
-            ffdev_topology_cxsource_from_string = NB_CX_MMD3
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_cxsource_from_string!')
-    end select
-
-end function ffdev_topology_cxsource_from_string
-
-! ==============================================================================
-! subroutine ffdev_topology_cxsource_to_string
-! ==============================================================================
-
-character(80) function ffdev_topology_cxsource_to_string(nb_mode)
-
-    use ffdev_utils
-    use ffdev_disp_dat
-
-    implicit none
-    integer  :: nb_mode
-    ! --------------------------------------------------------------------------
-
-    select case(nb_mode)
-        case(NB_CX_NONE)
-            ffdev_topology_cxsource_to_string = 'NONE'
-        case(NB_CX_XDM)
-            ffdev_topology_cxsource_to_string = 'XDM'
-        case(NB_CX_MMD3)
-            ffdev_topology_cxsource_to_string = 'MMD3'
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_cxsource_to_string!')
-    end select
-
-end function ffdev_topology_cxsource_to_string
-
-! ==============================================================================
-! subroutine ffdev_topology_rcsource_from_string
-! ==============================================================================
-
-integer function ffdev_topology_rcsource_from_string(string)
-
-    use ffdev_utils
-    use ffdev_disp_dat
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('NONE')
-            ffdev_topology_rcsource_from_string = NB_RC_NONE
-        case('XDM')
-            ffdev_topology_rcsource_from_string = NB_RC_XDM
-        case('XDM-POL')
-            ffdev_topology_rcsource_from_string = NB_RC_XDM_POL
-        case('XDM-VOL')
-            ffdev_topology_rcsource_from_string = NB_RC_XDM_VOL
-        case('MMD3')
-            ffdev_topology_rcsource_from_string = NB_RC_MMD3
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_rcsource_from_string!')
-    end select
-
-end function ffdev_topology_rcsource_from_string
-
-! ==============================================================================
-! subroutine ffdev_topology_rcsource_to_string
-! ==============================================================================
-
-character(80) function ffdev_topology_rcsource_to_string(nb_mode)
-
-    use ffdev_utils
-    use ffdev_disp_dat
-
-    implicit none
-    integer  :: nb_mode
-    ! --------------------------------------------------------------------------
-
-    select case(nb_mode)
-        case(NB_RC_NONE)
-            ffdev_topology_rcsource_to_string = 'NONE'
-        case(NB_RC_XDM)
-            ffdev_topology_rcsource_to_string = 'XDM'
-        case(NB_RC_XDM_POL)
-            ffdev_topology_rcsource_to_string = 'XDM-POL'
-        case(NB_RC_XDM_VOL)
-            ffdev_topology_rcsource_to_string = 'XDM-VOL'
-        case(NB_RC_MMD3)
-            ffdev_topology_rcsource_to_string = 'MMD3'
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_rcsource_to_string!')
-    end select
-
-end function ffdev_topology_rcsource_to_string
 
 ! ==============================================================================
 ! subroutine ffdev_topology_nb_mode_to_string
@@ -2523,6 +2415,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_utils
     use ffdev_xdm_dat
     use ffdev_disp_dat
+    use ffdev_atdens
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -2585,6 +2478,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = top%nb_types(nbt)%rc
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
+                case(DAMP_BJ_ATDENS)
+                    rc =  ffdev_atdens_rc(zi,damp_fa) + ffdev_atdens_rc(zj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2614,6 +2509,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = top%nb_types(nbt)%rc
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
+                case(DAMP_BJ_ATDENS)
+                    rc =  ffdev_atdens_rc(zi,damp_fa) + ffdev_atdens_rc(zj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2647,8 +2544,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_TT_CONST)
                     nbpair%tb  = damp_fa
                 case(DAMP_TT_BFAC)
-                    tbii = damp_fa * atom_bfac(zi)
-                    tbjj = damp_fa * atom_bfac(zj)
+                    tbii = damp_fa * ffdev_atdens_b(zi)
+                    tbjj = damp_fa * ffdev_atdens_b(zj)
 
                     !write(*,*) tbii,tbjj
                     select case(nb_comb_rules)
@@ -2678,8 +2575,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
 
                     nbpair%tb  = tbij
                 case(DAMP_TT_BFAC_XDM)
-                    tbii = damp_fa * atom_bfac(zi) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
-                    tbjj = damp_fa * atom_bfac(zj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
+                    tbii = damp_fa * ffdev_atdens_b(zi) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
+                    tbjj = damp_fa * ffdev_atdens_b(zj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
 
                     !write(*,*) tbii,tbjj
                     select case(nb_comb_rules)

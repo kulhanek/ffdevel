@@ -66,7 +66,7 @@ subroutine ffdev_err_chrgpnl_ctrl(fin)
         write(DEV_OUT,125) ChrgPnlErrorWeight
     end if
 
- 10 format('=== [chrgpnl] =================================================================')
+ 10 format('=== [chrgpnl] ==================================================================')
 
 110  format ('Charge penalty (enabled)               = ',a12)
 115  format ('Charge penalty (enabled)               = ',a12,'                  (default)')

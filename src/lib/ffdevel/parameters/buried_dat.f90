@@ -15,24 +15,32 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_pbpnl_dat
+module ffdev_buried_dat
 
 use ffdev_constants
 use ffdev_variables
 
+! buried data ------------------------------------------------------------------
+
+! buried atom info
+type BURRIED_ATOM_TYPE
+    real(DEVDP)         :: expave   ! average exposition, 0.0 - buried, 1.0 - exposed
+    real(DEVDP)         :: expsig
+    real(DEVDP)         :: weight   ! 0.0 - buried, 1.0 - exposed
+    integer             :: num
+end type BURRIED_ATOM_TYPE
+
+logical                             :: buried_data_loaded = .false.
+type(BURRIED_ATOM_TYPE),allocatable :: buried_atoms(:)    ! ntypes
+
+integer,parameter   :: SURF_SESA = 1
+integer,parameter   :: SURF_SASA = 2
+
+integer             :: surface_mode = SURF_SESA
+real(DEVDP)         :: ProbeR      =  1.30d0             ! solvent probe radius
+real(DEVDP)         :: BuriedExp0  =  0.25d0
+real(DEVDP)         :: BuriedBeta  = 50.00d0
+
 ! ------------------------------------------------------------------------------
 
-integer,parameter   :: PB_PNL_QUADRATIC = 1
-
-! ------------------------------------------------------------------------------
-
-! initialization in ffdev_err_pbpnl_init
-logical     :: EnablePBPnlError
-logical     :: PrintPBPnlErrorSummary
-real(DEVDP) :: PBPnlErrorWeight
-integer     :: PBPnlFce
-logical     :: PBPNLBuriedAtoms
-
-! ------------------------------------------------------------------------------
-
-end module ffdev_err_pbpnl_dat
+end module ffdev_buried_dat

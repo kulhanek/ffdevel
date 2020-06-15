@@ -692,14 +692,17 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 geo%sup_xdm_loaded = .true.
            case('SURF')
                 allocate( geo%sup_surf_ses(geo%natoms), &
-                          geo%sup_surf_sas(geo%natoms), stat = alloc_stat )
+                          geo%sup_surf_sas(geo%natoms), &
+                          geo%sup_surf_atr(geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for SURF!')
                 end if
                 geo%sup_surf_ses(:) = 0.0d0
                 geo%sup_surf_sas(:) = 0.0d0
+                geo%sup_surf_atr(:) = 0.0d0
                 do i=1,geo%natoms
-                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_surf_ses(i), geo%sup_surf_sas(i)
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_surf_atr(i), geo%sup_surf_ses(i), geo%sup_surf_sas(i)
+                    ! OLD - read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_surf_ses(i), geo%sup_surf_sas(i)
                     if( read_stat .ne. 0 ) then
                         write(buffer,'(A,I3)') 'Unable to read SURF pol entry! SURF line = ',i
                         call ffdev_utils_exit(DEV_ERR,1,trim(buffer))

@@ -67,13 +67,13 @@ subroutine ffdev_err_probe_ctrl(fin)
 
  10 format('=== [probe] ====================================================================')
 
-110  format ('Probe error (enabled)                   = ',a12)
-115  format ('Probe error (enabled)                   = ',a12,'                  (default)')
-130  format ('Print Probe summary (summary)           = ',a12)
-135  format ('Print Probe summary (summary)           = ',a12,'                  (default)')
+110  format ('Probe error (enabled)                  = ',a12)
+115  format ('Probe error (enabled)                  = ',a12,'                  (default)')
+130  format ('Print Probe summary (summary)          = ',a12)
+135  format ('Print Probe summary (summary)          = ',a12,'                  (default)')
 
-220  format ('Probe error weight (weight)             = ',f21.8)
-225  format ('Probe error weight (weight)             = ',f21.8,'         (default)')
+220  format ('Probe error weight (weight)            = ',f21.8)
+225  format ('Probe error weight (weight)            = ',f21.8,'         (default)')
 
 
 end subroutine ffdev_err_probe_ctrl

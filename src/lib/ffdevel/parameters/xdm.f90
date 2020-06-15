@@ -318,11 +318,15 @@ subroutine ffdev_xdm_print()
 
     do ti=1,ntypes
         tj = ti
-        f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
-        f1sum = f1sum + f1
-        f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
-        f2sum = f2sum + f2
-        nfsum = nfsum + 1
+        f1 = 0.0
+        f2 = 0.0
+        if( xdm_pairs(ti,tj)%c6ave .ne. 0.0d0 ) then
+            f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
+            f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
+            f1sum = f1sum + f1
+            f2sum = f2sum + f2
+            nfsum = nfsum + 1
+        end if
         write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name), &
                               xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%Rc, &
                               mmd3_pairs(ti,tj)%c6ave, mmd3_pairs(ti,tj)%c8ave, mmd3_pairs(ti,tj)%Rc, &
@@ -334,11 +338,15 @@ subroutine ffdev_xdm_print()
     if( ntypes .gt. 1 ) then
         do ti=1,ntypes
             do tj=ti+1,ntypes
-                f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
-                f1sum = f1sum + f1
-                f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
-                f2sum = f2sum + f2
-                nfsum = nfsum + 1
+                f1 = 0.0
+                f2 = 0.0
+                if( xdm_pairs(ti,tj)%c6ave .ne. 0.0d0 ) then
+                    f1 = fflj_pairs(ti,tj)%c6 / xdm_pairs(ti,tj)%c6ave
+                    f2 = fflj_pairs(ti,tj)%c6 / mmd3_pairs(ti,tj)%c6ave
+                    f1sum = f1sum + f1
+                    f2sum = f2sum + f2
+                    nfsum = nfsum + 1
+                end if
                 write(DEV_OUT,250) trim(types(ti)%name),trim(types(tj)%name), &
                                   xdm_pairs(ti,tj)%c6ave, xdm_pairs(ti,tj)%c8ave, xdm_pairs(ti,tj)%Rc,  &
                                   mmd3_pairs(ti,tj)%c6ave, mmd3_pairs(ti,tj)%c8ave, mmd3_pairs(ti,tj)%Rc, &

@@ -364,6 +364,9 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
     use ffdev_parameters_dat
     use prmfile
     use ffdev_utils
+    use ffdev_disp_control
+    use ffdev_buried_control
+    use ffdev_atdens_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -396,7 +399,11 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
             case('setprms')
                 call ffdev_parameters_ctrl_setprms(fin,exec)
             case('disp')
-                call ffdev_parameters_ctrl_disp(fin,exec)
+                call ffdev_disp_ctrl(fin,exec)
+            case('buried')
+                call ffdev_buried_ctrl(fin,exec)
+            case('atdens')
+                call ffdev_atdens_ctrl(fin,exec)
             case('files')
                 call ffdev_parameters_ctrl_files_exec(fin,exec)
         end select
@@ -406,105 +413,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
 
 end subroutine ffdev_parameters_ctrl_ffmanip
 
-! ==============================================================================
-! subroutine ffdev_parameters_ctrl_disp
-! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_disp(fin,exec)
-
-    use ffdev_parameters
-    use ffdev_parameters_dat
-    use prmfile
-    use ffdev_utils
-    use ffdev_topology_dat
-    use ffdev_topology
-    use ffdev_xdm_dat
-    use ffdev_mmd3_dat
-    use ffdev_disp_dat
-
-    implicit none
-    type(PRMFILE_TYPE)          :: fin
-    logical                     :: exec
-    ! --------------------------------------------
-    integer                     :: alloc_stat
-    character(PRMFILE_MAX_PATH) :: string
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( .not. prmfile_open_section(fin,'disp') ) then
-        write(DEV_OUT,25) ffdev_topology_cxsource_to_string(cx_source)
-        write(DEV_OUT,35) ffdev_topology_rcsource_to_string(rc_source)
-        return
-    end if
-
-    if( prmfile_get_string_by_key(fin,'cx_source', string)) then
-        cx_source = ffdev_topology_cxsource_from_string(string)
-        write(DEV_OUT,20) ffdev_topology_cxsource_to_string(cx_source)
-    else
-        write(DEV_OUT,25) ffdev_topology_cxsource_to_string(cx_source)
-    end if
-
-    if( prmfile_get_string_by_key(fin,'rc_source', string)) then
-        rc_source = ffdev_topology_rcsource_from_string(string)
-        write(DEV_OUT,30) ffdev_topology_rcsource_to_string(rc_source)
-    else
-        write(DEV_OUT,35) ffdev_topology_rcsource_to_string(rc_source)
-    end if
-
-    if( .not. exec ) return
-
-! execute
-    if( .not. disp_data_loaded ) then
-        allocate( disp_pairs(ntypes,ntypes), stat = alloc_stat)
-        if(alloc_stat .ne. 0) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for disp_pairs in ffdev_parameters_ctrl_disp!')
-        end if
-        disp_data_loaded = .true.
-    end if
-
-    disp_pairs(:,:)%c6 = 0.0d0
-    disp_pairs(:,:)%c8 = 0.0d0
-    disp_pairs(:,:)%c10 = 0.0d0
-    disp_pairs(:,:)%rc = 0.0d0
-
-    select case(cx_source)
-        case(NB_CX_XDM)
-            disp_pairs(:,:)%c6  = xdm_pairs(:,:)%c6ave
-            disp_pairs(:,:)%c8  = xdm_pairs(:,:)%c8ave
-            disp_pairs(:,:)%c10 = xdm_pairs(:,:)%c10ave
-        case(NB_CX_MMD3)
-            disp_pairs(:,:)%c6  = mmd3_pairs(:,:)%c6ave
-            disp_pairs(:,:)%c8  = mmd3_pairs(:,:)%c8ave
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_disp I!')
-    end select
-
-    select case(rc_source)
-        case(NB_RC_XDM)
-            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rc
-        case(NB_RC_XDM_POL)
-            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvdw
-        case(NB_RC_XDM_VOL)
-            disp_pairs(:,:)%Rc  = xdm_pairs(:,:)%Rvol
-        case(NB_RC_MMD3)
-            disp_pairs(:,:)%Rc  = mmd3_pairs(:,:)%Rc
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_disp II!')
-    end select
-
-    return
-
- 10 format('=== [disp] =====================================================================')
-
- 20  format ('Cx source (cx_source)                    = ',a12)
- 25  format ('Cx source (cx_source)                    = ',a12,'                (default)')
-
- 30  format ('Rc source (rc_source)                    = ',a12)
- 35  format ('Rc source (rc_source)                    = ',a12,'                (default)')
-
-end subroutine ffdev_parameters_ctrl_disp
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbsetup
@@ -637,6 +546,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
                 ! new set of parameters
                 write(DEV_OUT,*)
+                write(DEV_OUT,15) i
                 call ffdev_utils_heading(DEV_OUT,'New NB parameters', '*')
                 call ffdev_topology_info_types(sets(i)%top,2)
             end if
@@ -688,7 +598,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, stk, stl, realm
     real(DEVDP)                 :: lvalue
-    integer                     :: i, pn, realmid, ti, tj, tk, tl, parmid
+    integer                     :: pn, realmid, ti, tj, tk, tl, parmid
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)

@@ -192,8 +192,8 @@ real(DEVDP)     :: MinPAC       =     -2.0d0
 real(DEVDP)     :: MaxPAC       =      2.0d0
 
 ! vdW interactions
-real(DEVDP)     :: MinDampFA    =      0.0d0
-real(DEVDP)     :: MaxDampFA    =      6.0d0
+real(DEVDP)     :: MinDampFA    =    -20.0d0
+real(DEVDP)     :: MaxDampFA    =      0.0d0
 real(DEVDP)     :: MinDampFB    =     -6.0d0
 real(DEVDP)     :: MaxDampFB    =      6.0d0
 real(DEVDP)     :: MinDampPB    =      0.0d0

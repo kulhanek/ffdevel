@@ -38,6 +38,7 @@ subroutine ffdev_err_pbpnl_init
     PrintPBPnlErrorSummary  = .false.
     PBPnlErrorWeight        = 1.0
     PBPnlFce                = PB_PNL_QUADRATIC
+    PBPNLBuriedAtoms        = .false.
 
 end subroutine ffdev_err_pbpnl_init
 
@@ -51,13 +52,14 @@ subroutine ffdev_err_pbpnl_error(error)
     use ffdev_errors_dat
     use ffdev_err_pbpnl_dat
     use ffdev_parameters_dat
-    use ffdev_disp_dat
+    use ffdev_atdens
+    use ffdev_buried_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,z
-    real(DEVDP)         :: diff
+    real(DEVDP)         :: diff,w
     ! --------------------------------------------------------------------------
 
     error%pbpnl = 0.0d0
@@ -66,10 +68,14 @@ subroutine ffdev_err_pbpnl_error(error)
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
         z = types(params(i)%ti)%z
+        w = 1.0d0
+        if( PBPNLBuriedAtoms ) then
+            w = 1.0d0 - buried_atoms(params(i)%ti)%weight
+        end if
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - atom_bfac(z)
-                error%pbpnl = error%pbpnl + diff**2
+                diff = params(i)%value - ffdev_atdens_b(z)
+                error%pbpnl = error%pbpnl + w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_error!')
         end select
@@ -86,12 +92,13 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_err_pbpnl_dat
     use ffdev_utils
     use ffdev_parameters_dat
-    use ffdev_disp_dat
+    use ffdev_atdens
+    use ffdev_buried_dat
 
     implicit none
     logical         :: printsum
     integer         :: i, z
-    real(DEVDP)     :: totpnl, pnl, diff
+    real(DEVDP)     :: totpnl, pnl, diff, w
     ! --------------------------------------------------------------------------
 
     printsum = .false.
@@ -114,16 +121,21 @@ subroutine ffdev_err_pbpnl_summary()
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
 
         z = types(params(i)%ti)%z
+        w = 1.0d0
+        if( PBPNLBuriedAtoms ) then
+            w = 1.0d0 - buried_atoms(params(i)%ti)%weight
+        end if
+
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - atom_bfac(z)
-                pnl = diff**2
+                diff = params(i)%value - ffdev_atdens_b(z)
+                pnl = w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_summary!')
         end select
         totpnl = totpnl + pnl
 
-        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), atom_bfac(z), params(i)%value, diff, pnl
+        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_atdens_b(z), params(i)%value, diff, pnl
     end do
 
     write(DEV_OUT,20)
@@ -133,9 +145,9 @@ subroutine ffdev_err_pbpnl_summary()
  5 format('# Pauli Repulsion PB Penalties')
 10 format('# ID Type    PB(Tab)    PB(Opt)       Diff    Penalty')
 20 format('# -- ---- ---------- ---------- ---------- ----------')
-30 format(I4,1X,A4,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
-40 format('# Final penalty               =                               ',F10.3)
-45 format('# Final penalty (all weights) =                               ',F10.3)
+30 format(I4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
+40 format('# Final penalty               =            ',F10.3)
+45 format('# Final penalty (all weights) =            ',F10.3)
 
 end subroutine ffdev_err_pbpnl_summary
 

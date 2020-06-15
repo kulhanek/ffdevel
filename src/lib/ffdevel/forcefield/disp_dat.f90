@@ -1,6 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
-!    Copyright (C) 2013 Petr Kulhanek, kulhanek@chemi.muni.cz
+!    Copyright (C) 2020 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -47,27 +47,6 @@ type(DISP_PAIR_TYPE),allocatable    :: disp_pairs(:,:)      ! ntypes x ntypes - 
 logical                             :: disp_data_loaded     = .false.
 integer                             :: cx_source            = NB_CX_NONE
 integer                             :: rc_source            = NB_RC_NONE
-
-! ------------------------------------------------------------------------------
-
-! https://en.wikipedia.org/wiki/Ionization_energies_of_the_elements_(data_page)
-! CRC data in eV
-
-real(DEVDP)     :: atom_ip(10) = (/  &
-13.59844, 24.58741, &
-5.39172, 9.3227, 8.29803, 11.26030, 14.53414, 13.61806, 17.42282, 21.5646 &
-/)
-
-
-! ------------------------------------------------------------------------------
-
-! CCSD/UKBS - bfac
-
-real(DEVDP)     :: atom_bfac(18) = (/  &
-3.7829, 5.3139, &
-1.9827, 2.9793, 3.6458, 3.4357, 4.2317, 4.7252, 4.6843, 5.2192, &
-1.8440, 2.5588, 2.3121, 2.7842, 3.2578, 3.2282, 4.2113, 4.3007 &
-/)
 
 
 end module ffdev_disp_dat

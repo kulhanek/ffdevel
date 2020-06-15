@@ -46,6 +46,7 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintPBPnlErrorSummary)
 
         write(DEV_OUT,125) PBPnlErrorWeight
+        write(DEV_OUT,145) prmfile_onoff(PBPNLBuriedAtoms)
         return
     end if
 
@@ -54,6 +55,7 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
     else
         write(DEV_OUT,115) prmfile_onoff(EnablePBPnlError)
     end if
+
     if( prmfile_get_logical_by_key(fin,'summary', PrintPBPnlErrorSummary)) then
         write(DEV_OUT,130) prmfile_onoff(PrintPBPnlErrorSummary)
     else
@@ -66,7 +68,13 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,125) PBPnlErrorWeight
     end if
 
- 10 format('=== [pbpnl] =================================================================')
+    if( prmfile_get_logical_by_key(fin,'buried', PBPNLBuriedAtoms)) then
+        write(DEV_OUT,140) prmfile_onoff(PBPNLBuriedAtoms)
+    else
+        write(DEV_OUT,145) prmfile_onoff(PBPNLBuriedAtoms)
+    end if
+
+ 10 format('=== [pbpnl] ====================================================================')
 
 110  format ('Charge penalty (enabled)               = ',a12)
 115  format ('Charge penalty (enabled)               = ',a12,'                  (default)')
@@ -75,6 +83,9 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 
 120  format ('Charge penalty weight (weight)         = ',f21.8)
 125  format ('Charge penalty weight (weight)         = ',f21.8,'         (default)')
+
+140  format ('Consider buried atoms (buried)         = ',a12)
+145  format ('Consider buried atoms (buried)         = ',a12,'                  (default)')
 
 end subroutine ffdev_err_pbpnl_ctrl
 
