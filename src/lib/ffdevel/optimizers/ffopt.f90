@@ -897,6 +897,8 @@ subroutine opt_shark_nruns
 ! print final parameters
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
 
+        call ffdev_ffopt_write_error_sumlogs(SMMLOG_FINAL)
+
         if( (istep .eq. 1) .or. (besterr .gt. FFError%total) ) then
             call ffdev_ffopt_write_error_sumlogs(SMMLOG_BEST)
             besterr = FFError%total
@@ -1050,11 +1052,10 @@ subroutine opt_shark
         call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
     end if
 
+    ! this is required for multiple shark runs
     call ffdev_parameters_error_only(FFParams,FFError,.false.)
     call write_header(.true.)
     call write_results(istep,FFError,0.0d0,0.0d0,.true.)
-
-    call ffdev_ffopt_write_error_sumlogs(SMMLOG_FINAL)
 
     call shark_destroy()
 

@@ -428,8 +428,11 @@ subroutine execute_ffopt(grpin,pid,exec)
 
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
-    call ffdev_parameters_ctrl_realms(grpin)
+
+    ! ORDER: ranges -> realms (for proper random initialization from updated ranges)
     call ffdev_parameters_ctrl_ranges(grpin)
+    call ffdev_parameters_ctrl_realms(grpin)
+
 
     call ffdev_targetset_ctrl_optgeo(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)

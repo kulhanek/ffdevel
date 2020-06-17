@@ -1016,14 +1016,14 @@ subroutine ffdev_parameters_ctrl_ranges(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( ResetAllSetup ) then
-        call ffdev_params_reset_ranges()
-        write(DEV_OUT,'(A)') '>>> INFO: All ranges reset (resetallsetup=on)'
-    end if
-
     if( .not. prmfile_open_section(fin,'ranges') ) then
         write(DEV_OUT,15)
         return
+    end if
+
+    if( ResetAllSetup ) then
+        call ffdev_params_reset_ranges()
+        write(DEV_OUT,'(A)') '>>> INFO: All ranges reset (resetallsetup=on)'
     end if
 
     write(DEV_OUT,20)
