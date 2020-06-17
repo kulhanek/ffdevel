@@ -347,6 +347,11 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-2.final.log'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
+
+            case(SMMLOG_BEST)
+                sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-3.best.log'
+                write(DEV_OUT,*)
+                write(DEV_OUT,30) trim(sname)
         end select
 
         call ffdev_utils_open(DEV_ERRSUMLOG,sname,'U')
@@ -367,6 +372,8 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
                 call ffdev_utils_heading(DEV_OUT,'Intermediate Error Summary',':')
             case(SMMLOG_FINAL)
                 call ffdev_utils_heading(DEV_OUT,'Final Error Summary',':')
+            case(SMMLOG_BEST)
+                call ffdev_utils_heading(DEV_OUT,'Best Error Summary',':')
         end select
         write(DEV_OUT,1)
 
@@ -374,11 +381,17 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
 
         ! print error summary
         write(DEV_OUT,*)
+        write(DEV_OUT,100,ADVANCE='NO')
         call ffdev_errors_ffopt_header_I
+
         write(DEV_OUT,*)
+        write(DEV_OUT,200,ADVANCE='NO')
         call ffdev_errors_ffopt_header_II
+
         write(DEV_OUT,*)
+        write(DEV_OUT,300,ADVANCE='NO') error%total
         call ffdev_errors_ffopt_results(error)
+
         write(DEV_OUT,*)
 
         ! print error statistics
@@ -396,6 +409,11 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
   1 format('# ==============================================================================')
  10 format('errorsum',I3.3)
  30 format('>>> Error summary written to: ',A)
+
+
+100 format('#      Error')
+200 format('# ----------')
+300 format(E12.5)
 
 end subroutine ffdev_ffopt_write_error_sumlogs
 
@@ -772,7 +790,11 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
         grad(:) = FFParamsGrd(:)
     else
         FFParamsGrd(:) = 0.0d0
-        call ffdev_parameters_error_only(FFParams,FFError,.true.)
+        if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
+            call ffdev_parameters_error_only(FFParams,FFError,.false.)
+        else
+            call ffdev_parameters_error_only(FFParams,FFError,.true.)
+        end if
         value = FFError%Total
     end if
 
@@ -821,7 +843,7 @@ subroutine opt_shark_nruns
 
     ! save initial params
     tmp_InitialParams = FFParams
-
+    besterr = 0.0d0
     do istep=1,Shark_NRuns
 
         write(DEV_OUT,*)
@@ -873,8 +895,12 @@ subroutine opt_shark_nruns
         tmp_FinalError(istep)    = FFError%total
 
 ! print final parameters
-
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
+
+        if( (istep .eq. 1) .or. (besterr .gt. FFError%total) ) then
+            call ffdev_ffopt_write_error_sumlogs(SMMLOG_BEST)
+            besterr = FFError%total
+        end if
 
         if( istep .ne. Shark_NRuns ) then
             write(DEV_OUT,*)
@@ -908,7 +934,7 @@ subroutine opt_shark_nruns
     FFParams(:) = tmp_FinalParams(:,bestid)
 
     ! recalculate error
-    call ffdev_parameters_error_only(FFParams,FFError,.true.)
+    call ffdev_parameters_error_only(FFParams,FFError,.false.)
 
     call write_header(.false.)
     call write_results(0,FFError,0.0d0,0.0d0,.true.)
@@ -969,9 +995,10 @@ subroutine opt_shark
 
     istep = 0
 
-    write(DEV_OUT,10)
     call write_header(.false.)
     call write_results(istep,FFError,0.0d0,0.0d0,.true.)
+
+    call ffdev_ffopt_write_error_sumlogs(SMMLOG_INITIAL)
 
     write(DEV_OUT,*)
     write(DEV_OUT,20)
@@ -979,20 +1006,21 @@ subroutine opt_shark
 
     do istep = 1, NOptSteps
         call shark_dostep(error)
-        write(DEV_OUT,40) istep,FFOptFceEvals,error
+
+        if( ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
+            write(DEV_OUT,40) istep,FFOptFceEvals,error
+        end if
+
+        call shark_getsol(tmp_xg)
+
+        if( Shark_EnableBoxing ) then
+            call ffdev_ffopt_unbox_prms(tmp_xg,FFParams)
+        else
+            FFParams(:) = tmp_xg(:)
+        end if
 
         if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
-
-            call shark_getsol(tmp_xg)
-
-            if( Shark_EnableBoxing ) then
-                call ffdev_ffopt_unbox_prms(tmp_xg,FFParams)
-            else
-                FFParams(:) = tmp_xg(:)
-            end if
-
-            call ffdev_parameters_error_only(FFParams,FFError,.true.)
-
+            call ffdev_parameters_error_only(FFParams,FFError,.false.)
             call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
         end if
 
@@ -1022,19 +1050,11 @@ subroutine opt_shark
         call ffdev_utils_heading(DEV_OUT,'Intermediate results', '-')
     end if
 
-    call shark_getsol(tmp_xg)
-    if( Shark_EnableBoxing ) then
-        call ffdev_ffopt_unbox_prms(tmp_xg,FFParams)
-        ! write(*,*) 'unbox->', tmp_xg, FFParams
-    else
-        FFParams(:) = tmp_xg(:)
-    end if
-
-    call ffdev_parameters_error_only(FFParams,FFError,.true.)
-
-    write(DEV_OUT,10)
+    call ffdev_parameters_error_only(FFParams,FFError,.false.)
     call write_header(.true.)
     call write_results(istep,FFError,0.0d0,0.0d0,.true.)
+
+    call ffdev_ffopt_write_error_sumlogs(SMMLOG_FINAL)
 
     call shark_destroy()
 
@@ -1042,7 +1062,6 @@ subroutine opt_shark
     deallocate(tmp_ub)
     deallocate(tmp_xg)
 
-10 format('# Mode = Shark-ML')
 20 format('#     Step FceEvals          Error')
 30 format('# -------- -------- --------------')
 40 format(I10,1X,I8,1X,E14.6)

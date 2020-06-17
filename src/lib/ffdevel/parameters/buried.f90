@@ -37,26 +37,11 @@ subroutine ffdev_buried_run_stat()
     implicit none
     integer     :: ti, ai, i, j, alloc_stat
     real(DEVDP) :: rms, sexp
+    logical     :: buried_data_loaded
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'BURIED ATOMS', ':')
-
-    ! initialize
-    buried_data_loaded = .false.
-
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%sup_surf_loaded ) then
-                buried_data_loaded = .true.
-                exit
-            end if
-        end do
-    end do
-    if( .not. buried_data_loaded ) then
-        write(DEV_OUT,10)
-        return
-    end if
 
     ! allocate buried atoms array
     if( .not. allocated(buried_atoms) ) then
@@ -73,6 +58,27 @@ subroutine ffdev_buried_run_stat()
         buried_atoms(ti)%weight = 0
         buried_atoms(ti)%num    = 0
     end do
+
+    ! initialize
+    buried_data_loaded = .false.
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( sets(i)%geo(j)%sup_surf_loaded ) then
+                buried_data_loaded = .true.
+                exit
+            end if
+        end do
+    end do
+    if( .not. buried_data_loaded ) then
+        ! mark all atoms exposed if no SURF
+        do ti=1,ntypes
+            if( buried_atoms(ti)%num .eq. 0 ) then
+                buried_atoms(ti)%expave = 1.0
+            end if
+        end do
+        write(DEV_OUT,10)
+        return
+    end if
 
 ! gather data
     do i=1,nsets
@@ -150,12 +156,6 @@ subroutine ffdev_buried_print()
     integer     :: ti
     ! --------------------------------------------------------------------------
 
-    ! do we have data about buried atoms?
-    if( .not. buried_data_loaded ) then
-        write(DEV_OUT,10)
-        return
-    end if
-
     write(DEV_OUT,*)
     write(DEV_OUT,20) ffdev_buried_surf_mode_to_string(surface_mode)
     write(DEV_OUT,25) ProbeR
@@ -171,8 +171,6 @@ subroutine ffdev_buried_print()
                           buried_atoms(ti)%weight
     end do
    write(DEV_OUT,140)
-
- 10 format('>>> No information about buried atoms ....')
 
  20 format("Surface mode = ",A)
  25 format("Probe radius = ",F10.4)

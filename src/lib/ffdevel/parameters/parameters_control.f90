@@ -413,8 +413,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
 
 end subroutine ffdev_parameters_ctrl_ffmanip
 
-
-
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_nbsetup
 ! ==============================================================================
@@ -910,7 +908,7 @@ subroutine ffdev_parameters_ctrl_realms(fin)
     nactparms = 0
     if( ResetAllSetup ) then
         call ffdev_parameters_disable_all_realms()
-        write(DEV_OUT,35) nactparms,'all disabled by default'
+        write(DEV_OUT,35) nactparms,'all disabled by default (resetallsetup=on)'
     else
         do i=1,nparams
             if( params(i)%enabled ) nactparms = nactparms + 1
@@ -994,6 +992,78 @@ subroutine ffdev_parameters_ctrl_realms(fin)
 45 format('>>> WARNING: No active parameters to optimize!')
 
 end subroutine ffdev_parameters_ctrl_realms
+
+! ==============================================================================
+! subroutine ffdev_parameters_ctrl_ranges
+! ==============================================================================
+
+subroutine ffdev_parameters_ctrl_ranges(fin)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use prmfile
+    use ffdev_utils
+
+    implicit none
+    type(PRMFILE_TYPE)          :: fin
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: string,realm,bound
+    logical                     :: rst
+    integer                     :: realmid
+    real(DEVDP)                 :: lvalue, sc
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+
+    if( ResetAllSetup ) then
+        call ffdev_params_reset_ranges()
+        write(DEV_OUT,'(A)') '>>> INFO: All ranges reset (resetallsetup=on)'
+    end if
+
+    if( .not. prmfile_open_section(fin,'ranges') ) then
+        write(DEV_OUT,15)
+        return
+    end if
+
+    write(DEV_OUT,20)
+    write(DEV_OUT,30)
+
+    rst = prmfile_first_line(fin)
+    do while ( prmfile_get_line(fin,string) )
+        read(string,*,err=555,end=555) realm
+        if( trim(realm) .eq. 'reset' ) then
+            write(DEV_OUT,40) 'reset'
+            call ffdev_params_reset_ranges()
+        else
+            read(string,*,err=556,end=556) realm, bound, lvalue
+            realmid = ffdev_parameters_get_realmid(realm)
+            write(DEV_OUT,40) ffdev_parameters_get_realm_name(realmid), trim(bound), lvalue
+            sc = ffdev_parameters_get_realm_scaling(realmid)
+            lvalue = lvalue / sc
+            select case(trim(bound))
+                case('max')
+                    call ffdev_params_set_upper_bound(realmid,lvalue)
+                case('min')
+                    call ffdev_params_set_lower_bound(realmid,lvalue)
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'min/max required - unsupported boundary in ffdev_parameters_ctrl_ranges!')
+            end select
+        end if
+    end do
+
+    return
+
+ 10 format('=== [ranges] ===================================================================')
+ 15 format('>>> INFO: No changes in parameter ranges!')
+ 20 format('# Realm        Boundary     Value')
+ 30 format('# ------------ -------- ----------')
+ 40 format(A14,1X,A8,1X,F10.2)
+
+555 call ffdev_utils_exit(DEV_ERR,1,'Unable to read key in [ranges]!')
+556 call ffdev_utils_exit(DEV_ERR,1,'Unable to read realm, boundary, and/or parameter value in [ranges]!')
+
+end subroutine ffdev_parameters_ctrl_ranges
 
 ! ------------------------------------------------------------------------------
 

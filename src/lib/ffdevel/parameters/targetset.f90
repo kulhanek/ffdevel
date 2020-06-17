@@ -93,6 +93,7 @@ subroutine ffdev_targetset_calc_all
         end do
     end if
 
+    call ffdev_timers_start_timer(FFDEV_GEOOPT_TIMER)
     !$omp parallel
     !$omp single
     ! optimize geometry
@@ -126,23 +127,33 @@ subroutine ffdev_targetset_calc_all
     end do
     !$omp end single
     !$omp end parallel
+    call ffdev_timers_stop_timer(FFDEV_GEOOPT_TIMER)
 
     if( georeseted .gt. 0 ) then
         write(DEV_OUT,*) '>>> Geometries (',georeseted,') reset at ', evalcounter
     end if
 
+    call ffdev_timers_start_timer(FFDEV_PROPS_TIMER)
+    !$omp parallel
+    !$omp single
     ! calculate all energies, gradients, hessians
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
                 ! calculate hessian
+                !$omp task
                 call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
+                !$omp end task
         ! for zerograd error we do not need trg_grd_loaded
         ! else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
         else if( errors_calc_grad ) then
+                !$omp task
                 call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
+                !$omp end task
             else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
+                !$omp task
                 call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
+                !$omp end task
             end if
         end do
     end do
@@ -153,9 +164,14 @@ subroutine ffdev_targetset_calc_all
         do j=1,sets(i)%ngeos
             if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
                         .and. errors_calc_sapt ) ) cycle
+            !$omp task
             call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
+            !$omp end task
         end do
     end do
+    !$omp end single
+    !$omp end parallel
+    call ffdev_timers_stop_timer(FFDEV_PROPS_TIMER)
 
    ! update energies
     do i=1,nsets

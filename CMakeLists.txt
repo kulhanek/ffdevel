@@ -185,7 +185,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
     ENDIF(FCOMP_NAME STREQUAL ifort)
 
     SET(CMAKE_BUILD_TYPE Release)
-    #SET(CMAKE_BUILD_TYPE Debug)
+    # SET(CMAKE_BUILD_TYPE Debug)
 ENDIF(NOT DEFINED COMPOSITE_PROJECT)
 
 # ==============================================================================

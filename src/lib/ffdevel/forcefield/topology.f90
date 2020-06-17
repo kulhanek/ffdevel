@@ -2382,10 +2382,23 @@ subroutine ffdev_topology_update_nb_params(top)
     select case(nb_mode)
         case(NB_VDW_LJ)
             ! nothing to do
-        case(NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
+        case(NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
             if( .not. disp_data_loaded ) then
-                call ffdev_utils_exit(DEV_ERR,1,'DISP not loaded for ffdev_topology_update_nb_params!')
+                call ffdev_utils_exit(DEV_ERR,1, &
+                     'DISP not loaded for NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ in ffdev_topology_update_nb_params!')
             end if
+        case(NB_VDW_EXP_DISPTT)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1, &
+                     'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_params!')
+            end if
+            select case(damptt_mode)
+                case(DAMP_TT_BFAC_XDM)
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                         'XDM not loaded for DAMP_TT_BFAC_XDM in ffdev_topology_update_nb_params!')
+                case default
+                    ! nothing to do
+            end select
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_params!')
     end select

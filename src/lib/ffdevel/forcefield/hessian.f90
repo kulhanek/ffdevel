@@ -47,8 +47,6 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
         calcnb = .not. skipnb
     end if
 
-    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN_TIMER)
-
     ! reset energy
     geo%bond_ene = 0.0d0
     geo%angle_ene = 0.0d0
@@ -97,8 +95,6 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
                   + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
                   + geo%ele_ene + geo%rep_ene + geo%dis_ene
 
-    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
-
 end subroutine ffdev_hessian_all
 
 ! ==============================================================================
@@ -116,8 +112,6 @@ subroutine ffdev_hessian_ihess_bonded(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
-
-    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN_TIMER)
 
     ! reset energy
     geo%bond_ene = 0.0d0
@@ -153,8 +147,6 @@ subroutine ffdev_hessian_ihess_bonded(top,geo)
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
                   + geo%impropr_ene
 
-    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
-
 end subroutine ffdev_hessian_ihess_bonded
 
 ! ==============================================================================
@@ -185,8 +177,6 @@ subroutine ffdev_hessian_num_all(top,geo,skipnb)
     if( present(skipnb) ) then
         lskipnb = skipnb
     end if
-
-    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN_TIMER)
 
     d = 1.0d-5  ! differentiation parameter
     d2inv = 1.0d0/d**2
@@ -256,8 +246,6 @@ subroutine ffdev_hessian_num_all(top,geo,skipnb)
     ! release temporary geometry object
     deallocate(tmp_geo%crd)
 
-    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
-
 end subroutine ffdev_hessian_num_all
 
 ! ==============================================================================
@@ -289,8 +277,6 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo,skipnb)
     if( present(skipnb) ) then
         lskipnb = skipnb
     end if
-
-    call ffdev_timers_start_timer(FFDEV_POT_HESSIAN_TIMER)
 
     d = 1.0d-6  ! differentiation parameter
 
@@ -334,8 +320,6 @@ subroutine ffdev_hessian_num_by_grds_all(top,geo,skipnb)
         end do
     end do
     deallocate(tmp_geo1,tmp_geo2)
-
-    call ffdev_timers_stop_timer(FFDEV_POT_HESSIAN_TIMER)
 
 end subroutine ffdev_hessian_num_by_grds_all
 

@@ -104,14 +104,14 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     errors_calc_grad    = .false.
     errors_calc_hess    = .false.
 
-    if( opterror ) then
-        errors_calc_ene  = EnableEnergyError
-        errors_calc_sapt = EnableSAPTError .or. EnableProbeError
-        errors_calc_grad = EnableZeroGradError
-    else
-        errors_calc_ene  = EnableEnergyError .or. PrintEnergyErrorSummary
-        errors_calc_sapt = EnableSAPTError .or. PrintSAPTErrorSummary .or. EnableProbeError
-        errors_calc_grad = EnableZeroGradError .or. PrintZeroGradErrorSummary
+    errors_calc_ene  = EnableEnergyError
+    errors_calc_sapt = EnableSAPTError .or. EnableProbeError
+    errors_calc_grad = EnableZeroGradError
+
+    if( .not. opterror ) then
+        errors_calc_ene  = errors_calc_ene  .or. PrintEnergyErrorSummary
+        errors_calc_sapt = errors_calc_sapt .or. PrintSAPTErrorSummary .or. PrintProbeErrorSummary
+        errors_calc_grad = errors_calc_grad .or. PrintZeroGradErrorSummary
     end if
 
 end subroutine ffdev_errors_error_setup_domains

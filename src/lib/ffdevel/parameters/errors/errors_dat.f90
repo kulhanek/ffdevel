@@ -58,6 +58,7 @@ type(FFERROR_TYPE)      :: FFError
 integer, parameter      :: SMMLOG_INITIAL       = 1
 integer, parameter      :: SMMLOG_INTERMEDIATE  = 2
 integer, parameter      :: SMMLOG_FINAL         = 3
+integer, parameter      :: SMMLOG_BEST          = 4
 
 ! ------------------------------------------------------------------------------
 ! internal setup

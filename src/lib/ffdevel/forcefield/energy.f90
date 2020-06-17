@@ -69,8 +69,6 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     geo%total_ene = 0.0d0
     geo%rst_energy = 0.0d0
 
-    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
-
     ! bonded terms
     if( top%probe_size .eq. 0 ) then
         call ffdev_energy_bonds(top,geo)
@@ -80,7 +78,6 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     end if
 
     if( calcnb ) then
-        call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
 
         if( top%nb_params_update ) then
             call ffdev_topology_update_nb_params(top)
@@ -102,15 +99,11 @@ subroutine ffdev_energy_all(top,geo,skipnb)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
         end select
-
-        call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
     end if
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
                   + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
                   + geo%ele_ene + geo%rep_ene + geo%dis_ene
-
-    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
 end subroutine ffdev_energy_all
 
@@ -144,9 +137,6 @@ subroutine ffdev_energy_sapt(top,geo)
 
     if( top%sapt_size .le. 0 ) return ! no SAPT list
 
-    call ffdev_timers_start_timer(FFDEV_POT_ENERGY_TIMER)
-    call ffdev_timers_start_timer(FFDEV_POT_NB_ENERGY_TIMER)
-
     if( top%nb_params_update ) then
         call ffdev_topology_update_nb_params(top)
     end if
@@ -169,9 +159,6 @@ subroutine ffdev_energy_sapt(top,geo)
     end select
 
     geo%sapt_total = geo%sapt_ele + geo%sapt_rep + geo%sapt_dis
-
-    call ffdev_timers_stop_timer(FFDEV_POT_NB_ENERGY_TIMER)
-    call ffdev_timers_stop_timer(FFDEV_POT_ENERGY_TIMER)
 
 end subroutine ffdev_energy_sapt
 

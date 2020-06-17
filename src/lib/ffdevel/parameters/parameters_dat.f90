@@ -141,76 +141,78 @@ real(DEVDP)     :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos 
 
 ! === [ranges] =================================================================
 
-real(DEVDP)     :: MinBondD0    =       0.5d0
-real(DEVDP)     :: MaxBondD0    =       5.0d0
-real(DEVDP)     :: MinBondK     =       0.0
-real(DEVDP)     :: MaxBondK     =    1500.0d0
-real(DEVDP)     :: MinAngleA0   =       0.0
-real(DEVDP)     :: MaxAngleA0   =       DEV_PI
-real(DEVDP)     :: MinAngleK    =       0.0d0
-real(DEVDP)     :: MaxAngleK    =    1000.0d0
-real(DEVDP)     :: MinDihV      =       0.0d0
-real(DEVDP)     :: MaxDihV      =      50.0d0
-real(DEVDP)     :: MinDihG      =       0.0d0
-real(DEVDP)     :: MaxDihG      =     2*DEV_PI
-real(DEVDP)     :: MinDihSCEE   =       0.5d0
-real(DEVDP)     :: MaxDihSCEE   =       3.0d0
-real(DEVDP)     :: MinDihSCNB   =       0.5d0
-real(DEVDP)     :: MaxDihSCNB   =       3.0d0
-real(DEVDP)     :: MinImprV     =       0.0d0
-real(DEVDP)     :: MaxImprV     =      50.0d0
-real(DEVDP)     :: MinImprG     =      -DEV_PI
-real(DEVDP)     :: MaxImprG     =       DEV_PI
-real(DEVDP)     :: MinDihC      =     -50.0d0
-real(DEVDP)     :: MaxDihC      =      50.0d0
+! values set in ffdev_params_reset_ranges
+
+real(DEVDP)     :: MinBondD0
+real(DEVDP)     :: MaxBondD0
+real(DEVDP)     :: MinBondK
+real(DEVDP)     :: MaxBondK
+real(DEVDP)     :: MinAngleA0
+real(DEVDP)     :: MaxAngleA0
+real(DEVDP)     :: MinAngleK
+real(DEVDP)     :: MaxAngleK
+real(DEVDP)     :: MinDihV
+real(DEVDP)     :: MaxDihV
+real(DEVDP)     :: MinDihG
+real(DEVDP)     :: MaxDihG
+real(DEVDP)     :: MinDihSCEE
+real(DEVDP)     :: MaxDihSCEE
+real(DEVDP)     :: MinDihSCNB
+real(DEVDP)     :: MaxDihSCNB
+real(DEVDP)     :: MinImprV
+real(DEVDP)     :: MaxImprV
+real(DEVDP)     :: MinImprG
+real(DEVDP)     :: MaxImprG
+real(DEVDP)     :: MinDihC
+real(DEVDP)     :: MaxDihC
 
 ! non-bonded ERA
-real(DEVDP)     :: MinVdwEps    =       0.0d0
-real(DEVDP)     :: MaxVdwEps    =       2.0d0
-real(DEVDP)     :: MinVdwR0     =       0.5d0
-real(DEVDP)     :: MaxVdwR0     =       6.0d0
+real(DEVDP)     :: MinVdwEps
+real(DEVDP)     :: MaxVdwEps
+real(DEVDP)     :: MinVdwR0
+real(DEVDP)     :: MaxVdwR0
 
 ! non-bonded ABC
-real(DEVDP)     :: MinVdwPA     =      0.0d0
-real(DEVDP)     :: MaxVdwPA     =     20.0d0
+real(DEVDP)     :: MinVdwPA
+real(DEVDP)     :: MaxVdwPA
 
-real(DEVDP)     :: MinVdwPB     =      1.0d0
-real(DEVDP)     :: MaxVdwPB     =      7.0d0
+real(DEVDP)     :: MinVdwPB
+real(DEVDP)     :: MaxVdwPB
 
-real(DEVDP)     :: MinVdwRC     =      0.0d0
-real(DEVDP)     :: MaxVdwRC     =      5.0d0
+real(DEVDP)     :: MinVdwRC
+real(DEVDP)     :: MaxVdwRC
 
-real(DEVDP)     :: MinVdwTB     =      0.0d0
-real(DEVDP)     :: MaxVdwTB     =      5.0d0
+real(DEVDP)     :: MinVdwTB
+real(DEVDP)     :: MaxVdwTB
 
 ! non-bonded scaling factors
-real(DEVDP)     :: MinEleSQ     =      0.0d0
-real(DEVDP)     :: MaxEleSQ     =      3.0d0
+real(DEVDP)     :: MinEleSQ
+real(DEVDP)     :: MaxEleSQ
 
 ! partial atomic charges
-real(DEVDP)     :: MinPAC       =     -2.0d0
-real(DEVDP)     :: MaxPAC       =      2.0d0
+real(DEVDP)     :: MinPAC
+real(DEVDP)     :: MaxPAC
 
 ! vdW interactions
-real(DEVDP)     :: MinDampFA    =    -20.0d0
-real(DEVDP)     :: MaxDampFA    =      0.0d0
-real(DEVDP)     :: MinDampFB    =     -6.0d0
-real(DEVDP)     :: MaxDampFB    =      6.0d0
-real(DEVDP)     :: MinDampPB    =      0.0d0
-real(DEVDP)     :: MaxDampPB    =      2.0d0
+real(DEVDP)     :: MinDampFA
+real(DEVDP)     :: MaxDampFA
+real(DEVDP)     :: MinDampFB
+real(DEVDP)     :: MaxDampFB
+real(DEVDP)     :: MinDampPB
+real(DEVDP)     :: MaxDampPB
 
 ! dispersion scaling
-real(DEVDP)     :: MinDispS6    =      0.0d0
-real(DEVDP)     :: MaxDispS6    =     10.0d0
-real(DEVDP)     :: MinDispS8    =      0.0d0
-real(DEVDP)     :: MaxDispS8    =     10.0d0
-real(DEVDP)     :: MinDispS10   =      0.0d0
-real(DEVDP)     :: MaxDispS10   =     10.0d0
+real(DEVDP)     :: MinDispS6
+real(DEVDP)     :: MaxDispS6
+real(DEVDP)     :: MinDispS8
+real(DEVDP)     :: MaxDispS8
+real(DEVDP)     :: MinDispS10
+real(DEVDP)     :: MaxDispS10
 
-real(DEVDP)     :: MinGlbSCEE  =      0.0d0
-real(DEVDP)     :: MaxGlbSCEE  =      4.0d0
-real(DEVDP)     :: MinGlbSCNB  =      0.0d0
-real(DEVDP)     :: MaxGlbSCNB  =      4.0d0
+real(DEVDP)     :: MinGlbSCEE
+real(DEVDP)     :: MaxGlbSCEE
+real(DEVDP)     :: MinGlbSCNB
+real(DEVDP)     :: MaxGlbSCNB
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

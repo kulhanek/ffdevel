@@ -30,7 +30,6 @@ type BURRIED_ATOM_TYPE
     integer             :: num
 end type BURRIED_ATOM_TYPE
 
-logical                             :: buried_data_loaded = .false.
 type(BURRIED_ATOM_TYPE),allocatable :: buried_atoms(:)    ! ntypes
 
 integer,parameter   :: SURF_SESA = 1

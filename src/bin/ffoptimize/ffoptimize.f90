@@ -185,6 +185,7 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
+    call ffdev_params_reset_ranges()
 
     ! do fake input file processing
     rst = prmfile_first_group(fin)
@@ -263,6 +264,7 @@ program ffdev_optimize_program
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
     call ffdev_errors_init_all()
+    call ffdev_params_reset_ranges()
 
     ! initialize
     write(DEV_OUT,*)
@@ -427,11 +429,14 @@ subroutine execute_ffopt(grpin,pid,exec)
     ! load setup
     call ffdev_parameters_ctrl_identities(grpin)
     call ffdev_parameters_ctrl_realms(grpin)
+    call ffdev_parameters_ctrl_ranges(grpin)
+
     call ffdev_targetset_ctrl_optgeo(grpin)
     call ffdev_ffopt_ctrl_minimize(grpin)
 
     if( exec ) then
-        ! print final parameter list
+
+        ! print initial parameter list
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
 
         ! optimize

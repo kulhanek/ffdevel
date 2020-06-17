@@ -2098,12 +2098,20 @@ subroutine ffdev_parameters_print_parameters(mode)
     select case(mode)
         case(PARAMS_SUMMARY_INITIAL)
             call ffdev_utils_heading(DEV_OUT,'Input Parameter Summary', ':')
+            ! print initial parameter ranges
+            call ffdev_params_print_ranges
+
         case(PARAMS_SUMMARY_OPTIMIZED)
             call ffdev_utils_heading(DEV_OUT,'Optimized Parameter Summary', ':')
+            ! print initial parameter ranges
+            call ffdev_params_print_ranges
+
         case(PARAMS_SUMMARY_MODIFIED)
             call ffdev_utils_heading(DEV_OUT,'Modified Parameter Summary', ':')
+
         case(PARAMS_SUMMARY_FULL)
             call ffdev_utils_heading(DEV_OUT,'Parameter Summary', ':')
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_print_parameters!')
     end select
@@ -2578,6 +2586,135 @@ subroutine ffdev_parameters_to_tops
 end subroutine ffdev_parameters_to_tops
 
 ! ==============================================================================
+! subroutine ffdev_params_reset_ranges
+! ==============================================================================
+
+subroutine ffdev_params_reset_ranges
+
+    use ffdev_parameters_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+! === [ranges] =================================================================
+
+     MinBondD0    =       0.5d0
+     MaxBondD0    =       5.0d0
+     MinBondK     =       0.0
+     MaxBondK     =    1500.0d0
+     MinAngleA0   =       0.0
+     MaxAngleA0   =       DEV_PI
+     MinAngleK    =       0.0d0
+     MaxAngleK    =    1000.0d0
+     MinDihV      =       0.0d0
+     MaxDihV      =      50.0d0
+     MinDihG      =       0.0d0
+     MaxDihG      =     2*DEV_PI
+     MinDihSCEE   =       0.5d0
+     MaxDihSCEE   =       3.0d0
+     MinDihSCNB   =       0.5d0
+     MaxDihSCNB   =       3.0d0
+     MinImprV     =       0.0d0
+     MaxImprV     =      50.0d0
+     MinImprG     =      -DEV_PI
+     MaxImprG     =       DEV_PI
+     MinDihC      =     -50.0d0
+     MaxDihC      =      50.0d0
+
+! non-bonded ERA
+     MinVdwEps    =       0.0d0
+     MaxVdwEps    =       2.0d0
+     MinVdwR0     =       0.5d0
+     MaxVdwR0     =       6.0d0
+
+! non-bonded ABC
+     MinVdwPA     =      0.0d0
+     MaxVdwPA     =     20.0d0
+
+     MinVdwPB     =      1.0d0
+     MaxVdwPB     =      7.0d0
+
+     MinVdwRC     =      0.0d0
+     MaxVdwRC     =      5.0d0
+
+     MinVdwTB     =      0.0d0
+     MaxVdwTB     =      5.0d0
+
+! non-bonded scaling factors
+     MinEleSQ     =      0.0d0
+     MaxEleSQ     =      3.0d0
+
+! partial atomic charges
+     MinPAC       =     -2.0d0
+     MaxPAC       =      2.0d0
+
+! vdW interactions
+     MinDampFA    =      0.0d0
+     MaxDampFA    =      2.0d0
+     MinDampFB    =      0.0d0
+     MaxDampFB    =      6.0d0
+     MinDampPB    =      0.0d0
+     MaxDampPB    =      2.0d0
+
+! dispersion scaling
+     MinDispS6    =      0.0d0
+     MaxDispS6    =     10.0d0
+     MinDispS8    =      0.0d0
+     MaxDispS8    =     10.0d0
+     MinDispS10   =      0.0d0
+     MaxDispS10   =     10.0d0
+
+     MinGlbSCEE  =      0.0d0
+     MaxGlbSCEE  =      4.0d0
+     MinGlbSCNB  =      0.0d0
+     MaxGlbSCNB  =      4.0d0
+
+end subroutine ffdev_params_reset_ranges
+
+! ==============================================================================
+! subroutine ffdev_params_print_ranges
+! ==============================================================================
+
+subroutine ffdev_params_print_ranges
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_topology
+    use ffdev_utils
+
+    implicit none
+    integer         :: realmid, pid
+    real(DEVDP)     :: sc, lmin, lmax
+    logical         :: lprint
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,100)
+    write(DEV_OUT,110)
+
+    do realmid=REALM_FIRST,REALM_LAST
+        lprint = .false.
+        do pid=1,nparams
+            if( .not. params(pid)%enabled ) cycle
+            if( params(pid)%realm .ne. realmid ) cycle
+            lprint = .true.
+            exit
+        end do
+        if( lprint ) then
+            sc = ffdev_parameters_get_realm_scaling(realmid)
+            lmin = ffdev_params_get_lower_bound(realmid)
+            lmax = ffdev_params_get_upper_bound(realmid)
+            write(DEV_OUT,120) ffdev_parameters_get_realm_name(realmid), lmin*sc, lmax*sc
+        end if
+    end do
+
+100 format('#   Realm      MinValue   MaxValue')
+110 format('# ---------- ---------- ----------')
+120 format(A12,1X,F10.2,1X,F10.2)
+
+end subroutine ffdev_params_print_ranges
+
+! ==============================================================================
 ! subroutine ffdev_params_get_lower_bounds
 ! ==============================================================================
 
@@ -2687,6 +2824,89 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
 end function ffdev_params_get_lower_bound
 
 ! ==============================================================================
+! subroutine ffdev_params_set_lower_bound
+! ==============================================================================
+
+subroutine ffdev_params_set_lower_bound(realm,mvalue)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: realm
+    real(DEVDP) :: mvalue
+    ! --------------------------------------------------------------------------
+
+    select case(realm)
+        case(REALM_BOND_D0)
+            MinBondD0 = mvalue
+        case(REALM_BOND_K)
+            MinBondK = mvalue
+        case(REALM_ANGLE_A0)
+            MinAngleA0 = mvalue
+        case(REALM_ANGLE_K)
+            MinAngleK = mvalue
+        case(REALM_DIH_V)
+            MinDihV = mvalue
+        case(REALM_DIH_C)
+            MinDihC = mvalue
+        case(REALM_DIH_G)
+            MinDihG = mvalue
+        case(REALM_DIH_SCEE)
+            MinDihSCEE = mvalue
+        case(REALM_DIH_SCNB)
+            MinDihSCNB = mvalue
+        case(REALM_IMPR_V)
+            MinImprV = mvalue
+        case(REALM_IMPR_G)
+            MinImprG = mvalue
+
+        case(REALM_VDW_EPS)
+            MinVdwEps = mvalue
+        case(REALM_VDW_R0)
+            MinVdwR0 = mvalue
+
+        case(REALM_VDW_PA)
+            MinVdwPA = mvalue
+        case(REALM_VDW_PB)
+            MinVdwPB = mvalue
+        case(REALM_VDW_RC)
+            MinVdwRC = mvalue
+        case(REALM_VDW_TB)
+            MinVdwTB = mvalue
+
+        case(REALM_ELE_SQ)
+            MinEleSQ = mvalue
+
+        case(REALM_DAMP_FA)
+            MinDampFA = mvalue
+        case(REALM_DAMP_FB)
+            MinDampFB = mvalue
+        case(REALM_DAMP_PB)
+            MinDampPB = mvalue
+
+        case(REALM_DISP_S6)
+            MinDispS6 = mvalue
+        case(REALM_DISP_S8)
+            MinDispS8 = mvalue
+        case(REALM_DISP_S10)
+            MinDispS10 = mvalue
+
+        case(REALM_GLB_SCEE)
+            MinGlbSCEE = mvalue
+        case(REALM_GLB_SCNB)
+            MinGlbSCNB = mvalue
+
+        case(REALM_PAC)
+            MinPAC = mvalue
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_lower_bound')
+    end select
+
+end subroutine ffdev_params_set_lower_bound
+
+! ==============================================================================
 ! subroutine ffdev_params_get_upper_bounds
 ! ==============================================================================
 
@@ -2794,6 +3014,89 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
     end select
 
 end function ffdev_params_get_upper_bound
+
+! ==============================================================================
+! subroutine ffdev_params_set_upper_bound
+! ==============================================================================
+
+subroutine ffdev_params_set_upper_bound(realm,mvalue)
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: realm
+    real(DEVDP) :: mvalue
+    ! --------------------------------------------------------------------------
+
+    select case(realm)
+        case(REALM_BOND_D0)
+            MaxBondD0 = mvalue
+        case(REALM_BOND_K)
+            MaxBondK = mvalue
+        case(REALM_ANGLE_A0)
+            MaxAngleA0 = mvalue
+        case(REALM_ANGLE_K)
+            MaxAngleK = mvalue
+        case(REALM_DIH_V)
+            MaxDihV = mvalue
+        case(REALM_DIH_C)
+            MaxDihC = mvalue
+        case(REALM_DIH_G)
+            MaxDihG = mvalue
+        case(REALM_DIH_SCEE)
+            MaxDihSCEE = mvalue
+        case(REALM_DIH_SCNB)
+            MaxDihSCNB = mvalue
+        case(REALM_IMPR_V)
+            MaxImprV = mvalue
+        case(REALM_IMPR_G)
+            MaxImprG = mvalue
+
+        case(REALM_VDW_EPS)
+            MaxVdwEps = mvalue
+        case(REALM_VDW_R0)
+            MaxVdwR0 = mvalue
+
+        case(REALM_VDW_PA)
+            MaxVdwPA = mvalue
+        case(REALM_VDW_PB)
+            MaxVdwPB = mvalue
+        case(REALM_VDW_RC)
+            MaxVdwRC = mvalue
+        case(REALM_VDW_TB)
+            MaxVdwTB = mvalue
+
+        case(REALM_ELE_SQ)
+            MaxEleSQ = mvalue
+
+        case(REALM_DAMP_FA)
+            MaxDampFA = mvalue
+        case(REALM_DAMP_FB)
+            MaxDampFB = mvalue
+        case(REALM_DAMP_PB)
+            MaxDampPB = mvalue
+
+        case(REALM_DISP_S6)
+            MaxDispS6 = mvalue
+        case(REALM_DISP_S8)
+            MaxDispS8 = mvalue
+        case(REALM_DISP_S10)
+            MaxDispS10 = mvalue
+
+        case(REALM_GLB_SCEE)
+            MaxGlbSCEE = mvalue
+        case(REALM_GLB_SCNB)
+            MaxGlbSCNB = mvalue
+
+        case(REALM_PAC)
+            MaxPAC = mvalue
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_upper_bound')
+    end select
+
+end subroutine ffdev_params_set_upper_bound
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_bond_r0_set
