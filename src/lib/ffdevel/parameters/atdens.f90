@@ -40,8 +40,18 @@ real(DEVDP) function ffdev_atdens_b(z)
     end if
 
     select case(atdens_source)
-        case(ATDENS_CCSD_UGBS)
-            ffdev_atdens_b = atdens_CCSD_UGBS_b(z)
+        case(ATDENS_HF_UGBS)
+            if( .not. atdens_HF_UGBS_avail(z) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
+            end if
+            ffdev_atdens_b = atdens_HF_UGBS_b(z)
+
+        case(ATDENS_HF_DKH_ANORCC)
+            if( .not. atdens_HF_DKH_ANORCC_avail(z) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
+            end if
+            ffdev_atdens_b = atdens_HF_DKH_ANORCC_b(z)
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_b')
     end select
@@ -66,8 +76,18 @@ real(DEVDP) function ffdev_atdens_rc(z,dens)
     end if
 
     select case(atdens_source)
-        case(ATDENS_CCSD_UGBS)
-            ffdev_atdens_rc = (atdens_CCSD_UGBS_a(z) - dens)/atdens_CCSD_UGBS_b(z)
+        case(ATDENS_HF_UGBS)
+            if( .not. atdens_HF_UGBS_avail(z) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
+            end if
+            ffdev_atdens_rc = (atdens_HF_UGBS_a(z) - dens)/atdens_HF_UGBS_b(z)
+
+        case(ATDENS_HF_DKH_ANORCC)
+            if( .not. atdens_HF_DKH_ANORCC_avail(z) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
+            end if
+            ffdev_atdens_rc = (atdens_HF_DKH_ANORCC_a(z) - dens)/atdens_HF_DKH_ANORCC_b(z)
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_rc')
     end select
@@ -87,8 +107,14 @@ integer function ffdev_atdens_source_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
-        case('CCSD/UGBS')
-            ffdev_atdens_source_from_string = ATDENS_CCSD_UGBS
+        case('HF/UGBS')
+            ffdev_atdens_source_from_string = ATDENS_HF_UGBS
+        case('CC/UGBS')
+            ffdev_atdens_source_from_string = ATDENS_CC_UGBS
+        case('HF-DKH/ANORCC')
+            ffdev_atdens_source_from_string = ATDENS_HF_DKH_ANORCC
+        case('CC-DKH/ANORCC')
+            ffdev_atdens_source_from_string = ATDENS_CC_DKH_ANORCC
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atdens_source_from_string!')
     end select
@@ -108,8 +134,14 @@ character(80) function ffdev_atdens_source_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(ATDENS_CCSD_UGBS)
-            ffdev_atdens_source_to_string = 'CCSD/UGBS'
+        case(ATDENS_HF_UGBS)
+            ffdev_atdens_source_to_string = 'HF/UGBS'
+        case(ATDENS_CC_UGBS)
+            ffdev_atdens_source_to_string = 'CC/UGBS'
+        case(ATDENS_HF_DKH_ANORCC)
+            ffdev_atdens_source_to_string = 'HF-DKH/ANORCC'
+        case(ATDENS_CC_DKH_ANORCC)
+            ffdev_atdens_source_to_string = 'CC-DKH/ANORCC'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_source_to_string!')
     end select
