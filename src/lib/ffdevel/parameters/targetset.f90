@@ -93,6 +93,13 @@ subroutine ffdev_targetset_calc_all
         end do
     end if
 
+    ! PARALLEL !!!!! ensure that NB parameters are updated before the parallel section !!!!!
+    do i=1,nsets
+        if( sets(i)%top%nb_params_update ) then
+            call ffdev_topology_update_nb_params(sets(i)%top)
+        end if
+    end do
+
     call ffdev_timers_start_timer(FFDEV_GEOOPT_TIMER)
     !$omp parallel
     !$omp single
