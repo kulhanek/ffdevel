@@ -65,6 +65,9 @@ subroutine ffdev_err_zerograd_error(error)
     nele = 0
     totgrms = 0.0d0
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle   ! skip probes
+        if( sets(i)%top%natoms .le. 1 ) cycle       ! at least two atoms for gradient
+
         do j=1,sets(i)%ngeos
             grms = 0.0d0
             do k=1,sets(i)%top%natoms
@@ -118,6 +121,9 @@ subroutine ffdev_err_zerograd_summary
     nele = 0
     totgrms = 0.0d0
     do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle   ! skip probes
+        if( sets(i)%top%natoms .le. 1 ) cycle       ! at least two atoms for gradient
+
         do j=1,sets(i)%ngeos
             printsum = .true.
             grms = 0.0d0

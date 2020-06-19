@@ -58,8 +58,8 @@ subroutine ffdev_atdens_ctrl(fin,exec)
 
  10 format('=== [atdens] ===================================================================')
 
-110  format ('Atom density source (source)           = ',a12)
-115  format ('Atom density source (source)           = ',a12,'                  (default)')
+110  format ('Atom density source (source)           = ',a29)
+115  format ('Atom density source (source)           = ',a29,' (default)')
 
 end subroutine ffdev_atdens_ctrl
 
