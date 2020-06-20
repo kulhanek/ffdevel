@@ -24,73 +24,267 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
+! subroutine ffdev_atdens_update_db
+! ==============================================================================
+
+subroutine ffdev_atdens_update_db
+
+    use ffdev_utils
+    use ffdev_atdens_db
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    atdens_bp(:) = 0.0d0
+    atdens_b0(:) = 0.0d0
+    atdens_bm(:) = 0.0d0
+
+    atdens_ap(:) = 0.0d0
+    atdens_a0(:) = 0.0d0
+    atdens_am(:) = 0.0d0
+
+    select case(atdens_source)
+        case(ATDENS_HF_UGBS)
+!            atdens_bm = atdens_HF_UGBS_bm
+!            atdens_am = atdens_HF_UGBS_am
+!
+!            atdens_b0 = atdens_HF_UGBS_b0
+!            atdens_a0 = atdens_HF_UGBS_a0
+!
+!            atdens_bp = atdens_HF_UGBS_bp
+!            atdens_ap = atdens_HF_UGBS_ap
+
+        case(ATDENS_HF_DKH_ANORCC)
+            atdens_bm = atdens_HF_DKH_ANORCC_bm
+            atdens_am = atdens_HF_DKH_ANORCC_am
+
+            atdens_b0 = atdens_HF_DKH_ANORCC_b0
+            atdens_a0 = atdens_HF_DKH_ANORCC_a0
+
+            atdens_bp = atdens_HF_DKH_ANORCC_bp
+            atdens_ap = atdens_HF_DKH_ANORCC_ap
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_update_db')
+    end select
+
+end subroutine ffdev_atdens_update_db
+
+! ==============================================================================
+! subroutine ffdev_atdens_print
+! ==============================================================================
+
+subroutine ffdev_atdens_print
+
+    use ffdev_utils
+    use smf_periodic_table_dat
+    use ffdev_parameters_dat
+
+    implicit none
+    integer :: z, i
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Linearized Atomic Densities', '=')
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+    write(DEV_OUT,20)
+
+     do i=1,ntypes
+        z = types(i)%z
+        write(DEV_OUT,30,ADVANCE='NO') i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z))
+        if( atdens_bm(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') atdens_bm(z)
+        else
+            write(DEV_OUT,50,ADVANCE='NO')
+        end if
+        if( atdens_b0(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') atdens_b0(z)
+        else
+            write(DEV_OUT,50,ADVANCE='NO')
+        end if
+        if( atdens_bp(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') atdens_bp(z)
+        else
+            write(DEV_OUT,50,ADVANCE='NO')
+        end if
+
+        if( atdens_bm(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') atdens_am(z)
+        else
+            write(DEV_OUT,50,ADVANCE='NO')
+        end if
+        if( atdens_b0(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') atdens_a0(z)
+        else
+            write(DEV_OUT,50,ADVANCE='NO')
+        end if
+        if( atdens_bp(z) .ne. 0 ) then
+            write(DEV_OUT,40) atdens_ap(z)
+        else
+            write(DEV_OUT,50)
+        end if
+    end do
+
+ 10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+  ')
+ 20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------')
+ 30 format(I4,1X,A4,1X,I3,1X,A2)
+ 40 format(1X,F6.3)
+ 50 format(7X)
+
+end subroutine ffdev_atdens_print
+
+! ==============================================================================
 ! function ffdev_atdens_b
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atdens_b(z)
+real(DEVDP) function ffdev_atdens_b(gti)
 
     use ffdev_utils
+    use ffdev_parameters_dat
 
     implicit none
+    integer     :: gti
+    ! --------------------------------------------
     integer     :: z
+    real(DEVDP) :: q, b1, b2
     ! --------------------------------------------------------------------------
 
+    ffdev_atdens_b = 1.0 ! default b
+
+    ! get Z
+    z = types(gti)%z
     if( (z .le. 0) .and. (z .gt. ATDENS_MAX_Z) ) then
         call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atdens_b')
     end if
 
-    select case(atdens_source)
-        case(ATDENS_HF_UGBS)
-            if( .not. atdens_HF_UGBS_avail(z) ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
-            end if
-            ffdev_atdens_b = atdens_HF_UGBS_b(z)
+    ! effective charge of type
+    q = types(gti)%aveq
 
-        case(ATDENS_HF_DKH_ANORCC)
-            if( .not. atdens_HF_DKH_ANORCC_avail(z) ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
-            end if
-            ffdev_atdens_b = atdens_HF_DKH_ANORCC_b(z)
+    ! no modulation by charge or zero charge or no extrapolation/interpolation data
+    if( (.not. atdens_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
+        ( (atdens_bp(z) .eq. 0.0d0) .and. (atdens_bm(z) .eq. 0.0d0) ) ) then
+        ffdev_atdens_b = atdens_b0(z)
+        if( ffdev_atdens_b .eq. 0.0d0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_atdens_b')
+        end if
+        return
+    end if
 
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_b')
-    end select
+    ! modulation by charge
+        b1 = atdens_b0(z)
+    if( q .gt. 0.0d0 ) then
+        ! positive mode ( q > 0 )
+        if( atdens_bp(z) .ne. 0.0d0 ) then
+            ! interpolation
+            b2 = atdens_bp(z) - atdens_b0(z)
+        else
+            ! extrapolation
+            b2 = atdens_b0(z) - atdens_bm(z)
+        end if
+    else
+        ! negative mode ( q < 0 )
+        if( atdens_bm(z) .ne. 0.0d0 ) then
+            ! interpolation
+            b2 = atdens_b0(z) - atdens_bm(z)
+        else
+            ! extrapolation
+            b2 = atdens_bp(z) - atdens_b0(z)
+        end if
+    end if
 
-end function
+    ffdev_atdens_b = b1 + b2*q
+
+end function ffdev_atdens_b
+
+! ==============================================================================
+! function ffdev_atdens_a
+! ==============================================================================
+
+real(DEVDP) function ffdev_atdens_a(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    real(DEVDP) :: q, a1, a2
+    ! --------------------------------------------------------------------------
+
+    ffdev_atdens_a = 0.0 ! default a
+
+    ! get Z
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. ATDENS_MAX_Z) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atdens_a')
+    end if
+
+    ! effective charge of type
+    q = types(gti)%aveq
+
+    ! no modulation by charge or zero charge or no extrapolation/interpolation data
+    if( (.not. atdens_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
+        ( (atdens_bp(z) .eq. 0.0d0) .and. (atdens_bm(z) .eq. 0.0d0) ) ) then
+        ffdev_atdens_a = atdens_a0(z)
+        if( ffdev_atdens_a .eq. 0.0d0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_atdens_a')
+        end if
+        return
+    end if
+
+    ! modulation by charge
+    a1 = atdens_a0(z)
+    if( q .gt. 0.0d0 ) then
+        ! positive mode ( q > 0 )
+        if( atdens_bp(z) .ne. 0.0d0 ) then
+            ! interpolation
+            a2 = atdens_ap(z) - atdens_a0(z)
+        else
+            ! extrapolation
+            a2 = atdens_a0(z) - atdens_am(z)
+        end if
+    else
+        ! negative mode ( q < 0 )
+        if( atdens_bm(z) .ne. 0.0d0 ) then
+            ! interpolation
+            a2 = atdens_a0(z) - atdens_am(z)
+        else
+            ! extrapolation
+            a2 = atdens_ap(z) - atdens_a0(z)
+        end if
+    end if
+
+    ffdev_atdens_a = a1 + a2*q
+
+end function ffdev_atdens_a
 
 ! ==============================================================================
 ! function ffdev_atdens_rc
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atdens_rc(z,dens)
+real(DEVDP) function ffdev_atdens_rc(gti,dens)
 
     use ffdev_utils
+    use ffdev_parameters_dat
 
     implicit none
-    integer     :: z
+    integer     :: gti
     real(DEVDP) :: dens
+    ! --------------------------------------------
+    real(DEVDP) :: b, a
     ! --------------------------------------------------------------------------
 
-    if( (z .le. 0) .and. (z .gt. ATDENS_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atdens_rc')
+    b = ffdev_atdens_b(gti)
+    a = ffdev_atdens_a(gti)
+
+    if( b .eq. 0.0d0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_atdens_rc')
     end if
 
-    select case(atdens_source)
-        case(ATDENS_HF_UGBS)
-            if( .not. atdens_HF_UGBS_avail(z) ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
-            end if
-            ffdev_atdens_rc = (atdens_HF_UGBS_a(z) - dens)/atdens_HF_UGBS_b(z)
-
-        case(ATDENS_HF_DKH_ANORCC)
-            if( .not. atdens_HF_DKH_ANORCC_avail(z) ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No data for given Z')
-            end if
-            ffdev_atdens_rc = (atdens_HF_DKH_ANORCC_a(z) - dens)/atdens_HF_DKH_ANORCC_b(z)
-
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atdens_rc')
-    end select
+    ffdev_atdens_rc = (a - dens)/b
 
 end function ffdev_atdens_rc
 

@@ -2434,7 +2434,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     type(TOPOLOGY)  :: top
     type(NB_PAIR)   :: nbpair
     ! --------------------------------------------
-    integer         :: i,j,nbt,agti,agtj,nbtii,nbtjj,ti,tj,zi,zj
+    integer         :: i,j,nbt,agti,agtj,nbtii,nbtjj,ti,tj
     real(DEVDP)     :: rc,tbii,tbjj,tbij
     ! --------------------------------------------------------------------------
 
@@ -2458,8 +2458,6 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     tj      = top%nb_types(nbtjj)%tj
     agti    = top%atom_types(ti)%glbtypeid
     agtj    = top%atom_types(tj)%glbtypeid
-    zi      = top%atom_types(ti)%z
-    zj      = top%atom_types(tj)%z
 
     ! electrostatics
     ! FIXME - better value
@@ -2492,7 +2490,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case(DAMP_BJ_ATDENS)
-                    rc =  ffdev_atdens_rc(zi,damp_fa) + ffdev_atdens_rc(zj,damp_fa)
+                    rc =  ffdev_atdens_rc(agti,damp_fa) + ffdev_atdens_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2523,7 +2521,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case(DAMP_BJ_ATDENS)
-                    rc =  ffdev_atdens_rc(zi,damp_fa) + ffdev_atdens_rc(zj,damp_fa)
+                    rc =  ffdev_atdens_rc(agti,damp_fa) + ffdev_atdens_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2557,8 +2555,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_TT_CONST)
                     nbpair%tb  = damp_fa
                 case(DAMP_TT_BFAC)
-                    tbii = damp_fa * ffdev_atdens_b(zi)
-                    tbjj = damp_fa * ffdev_atdens_b(zj)
+                    tbii = damp_fa * ffdev_atdens_b(agti)
+                    tbjj = damp_fa * ffdev_atdens_b(agtj)
 
                     !write(*,*) tbii,tbjj
                     select case(nb_comb_rules)
@@ -2588,8 +2586,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
 
                     nbpair%tb  = tbij
                 case(DAMP_TT_BFAC_XDM)
-                    tbii = damp_fa * ffdev_atdens_b(zi) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
-                    tbjj = damp_fa * ffdev_atdens_b(zj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
+                    tbii = damp_fa * ffdev_atdens_b(agti) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
+                    tbjj = damp_fa * ffdev_atdens_b(agtj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
 
                     !write(*,*) tbii,tbjj
                     select case(nb_comb_rules)

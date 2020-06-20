@@ -77,6 +77,7 @@ SET(FFDEVEL_SRC
         parameters/errors/pbpnl_control.f90
 
         parameters/atdens_dat.f90
+        parameters/atdens_db.f90
         parameters/atdens.f90
         parameters/atdens_control.f90
         parameters/buried_dat.f90

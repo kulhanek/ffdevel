@@ -32,6 +32,7 @@ subroutine ffdev_parameters_init()
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
+    use ffdev_atdens
 
     implicit none
     integer     :: maxnparams, i, alloc_stat
@@ -104,6 +105,8 @@ subroutine ffdev_parameters_init()
     write(DEV_OUT,50)
 
     call ffdev_parameters_print_types()
+    call ffdev_parameters_print_charge_stat()
+    call ffdev_atdens_print()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
   5 format('Number of sets (topologies)              = ',I6)
@@ -880,6 +883,8 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
+    call ffdev_parameters_update_charge_stat()
+
 end subroutine ffdev_parameters_reinit
 
 ! ==============================================================================
@@ -1256,6 +1261,92 @@ subroutine ffdev_parameters_gen_unique_types()
     end do
 
 end subroutine ffdev_parameters_gen_unique_types
+
+! ==============================================================================
+! subroutine ffdev_parameters_update_charge_stat
+! ==============================================================================
+
+subroutine ffdev_parameters_update_charge_stat()
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: i,j,ti,gti
+    real(DEVDP) :: q, sdq
+    ! --------------------------------------------------------------------------
+
+    ! reset
+    types(:)%qcount = 0
+    types(:)%minq   = 0
+    types(:)%maxq   = 0
+    types(:)%aveq   = 0
+    types(:)%sdq    = 0
+
+    ! get data
+    do i=1,nsets
+        do j=1,sets(i)%top%natoms
+                ti  = sets(i)%top%atoms(j)%typeid
+                q   = sets(i)%top%atoms(j)%charge
+                gti = sets(i)%top%atom_types(ti)%glbtypeid
+                types(gti)%qcount = types(gti)%qcount + 1
+                if( types(gti)%qcount .eq. 1 ) then
+                    types(gti)%minq = q
+                    types(gti)%maxq = q
+                end if
+                if( q .gt. types(gti)%maxq ) types(gti)%maxq = q
+                if( q .lt. types(gti)%minq ) types(gti)%minq = q
+                types(gti)%aveq = types(gti)%aveq + q
+                types(gti)%sdq  = types(gti)%sdq + q**2
+        end do
+    end do
+
+    ! finalize
+    do gti=1,ntypes
+        if( types(gti)%qcount .le. 0 ) cycle
+        sdq = types(gti)%qcount * types(gti)%sdq - types(gti)%aveq**2
+        if( sdq .gt. 0.d0 ) then
+            sdq = sqrt(sdq) / real(types(gti)%qcount)
+        else
+            sdq = 0.0d0
+        end if
+        types(gti)%sdq  = sdq
+        types(gti)%aveq = types(gti)%aveq / real(types(gti)%qcount)
+    end do
+
+end subroutine ffdev_parameters_update_charge_stat
+
+! ==============================================================================
+! subroutine ffdev_parameters_print_charge_stat
+! ==============================================================================
+
+subroutine ffdev_parameters_print_charge_stat()
+
+    use ffdev_parameters_dat
+    use ffdev_utils
+
+    implicit none
+    integer     :: i
+    ! --------------------------------------------------------------------------
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'Partial Atomic Charges (PAC) per Atom Types', '=')
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10)
+    write(DEV_OUT,20)
+
+    do i=1,ntypes
+        write(DEV_OUT,30) i, adjustl(types(i)%name), types(i)%qcount, &
+                          types(i)%maxq, types(i)%minq, types(i)%aveq, types(i)%sdq
+    end do
+
+ 10 format('# ID Type #Atoms     MinQ     MaxQ      <Q>     s(Q)')
+ 20 format('# -- ---- ------ -------- -------- -------- --------')
+ 30 format(I4,1X,A4,1X,I6,1X,F8.4,1X,F8.4,1X,F8.4,1X,F8.4)
+
+end subroutine ffdev_parameters_print_charge_stat
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_load
@@ -1858,7 +1949,7 @@ subroutine ffdev_parameters_print_types()
 
   5 format('Number of unique atom types among all target sets = ',I6)
 
- 10 format('# ID Type Counts     IDs in Sets')
+ 10 format('# ID Type  #Sets     IDs in Sets')
  20 format('# -- ---- ------     --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---')
  30 format(I4,1X,A4,1X,I6,5X)
  40 format(I3,1X)
@@ -2577,6 +2668,9 @@ subroutine ffdev_parameters_to_tops
             end if
         end do
     end if
+
+    ! update charge stat
+    call ffdev_parameters_update_charge_stat()
 
     ! mark NB params for update
     do i=1,nsets

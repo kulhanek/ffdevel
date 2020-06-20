@@ -70,27 +70,27 @@ subroutine ffdev_err_nbdists_error(error)
 
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_crd_optimized .and. sets(i)%top%nfragments .gt. 1) then
-                do q=1,sets(i)%top%nb_size
-                    ai = sets(i)%top%nb_list(q)%ai
-                    aj = sets(i)%top%nb_list(q)%aj
 
-                    if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
+            if( .not. (sets(i)%geo(j)%trg_crd_optimized .and. sets(i)%top%nfragments .gt. 1) )  cycle
+
+            do q=1,sets(i)%top%nb_size
+                ai = sets(i)%top%nb_list(q)%ai
+                aj = sets(i)%top%nb_list(q)%aj
+
+                if( sets(i)%top%atoms(ai)%frgid .eq. sets(i)%top%atoms(aj)%frgid ) cycle
 
 
+                d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
+                dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
+                err = d0 - dt
 
-                    d0 = ffdev_geometry_get_length(sets(i)%geo(j)%crd,ai,aj)
-                    dt = ffdev_geometry_get_length(sets(i)%geo(j)%trg_crd,ai,aj)
-                    err = d0 - dt
+                ! calculate switch function
+                sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
 
-                    ! calculate switch function
-                    sw = 1.0d0 / (1.0d0 + exp( NBDistanceSWAlpha*(dt - NBDistanceSWPosition) ) )
-
-                    seterrnbdists = seterrnbdists + sets(i)%geo(j)%weight * sw * err**2
-                    swsum = swsum + sw
-                    num = num + 1
-                end do
-            end if
+                seterrnbdists = seterrnbdists + sets(i)%geo(j)%weight * sw * err**2
+                swsum = swsum + sw
+                num = num + 1
+            end do
         end do
     end do
 
@@ -124,7 +124,7 @@ subroutine ffdev_err_nbdists_summary(top,geo,printsum)
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
-        printsum = .true.
+        printsum = geo%trg_crd_optimized .and. (top%nfragments .gt. 1)
         return
     end if
 

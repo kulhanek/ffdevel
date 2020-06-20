@@ -157,7 +157,7 @@ subroutine ffdev_buried_print()
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
-    write(DEV_OUT,20) ffdev_buried_surf_mode_to_string(surface_mode)
+    write(DEV_OUT,20) trim(ffdev_buried_surf_mode_to_string(surface_mode))
     write(DEV_OUT,25) ProbeR
     write(DEV_OUT,30) BuriedExp0
     write(DEV_OUT,40) BuriedBeta

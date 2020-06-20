@@ -58,7 +58,7 @@ subroutine ffdev_err_pbpnl_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,z
+    integer             :: i
     real(DEVDP)         :: diff,w
     ! --------------------------------------------------------------------------
 
@@ -67,14 +67,13 @@ subroutine ffdev_err_pbpnl_error(error)
     do i=1,nparams
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
-        z = types(params(i)%ti)%z
         w = 1.0d0
         if( PBPNLBuriedAtoms ) then
             w = 1.0d0 - buried_atoms(params(i)%ti)%weight
         end if
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_atdens_b(z)
+                diff = params(i)%value - ffdev_atdens_b(params(i)%ti)
                 error%pbpnl = error%pbpnl + w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_error!')
@@ -97,7 +96,7 @@ subroutine ffdev_err_pbpnl_summary()
 
     implicit none
     logical         :: printsum
-    integer         :: i, z
+    integer         :: i
     real(DEVDP)     :: totpnl, pnl, diff, w
     ! --------------------------------------------------------------------------
 
@@ -120,7 +119,6 @@ subroutine ffdev_err_pbpnl_summary()
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
 
-        z = types(params(i)%ti)%z
         w = 1.0d0
         if( PBPNLBuriedAtoms ) then
             w = 1.0d0 - buried_atoms(params(i)%ti)%weight
@@ -128,14 +126,14 @@ subroutine ffdev_err_pbpnl_summary()
 
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_atdens_b(z)
+                diff = params(i)%value - ffdev_atdens_b(params(i)%ti)
                 pnl = w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_summary!')
         end select
         totpnl = totpnl + pnl
 
-        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_atdens_b(z), params(i)%value, diff, pnl
+        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_atdens_b(params(i)%ti), params(i)%value, diff, pnl
     end do
 
     write(DEV_OUT,20)

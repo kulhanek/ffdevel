@@ -98,6 +98,12 @@ type PARM_TYPE
     logical                 :: print_nb
     real(DEVDP)             :: eps
     real(DEVDP)             :: r0
+    ! charge statistics
+    integer                 :: qcount
+    real(DEVDP)             :: minq
+    real(DEVDP)             :: maxq
+    real(DEVDP)             :: aveq
+    real(DEVDP)             :: sdq
 end type PARM_TYPE
 
 integer                     :: ntypes    ! number of types

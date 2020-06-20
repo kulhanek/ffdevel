@@ -114,7 +114,7 @@ subroutine ffdev_err_bonds_summary(top,geo,printsum)
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
-        printsum = .true.
+        printsum = top%nbonds .gt. 0
         return
     end if
 

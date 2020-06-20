@@ -111,7 +111,7 @@ subroutine ffdev_err_angles_summary(top,geo,printsum)
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
-        printsum = .true.
+        printsum = top%nangles .gt. 0
         return
     end if
 

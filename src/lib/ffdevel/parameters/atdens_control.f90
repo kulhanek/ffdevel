@@ -45,6 +45,8 @@ subroutine ffdev_atdens_ctrl(fin,exec)
 
     if( .not. prmfile_open_section(fin,'atdens') ) then
         write(DEV_OUT,115) ffdev_atdens_source_to_string(atdens_source)
+        write(DEV_OUT,55) prmfile_onoff(atdens_mod_by_charge)
+        call ffdev_atdens_update_db
         return
     end if
 
@@ -56,10 +58,20 @@ subroutine ffdev_atdens_ctrl(fin,exec)
         write(DEV_OUT,115) ffdev_atdens_source_to_string(atdens_source)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'modbycharge', atdens_mod_by_charge)) then
+        write(DEV_OUT,50) prmfile_onoff(atdens_mod_by_charge)
+    else
+        write(DEV_OUT,55) prmfile_onoff(atdens_mod_by_charge)
+    end if
+
+    call ffdev_atdens_update_db
+
  10 format('=== [atdens] ===================================================================')
 
 110  format ('Atom density source (source)           = ',a29)
 115  format ('Atom density source (source)           = ',a29,' (default)')
+ 50  format ('Modulation by charge (modbycharge)     = ',a12)
+ 55  format ('Modulation by charge (modbycharge)     = ',a12,'                  (default)')
 
 end subroutine ffdev_atdens_ctrl
 
