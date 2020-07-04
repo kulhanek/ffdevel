@@ -64,6 +64,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
+        write(DEV_OUT,245) trim(LoadEnergy)
+        write(DEV_OUT,255) trim(LoadProbe)
         write(DEV_OUT,235) trim(LoadCharges)
         write(DEV_OUT,95)  GlbRngSeed
         write(DEV_OUT,105) Verbosity
@@ -126,6 +128,20 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,85) prmfile_onoff(ResetAllSetup)
     end if
 
+    ! setup energy, which should be loaded
+    if( prmfile_get_string_by_key(fin,'load_energy',LoadEnergy) ) then
+        write(DEV_OUT,240) trim(LoadEnergy)
+    else
+        write(DEV_OUT,245) trim(LoadEnergy)
+    end if
+
+    ! setup energy, which should be loaded for probes
+    if( prmfile_get_string_by_key(fin,'load_probe',LoadProbe) ) then
+        write(DEV_OUT,250) trim(LoadProbe)
+    else
+        write(DEV_OUT,255) trim(LoadProbe)
+    end if
+
     ! setup charges, which should be loaded
     if( prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
         write(DEV_OUT,230) trim(LoadCharges)
@@ -174,6 +190,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
  96  format ('Random number generator seed (seed)      = ',I12,'      (from system clock)')
 100  format ('Verbosity (verbosity)                    = ',I12)
 105  format ('Verbosity (verbosity)                    = ',I12,'                (default)')
+
+240  format ('Load energy (load_energy)                = ',A12)
+245  format ('Load energy (load_energy)                = ',A12,'                (default)')
+
+250  format ('Load probe energy (load_probe)           = ',A12)
+255  format ('Load probe energy (load_probe)           = ',A12,'                (default)')
 
 230  format ('Load charges (load_charges)              = ',A12)
 235  format ('Load charges (load_charges)              = ',A12,'                (default)')

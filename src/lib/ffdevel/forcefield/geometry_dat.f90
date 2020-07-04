@@ -71,6 +71,7 @@ type GEOMETRY
 ! target data
     logical                 :: trg_crd_optimized    ! indicates that the goemtry was optimized
     logical                 :: trg_ene_loaded
+    logical                 :: trg_ene_generic
     logical                 :: trg_crd_loaded
     logical                 :: trg_grd_loaded
     logical                 :: trg_hess_loaded
@@ -88,6 +89,7 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_esp(:,:)         ! target ESP (4,npoints)
 ! probe energy
     logical                 :: trg_probe_ene_loaded
+    logical                 :: trg_probe_ene_generic
     real(DEVDP)             :: trg_probe_ene
     integer                 :: trg_probe_ene_mode
 ! target SAPT
@@ -113,7 +115,7 @@ type GEOMETRY
     real(DEVDP),pointer     :: sup_surf_sas(:)      ! atomic surface contribution
     real(DEVDP),pointer     :: sup_surf_atr(:)      ! atom radii
     logical                 :: sup_chrg_loaded
-    character(len=MAX_PATH) :: sup_chrg_type
+    logical                 :: sup_chrg_generic
     real(DEVDP),pointer     :: sup_chrg(:)          ! partial atomic charges
 end type GEOMETRY
 
@@ -122,6 +124,12 @@ end type GEOMETRY
 
 real(DEVDP)     :: DIS_FC   = 1000.0     ! kcal/mol/A^2
 real(DEVDP)     :: ANG_FC   = 1000.0     ! kcal/mol/rad^2
+
+! which energy should be loaded
+character(len=MAX_PATH) :: LoadEnergy  = ''
+
+! which energy should be loaded for probes
+character(len=MAX_PATH) :: LoadProbe   = ''
 
 ! which charges should be loaded
 character(len=MAX_PATH) :: LoadCharges  = 'DDEC6'

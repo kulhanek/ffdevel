@@ -298,6 +298,22 @@ real(DEVDP) :: damp_fa  = 1.0d0
 real(DEVDP) :: damp_fb  = 0.0d0
 real(DEVDP) :: damp_pb  = 1.0d0
 
+! === [abc2er] =================================================================
+integer,parameter   ::  ABC2ER_MODE_MINIMUM             = 1
+integer,parameter   ::  ABC2ER_MODE_OVERLAY             = 2
+integer,parameter   ::  ABC2ER_MODE_OVERLAY_WEIGHTED    = 3
+
+integer         :: ABC2ERMode       = ABC2ER_MODE_MINIMUM
+real(DEVDP)     :: ABC2ERMaxR       = 6.0           ! max range for
+integer         :: ABC2ERIterGS     = 1000          ! precision
+integer         :: ABC2ERIterBS     = 1000          ! precision
+integer         :: ABC2ERIterOpt    = 1000          ! precision
+integer         :: ABC2ERIterErr    = 1000          ! precision
+
+! working data
+real(DEVDP)     :: ABC2ERMinR
+type(NB_PAIR)   :: ABC2ERNBPair
+
 ! ------------------------------------------------------------------------------
 
 end module ffdev_topology_dat

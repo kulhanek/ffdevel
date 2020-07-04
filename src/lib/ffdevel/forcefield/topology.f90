@@ -1311,47 +1311,6 @@ subroutine ffdev_topology_find_r_for_lj(eps,r0,e,r,er)
 end subroutine ffdev_topology_find_r_for_lj
 
 ! ==============================================================================
-! function ffdev_topology_find_min_for_exp68
-! ==============================================================================
-
-subroutine ffdev_topology_find_min_for_exp68(a,b,c6,c8,r0,eps)
-
-    use ffdev_utils
-
-    implicit none
-    real(DEVDP)     :: a,b,c6,c8,r0,eps
-    ! --------------------------------------------
-    integer         :: i
-    real(DEVDP)     :: r1,r2,r3,r4,gr,f2,f3
-    ! --------------------------------------------------------------------------
-
-    ! Golden-section search
-    ! https://en.wikipedia.org/wiki/Golden-section_search
-
-    r1 = 1.0d0
-    r4 = 10.0d0
-    gr = (1.0d0 + sqrt(5.0d0)) * 0.5d0
-
-    do i=1,1000
-        r2 = r4 - (r4 - r1) / gr
-        r3 = r1 + (r4 - r1) / gr
-        f2 = a*exp(b*r2) - c6/r2**6 - c8/r2**8
-        f3 = a*exp(b*r3) - c6/r3**6 - c8/r3**8
-        if( f2 .lt. f3 ) then
-            r4 = r3
-        else
-            r1 = r2
-        end if
-    end do
-
-    r0 = (r1+r4)*0.5d0
-    eps = -(a*exp(b*r0) - c6/r0**6 - c8/r0**8)
-
-!    write(*,*) eps,r0,e,r,er
-
-end subroutine ffdev_topology_find_min_for_exp68
-
-! ==============================================================================
 ! subroutine ffdev_topology_LJ_ERA2ABC
 ! ==============================================================================
 
@@ -1474,52 +1433,6 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
     end if
 
 end subroutine ffdev_topology_switch_to_probe_mode
-
-! ==============================================================================
-! function ffdev_topology_z2n
-! ==============================================================================
-
-integer function ffdev_topology_z2n(z)
-
-    use ffdev_utils
-
-    implicit none
-    integer     :: z
-    ! --------------------------------------------------------------------------
-
-    if( (z .ge. 1) .and. (z .le. 2) ) then
-        ffdev_topology_z2n = 1
-        return
-    end if
-
-    if( (z .ge. 3) .and. (z .le. 10) ) then
-        ffdev_topology_z2n = 2
-        return
-    end if
-
-    if( (z .ge. 11) .and. (z .le. 18) ) then
-        ffdev_topology_z2n = 3
-        return
-    end if
-
-    if( (z .ge. 19) .and. (z .le. 36) ) then
-        ffdev_topology_z2n = 4
-        return
-    end if
-
-    if( (z .ge. 37) .and. (z .le. 54) ) then
-        ffdev_topology_z2n = 5
-        return
-    end if
-
-    if( (z .ge. 55) .and. (z .le. 86) ) then
-        ffdev_topology_z2n = 6
-        return
-    end if
-
-    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range in ffdev_topology_z2n')
-
-end function ffdev_topology_z2n
 
 ! ==============================================================================
 ! subroutine ffdev_topology_gen_sapt_list_for_refs
@@ -1840,8 +1753,7 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
             select case(to_nb_mode)
                 case(NB_VDW_LJ)
                     do nbt=1,top%nnb_types
-                        call ffdev_topology_find_min_for_nbpair(top,nbt, &
-                                                                top%nb_types(nbt)%r0,top%nb_types(nbt)%eps)
+                        call ffdev_topology_abc2er(top,nbt)
                     end do
 
                 case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
@@ -1858,6 +1770,142 @@ subroutine ffdev_topology_switch_nbmode(top,from_nb_mode,to_nb_mode)
     top%nb_params_update = .true.
 
 end subroutine ffdev_topology_switch_nbmode
+
+! ==============================================================================
+! subroutine ffdev_topology_abc2er
+! ==============================================================================
+
+subroutine ffdev_topology_abc2er(top,nbt)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    include 'nlopt.f'
+
+    type(TOPOLOGY),target   :: top
+    integer                 :: nbt
+    ! --------------------------------------------
+    real(DEVDP)             :: r0,eps,sig
+    integer                 :: istep,alloc_status
+    integer                 :: ires,nactparms
+    real(DEVDP)             :: finerr
+    real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
+    integer(8)              :: nloptid
+    integer                 :: nlopt_method
+    real(DEVDP)             :: nlopt_initialstep
+    ! --------------------------------------------------------------------------
+
+    ! find r0, eps
+    call ffdev_topology_find_min_for_nbpair(top,nbt,r0,eps)
+
+    select case(ABC2ERMode)
+        case(ABC2ER_MODE_MINIMUM)
+            top%nb_types(nbt)%r0  = r0
+            top%nb_types(nbt)%eps = eps
+            return
+        case(ABC2ER_MODE_OVERLAY,ABC2ER_MODE_OVERLAY_WEIGHTED)
+            ! find sigma
+            call ffdev_topology_find_sig_for_nbpair(top,nbt,sig)
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported ABC2ERMode in ffdev_topology_abc2er!')
+    end select
+
+    ! minimize overlay
+    ! --------------------------------------------------------------------------
+
+    nloptid = 0
+    nactparms = 2
+    nlopt_method = NLOPT_LN_NELDERMEAD
+    nlopt_initialstep = 0.001d0
+
+    call nlo_create(nloptid,nlopt_method, nactparms)
+    call nlo_set_initial_step1(ires, nloptid, real(nlopt_initialstep,DEVDP))
+    call nlo_set_maxeval(ires, nloptid, ABC2ERIterOpt)
+    call nlo_set_stopval(ires,nloptid,real(0.0,DEVDP))
+    call nlo_set_ftol_abs(ires, nloptid, real(-1.0d0,DEVDP))
+
+    ! allocate working array
+    allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
+    if( alloc_status .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for NLOPT optimization in ffdev_topology_abc2er!')
+    end if
+
+    tmp_lb(1) = sig
+    tmp_lb(2) = 0.0d0
+
+    tmp_ub(1) = ABC2ERMaxR
+    tmp_ub(2) = 2.0d0*eps
+
+    ! setup error fce
+    ABC2ERNBPair%ai       = 0
+    ABC2ERNBPair%aj       = 0
+    ABC2ERNBPair%nbt      = nbt
+    ABC2ERNBPair%dt       = 0
+    ABC2ERNBPair%nbtii    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%ti,top%nb_types(nbt)%ti)
+    ABC2ERNBPair%nbtjj    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%tj,top%nb_types(nbt)%tj)
+
+    ABC2ERMinR = sig
+
+    call nlo_set_min_objective(ires, nloptid, ffdev_topology_abc2er_errfce, nbt)
+    if( ires .ne. NLOPT_SUCCESS ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_min_objective in ffdev_topology_abc2er!')
+    end if
+
+    tmp_xg(1) = r0
+    tmp_xg(2) = eps
+
+    call nlo_optimize(ires, nloptid, tmp_xg, finerr)
+
+    call nlo_destroy(nloptid)
+
+    top%nb_types(nbt)%r0  = tmp_xg(1)
+    top%nb_types(nbt)%eps = tmp_xg(2)
+
+    deallocate(tmp_lb)
+    deallocate(tmp_ub)
+    deallocate(tmp_xg)
+
+end subroutine ffdev_topology_abc2er
+
+!===============================================================================
+! subroutine ffdev_topology_abc2er_errfce
+!===============================================================================
+
+subroutine ffdev_topology_abc2er_errfce(errv, n, x, grad, need_gradient, nbt)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    real(DEVDP)     :: errv
+    integer         :: n
+    real(DEVDP)     :: x(n), grad(n)
+    integer         :: need_gradient
+    integer         :: nbt
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: r,dr,enb,elj
+    ! --------------------------------------------------------------------------
+
+    if( need_gradient .gt. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_abc2er_errfce!')
+    end if
+
+    r  = ABC2ERMinR
+    dr = (ABC2ERMaxR - ABC2ERMinR)/real(ABC2ERIterErr,DEVDP)
+    errv = 0.0d0
+
+    do i=1,ABC2ERIterErr
+        enb = ffdev_topology_nbpair(ABC2ERNBPair,r)
+        elj = ffdev_topology_ljene(x(1),x(2),r)
+
+        errv = errv + (enb-elj)**2
+        r = r + dr
+    end do
+
+
+end subroutine ffdev_topology_abc2er_errfce
 
 ! ==============================================================================
 ! subroutine ffdev_topology_find_min_for_nbpair
@@ -1888,10 +1936,10 @@ subroutine ffdev_topology_find_min_for_nbpair(top,nbt,r0,eps)
     ! https://en.wikipedia.org/wiki/Golden-section_search
 
     r1 = 1.0d0
-    r4 = 10.0d0
+    r4 = ABC2ERMaxR
     gr = (1.0d0 + sqrt(5.0d0)) * 0.5d0
 
-    do i=1,1000
+    do i=1,ABC2ERIterGS
         r2 = r4 - (r4 - r1) / gr
         r3 = r1 + (r4 - r1) / gr
         f2 = ffdev_topology_nbpair(nbpair,r2)
@@ -1906,9 +1954,72 @@ subroutine ffdev_topology_find_min_for_nbpair(top,nbt,r0,eps)
     r0  = (r1+r4)*0.5d0
     eps = - ffdev_topology_nbpair(nbpair,r0)
 
-!    write(*,*) eps,r0,e,r,er
-
 end subroutine ffdev_topology_find_min_for_nbpair
+
+! ==============================================================================
+! subroutine ffdev_topology_find_sig_for_nbpair
+! ==============================================================================
+
+subroutine ffdev_topology_find_sig_for_nbpair(top,nbt,sig)
+
+    use ffdev_topology_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: nbt
+    real(DEVDP)     :: sig
+    ! --------------------------------------------
+    type(NB_PAIR)   :: nbpair
+    integer         :: i
+    real(DEVDP)     :: r1,r2,f1,f2,rm,fm
+    ! --------------------------------------------------------------------------
+
+    nbpair%ai       = 0
+    nbpair%aj       = 0
+    nbpair%nbt      = nbt
+    nbpair%dt       = 0
+    nbpair%nbtii    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%ti,top%nb_types(nbt)%ti)
+    nbpair%nbtjj    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%tj,top%nb_types(nbt)%tj)
+
+    ! Bisection method
+    ! https://en.wikipedia.org/wiki/Bisection_method
+
+    r1 = 1.0d0
+    r2 = ABC2ERMaxR
+
+    f1 = ffdev_topology_nbpair(nbpair,r1)
+    f2 = ffdev_topology_nbpair(nbpair,r2)
+
+    do i=1,ABC2ERIterBS
+        rm = (r1 + r2)*0.5d0
+        fm = ffdev_topology_nbpair(nbpair,rm)
+        if( fm .gt. 0 ) then
+            f1 = fm
+            r1 = rm
+        else
+            f2 = fm
+            r2 = rm
+        end if
+    end do
+
+    sig = rm
+
+end subroutine ffdev_topology_find_sig_for_nbpair
+
+! ==============================================================================
+! function ffdev_topology_ljene
+! ==============================================================================
+
+real(DEVDP) function ffdev_topology_ljene(r0,eps,r)
+
+    implicit none
+    real(DEVDP)     :: r0,eps
+    real(DEVDP)     :: r
+    ! --------------------------------------------------------------------------
+
+    ffdev_topology_ljene = eps*( (r0/r)**12 - 2.0d0*(r0/r)**6 )
+
+end function ffdev_topology_ljene
 
 ! ==============================================================================
 ! function ffdev_topology_nbpair

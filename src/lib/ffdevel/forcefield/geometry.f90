@@ -69,6 +69,7 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_sapt_dis    = 0
 
     geo%trg_ene_loaded      = .false.
+    geo%trg_ene_generic     = .false.
     geo%trg_crd_loaded      = .false.
     geo%trg_grd_loaded      = .false.
     geo%trg_hess_loaded     = .false.
@@ -77,12 +78,13 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_crd_optimized   = .false.
     geo%esp_npoints         = 0
 
-    geo%sup_xdm_loaded  = .false.
-    geo%sup_surf_loaded = .false.
-    geo%sup_chrg_loaded = .false.
-    geo%sup_chrg_type   = ''
+    geo%sup_xdm_loaded   = .false.
+    geo%sup_surf_loaded  = .false.
+    geo%sup_chrg_loaded  = .false.
+    geo%sup_chrg_generic = .false.
 
     geo%trg_probe_ene_loaded    = .false.
+    geo%trg_probe_ene_generic   = .false.
     geo%trg_probe_ene           = 0.0d0
     geo%trg_probe_ene_mode      = 0
 
@@ -459,7 +461,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
     ! --------------------------------------------
     integer             :: i,j,k,l,alloc_stat,read_stat,ri,rj,xdm_mode
     character(len=255)  :: line,buffer
-    character(len=80)   :: key,sym
+    character(len=80)   :: key,sym,subkey
     real(DEVDP)         :: rnum
     ! --------------------------------------------------------------------------
 
@@ -511,7 +513,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
     ! extra data - optional
     do while( .true. )
         ! read key line
-        read(DEV_GEO,*,iostat = read_stat) key
+        read(DEV_GEO,'(A)',iostat = read_stat) line
 
         if( read_stat .lt. 0 ) exit ! end of file
         if( read_stat .gt. 0 ) then
@@ -519,12 +521,16 @@ subroutine ffdev_geometry_load_1point(geo,stream)
         end if
 
         ! is it a number?
-        read(key,*,iostat = read_stat) k
+        read(line,*,iostat = read_stat) k
         if( read_stat .eq. 0 ) then
             ! backspace record and return
             backspace(DEV_GEO)
             exit
         end if
+
+        ! get subkey - optional
+        subkey = ''
+        read(line,*,iostat = read_stat) key, subkey
 
         ! parse keys
         select case(trim(key))
@@ -534,27 +540,34 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to read point weight!')
                 end if
             case('ENERGY')
-                read(DEV_GEO,*,iostat = read_stat) geo%trg_energy
+                read(DEV_GEO,*,iostat = read_stat) rnum
                 if( read_stat .ne. 0 ) then
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to read point energy!')
                 end if
-                geo%trg_ene_loaded = .true.
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. trim(LoadEnergy)) ) then
+                    geo%trg_ene_generic = trim(subkey) .eq. ''
+                    geo%trg_energy = rnum
+                    geo%trg_ene_loaded = .true.
+                end if
             case('PROBE-ENERGY')
                 read(DEV_GEO,*,iostat = read_stat) key, geo%trg_probe_ene
                 if( read_stat .ne. 0 ) then
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to read point probe-energy!')
                 end if
-                select case(trim(key))
-                    case('Erep')
-                        geo%trg_probe_ene_mode = GEO_PROBE_ENE_REP
-                    case('Etot')
-                        geo%trg_probe_ene_mode = GEO_PROBE_ENE_TOT
-                    case default
-                        write(buffer,'(A,I3)') 'Unsupported probe mode (' &
-                                               // trim(key) // ') at line = ',i
-                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
-                end select
-                geo%trg_probe_ene_loaded = .true.
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. trim(LoadProbe)) ) then
+                    geo%trg_probe_ene_generic = trim(subkey) .eq. ''
+                    select case(trim(key))
+                        case('Erep')
+                            geo%trg_probe_ene_mode = GEO_PROBE_ENE_REP
+                        case('Etot')
+                            geo%trg_probe_ene_mode = GEO_PROBE_ENE_TOT
+                        case default
+                            write(buffer,'(A,I3)') 'Unsupported probe mode (' &
+                                                   // trim(key) // ') at line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                    end select
+                    geo%trg_probe_ene_loaded = .true.
+                end if
             case('SAPT0')
                 do i=1,4
                     read(DEV_GEO,*,iostat = read_stat) key, rnum
@@ -632,7 +645,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 geo%trg_esp_loaded = .true.
             case('XDM')
                 ! xdm_mode is reserved for future use
-                read(DEV_GEO,*,iostat = read_stat) xdm_mode
+                read(subkey,*,iostat = read_stat) xdm_mode
                 if( read_stat .ne. 0 ) then
                     write(buffer,'(A,I3)') 'Unable to read XDM mode entry! XDM line = ',i
                     call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
@@ -714,13 +727,8 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 end do
                 geo%sup_surf_loaded = .true.
           case('CHARGES')
-                read(DEV_GEO,*,iostat = read_stat) key
-                if( read_stat .ne. 0 ) then
-                    write(buffer,'(A,I3)') 'Unable to read CHARGES type entry! CHARGES line = ',i
-                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
-                end if
-                if( trim(key) .eq. trim(LoadCharges) ) then
-                    geo%sup_chrg_type = key
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. trim(LoadCharges)) ) then
+                    geo%sup_chrg_generic = trim(subkey) .eq. ''
                     allocate( geo%sup_chrg(geo%natoms), stat = alloc_stat )
                     if( alloc_stat .ne. 0 ) then
                         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for CHARGES!')
@@ -1139,8 +1147,8 @@ subroutine ffdev_geometry_info_point_header()
     write(DEV_OUT,30)
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight E S V G H P X A C Charges')
-40 format('# ---- ---------------------------------------- ------ - - - - - - - - - -------')
+30 format('# ID   File                                     Weight E S V G H P X A C')
+40 format('# ---- ---------------------------------------- ------ - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1154,17 +1162,44 @@ subroutine ffdev_geometry_info_point(geo)
     type(GEOMETRY)      :: geo
     ! --------------------------------------------
     character(len=40)   :: lname
+    character(len=1)    :: enef, prbf, chrgf
     ! --------------------------------------------------------------------------
 
+    enef = 'F'
+    if( geo%trg_ene_loaded ) then
+        if( geo%trg_ene_generic ) then
+            enef = 'T'
+        else
+            enef = 'S'
+        end if
+    end if
+
+    prbf = 'F'
+    if( geo%trg_probe_ene_loaded ) then
+        if( geo%trg_probe_ene_generic ) then
+            prbf = 'T'
+        else
+            prbf = 'S'
+        end if
+    end if
+
+    chrgf = 'F'
+    if( geo%sup_chrg_loaded ) then
+        if( geo%sup_chrg_generic ) then
+            chrgf = 'T'
+        else
+            chrgf = 'S'
+        end if
+    end if
+
     lname = trim(geo%name)
-    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
+    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, enef, &
+                      geo%trg_sapt_loaded, prbf, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
-                      trim(geo%sup_chrg_type)
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
+  10 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
 
 end subroutine ffdev_geometry_info_point
 
@@ -1185,9 +1220,9 @@ subroutine ffdev_geometry_info_point_header_ext(relative)
     end if
     write(DEV_OUT,40)
 
-30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C Charges')
-35 format('# ID   File                                     Weight       Energy E S V G H P X A C Charges')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - - -------')
+30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C')
+35 format('# ID   File                                     Weight       Energy E S V G H P X A C')
+40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header_ext
 
@@ -1202,26 +1237,52 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
     ! --------------------------------------------
     character(len=40)   :: lname
     logical             :: relative
+    character(len=1)    :: enef, prbf, chrgf
     ! --------------------------------------------------------------------------
+
+    enef = 'F'
+    if( geo%trg_ene_loaded ) then
+        if( geo%trg_ene_generic ) then
+            enef = 'T'
+        else
+            enef = 'S'
+        end if
+    end if
+
+    prbf = 'F'
+    if( geo%trg_probe_ene_loaded ) then
+        if( geo%trg_probe_ene_generic ) then
+            prbf = 'T'
+        else
+            prbf = 'S'
+        end if
+    end if
+
+    chrgf = 'F'
+    if( geo%sup_chrg_loaded ) then
+        if( geo%sup_chrg_generic ) then
+            chrgf = 'T'
+        else
+            chrgf = 'S'
+        end if
+    end if
 
     lname = trim(geo%name)
     if( relative ) then
-    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
+    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
+                      geo%trg_sapt_loaded, prbf, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
-                      trim(geo%sup_chrg_type)
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
     else
-    write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, geo%trg_ene_loaded, &
-                      geo%trg_sapt_loaded, geo%trg_probe_ene_loaded, &
+    write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
+                      geo%trg_sapt_loaded, prbf, &
                       geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, geo%sup_chrg_loaded, &
-                      trim(geo%sup_chrg_type)
+                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
     end if
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
-  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A7)
+  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
+  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
 
 end subroutine ffdev_geometry_info_point_ext
 
