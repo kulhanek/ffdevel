@@ -273,13 +273,6 @@ integer,parameter   :: COMB_RULE_VS         = 92    ! Vleet-Schmidt
 
 ! ==============================================================================
 
-! possible values for lj2exp6_alpha
-real(DEVDP) :: lj2exp6_alpha    = 12.0d0    ! alpha for lj to exp-6 potential conversion
-                                            ! 12.0                           - identical long-range
-                                            ! 0.5d0*(19.0d0 + sqrt(73.0d0))  - identical shape in local minima
-
-! ==============================================================================
-
 ! employed method for NB interactions
 integer     :: nb_mode                      = NB_VDW_LJ
 integer     :: nb_comb_rules                = COMB_RULE_LB
@@ -297,22 +290,6 @@ real(DEVDP) :: disp_s10 = 1.0d0
 real(DEVDP) :: damp_fa  = 1.0d0
 real(DEVDP) :: damp_fb  = 0.0d0
 real(DEVDP) :: damp_pb  = 1.0d0
-
-! === [abc2er] =================================================================
-integer,parameter   ::  ABC2ER_MODE_MINIMUM             = 1
-integer,parameter   ::  ABC2ER_MODE_OVERLAY             = 2
-integer,parameter   ::  ABC2ER_MODE_OVERLAY_WEIGHTED    = 3
-
-integer         :: ABC2ERMode       = ABC2ER_MODE_MINIMUM
-real(DEVDP)     :: ABC2ERMaxR       = 6.0           ! max range for
-integer         :: ABC2ERIterGS     = 1000          ! precision
-integer         :: ABC2ERIterBS     = 1000          ! precision
-integer         :: ABC2ERIterOpt    = 1000          ! precision
-integer         :: ABC2ERIterErr    = 1000          ! precision
-
-! working data
-real(DEVDP)     :: ABC2ERMinR
-type(NB_PAIR)   :: ABC2ERNBPair
 
 ! ------------------------------------------------------------------------------
 

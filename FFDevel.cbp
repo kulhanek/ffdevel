@@ -352,10 +352,16 @@
 			<Option weight="3" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/optimizers/shark-ml.cpp">
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml1.cpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/optimizers/shark-ml.hpp">
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml1.hpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml2.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/optimizers/shark-ml2.hpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/atdens.f90">

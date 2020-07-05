@@ -1,4 +1,4 @@
-#include <shark-ml.hpp>
+#include <shark-ml1.hpp>
 #include <memory>
 #include <chrono>
 #include <shark/Algorithms/DirectSearch/CMA.h>
@@ -8,73 +8,73 @@ using namespace std;
 
 // -----------------------------------------------------------------------------
 
-int                 OptMethod;
-int                 NumOfParams;
-shared_ptr<CMA>     CMAOpt;
-COptSharkFce        OptSharkFce;
-shared_ptr<double>  tmp_x;
-std::mt19937        RnG;
+int                 OptMethod1;
+int                 NumOfParams1;
+shared_ptr<CMA>     CMAOpt1;
+COptSharkFce1       OptSharkFce1;
+shared_ptr<double>  tmp_x1;
+std::mt19937        RnG1;
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_create_(int* nactparms,int* method,double* initial_step,double* initial_params)
+extern "C" void shark_create1_(int* nactparms,int* method,double* initial_step,double* initial_params)
 {
-    NumOfParams = *nactparms;
-    if( NumOfParams <= 0 ) return;
+    NumOfParams1 = *nactparms;
+    if( NumOfParams1 <= 0 ) return;
 
-    RealVector params(NumOfParams);
-    for(size_t i=0; i < NumOfParams; i++){
+    RealVector params(NumOfParams1);
+    for(size_t i=0; i < NumOfParams1; i++){
             params(i) = initial_params[i];
     }
-    tmp_x = shared_ptr<double>(new double[NumOfParams]);
+    tmp_x1 = shared_ptr<double>(new double[NumOfParams1]);
 
     // currently only CMA is supported
-    OptMethod = *method;
-    switch(OptMethod){
+    OptMethod1 = *method;
+    switch(OptMethod1){
         case SHARK_CMA_ES:
-            CMAOpt = shared_ptr<CMA>(new CMA(RnG));
-            CMAOpt->setInitialSigma(*initial_step);
-            CMAOpt->init(OptSharkFce,params);
+            CMAOpt1 = shared_ptr<CMA>(new CMA(RnG1));
+            CMAOpt1->setInitialSigma(*initial_step);
+            CMAOpt1->init(OptSharkFce1,params);
             break;
     }
 }
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_set_rngseed_(int* seed)
+extern "C" void shark_set_rngseed1_(int* seed)
 {
     if( *seed == 0 ) {
         unsigned seed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
-        RnG.seed(seed);
+        RnG1.seed(seed);
     } else {
         // setup RNG
-        RnG.seed(*seed);
+        RnG1.seed(*seed);
     }
 }
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_dostep_(double* error)
+extern "C" void shark_dostep1_(double* error)
 {
     *error = 0.0;
-    if( NumOfParams <= 0 ) return;
-    switch(OptMethod){
+    if( NumOfParams1 <= 0 ) return;
+    switch(OptMethod1){
         case SHARK_CMA_ES:
-            CMAOpt->step(OptSharkFce);
-            *error = CMAOpt->solution().value;
+            CMAOpt1->step(OptSharkFce1);
+            *error = CMAOpt1->solution().value;
             break;
     }
 }
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_getsol_(double* params)
+extern "C" void shark_getsol1_(double* params)
 {
-    if( NumOfParams <= 0 ) return;
-    switch(OptMethod){
+    if( NumOfParams1 <= 0 ) return;
+    switch(OptMethod1){
         case SHARK_CMA_ES:
-            for(size_t i=0; i < NumOfParams; i++ ){
-                params[i] = CMAOpt->solution().point(i);
+            for(size_t i=0; i < NumOfParams1; i++ ){
+                params[i] = CMAOpt1->solution().point(i);
             }
             break;
     }
@@ -82,50 +82,50 @@ extern "C" void shark_getsol_(double* params)
 
 // -----------------------------------------------------------------------------
 
-extern "C" void shark_destroy_(void)
+extern "C" void shark_destroy1_(void)
 {
     // destroy data
-    switch(OptMethod){
+    switch(OptMethod1){
         case SHARK_CMA_ES:
-            CMAOpt = shared_ptr<CMA>();
+            CMAOpt1 = shared_ptr<CMA>();
             break;
     }
-    tmp_x = shared_ptr<double>();
+    tmp_x1 = shared_ptr<double>();
 }
 
 // -----------------------------------------------------------------------------
 
-COptSharkFce::COptSharkFce(void)
+COptSharkFce1::COptSharkFce1(void)
 {
     m_features |= HAS_VALUE;
 }
 
 // -----------------------------------------------------------------------------
 
-std::string COptSharkFce::name(void) const
+std::string COptSharkFce1::name(void) const
 {
     return("FFDevel");
 }
 
 // -----------------------------------------------------------------------------
 
-std::size_t COptSharkFce::numberOfVariables(void) const
+std::size_t COptSharkFce1::numberOfVariables(void) const
 {
-    return(NumOfParams);
+    return(NumOfParams1);
 }
 
 // -----------------------------------------------------------------------------
 
-extern "C" void opt_shark_fce_(int* nprms,double* prms,double* value);
+extern "C" void opt_shark_fce1_(int* nprms,double* prms,double* value);
 
-double COptSharkFce::eval(SearchPointType const& x) const
+double COptSharkFce1::eval(SearchPointType const& x) const
 {
-    double* prms = tmp_x.get();
-    for(size_t i=0; i < NumOfParams; i++) prms[i] = x(i);
+    double* prms = tmp_x1.get();
+    for(size_t i=0; i < NumOfParams1; i++) prms[i] = x(i);
     double  value = 0.0;
 
     // call fortran method
-    opt_shark_fce_(&NumOfParams,prms,&value);
+    opt_shark_fce1_(&NumOfParams1,prms,&value);
 
     return(value);
 }

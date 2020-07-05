@@ -86,27 +86,27 @@ interface
     end subroutine nlo_destroy
 
     ! shark interfaces
-    subroutine shark_create(nactparms,method,initial_step,initial_params)
+    subroutine shark_create1(nactparms,method,initial_step,initial_params)
         integer(4)      :: nactparms
         integer(4)      :: method
         real(8)         :: initial_step
         real(8)         :: initial_params(*)
-    end subroutine shark_create
+    end subroutine shark_create1
 
-    subroutine shark_dostep(error)
+    subroutine shark_dostep1(error)
         real(8)         :: error
-    end subroutine shark_dostep
+    end subroutine shark_dostep1
 
-    subroutine shark_getsol(params)
+    subroutine shark_getsol1(params)
         real(8)         :: params(*)
-    end subroutine shark_getsol
+    end subroutine shark_getsol1
 
-    subroutine shark_destroy()
-    end subroutine shark_destroy
+    subroutine shark_destroy1()
+    end subroutine shark_destroy1
 
-    subroutine shark_set_rngseed(seed)
+    subroutine shark_set_rngseed1(seed)
         integer(4)      :: seed
-    end subroutine shark_set_rngseed
+    end subroutine shark_set_rngseed1
 
 end interface
 
@@ -170,7 +170,7 @@ subroutine ffdev_ffopt_setup_rng(seed)
     integer     :: seed
     ! --------------------------------------------------------------------------
 
-    call shark_set_rngseed(seed)
+    call shark_set_rngseed1(seed)
 
 end subroutine ffdev_ffopt_setup_rng
 
@@ -990,7 +990,7 @@ subroutine opt_shark
         tmp_xg(:) = FFParams(:)
     end if
 
-    call shark_create(nactparms,Shark_Method,Shark_InitialStep,tmp_xg)
+    call shark_create1(nactparms,Shark_Method,Shark_InitialStep,tmp_xg)
 
     ! initial error
     call ffdev_parameters_error_only(FFParams,FFError,.true.)
@@ -1007,13 +1007,13 @@ subroutine opt_shark
     write(DEV_OUT,30)
 
     do istep = 1, NOptSteps
-        call shark_dostep(error)
+        call shark_dostep1(error)
 
         if( ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
             write(DEV_OUT,40) istep,FFOptFceEvals,error
         end if
 
-        call shark_getsol(tmp_xg)
+        call shark_getsol1(tmp_xg)
 
         if( Shark_EnableBoxing ) then
             call ffdev_ffopt_unbox_prms(tmp_xg,FFParams)
@@ -1057,7 +1057,7 @@ subroutine opt_shark
     call write_header(.true.)
     call write_results(istep,FFError,0.0d0,0.0d0,.true.)
 
-    call shark_destroy()
+    call shark_destroy1()
 
     deallocate(tmp_lb)
     deallocate(tmp_ub)
@@ -1255,12 +1255,11 @@ subroutine ffdev_ffopt_unbox_prms(boxed,prms)
     i = 1
     do j=1,nparams
         if( .not. params(j)%enabled ) cycle
-       ! FIXME
-       ! if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
-       !     prms(i) = boxed(i)
-       ! else
+        if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
+            prms(i) = boxed(i)
+        else
             prms(i) = tmp_lb(i) + 0.5d0*(tmp_ub(i)-tmp_lb(i))*(1.0d0-cos(boxed(i)))
-       ! end if
+        end if
         i = i + 1
     end do
 
@@ -1286,15 +1285,14 @@ subroutine ffdev_ffopt_box_prms(prms,boxed)
     i = 1
     do j=1,nparams
         if( .not. params(j)%enabled ) cycle
-       ! FIXME
-       ! if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
-       !     boxed(i) = prms(i)
-       ! else
+        if( (params(j)%realm .eq. REALM_DIH_G) .or. (params(j)%realm .eq. REALM_IMPR_G) ) then
+            boxed(i) = prms(i)
+        else
             sc = 1.0d0 - 2.0d0*(prms(i)-tmp_lb(i))/(tmp_ub(i)-tmp_lb(i))
             if( sc .gt.  1.0d0 ) sc =  1.0d0
             if( sc .lt. -1.0d0 ) sc = -1.0d0
             boxed(i) = acos(sc)
-       ! end if
+        end if
         i = i + 1
     end do
 
@@ -1312,10 +1310,10 @@ end module ffdev_ffopt
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! subroutine opt_shark_fce
+! subroutine opt_shark_fce1
 !===============================================================================
 
-subroutine opt_shark_fce(n, x, value)
+subroutine opt_shark_fce1(n, x, value)
 
     use ffdev_ffopt_dat
     use ffdev_errors_dat
@@ -1340,7 +1338,7 @@ subroutine opt_shark_fce(n, x, value)
 
     value = FFError%Total
 
-end subroutine opt_shark_fce
+end subroutine opt_shark_fce1
 
 !===============================================================================
 !-------------------------------------------------------------------------------

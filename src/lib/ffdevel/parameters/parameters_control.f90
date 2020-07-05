@@ -449,6 +449,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     use ffdev_topology_dat
     use ffdev_targetset
     use ffdev_targetset_dat
+    use ffdev_nb2nb
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -496,10 +497,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
     if( exec .and. changed ) then
-        do i=1,nsets
-            ! switch mode
-            call ffdev_topology_switch_nbmode(sets(i)%top,from_nb_mode,to_nb_mode)
-        end do
+        call ffdev_nb2nb_gather_nbtypes
+        call ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
+        call ffdev_nb2nb_conv_sum
+        call ffdev_nb2nb_scatter_nbtypes
         nb_mode = to_nb_mode
     end if
 

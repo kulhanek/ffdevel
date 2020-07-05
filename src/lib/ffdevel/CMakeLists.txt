@@ -91,6 +91,8 @@ SET(FFDEVEL_SRC
         parameters/parameters_dat.f90
         parameters/parameters.f90
         parameters/parameters_control.f90
+        parameters/nb2nb.f90
+        parameters/nb2nb_dat.f90
 
         optimizers/geoopt_dat.f90
         optimizers/geoopt_control.f90
@@ -99,7 +101,8 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_dat.f90
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
-        optimizers/shark-ml.cpp
+        optimizers/shark-ml1.cpp
+        optimizers/shark-ml2.cpp
 
         dftd3/sizes.f90
         dftd3/api.f90

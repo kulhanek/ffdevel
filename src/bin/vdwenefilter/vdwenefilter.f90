@@ -122,15 +122,14 @@ program ffdev_enefilter_program
     call ffdev_topology_switch_to_probe_mode(top,probe_size,.false.)
 
     ! FIXME
-!    select case(trim(fmethod))
-!        case('lj')
-!            call ffdev_topology_switch_nbmode(top,NB_MODE_LJ)
-!            nbins = enemax / binsize
-!            allocate(bins(nbins))
-!            bins(:) = 0
-!        case default
-!            call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
-!    end select
+    select case(trim(fmethod))
+        case('lj')
+            nbins = INT(enemax / binsize)
+            allocate(bins(nbins))
+            bins(:) = 0
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported filter mode!')
+    end select
 
     call ffdev_topology_finalize_setup(top)
     call ffdev_topology_info(top)

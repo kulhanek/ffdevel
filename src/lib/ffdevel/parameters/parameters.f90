@@ -33,6 +33,7 @@ subroutine ffdev_parameters_init()
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_atdens
+    use ffdev_nb2nb
 
     implicit none
     integer     :: maxnparams, i, alloc_stat
@@ -104,6 +105,7 @@ subroutine ffdev_parameters_init()
     write(DEV_OUT,30) nparams
     write(DEV_OUT,50)
 
+    call ffdev_nb2nb_init_nbtypes
     call ffdev_parameters_print_types()
     call ffdev_parameters_print_charge_stat()
     call ffdev_atdens_print()
