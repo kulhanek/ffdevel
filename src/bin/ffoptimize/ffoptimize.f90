@@ -35,6 +35,7 @@ program ffdev_optimize_program
     use ffdev_buried
     use ffdev_buried_control
     use ffdev_atdens_control
+    use ffdev_nb2nb_control
 
 !$ use omp_lib
 
@@ -104,6 +105,7 @@ program ffdev_optimize_program
         call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
         call ffdev_parameters_ctrl_grbf2cos(fin)
+        call ffdev_nb2lj_ctrl(fin)
     end if
 
     ! process target set file --------------------------------------------------

@@ -485,6 +485,7 @@ subroutine ffdev_parameters_reinit()
         case(NB_VDW_EXP_DISPBJ)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
+            use_damp_pb     = .true.
 
            select case(dampbj_mode)
                 case(DAMP_BJ_DRC)
@@ -511,10 +512,11 @@ subroutine ffdev_parameters_reinit()
         case(NB_VDW_EXP_DISPTT)
             use_vdw_pa      = .true.
             use_vdw_pb      = .true.
+            use_damp_pb     = .true.
 
             select case(damptt_mode)
                 case(DAMP_TT_COUPLED)
-                    use_damp_pb     = .true.
+                    use_damp_fa     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
                 case(DAMP_TT_CONST)

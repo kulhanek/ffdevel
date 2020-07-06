@@ -359,7 +359,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,*)
-            if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref ) then
+            if( (shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) .and. (.not. (sets(i)%top%probe_size .gt. 0) ) ) then
                 call ffdev_geometry_info_point_header_ext(.false.)
             else
                 call ffdev_geometry_info_point_header()
@@ -428,12 +428,6 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     sets(i)%geo(j)%trg_freq_loaded =  .true.
                 end if
 
-                if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref ) then
-                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.false.)
-                else
-                    call ffdev_geometry_info_point(sets(i)%geo(j))
-                end if
-
                 ! overwrite weights
                 select case(trim(wmode))
                     case('auto')
@@ -442,9 +436,20 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                         if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
                             sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
                         end if
+                    case('boltzmannProbe')
+                        ! FIXME
+                        if( sets(i)%geo(j)%trg_probe_ene .gt. 0d0 ) then
+                            sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*300.0d0))
+                        end if
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
+
+                if( (shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) .and. (.not. (sets(i)%top%probe_size .gt. 0) )  ) then
+                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.false.)
+                else
+                    call ffdev_geometry_info_point(sets(i)%geo(j))
+                end if
 
                 call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
 
@@ -476,7 +481,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
         end do
 
         ! update points with references
-        if( sets(i)%nrefs .gt. 0 ) then
+        if( (sets(i)%nrefs .gt. 0) .and. (.not. (sets(i)%top%probe_size .gt. 0) ) ) then
             write(DEV_OUT,*)
             write(DEV_OUT,305)
             write(DEV_OUT,*)

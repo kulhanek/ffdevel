@@ -1617,7 +1617,7 @@ character(80) function ffdev_topology_dampbj_mode_to_string(nb_mode)
         case(DAMP_BJ_SRC)
             ffdev_topology_dampbj_mode_to_string = 'SRC - Use scaled optimized Rc per type'
         case(DAMP_BJ_ATDENS)
-            ffdev_topology_dampbj_mode_to_string = 'ATDENS - Derived form atom densities'
+            ffdev_topology_dampbj_mode_to_string = 'ATDENS - Derived from atom densities'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_dampbj_mode_to_string!')
     end select
@@ -2261,7 +2261,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
         case(NB_VDW_EXP_DISPBJ)
             ! Pauli repulsion
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
-            nbpair%pb  = top%nb_types(nbt)%pb
+            nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
@@ -2296,7 +2296,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             else
                 nbpair%pa  = exp(top%nb_types(nbt)%pa)
             end if
-            nbpair%pb  = top%nb_types(nbt)%pb
+            nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
@@ -2306,7 +2306,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             ! TT damping
             select case(damptt_mode)
                 case(DAMP_TT_COUPLED)
-                    nbpair%tb  = damp_pb * nbpair%pb
+                    nbpair%tb  = damp_fa * top%nb_types(nbt)%pb
                 case(DAMP_TT_FREEOPT)
                     nbpair%tb  = top%nb_types(nbt)%tb
                 case(DAMP_TT_CONST)

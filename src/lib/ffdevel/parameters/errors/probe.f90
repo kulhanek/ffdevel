@@ -58,13 +58,14 @@ subroutine ffdev_err_probe_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j,nene
-    real(DEVDP)         :: err,serene,emm
+    real(DEVDP)         :: err,serene,emm,sumw
     ! --------------------------------------------------------------------------
 
     error%probe_ene = 0.0d0
 
     serene = 0.0
     nene = 0
+    sumw = 0.0d0
 
     do i=1,nsets
         if( sets(i)%top%probe_size .eq. 0 ) cycle
@@ -87,12 +88,13 @@ subroutine ffdev_err_probe_error(error)
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_error!')
             end select
             serene = serene + sets(i)%geo(j)%weight * err**2
+            sumw = sumw + sets(i)%geo(j)%weight
 
         end do
     end do
 
-    if( nene .gt. 0 ) then
-        error%probe_ene = sqrt(serene/real(nene))
+    if( sumw .gt. 0 ) then
+        error%probe_ene = sqrt(serene/sumw)
     end if
 
 end subroutine ffdev_err_probe_error
@@ -111,7 +113,7 @@ subroutine ffdev_err_probe_summary
     implicit none
     integer                 :: i,j,nene
     logical                 :: printsum
-    real(DEVDP)             :: serene,errtot,emm,err,maxerr
+    real(DEVDP)             :: serene,errtot,emm,err,maxerr,sumw
     character(len=MAX_PATH) :: string
     ! --------------------------------------------------------------------------
 
@@ -134,6 +136,7 @@ subroutine ffdev_err_probe_summary
     nene = 0
 
     maxerr = 0.0d0
+    sumw = 0.0d0
 
     do i=1,nsets
         printsum = .false.
@@ -163,6 +166,7 @@ subroutine ffdev_err_probe_summary
                 maxerr = err
             end if
             serene = serene + sets(i)%geo(j)%weight * err**2
+            sumw = sumw + sets(i)%geo(j)%weight
 
             write(DEV_OUT,30) i, j, trim(string), sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_probe_ene, emm, err
@@ -171,8 +175,8 @@ subroutine ffdev_err_probe_summary
     end do
 
     errtot = 0.0
-    if( nene .gt. 0 ) then
-        errtot  = sqrt(serene/real(nene))
+    if( sumw .gt. 0 ) then
+        errtot  = sqrt(serene/sumw)
     end if
 
     write(DEV_OUT,35)  maxerr

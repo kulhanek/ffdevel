@@ -37,9 +37,11 @@ real(DEVDP) :: ljdefrc          = 2.6d0     ! default Rc
 integer,parameter       :: NB2LJ_MODE_MINIMUM           = 1
 integer,parameter       :: NB2LJ_MODE_OVERLAY           = 2
 integer,parameter       :: NB2LJ_MODE_OVERLAY_WEIGHTED  = 3
+integer,parameter       :: NB2LJ_MODE_OVERLAY_REP       = 4
+integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 5
 
 integer                 :: NB2LJMode                    = NB2LJ_MODE_OVERLAY
-real(DEVDP)             :: NB2LJMaxR                    = 6.0           ! max range for r
+real(DEVDP)             :: NB2LJCutoffR                 = 6.0           ! max range for r
 integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
 integer                 :: NB2LJIterOpt                 = 1000          ! precision - overlay optimization
@@ -50,7 +52,9 @@ character(len=MAX_PATH) :: NBPotPath                    = 'nbpot'       ! NB pot
 
 ! working data
 integer                 :: NB2LJNParams
+real(DEVDP)             :: NB2LJSigma
 real(DEVDP)             :: NB2LJMinR
+real(DEVDP)             :: NB2LJMaxR
 type(NB_PAIR)           :: NB2LJNBPair
 integer                 :: NB2LJErrFceEval
 real(DEVDP),allocatable :: NB2LJprms(:),NB2LJtmp_xg(:),NB2LJtmp_ub(:),NB2LJtmp_lb(:)

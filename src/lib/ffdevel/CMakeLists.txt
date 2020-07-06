@@ -93,6 +93,7 @@ SET(FFDEVEL_SRC
         parameters/parameters_control.f90
         parameters/nb2nb.f90
         parameters/nb2nb_dat.f90
+        parameters/nb2nb_control.f90
 
         optimizers/geoopt_dat.f90
         optimizers/geoopt_control.f90

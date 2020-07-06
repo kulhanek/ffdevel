@@ -52,6 +52,66 @@ end interface
 contains
 
 ! ==============================================================================
+! subroutine ffdev_nb2nb_nb2lj_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_nb2nb_nb2lj_mode_to_string(mode)
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    implicit none
+    integer  :: mode
+    ! --------------------------------------------------------------------------
+
+    select case(mode)
+        case(NB2LJ_MODE_MINIMUM)
+            ffdev_nb2nb_nb2lj_mode_to_string = 'MINIMUM'
+        case(NB2LJ_MODE_OVERLAY)
+            ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY'
+        case(NB2LJ_MODE_OVERLAY_WEIGHTED)
+            ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY-WEIGHTED'
+        case(NB2LJ_MODE_OVERLAY_REP)
+            ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY-REPULSION'
+        case(NB2LJ_MODE_OVERLAY_DISP)
+            ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY-DISPERSION'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_nb2nb_nb2lj_mode_to_string!')
+    end select
+
+end function ffdev_nb2nb_nb2lj_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_nb2nb_nb2lj_mode_from_string
+! ==============================================================================
+
+integer function ffdev_nb2nb_nb2lj_mode_from_string(string)
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('MINIMUM')
+            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_MINIMUM
+        case('OVERLAY')
+            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY
+        case('OVERLAY-WEIGHTED')
+            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY_WEIGHTED
+        case('OVERLAY-REPULSION')
+            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY_REP
+        case('OVERLAY-DISPERSION')
+            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY_DISP
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_nb2nb_nb2lj_mode_from_string!')
+    end select
+
+end function ffdev_nb2nb_nb2lj_mode_from_string
+
+! ==============================================================================
 ! function ffdev_nb2nb_init_nbtypes
 ! ==============================================================================
 
@@ -321,7 +381,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     call ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     call ffdev_nb2nb_find_sig_for_nbpair(sig)
 
-    NB2LJMinR = sig
+    NB2LJSigma = sig
 
     ! write the source potential
     call ffdev_nb2nb_write_source_pot(gnbt)
@@ -336,7 +396,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
 
             call ffdev_nb2nb_write_LJ(gnbt,r0,eps)
             return
-        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_WEIGHTED)
+        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_WEIGHTED,NB2LJ_MODE_OVERLAY_REP,NB2LJ_MODE_OVERLAY_DISP)
             ! nothing to be done here
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB2LJMode in ffdev_nb2nb_nb2nb!')
@@ -353,6 +413,22 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     if( alloc_status .ne. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SHARK optimization in ffdev_nb2nb_nb2nb!')
     end if
+
+    select case(NB2LJMode)
+        case(NB2LJ_MODE_MINIMUM)
+            call ffdev_utils_exit(DEV_ERR,1,'Illegal exec path in ffdev_nb2nb_nb2nb!')
+        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_WEIGHTED)
+            NB2LJMinR   = NB2LJSigma
+            NB2LJMaxR   = NB2LJCutoffR
+        case(NB2LJ_MODE_OVERLAY_REP)
+            NB2LJMinR   = NB2LJSigma
+            NB2LJMaxR   = r0
+        case(NB2LJ_MODE_OVERLAY_DISP)
+            NB2LJMinR   = r0
+            NB2LJMaxR   = NB2LJCutoffR
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB2LJMode in ffdev_nb2nb_nb2nb!')
+    end select
 
     NB2LJtmp_lb(1) = sig
     NB2LJtmp_lb(2) = 0.0d0
@@ -477,8 +553,8 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
     ! open file
     call ffdev_utils_open(DEV_NBPOT,name,'U')
 
-    r  = NB2LJMinR
-    dr = (NB2LJMaxR - NB2LJMinR)/real(NB2LJIterErr,DEVDP)
+    r  = NB2LJSigma
+    dr = (NB2LJCutoffR - NB2LJSigma)/real(NB2LJIterErr,DEVDP)
 
     do i=1,NB2LJIterErr
         enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
@@ -517,8 +593,8 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     ! open file
     call ffdev_utils_open(DEV_NBPOT,name,'U')
 
-    r  = NB2LJMinR
-    dr = (NB2LJMaxR - NB2LJMinR)/real(NB2LJIterErr,DEVDP)
+    r  = NB2LJSigma
+    dr = (NB2LJCutoffR - NB2LJSigma)/real(NB2LJIterErr,DEVDP)
 
     do i=1,NB2LJIterErr
         enb = ffdev_nb2nb_ljene(r0,eps,r)
@@ -583,7 +659,7 @@ subroutine ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     ! https://en.wikipedia.org/wiki/Golden-section_search
 
     r1 = 1.0d0
-    r4 = NB2LJMaxR
+    r4 = NB2LJCutoffR
     gr = (1.0d0 + sqrt(5.0d0)) * 0.5d0
 
     do i=1,NB2LJIterGS
@@ -622,7 +698,7 @@ subroutine ffdev_nb2nb_find_sig_for_nbpair(sig)
     ! https://en.wikipedia.org/wiki/Bisection_method
 
     r1 = 1.0d0
-    r2 = NB2LJMaxR
+    r2 = NB2LJCutoffR
 
     f1 = ffdev_nb2nb_nbpair(NB2LJNBPair,r1)
     f2 = ffdev_nb2nb_nbpair(NB2LJNBPair,r2)
@@ -717,7 +793,7 @@ subroutine opt_shark_fce2(n, x, errval)
     real(DEVDP)     :: errval
     ! --------------------------------------------
     integer         :: i
-    real(DEVDP)     :: r,dr,enb,elj,r0,eps,w
+    real(DEVDP)     :: r,dr,enb,elj,r0,eps,w,sumw
     ! --------------------------------------------------------------------------
 
     call ffdev_nb2nb_nb2nb_unbox_prms(x,NB2LJprms)
@@ -729,18 +805,24 @@ subroutine opt_shark_fce2(n, x, errval)
     r0  = NB2LJprms(1)
     eps = NB2LJprms(2)
 
+    sumw = 0.0
     do i=1,NB2LJIterErr
         enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
         elj = ffdev_nb2nb_ljene(r0,eps,r)
 
-        ! eps is positive, but minimum is at -eps
-        w = exp(-(elj+eps)/(DEV_Rgas*NB2LJTemp))
+        if( NB2LJ_MODE_OVERLAY_WEIGHTED .eq. NB2LJ_MODE_OVERLAY_WEIGHTED ) then
+            ! eps is positive, but minimum is at -eps
+            w = exp(-(elj+eps)/(DEV_Rgas*NB2LJTemp))
+        else
+            w = 1.0
+        end if
 
         errval = errval + w*(enb-elj)**2
+        sumw = sumw + w
         r = r + dr
     end do
 
-    errval = sqrt( errval / real(NB2LJIterErr,DEVDP) )
+    errval = sqrt(errval/sumw)
 
     NB2LJErrFceEval = NB2LJErrFceEval + 1
 

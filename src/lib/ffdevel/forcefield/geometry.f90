@@ -550,7 +550,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     geo%trg_ene_loaded = .true.
                 end if
             case('PROBE-ENERGY')
-                read(DEV_GEO,*,iostat = read_stat) key, geo%trg_probe_ene
+                read(DEV_GEO,*,iostat = read_stat) key, rnum
                 if( read_stat .ne. 0 ) then
                     call ffdev_utils_exit(DEV_ERR,1,'Unable to read point probe-energy!')
                 end if
@@ -566,6 +566,7 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                                                    // trim(key) // ') at line = ',i
                             call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
                     end select
+                    geo%trg_probe_ene = rnum
                     geo%trg_probe_ene_loaded = .true.
                 end if
             case('SAPT0')
