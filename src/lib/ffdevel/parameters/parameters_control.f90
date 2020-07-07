@@ -61,6 +61,15 @@ subroutine ffdev_parameters_ctrl_control(fin)
         end select
 
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+        select case(PACSource)
+            case(PAC_SOURCE_TOPOLOGY)
+                write(DEV_OUT,335) 'topology'
+            case(PAC_SOURCE_GEO)
+                write(DEV_OUT,335) 'geometry'
+            case(PAC_SOURCE_GEO_HIRSHFELD)
+                write(DEV_OUT,335) 'hirshfeld'
+        end select
+
         write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
@@ -108,6 +117,33 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,110) prmfile_onoff(PACAsPrms)
     else
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+    end if
+
+    if( prmfile_get_string_by_key(fin,'pac_source', string)) then
+        select case(trim(string))
+            case('topology')
+                PACSource = PAC_SOURCE_TOPOLOGY
+                write(DEV_OUT,330) trim(string)
+            case('geometry')
+                PACSource = PAC_SOURCE_GEO
+                ApplyCombiningRules = .true.
+                write(DEV_OUT,330) trim(string)
+            case('hirshfeld')
+                PACSource = PAC_SOURCE_GEO_HIRSHFELD
+                ApplyCombiningRules = .true.
+                write(DEV_OUT,330) trim(string)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
+        end select
+    else
+        select case(PACSource)
+            case(PAC_SOURCE_TOPOLOGY)
+                write(DEV_OUT,335) 'topology'
+            case(PAC_SOURCE_GEO)
+                write(DEV_OUT,335) 'geometry'
+            case(PAC_SOURCE_GEO_HIRSHFELD)
+                write(DEV_OUT,335) 'hirshfeld'
+        end select
     end if
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
@@ -199,6 +235,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
 230  format ('Load charges (load_charges)              = ',A12)
 235  format ('Load charges (load_charges)              = ',A12,'                (default)')
+
+330  format ('PAC source for stat (pac_source)         = ',A12)
+335  format ('PAC source for stat (pac_source)         = ',A12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 
@@ -455,7 +494,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     type(PRMFILE_TYPE)  :: fin
     logical             :: exec
     ! --------------------------------------------
-    logical                     :: changed,lcouple_pa_pb_forA
+    logical                     :: changed,lcouple_pa_pb_forA,lpb_from_atdens
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
     integer                     :: ldampbj_mode,ldamptt_mode
@@ -473,6 +512,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         if( nb_mode .eq. NB_VDW_EXP_DISPTT ) then
             write(DEV_OUT,55) ffdev_topology_damptt_mode_to_string(damptt_mode)
             write(DEV_OUT,65) prmfile_onoff(couple_pa_pb_forA)
+        end if
+        if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+            write(DEV_OUT,75) prmfile_onoff(pb_from_atdens)
         end if
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         if( ApplyCombiningRules ) then
@@ -556,6 +598,18 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         end if
     end if
 
+    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
+        if( prmfile_get_logical_by_key(fin,'pb_from_atdens', lpb_from_atdens)) then
+            if( exec ) then
+                write(DEV_OUT,70) prmfile_onoff(lpb_from_atdens)
+                pb_from_atdens = lpb_from_atdens
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,75) prmfile_onoff(pb_from_atdens)
+        end if
+    end if
+
 ! ---------------------------
     if( exec .and. changed ) then
         do i=1,nsets
@@ -579,20 +633,23 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
  10 format('=== [nbsetup] ==================================================================')
 
- 20 format('New NB mode (nb_mode)            = ',A)
- 25 format('NB mode (nb_mode)                = ',A35,' (current)')
+ 20 format('New NB mode (nb_mode)             = ',A)
+ 25 format('NB mode (nb_mode)                 = ',A34,' (current)')
 
- 30 format('New combining rules (comb_rules) = ',A)
- 35 format('Combining rules (comb_rules)     = ',A35,' (current)')
+ 30 format('New combining rules (comb_rules)  = ',A)
+ 35 format('Combining rules (comb_rules)      = ',A34,' (current)')
 
- 40 format('BJ damping mode (dampbj_mode)    = ',A)
- 45 format('BJ damping mode (dampbj_mode)    = ',A35,' (current)')
+ 40 format('BJ damping mode (dampbj_mode)     = ',A)
+ 45 format('BJ damping mode (dampbj_mode)     = ',A34,' (current)')
 
- 50 format('TT damping mode (damptt_mode)    = ',A)
- 55 format('TT damping mode (damptt_mode)    = ',A35,' (current)')
+ 50 format('TT damping mode (damptt_mode)     = ',A)
+ 55 format('TT damping mode (damptt_mode)     = ',A34,' (current)')
 
- 60 format('PA*PB as A (papb_as_A)           = ',A)
- 65 format('PA*PB as A (papb_as_A)           = ',A35,' (current)')
+ 60 format('PA*PB as A (papb_as_A)            = ',A)
+ 65 format('PA*PB as A (papb_as_A)            = ',A34,' (current)')
+
+ 70 format('PB from AtomDens (pb_from_atdens) = ',A)
+ 75 format('PB from AtomDens (pb_from_atdens) = ',A34,' (current)')
 
  15 format('=== SET ',I2.2)
 

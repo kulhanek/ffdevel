@@ -2119,6 +2119,46 @@ subroutine ffdev_topology_apply_NB_comb_rules_EXPTT(top,comb_rules)
 end subroutine ffdev_topology_apply_NB_comb_rules_EXPTT
 
 !===============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_PB
+!===============================================================================
+
+subroutine ffdev_topology_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
+
+    use ffdev_utils
+
+    implicit none
+    real(DEVDP)     :: pbii,pbjj,pbij
+    ! --------------------------------------------------------------------------
+
+    !write(*,*) pbii,pbjj
+    select case(nb_comb_rules)
+        case(COMB_RULE_AM)
+            pbij = 0.5d0 * (pbii+pbjj)
+
+        case(COMB_RULE_GS)
+            if( pbii+pbjj .gt. 0 ) then
+                pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+            else
+                pbij = 0.5d0 * (pbii+pbjj)
+            end if
+
+        case(COMB_RULE_BA)
+            if( pbii+pbjj .gt. 0 ) then
+                pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+            else
+                pbij = 0.5d0 * (pbii+pbjj)
+            end if
+
+        case(COMB_RULE_VS)
+            pbij = sqrt(pbii*pbjj)
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented nb_comb_rules in ffdev_topology_update_nbpair_prms!')
+    end select
+
+end subroutine ffdev_topology_apply_NB_comb_rules_PB
+
+!===============================================================================
 ! subroutine ffdev_topology_update_nb_params
 !===============================================================================
 
@@ -2192,7 +2232,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     type(NB_PAIR)   :: nbpair
     ! --------------------------------------------
     integer         :: i,j,nbt,agti,agtj,nbtii,nbtjj,ti,tj
-    real(DEVDP)     :: rc,tbii,tbjj,tbij
+    real(DEVDP)     :: rc,tbii,tbjj,tbij,pbii,pbjj,pbij
     ! --------------------------------------------------------------------------
 
     nbpair%crgij = 0.0d0
@@ -2296,7 +2336,16 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             else
                 nbpair%pa  = exp(top%nb_types(nbt)%pa)
             end if
-            nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
+
+            if( pb_from_atdens ) then
+                pbii = damp_pb * ffdev_atdens_b(agti)
+                pbjj = damp_pb * ffdev_atdens_b(agtj)
+
+                call ffdev_topology_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
+                nbpair%pb  = pbij
+            else
+                nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
+            end if
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
@@ -2315,64 +2364,16 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     tbii = damp_fa * ffdev_atdens_b(agti)
                     tbjj = damp_fa * ffdev_atdens_b(agtj)
 
-                    !write(*,*) tbii,tbjj
-                    select case(nb_comb_rules)
-                        case(COMB_RULE_AM)
-                            tbij = 0.5d0 * (tbii+tbjj)
-
-                        case(COMB_RULE_GS)
-                            if( tbii+tbjj .gt. 0 ) then
-                                tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-                            else
-                                tbij = 0.5d0 * (tbii+tbjj)
-                            end if
-
-                        case(COMB_RULE_BA)
-                            if( tbii+tbjj .gt. 0 ) then
-                                tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-                            else
-                                tbij = 0.5d0 * (tbii+tbjj)
-                            end if
-
-                        case(COMB_RULE_VS)
-                            tbij = sqrt(tbii*tbjj)
-
-                        case default
-                            call ffdev_utils_exit(DEV_ERR,1,'Not implemented nb_comb_rules in ffdev_topology_update_nbpair_prms!')
-                    end select
-
+                    call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
                     nbpair%tb  = tbij
+
                 case(DAMP_TT_BFAC_XDM)
                     tbii = damp_fa * ffdev_atdens_b(agti) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
                     tbjj = damp_fa * ffdev_atdens_b(agtj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
 
-                    !write(*,*) tbii,tbjj
-                    select case(nb_comb_rules)
-                        case(COMB_RULE_AM)
-                            tbij = 0.5d0 * (tbii+tbjj)
-
-                        case(COMB_RULE_GS)
-                            if( tbii+tbjj .gt. 0 ) then
-                                tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-                            else
-                                tbij = 0.5d0 * (tbii+tbjj)
-                            end if
-
-                        case(COMB_RULE_BA)
-                            if( tbii+tbjj .gt. 0 ) then
-                                tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-                            else
-                                tbij = 0.5d0 * (tbii+tbjj)
-                            end if
-
-                        case(COMB_RULE_VS)
-                            tbij = sqrt(tbii*tbjj)
-
-                        case default
-                            call ffdev_utils_exit(DEV_ERR,1,'Not implemented nb_comb_rules in ffdev_topology_update_nbpair_prms!')
-                    end select
-
+                    call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
                     nbpair%tb  = tbij
+
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_update_nbpair_prms!')

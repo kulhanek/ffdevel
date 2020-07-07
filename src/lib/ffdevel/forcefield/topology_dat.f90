@@ -239,6 +239,7 @@ integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
 
 ! Pauli repulsion
 logical             :: couple_pa_pb_forA    = .false.
+logical             :: pb_from_atdens       = .false.
 
 ! Becke-Johnson damping
 integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx

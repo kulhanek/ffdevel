@@ -133,13 +133,19 @@ integer,parameter       :: PARAMS_SUMMARY_OPTIMIZED     = 2
 integer,parameter       :: PARAMS_SUMMARY_MODIFIED      = 3
 integer,parameter       :: PARAMS_SUMMARY_FULL          = 4
 
+! PAC charge source
+integer,parameter       :: PAC_SOURCE_TOPOLOGY          = 1
+integer,parameter       :: PAC_SOURCE_GEO               = 2
+integer,parameter       :: PAC_SOURCE_GEO_HIRSHFELD     = 3
+
 ! === [control] ================================================================
 integer         :: NBParamsMode         = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
 logical         :: PACAsPrms            = .false.                   ! partial atomic charges as parameters
 logical         :: OnlyDefinedDihItems  = .true.
 logical         :: LockDihC_PN1         = .true.
 logical         :: ResetAllSetup        = .true.
-integer         :: GlbRngSeed           = 5489              ! random number generator setup
+integer         :: GlbRngSeed           = 5489                      ! random number generator setup
+integer         :: PACSource            = PAC_SOURCE_TOPOLOGY
 
 ! === [grbf2cos] ===============================================================
 integer         :: GRBF2COSMaxN     = 4             ! max length of cos series

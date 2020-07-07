@@ -82,6 +82,7 @@ subroutine ffdev_geometry_init(geo)
     geo%sup_surf_loaded  = .false.
     geo%sup_chrg_loaded  = .false.
     geo%sup_chrg_generic = .false.
+    geo%sup_hirshfeld_loaded = .false.
 
     geo%trg_probe_ene_loaded    = .false.
     geo%trg_probe_ene_generic   = .false.
@@ -117,6 +118,7 @@ subroutine ffdev_geometry_init(geo)
     geo%sup_surf_sas    => null()
 
     geo%sup_chrg        => null()
+    geo%sup_hirshfeld   => null()
 
     geo%rst             => null()
 
@@ -202,6 +204,10 @@ subroutine ffdev_geometry_destroy(geo)
 
     if( associated(geo%sup_chrg) ) then
         deallocate(geo%sup_chrg)
+    end if
+
+    if( associated(geo%sup_hirshfeld) ) then
+        deallocate(geo%sup_hirshfeld)
     end if
 
     if( associated(geo%rst) ) then
@@ -757,6 +763,24 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                         end if
                     end do
                 end if
+            case('HIRSHFELD')
+                allocate( geo%sup_hirshfeld(geo%natoms), stat = alloc_stat )
+                if( alloc_stat .ne. 0 ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for HIRSHFELD!')
+                end if
+                geo%sup_hirshfeld(:) = 0.0d0
+                do i=1,geo%natoms
+                    read(DEV_GEO,*,iostat = read_stat) ri, geo%sup_hirshfeld(i)
+                    if( read_stat .ne. 0 ) then
+                        write(buffer,'(A,I3)') 'Unable to read HIRSHFELD entry! HIRSHFELD line = ',i
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                    end if
+                    if( ri .ne. i ) then
+                        write(buffer,'(A,I3)') 'Miss-aligned HIRSHFELD entry! HIRSHFELD line = ',i
+                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                    end if
+                end do
+                geo%sup_hirshfeld_loaded = .true.
             case('RST')
                 read(DEV_GEO,*,iostat = read_stat) geo%nrst
                 if( read_stat .ne. 0 ) then

@@ -1277,8 +1277,8 @@ subroutine ffdev_parameters_update_charge_stat()
     use ffdev_utils
 
     implicit none
-    integer     :: i,j,ti,gti
-    real(DEVDP) :: q, sdq
+    integer     :: i,j,ti,gti,k
+    real(DEVDP) :: q,sdq
     ! --------------------------------------------------------------------------
 
     ! reset
@@ -1288,23 +1288,68 @@ subroutine ffdev_parameters_update_charge_stat()
     types(:)%aveq   = 0
     types(:)%sdq    = 0
 
-    ! get data
-    do i=1,nsets
-        do j=1,sets(i)%top%natoms
-                ti  = sets(i)%top%atoms(j)%typeid
-                q   = sets(i)%top%atoms(j)%charge
-                gti = sets(i)%top%atom_types(ti)%glbtypeid
-                types(gti)%qcount = types(gti)%qcount + 1
-                if( types(gti)%qcount .eq. 1 ) then
-                    types(gti)%minq = q
-                    types(gti)%maxq = q
-                end if
-                if( q .gt. types(gti)%maxq ) types(gti)%maxq = q
-                if( q .lt. types(gti)%minq ) types(gti)%minq = q
-                types(gti)%aveq = types(gti)%aveq + q
-                types(gti)%sdq  = types(gti)%sdq + q**2
-        end do
-    end do
+    select case(PACSource)
+        case(PAC_SOURCE_TOPOLOGY)
+            ! get data
+            do i=1,nsets
+                do j=1,sets(i)%top%natoms
+                    ti  = sets(i)%top%atoms(j)%typeid
+                    q   = sets(i)%top%atoms(j)%charge
+                    gti = sets(i)%top%atom_types(ti)%glbtypeid
+                    types(gti)%qcount = types(gti)%qcount + 1
+                    if( types(gti)%qcount .eq. 1 ) then
+                        types(gti)%minq = q
+                        types(gti)%maxq = q
+                    end if
+                    if( q .gt. types(gti)%maxq ) types(gti)%maxq = q
+                    if( q .lt. types(gti)%minq ) types(gti)%minq = q
+                    types(gti)%aveq = types(gti)%aveq + q
+                    types(gti)%sdq  = types(gti)%sdq + q**2
+                end do
+            end do
+        case(PAC_SOURCE_GEO)
+            ! get data
+            do i=1,nsets
+                do k=1,sets(i)%ngeos
+                    if( .not. sets(i)%geo(k)%sup_chrg_loaded ) cycle
+                    do j=1,sets(i)%top%natoms
+                        ti  = sets(i)%top%atoms(j)%typeid
+                        q   = sets(i)%geo(k)%sup_chrg(j)
+                        gti = sets(i)%top%atom_types(ti)%glbtypeid
+                        types(gti)%qcount = types(gti)%qcount + 1
+                        if( types(gti)%qcount .eq. 1 ) then
+                            types(gti)%minq = q
+                            types(gti)%maxq = q
+                        end if
+                        if( q .gt. types(gti)%maxq ) types(gti)%maxq = q
+                        if( q .lt. types(gti)%minq ) types(gti)%minq = q
+                        types(gti)%aveq = types(gti)%aveq + q
+                        types(gti)%sdq  = types(gti)%sdq + q**2
+                    end do
+                end do
+            end do
+        case(PAC_SOURCE_GEO_HIRSHFELD)
+            ! get data
+            do i=1,nsets
+                do k=1,sets(i)%ngeos
+                    if( .not. sets(i)%geo(k)%sup_hirshfeld_loaded ) cycle
+                    do j=1,sets(i)%top%natoms
+                        ti  = sets(i)%top%atoms(j)%typeid
+                        q   = sets(i)%geo(k)%sup_hirshfeld(j)
+                        gti = sets(i)%top%atom_types(ti)%glbtypeid
+                        types(gti)%qcount = types(gti)%qcount + 1
+                        if( types(gti)%qcount .eq. 1 ) then
+                            types(gti)%minq = q
+                            types(gti)%maxq = q
+                        end if
+                        if( q .gt. types(gti)%maxq ) types(gti)%maxq = q
+                        if( q .lt. types(gti)%minq ) types(gti)%minq = q
+                        types(gti)%aveq = types(gti)%aveq + q
+                        types(gti)%sdq  = types(gti)%sdq + q**2
+                    end do
+                end do
+            end do
+    end select
 
     ! finalize
     do gti=1,ntypes
@@ -1343,7 +1388,7 @@ subroutine ffdev_parameters_print_charge_stat()
 
     do i=1,ntypes
         write(DEV_OUT,30) i, adjustl(types(i)%name), types(i)%qcount, &
-                          types(i)%maxq, types(i)%minq, types(i)%aveq, types(i)%sdq
+                          types(i)%minq, types(i)%maxq, types(i)%aveq, types(i)%sdq
     end do
 
  10 format('# ID Type #Atoms     MinQ     MaxQ      <Q>     s(Q)')

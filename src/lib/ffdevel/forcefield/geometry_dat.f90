@@ -117,6 +117,8 @@ type GEOMETRY
     logical                 :: sup_chrg_loaded
     logical                 :: sup_chrg_generic
     real(DEVDP),pointer     :: sup_chrg(:)          ! partial atomic charges
+    logical                 :: sup_hirshfeld_loaded
+    real(DEVDP),pointer     :: sup_hirshfeld(:)     ! hirshfeld atomic charges
 end type GEOMETRY
 
 ! ------------------------------------------------------------------------------
