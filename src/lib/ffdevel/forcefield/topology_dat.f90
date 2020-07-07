@@ -245,7 +245,8 @@ logical             :: pb_from_atdens       = .false.
 integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
 integer,parameter   :: DAMP_BJ_ORC          = 202       ! optimized radii
 integer,parameter   :: DAMP_BJ_SRC          = 203       ! scaled optimized radii
-integer,parameter   :: DAMP_BJ_ATDENS       = 204
+integer,parameter   :: DAMP_BJ_ATDENS       = 204       ! derived from atom densities
+integer,parameter   :: DAMP_BJ_CONST        = 205       ! constant
 
 integer     :: dampbj_mode                  = DAMP_BJ_DRC
 
