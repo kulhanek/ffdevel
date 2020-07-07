@@ -2171,6 +2171,7 @@ subroutine ffdev_topology_update_nb_params(top)
     use ffdev_topology_dat
     use ffdev_utils
     use ffdev_disp_dat
+    use ffdev_xdm_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -2195,8 +2196,10 @@ subroutine ffdev_topology_update_nb_params(top)
             end if
             select case(damptt_mode)
                 case(DAMP_TT_BFAC_XDM)
-                    call ffdev_utils_exit(DEV_ERR,1, &
-                         'XDM not loaded for DAMP_TT_BFAC_XDM in ffdev_topology_update_nb_params!')
+                    if( .not. xdm_data_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1, &
+                             'XDM not loaded for DAMP_TT_BFAC_XDM in ffdev_topology_update_nb_params!')
+                     end if
                 case default
                     ! nothing to do
             end select
