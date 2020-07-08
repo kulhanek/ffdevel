@@ -50,6 +50,9 @@ end type TARGETSET
 integer                     :: nsets    ! number of sets
 type(TARGETSET),allocatable :: sets(:)  ! all training sets
 
+! [control] in {FFPARAMS}
+real(DEVDP)                 :: max_probe_energy         = -1  ! -1 disable the filter
+
 ! [setup] ----------------------------------------------------------------------
 logical                 :: DoNotCalcFreqs               = .false.   ! do not calculate frequencies when hessian is loaded
 logical                 :: useOptGeometry               = .true.    ! save optimized geometry otherwise use target geometry
@@ -59,7 +62,7 @@ character(len=MAX_PATH) :: SavePtsPath                  = 'points'  ! storage fo
 logical                 :: SaveXYZR                     = .false.
 character(len=MAX_PATH) :: SaveXYZRPath                 = 'xyzr'
 logical                 :: SaveSumLogs                  = .true.   ! for error statistics
-character(len=MAX_PATH) :: SaveSumLogsPath              = 'sumlogs'
+character(len=MAX_PATH) :: SaveSumLogsPath              = '03.sumlogs'
 
 ! [optgeo] --------------------------------------------------------------------
 ! default values set in ffdev_targetset_ctrl_optgeo_set_default

@@ -42,8 +42,6 @@ character(MAX_PATH) function ffdev_errors_utils_scale_to_string(iscale)
             ffdev_errors_utils_scale_to_string = 'rel (relative)'
         case(EE_LOG)
             ffdev_errors_utils_scale_to_string = 'log (logarithimic)'
-        case(EE_ABSLOG)
-            ffdev_errors_utils_scale_to_string = 'abs+log (absolute+logarithimic)'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_errors_utils_scale_to_string!')
     end select
@@ -70,8 +68,6 @@ integer function ffdev_errors_utils_scale_from_string(string)
             ffdev_errors_utils_scale_from_string = EE_REL
         case('log')
             ffdev_errors_utils_scale_from_string = EE_LOG
-        case('abs+log')
-            ffdev_errors_utils_scale_from_string = EE_ABSLOG
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) // &
                                             '" in ffdev_errors_utils_scale_from_string!')

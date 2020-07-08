@@ -56,8 +56,8 @@ subroutine ffdev_err_bonds_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,nbonds,ai,aj
-    real(DEVDP)         :: err,seterrbonds
+    integer             :: i,j,q,ai,aj
+    real(DEVDP)         :: err,seterrbonds,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ subroutine ffdev_err_bonds_error(error)
 
     ! calculate error
     seterrbonds = 0.0
-    nbonds = 0
+    totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%nbonds
@@ -83,14 +83,14 @@ subroutine ffdev_err_bonds_error(error)
                 ! write(*,*) d0, dt
                 err = d0 - dt
                 seterrbonds = seterrbonds + sets(i)%geo(j)%weight * err**2
-                nbonds = nbonds + 1
+                totw = totw + sets(i)%geo(j)%weight
             end do
         end do
     end do
 
     ! geometry
-    if( nbonds .gt. 0 ) then
-        error%bonds = sqrt(seterrbonds/real(nbonds))
+    if( totw .gt. 0 ) then
+        error%bonds = sqrt(seterrbonds/totw)
     end if
 
 end subroutine ffdev_err_bonds_error

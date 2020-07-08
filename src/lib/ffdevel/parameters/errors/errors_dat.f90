@@ -25,7 +25,6 @@ use ffdev_variables
 integer,parameter       :: EE_ABS       = 1 ! absolute
 integer,parameter       :: EE_REL       = 2 ! relative
 integer,parameter       :: EE_LOG       = 3 ! log
-integer,parameter       :: EE_ABSLOG    = 4 ! abs+log
 
 ! ------------------------------------------------------------------------------
 ! error function

@@ -359,10 +359,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
         if( sets(i)%ngeos .gt. 0 ) then
             write(DEV_OUT,*)
-            if( (shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) .and. (.not. (sets(i)%top%probe_size .gt. 0) ) ) then
-                call ffdev_geometry_info_point_header_ext(.false.)
+            if( shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref ) then
+                if( sets(i)%top%probe_size .gt. 0 ) then
+                    call ffdev_geometry_info_point_header(GEO_INFO_PRBENERGY)
+                else
+                    call ffdev_geometry_info_point_header(GEO_INFO_ABSENERGY)
+                end if
             else
-                call ffdev_geometry_info_point_header()
+                call ffdev_geometry_info_point_header(GEO_INFO_NOENERGY)
             end if
         end if
 
@@ -431,13 +435,18 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 ! overwrite weights
                 select case(trim(wmode))
                     case('auto')
-                        ! nothing to do
+                        ! for probed structure set weight to zero for high energy structures
+                        if( sets(i)%geo(j)%trg_probe_ene_loaded ) then
+                            if( (max_probe_energy .gt. 0) .and. (sets(i)%geo(j)%trg_probe_ene .gt. max_probe_energy) ) then
+                                sets(i)%geo(j)%weight = 0.0d0
+                            end if
+                        end if
                     case('ire2')
                         if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
                             sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
                         end if
                     case('boltzmannProbe')
-                        ! FIXME
+                        ! FIXME - add tunable value for Temp
                         if( sets(i)%geo(j)%trg_probe_ene .gt. 0d0 ) then
                             sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*300.0d0))
                         end if
@@ -445,10 +454,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
 
-                if( (shift2zero .or. sets(i)%nrefs .gt. 0 .or. sets(i)%isref) .and. (.not. (sets(i)%top%probe_size .gt. 0) )  ) then
-                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.false.)
+                if( sets(i)%geo(j)%trg_ene_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded ) then
+                    if( sets(i)%geo(j)%trg_probe_ene_loaded ) then
+                        call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_PRBENERGY)
+                    else
+                        call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_ABSENERGY)
+                    end if
                 else
-                    call ffdev_geometry_info_point(sets(i)%geo(j))
+                    call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_NOENERGY)
                 end if
 
                 call ffdev_geometry_check_z(sets(i)%top,sets(i)%geo(j))
@@ -457,6 +470,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 if( sets(i)%isref ) then
                     if( sets(i)%geo(j)%trg_ene_loaded .eqv. .false. ) then
                         call ffdev_utils_exit(DEV_ERR,1,'Reference point must contain ENERGY definition!')
+                    end if
+                end if
+
+                ! probed mode requires probe energy
+                if( sets(i)%top%probe_size .gt. 0 ) then
+                    if( sets(i)%geo(j)%trg_probe_ene_loaded .eqv. .false. ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'In probed mode, the point must contain PROBE-ENERGY definition!')
                     end if
                 end if
 
@@ -485,13 +505,13 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,*)
             write(DEV_OUT,305)
             write(DEV_OUT,*)
-            call ffdev_geometry_info_point_header_ext(.true.)
+            call ffdev_geometry_info_point_header(GEO_INFO_RELENERGY)
             do j=1,sets(i)%ngeos
                 if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                 do k=1,sets(i)%nrefs
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
                 end do
-                call ffdev_geometry_info_point_ext(sets(i)%geo(j),.true.)
+                call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_RELENERGY)
             end do
         end if
 
@@ -522,11 +542,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 write(DEV_OUT,*)
                 write(DEV_OUT,308)
                 write(DEV_OUT,*)
-                call ffdev_geometry_info_point_header_ext(.true.)
+                call ffdev_geometry_info_point_header(GEO_INFO_RELENERGY)
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
-                    call ffdev_geometry_info_point_ext(sets(i)%geo(j),.true.)
+                    call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_RELENERGY)
                 end do
             end if
         end if

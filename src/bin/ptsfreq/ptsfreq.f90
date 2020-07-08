@@ -49,8 +49,8 @@ program ffdev_ptsfreq_program
     call ffdev_geometry_load_point(geo,geoname)
 
     write(DEV_OUT,*)
-    call ffdev_geometry_info_point_header()
-    call ffdev_geometry_info_point(geo)
+    call ffdev_geometry_info_point_header(GEO_INFO_NOENERGY)
+    call ffdev_geometry_info_point(geo,GEO_INFO_NOENERGY)
 
     if( .not. geo%trg_hess_loaded ) then
         call ffdev_utils_exit(DEV_ERR,1,'Point does not contain Hessian!')

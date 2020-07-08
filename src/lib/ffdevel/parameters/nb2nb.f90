@@ -328,6 +328,9 @@ subroutine ffdev_nb2nb_conv_sum
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
+    write(DEV_OUT,10) trim(ffdev_nb2nb_nb2lj_mode_to_string(NB2LJMode))
+
+    write(DEV_OUT,*)
     write(DEV_OUT,20)
     write(DEV_OUT,30)
 
@@ -335,6 +338,10 @@ subroutine ffdev_nb2nb_conv_sum
         write(DEV_OUT,40) trim(types(nb_types(gnbt)%gti)%name), trim(types(nb_types(gnbt)%gtj)%name), &
                           nb_types(gnbt)%eps,nb_types(gnbt)%r0,nb_types(gnbt)%errval
     end do
+
+    write(DEV_OUT,*)
+
+10 format('# NB->LJ conversion method: ',A)
 
 20 format('# TypA TypB          Eps           R0          Err')
 30 format('# ---- ---- ------------ ------------ ------------')

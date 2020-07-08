@@ -104,8 +104,8 @@ program ffdev_genpoints_program
     call ffdev_geometry_load_point(geo,GenCrdName)
     call ffdev_geometry_info_input(geo)
     write(DEV_OUT,*)
-    call ffdev_geometry_info_point_header()
-    call ffdev_geometry_info_point(geo)
+    call ffdev_geometry_info_point_header(GEO_INFO_NOENERGY)
+    call ffdev_geometry_info_point(geo,GEO_INFO_NOENERGY)
 
     ! check coordinates and topology
     if( top%natoms .ne. geo%natoms ) then

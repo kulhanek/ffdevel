@@ -712,6 +712,21 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%tl   = 0
     end if
 
+    if( use_damp_pb ) then
+        ! =====================
+        nparams = nparams + 1
+        params(nparams)%value = damp_pb
+        params(nparams)%realm = REALM_DAMP_PB
+        params(nparams)%enabled = .false.
+        params(nparams)%identity = 0
+        params(nparams)%pn    = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ti   = 0
+        params(nparams)%tj   = 0
+        params(nparams)%tk   = 0
+        params(nparams)%tl   = 0
+    end if
+
     if( use_damp_fa ) then
         ! =====================
         nparams = nparams + 1
@@ -732,21 +747,6 @@ subroutine ffdev_parameters_reinit()
         nparams = nparams + 1
         params(nparams)%value = damp_fb
         params(nparams)%realm = REALM_DAMP_FB
-        params(nparams)%enabled = .false.
-        params(nparams)%identity = 0
-        params(nparams)%pn    = 0
-        params(nparams)%ids(:) = 0
-        params(nparams)%ti   = 0
-        params(nparams)%tj   = 0
-        params(nparams)%tk   = 0
-        params(nparams)%tl   = 0
-    end if
-
-    if( use_damp_pb ) then
-        ! =====================
-        nparams = nparams + 1
-        params(nparams)%value = damp_pb
-        params(nparams)%realm = REALM_DAMP_PB
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0

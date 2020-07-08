@@ -55,15 +55,15 @@ subroutine ffdev_err_dihedrals_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,ndihedrals,ai,aj,ak,al
-    real(DEVDP)         :: err,seterrdihedrals
+    integer             :: i,j,q,ai,aj,ak,al
+    real(DEVDP)         :: err,seterrdihedrals,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
     error%dihedrals = 0.0
 
     seterrdihedrals = 0.0
-    ndihedrals = 0
+    totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%ndihedrals
@@ -86,13 +86,13 @@ subroutine ffdev_err_dihedrals_error(error)
                 err = err * DEV_R2D
 
                 seterrdihedrals = seterrdihedrals + sets(i)%geo(j)%weight * err**2
-                ndihedrals = ndihedrals + 1
+                totw = totw + sets(i)%geo(j)%weight
             end do
         end do
     end do
 
-    if( ndihedrals .gt. 0 ) then
-        error%dihedrals = sqrt(seterrdihedrals/real(ndihedrals))
+    if( totw .gt. 0 ) then
+        error%dihedrals = sqrt(seterrdihedrals/totw)
     end if
 
 end subroutine ffdev_err_dihedrals_error

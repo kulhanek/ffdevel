@@ -55,15 +55,15 @@ subroutine ffdev_err_angles_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,nangles,ai,aj,ak
-    real(DEVDP)         :: err,seterrangles
+    integer             :: i,j,q,ai,aj,ak
+    real(DEVDP)         :: err,seterrangles,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
     error%angles = 0.0
 
     seterrangles = 0.0
-    nangles = 0
+    totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%nangles
@@ -81,13 +81,13 @@ subroutine ffdev_err_angles_error(error)
                 dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D
                 err = d0 - dt
                 seterrangles = seterrangles + sets(i)%geo(j)%weight * err**2
-                nangles = nangles + 1
+                totw = totw + sets(i)%geo(j)%weight
             end do
         end do
     end do
 
-    if( nangles .gt. 0 ) then
-        error%angles = sqrt(seterrangles/real(nangles))
+    if( totw .gt. 0 ) then
+        error%angles = sqrt(seterrangles/totw)
     end if
 
 end subroutine ffdev_err_angles_error

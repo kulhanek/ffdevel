@@ -36,6 +36,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
     use ffdev_topology_dat
     use ffdev_topology
     use ffdev_ffopt
+    use ffdev_targetset_dat
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -75,6 +76,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
         write(DEV_OUT,245) trim(LoadEnergy)
         write(DEV_OUT,255) trim(LoadProbe)
+        write(DEV_OUT,265) max_probe_energy
         write(DEV_OUT,235) trim(LoadCharges)
         write(DEV_OUT,95)  GlbRngSeed
         write(DEV_OUT,105) Verbosity
@@ -178,6 +180,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,255) trim(LoadProbe)
     end if
 
+    if( prmfile_get_real8_by_key(fin,'max_probe_energy', max_probe_energy)) then
+        write(DEV_OUT,260) max_probe_energy
+    else
+        write(DEV_OUT,265) max_probe_energy
+    end if
+
     ! setup charges, which should be loaded
     if( prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
         write(DEV_OUT,230) trim(LoadCharges)
@@ -232,6 +240,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
 250  format ('Load probe energy (load_probe)           = ',A12)
 255  format ('Load probe energy (load_probe)           = ',A12,'                (default)')
+
+260  format ('Max probe energy (max_probe_energy)      = ',F12.3)
+265  format ('Max probe energy (max_probe_energy)      = ',F12.3,'                (default)')
 
 230  format ('Load charges (load_charges)              = ',A12)
 235  format ('Load charges (load_charges)              = ',A12,'                (default)')
@@ -541,8 +552,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     if( exec .and. changed ) then
         call ffdev_nb2nb_gather_nbtypes
         call ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
-        call ffdev_nb2nb_conv_sum
-        call ffdev_nb2nb_scatter_nbtypes
+        if( to_nb_mode .eq. NB_VDW_LJ ) then
+            call ffdev_nb2nb_conv_sum
+            call ffdev_nb2nb_scatter_nbtypes
+        end if
         nb_mode = to_nb_mode
     end if
 

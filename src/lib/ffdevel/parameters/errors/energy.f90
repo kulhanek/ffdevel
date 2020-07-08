@@ -62,13 +62,14 @@ subroutine ffdev_err_energy_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j,nene
-    real(DEVDP)         :: err,seterrene
+    real(DEVDP)         :: err,seterrene,totw
     ! --------------------------------------------------------------------------
 
     error%energy = 0.0d0
 
     seterrene = 0.0
     nene = 0
+    totw = 0
 
     do i=1,nsets
         ! use only sets, which can provide reliable energy
@@ -91,12 +92,14 @@ subroutine ffdev_err_energy_error(error)
                     nene = nene + 1
                     err = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
                     seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                    totw = totw + sets(i)%geo(j)%weight
                 case(EE_REL)
                     if( sets(i)%geo(j)%trg_energy .gt. 0 ) then
                         nene = nene + 1
                         err = (sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) / &
                               sets(i)%geo(j)%trg_energy
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                        totw = totw + sets(i)%geo(j)%weight
                     end if
                 case(EE_LOG)
                     if( (sets(i)%geo(j)%total_ene .gt. 0) .and. &
@@ -104,26 +107,15 @@ subroutine ffdev_err_energy_error(error)
                         nene = nene + 1
                         err = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
                         seterrene = seterrene + sets(i)%geo(j)%weight * err**2
+                        totw = totw + sets(i)%geo(j)%weight
                     end if
-                case(EE_ABSLOG)
-                    ! log
-                    if( (sets(i)%geo(j)%total_ene .gt. 0) .and. &
-                        (sets(i)%geo(j)%trg_energy .gt. 0) ) then
-                        nene = nene + 1
-                        err = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
-                        seterrene = seterrene + sets(i)%geo(j)%weight * err**2
-                    end if
-                    ! and abs
-                    nene = nene + 1
-                    err = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
-                    seterrene = seterrene + sets(i)%geo(j)%weight * err**2
             end select
 
         end do
     end do
 
-    if( nene .gt. 0 ) then
-        error%energy = sqrt(seterrene/real(nene))
+    if( totw .gt. 0 ) then
+        error%energy = sqrt(seterrene/totw)
     end if
 
 end subroutine ffdev_err_energy_error
@@ -141,8 +133,7 @@ subroutine ffdev_err_energy_summary
     implicit none
     real(DEVDP)         :: aerr,aserr
     real(DEVDP)         :: rerr,rserr
-    real(DEVDP)         :: lerr,lserr,maxerr
-    integer             :: anum,rnum,lnum
+    real(DEVDP)         :: lerr,lserr,maxerr,atotw,rtotw,ltotw
     integer             :: i,j
     logical             :: printsum
     ! --------------------------------------------------------------------------
@@ -165,11 +156,11 @@ subroutine ffdev_err_energy_summary
     write(DEV_OUT,60)
 
     aserr = 0.0d0
-    anum = 0
     rserr = 0.0d0
-    rnum = 0
     lserr = 0.0d0
-    lnum = 0
+    atotw = 0.0d0
+    rtotw = 0.0d0
+    ltotw = 0.0d0
 
     maxerr = 0.0d0
 
@@ -186,7 +177,7 @@ subroutine ffdev_err_energy_summary
             ! absolute
             aerr  = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
             aserr = aserr + sets(i)%geo(j)%weight * aerr**2
-            anum  = anum + 1
+            atotw  = atotw + sets(i)%geo(j)%weight
 
             if( abs(aerr) .gt. abs(maxerr) ) then
                 maxerr = aerr
@@ -197,14 +188,14 @@ subroutine ffdev_err_energy_summary
             if( sets(i)%geo(j)%trg_energy .ne. 0 ) then
                 rerr  = (sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)/sets(i)%geo(j)%trg_energy
                 rserr = rserr + sets(i)%geo(j)%weight * rerr**2
-                rnum  = rnum + 1
+                rtotw  = rtotw + sets(i)%geo(j)%weight
             end if
             ! log
             lerr  = 0.0
             if( (sets(i)%geo(j)%trg_energy .gt. 0) .and. (sets(i)%geo(j)%total_ene .gt. 0) ) then
                 lerr  = log(sets(i)%geo(j)%total_ene) - log(sets(i)%geo(j)%trg_energy)
                 lserr = lserr + sets(i)%geo(j)%weight * lerr**2
-                lnum  = lnum + 1
+                ltotw  = ltotw + sets(i)%geo(j)%weight
             end if
 
             write(DEV_OUT,30,ADVANCE='NO') i, j, sets(i)%geo(j)%weight, &
@@ -233,14 +224,14 @@ subroutine ffdev_err_energy_summary
         end if
     end do
 
-    if( anum .gt. 0 ) then
-        aserr = sqrt(aserr / real(anum))
+    if( atotw .gt. 0 ) then
+        aserr = sqrt(aserr / atotw)
     end if
-    if( rnum .gt. 0 ) then
-        rserr = sqrt(rserr / real(rnum))
+    if( rtotw .gt. 0 ) then
+        rserr = sqrt(rserr / rtotw)
     end if
-    if( lnum .gt. 0 ) then
-        lserr = sqrt(lserr / real(lnum))
+    if( ltotw .gt. 0 ) then
+        lserr = sqrt(lserr / ltotw)
     end if
 
     write(DEV_OUT,35)  maxerr

@@ -48,7 +48,7 @@ integer                 :: NB2LJIterOpt                 = 1000          ! precis
 integer                 :: NB2LJIterErr                 = 1000          ! precision - error discretization
 real(DEVDP)             :: NB2LJSharkInitialStep        = 0.2           ! CMA-AS optimizer setup
 real(DEVDP)             :: NB2LJTemp                    = 300.0         ! temp factor for weights
-character(len=MAX_PATH) :: NBPotPath                    = 'nbpot'       ! NB potential
+character(len=MAX_PATH) :: NBPotPath                    = '04.nbpot'       ! NB potential
 
 ! working data
 integer                 :: NB2LJNParams

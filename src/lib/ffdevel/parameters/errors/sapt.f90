@@ -61,8 +61,8 @@ subroutine ffdev_err_sapt_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,nene
-    real(DEVDP)         :: err,serrrep,serrdis,trg_sapt_rep,pen_guess
+    integer             :: i,j
+    real(DEVDP)         :: err,serrrep,serrdis,trg_sapt_rep,pen_guess,totw
     ! --------------------------------------------------------------------------
 
     error%sapt_rep = 0.0d0
@@ -70,7 +70,7 @@ subroutine ffdev_err_sapt_error(error)
 
     serrrep = 0.0
     serrdis = 0.0
-    nene = 0
+    totw = 0.0
 
     do i=1,nsets
         if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
@@ -78,8 +78,6 @@ subroutine ffdev_err_sapt_error(error)
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
-
-            nene = nene + 1
 
         ! electrostatics
             ! pen_guess is penetration energy guess
@@ -99,12 +97,14 @@ subroutine ffdev_err_sapt_error(error)
         ! dispersion
             err = sets(i)%geo(j)%trg_sapt_dis - sets(i)%geo(j)%sapt_dis
             serrdis = serrdis + sets(i)%geo(j)%weight * err**2
+
+            totw = totw + sets(i)%geo(j)%weight
         end do
     end do
 
-    if( nene .gt. 0 ) then
-        error%sapt_rep = sqrt(serrrep/real(nene))
-        error%sapt_dis = sqrt(serrdis/real(nene))
+    if( totw .gt. 0 ) then
+        error%sapt_rep = sqrt(serrrep/totw)
+        error%sapt_dis = sqrt(serrdis/totw)
     end if
 
 
@@ -121,9 +121,9 @@ subroutine ffdev_err_sapt_summary
     use ffdev_err_sapt_dat
 
     implicit none
-    integer             :: i,j,nene
+    integer             :: i,j
     logical             :: printsum
-    real(DEVDP)         :: serrrep,serrdisp,trg_sapt_rep
+    real(DEVDP)         :: serrrep,serrdisp,trg_sapt_rep,totw
     real(DEVDP)         :: errrep,errdisp,pen_guess,maxrep,maxdisp
     ! --------------------------------------------------------------------------
 
@@ -144,10 +144,11 @@ subroutine ffdev_err_sapt_summary
 
     serrrep = 0.0
     serrdisp = 0.0
-    nene = 0
 
     maxrep = 0.0d0
     maxdisp = 0.0d0
+
+    totw = 0.0d0
 
     do i=1,nsets
         printsum = .false.
@@ -157,7 +158,6 @@ subroutine ffdev_err_sapt_summary
             if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
 
             printsum = .true.
-            nene = nene + 1
 
         ! electrostatics
             ! pen_guess is penetration energy guess
@@ -184,6 +184,8 @@ subroutine ffdev_err_sapt_summary
             end if
             serrdisp = serrdisp + sets(i)%geo(j)%weight * errdisp**2
 
+            totw = totw + sets(i)%geo(j)%weight
+
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_sapt_ele, sets(i)%geo(j)%sapt_ele, pen_guess, &
                               sets(i)%geo(j)%trg_sapt_ind, sets(i)%geo(j)%trg_sapt_exc, &
@@ -195,9 +197,9 @@ subroutine ffdev_err_sapt_summary
 
     errrep  = 0.0
     errdisp = 0.0
-    if( nene .gt. 0 ) then
-        errrep  = sqrt(serrrep/real(nene))
-        errdisp = sqrt(serrdisp/real(nene))
+    if( totw .gt. 0 ) then
+        errrep  = sqrt(serrrep/totw)
+        errdisp = sqrt(serrdisp/totw)
     end if
 
     write(DEV_OUT,35)  maxrep, maxdisp

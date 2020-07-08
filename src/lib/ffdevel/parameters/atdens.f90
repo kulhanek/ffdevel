@@ -79,6 +79,7 @@ subroutine ffdev_atdens_print
     use ffdev_utils
     use smf_periodic_table_dat
     use ffdev_parameters_dat
+    use prmfile
 
     implicit none
     integer :: z, i
@@ -86,6 +87,10 @@ subroutine ffdev_atdens_print
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Linearized Atomic Densities', '=')
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,5) trim(ffdev_atdens_source_to_string(atdens_source))
+    write(DEV_OUT,6) prmfile_onoff(atdens_mod_by_charge)
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -127,6 +132,8 @@ subroutine ffdev_atdens_print
         end if
     end do
 
+  5 format('# Atom density source  : ',A)
+  6 format('# Modulation by charge : ',A)
  10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+  ')
  20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------')
  30 format(I4,1X,A4,1X,I3,1X,A2)

@@ -98,7 +98,7 @@ subroutine ffdev_err_zerograd_summary
     use ffdev_err_zerograd_dat
 
     implicit none
-    real(DEVDP)         :: grms,totgrms,nele
+    real(DEVDP)         :: grms,totgrms,totw
     integer             :: i,j,k
     logical             :: printsum
     ! --------------------------------------------------------------------------
@@ -118,7 +118,7 @@ subroutine ffdev_err_zerograd_summary
 
     totgrms = 0.0d0
 
-    nele = 0
+    totw = 0
     totgrms = 0.0d0
     do i=1,nsets
         if( sets(i)%top%probe_size .ne. 0 ) cycle   ! skip probes
@@ -134,14 +134,14 @@ subroutine ffdev_err_zerograd_summary
                 grms = sqrt(grms/real(3 * sets(i)%top%natoms))
             end if
             totgrms = totgrms + sets(i)%geo(j)%weight * grms ** 2
-            nele = nele + 1
+            totw = totw + sets(i)%geo(j)%weight
             write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, grms
         end do
         if( printsum ) write(DEV_OUT,20)
     end do
 
-    if( nele.gt. 0 ) then
-        totgrms = sqrt(totgrms/nele)
+    if( totw .gt. 0 ) then
+        totgrms = sqrt(totgrms/totw)
     end if
 
     write(DEV_OUT,40)  totgrms

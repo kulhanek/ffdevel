@@ -138,4 +138,11 @@ character(len=MAX_PATH) :: LoadCharges  = 'DDEC6'
 
 ! ------------------------------------------------------------------------------
 
+integer,parameter   :: GEO_INFO_ABSENERGY = 1
+integer,parameter   :: GEO_INFO_RELENERGY = 2
+integer,parameter   :: GEO_INFO_PRBENERGY = 3
+integer,parameter   :: GEO_INFO_NOENERGY  = 4
+
+! ------------------------------------------------------------------------------
+
 end module ffdev_geometry_dat

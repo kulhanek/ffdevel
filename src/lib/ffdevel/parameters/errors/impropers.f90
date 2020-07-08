@@ -57,15 +57,15 @@ subroutine ffdev_err_impropers_error(error)
     implicit none
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
-    integer             :: i,j,q,nimpropers,ai,aj,ak,al,idt
-    real(DEVDP)         :: err,seterrimpropers
+    integer             :: i,j,q,ai,aj,ak,al,idt
+    real(DEVDP)         :: err,seterrimpropers,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
     error%impropers = 0.0
 
     seterrimpropers = 0.0
-    nimpropers = 0
+    totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%nimpropers
@@ -90,13 +90,13 @@ subroutine ffdev_err_impropers_error(error)
                 err = ffdev_geometry_get_dihedral_deviation(d0,dt) ! this needs values in RAD
                 err = err * DEV_R2D
                 seterrimpropers = seterrimpropers + sets(i)%geo(j)%weight * err**2
-                nimpropers = nimpropers + 1
+                totw = totw + sets(i)%geo(j)%weight
             end do
         end do
     end do
 
-    if( nimpropers .gt. 0 ) then
-        error%impropers = sqrt(seterrimpropers/real(nimpropers))
+    if( totw .gt. 0 ) then
+        error%impropers = sqrt(seterrimpropers/totw)
     end if
 
 end subroutine ffdev_err_impropers_error

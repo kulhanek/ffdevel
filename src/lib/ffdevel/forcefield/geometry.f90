@@ -1164,16 +1164,34 @@ end subroutine ffdev_geometry_info_input
 ! subroutine ffdev_geometry_info_point_header
 ! ==============================================================================
 
-subroutine ffdev_geometry_info_point_header()
+subroutine ffdev_geometry_info_point_header(mode)
 
     implicit none
+    integer :: mode
     ! --------------------------------------------------------------------------
 
-    write(DEV_OUT,30)
-    write(DEV_OUT,40)
+    select case(mode)
+        case(GEO_INFO_ABSENERGY)
+            write(DEV_OUT,10)
+            write(DEV_OUT,90)
+        case(GEO_INFO_RELENERGY)
+            write(DEV_OUT,20)
+            write(DEV_OUT,90)
+       case(GEO_INFO_PRBENERGY)
+            write(DEV_OUT,30)
+            write(DEV_OUT,90)
+       case default
+            write(DEV_OUT,110)
+            write(DEV_OUT,190)
+    end select
 
-30 format('# ID   File                                     Weight E S V G H P X A C')
-40 format('# ---- ---------------------------------------- ------ - - - - - - - - -')
+ 10 format('# ID   File                                     Weight   Abs Energy E S V G H P X A C I')
+ 20 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C I')
+ 30 format('# ID   File                                     Weight Probe Energy E S V G H P X A C I')
+ 90 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - - -')
+
+110 format('# ID   File                                     Weight E S V G H P X A C I')
+190 format('# ---- ---------------------------------------- ------ - - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1181,10 +1199,11 @@ end subroutine ffdev_geometry_info_point_header
 ! subroutine ffdev_geometry_info_point
 ! ==============================================================================
 
-subroutine ffdev_geometry_info_point(geo)
+subroutine ffdev_geometry_info_point(geo,mode)
 
     implicit none
     type(GEOMETRY)      :: geo
+    integer             :: mode
     ! --------------------------------------------
     character(len=40)   :: lname
     character(len=1)    :: enef, prbf, chrgf
@@ -1218,38 +1237,37 @@ subroutine ffdev_geometry_info_point(geo)
     end if
 
     lname = trim(geo%name)
-    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, enef, &
-                      geo%trg_sapt_loaded, prbf, &
-                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
+
+    select case(mode)
+        case(GEO_INFO_ABSENERGY)
+            write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
+                              geo%trg_sapt_loaded, prbf, &
+                              geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                              geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
+        case(GEO_INFO_RELENERGY)
+            write(DEV_OUT,20) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
+                              geo%trg_sapt_loaded, prbf, &
+                              geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                              geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
+        case(GEO_INFO_PRBENERGY)
+            write(DEV_OUT,20) geo%id,adjustl(lname), geo%weight, geo%trg_probe_ene, enef, &
+                              geo%trg_sapt_loaded, prbf, &
+                              geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                              geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
+        case default
+            write(DEV_OUT,30) geo%id,adjustl(lname), geo%weight, enef, &
+                              geo%trg_sapt_loaded, prbf, &
+                              geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
+                              geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
+    end select
 
 ! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
+
+  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
+  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
+  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
 
 end subroutine ffdev_geometry_info_point
-
-! ==============================================================================
-! subroutine ffdev_geometry_info_point_header_ext
-! ==============================================================================
-
-subroutine ffdev_geometry_info_point_header_ext(relative)
-
-    implicit none
-    logical :: relative
-    ! --------------------------------------------------------------------------
-
-    if( relative ) then
-        write(DEV_OUT,30)
-    else
-        write(DEV_OUT,35)
-    end if
-    write(DEV_OUT,40)
-
-30 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C')
-35 format('# ID   File                                     Weight       Energy E S V G H P X A C')
-40 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - -')
-
-end subroutine ffdev_geometry_info_point_header_ext
 
 ! ==============================================================================
 ! subroutine ffdev_geometry_info_point_ext
@@ -1294,15 +1312,9 @@ subroutine ffdev_geometry_info_point_ext(geo,relative)
 
     lname = trim(geo%name)
     if( relative ) then
-    write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
-                      geo%trg_sapt_loaded, prbf, &
-                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
+
     else
-    write(DEV_OUT,15) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
-                      geo%trg_sapt_loaded, prbf, &
-                      geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
-                      geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf
+
     end if
 
 ! '# ---- -------------------- ------ - - - -'
