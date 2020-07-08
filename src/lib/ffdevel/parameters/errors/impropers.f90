@@ -36,7 +36,7 @@ subroutine ffdev_err_impropers_init
     EnableImpropersError            = .false.
     PrintImpropersErrorSummary      = .false.
     ImpropersErrorWeight            = DEV_D2R
-    ImpropersErrorLockToPhase       = .true.
+    ImpropersErrorLockToPhase       = .false.
     OnlyFFOptImpropers              = .false.
 
 end subroutine ffdev_err_impropers_init
