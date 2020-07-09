@@ -470,12 +470,12 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_rc      = .true.
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
+                case(DAMP_BJ_CONST)
+                    use_damp_fa     = .true.
                case(DAMP_BJ_ATDENS)
                     use_damp_fa     = .true.
                 case default
-                    if( .not. disp_data_loaded ) then
-                        call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
-                    end if
+                    call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
             end select
 
             use_disp_s6     = .true.
@@ -497,12 +497,12 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_rc      = .true.
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
+                case(DAMP_BJ_CONST)
+                    use_damp_fa     = .true.
                case(DAMP_BJ_ATDENS)
                     use_damp_fa     = .true.
                 case default
-                    if( .not. disp_data_loaded ) then
-                        call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
-                    end if
+                    call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
             end select
 
             use_disp_s6     = .true.
