@@ -116,9 +116,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
     if( prmfile_get_string_by_key(fin,'pac_source', string)) then
         PACSource = ffdev_parameters_pac_source_from_string(string)
-        write(DEV_OUT,330) trim(ffdev_topology_nb_mode_to_string(PACSource))
+        write(DEV_OUT,330) trim(ffdev_parameters_pac_source_to_string(PACSource))
     else
-        write(DEV_OUT,335) trim(ffdev_topology_nb_mode_to_string(PACSource))
+        write(DEV_OUT,335) trim(ffdev_parameters_pac_source_to_string(PACSource))
     end if
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
