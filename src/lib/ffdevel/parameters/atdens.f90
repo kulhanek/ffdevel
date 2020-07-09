@@ -130,13 +130,18 @@ subroutine ffdev_atdens_print
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        write(DEV_OUT,42) ffdev_atdens_b(i)
+        if( atdens_mod_by_charge ) then
+            write(DEV_OUT,42,ADVANCE='NO') types(i)%aveq
+        else
+            write(DEV_OUT,42,ADVANCE='NO') 0.0d0
+        end if
+        write(DEV_OUT,40) ffdev_atdens_b(i)
     end do
 
   5 format('# Atom density source  : ',A)
   6 format('# Modulation by charge : ',A)
- 10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+      Bx  ')
- 20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------  ------')
+ 10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+     <Q>    Bx  ')
+ 20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------  ----- ------')
  30 format(I4,1X,A4,1X,I3,1X,A2)
  40 format(1X,F6.3)
  42 format(2X,F6.3)
