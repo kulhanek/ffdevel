@@ -130,7 +130,7 @@ subroutine ffdev_atdens_print
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        write(DEV_OUT,40,ADVANCE='NO') ffdev_atdens_b(i)
+        write(DEV_OUT,42) ffdev_atdens_b(i)
     end do
 
   5 format('# Atom density source  : ',A)
