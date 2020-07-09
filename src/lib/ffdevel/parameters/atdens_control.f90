@@ -65,6 +65,7 @@ subroutine ffdev_atdens_ctrl(fin,exec)
     end if
 
     call ffdev_atdens_update_db
+    call ffdev_atdens_print
 
  10 format('=== [atdens] ===================================================================')
 

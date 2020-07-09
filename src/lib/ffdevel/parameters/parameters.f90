@@ -1266,6 +1266,59 @@ subroutine ffdev_parameters_gen_unique_types()
 
 end subroutine ffdev_parameters_gen_unique_types
 
+
+! ==============================================================================
+! subroutine ffdev_parameters_pac_source_to_string
+! ==============================================================================
+
+character(80) function ffdev_parameters_pac_source_to_string(pac_source)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer  :: pac_source
+    ! --------------------------------------------------------------------------
+
+    select case(pac_source)
+        case(PAC_SOURCE_TOPOLOGY)
+            ffdev_parameters_pac_source_to_string = 'topology'
+        case(PAC_SOURCE_GEO)
+            ffdev_parameters_pac_source_to_string = 'geometry'
+        case(PAC_SOURCE_GEO_HIRSHFELD)
+            ffdev_parameters_pac_source_to_string = 'hirshfeld'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_pac_source_to_string!')
+    end select
+
+end function ffdev_parameters_pac_source_to_string
+
+! ==============================================================================
+! subroutine ffdev_parameters_pac_source_from_string
+! ==============================================================================
+
+integer function ffdev_parameters_pac_source_from_string(string)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('topology')
+            ffdev_parameters_pac_source_from_string = PAC_SOURCE_TOPOLOGY
+        case('geometry')
+            ffdev_parameters_pac_source_from_string = PAC_SOURCE_GEO
+        case('hirshfeld')
+            ffdev_parameters_pac_source_from_string = PAC_SOURCE_GEO_HIRSHFELD
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_parameters_pac_source_from_string!')
+    end select
+
+end function ffdev_parameters_pac_source_from_string
+
 ! ==============================================================================
 ! subroutine ffdev_parameters_update_charge_stat
 ! ==============================================================================
@@ -1383,6 +1436,9 @@ subroutine ffdev_parameters_print_charge_stat()
     call ffdev_utils_heading(DEV_OUT,'Partial Atomic Charges (PAC) per Atom Types', '=')
 
     write(DEV_OUT,*)
+    write(DEV_OUT,5) trim(ffdev_parameters_pac_source_to_string(PACSource))
+
+    write(DEV_OUT,*)
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
@@ -1390,6 +1446,8 @@ subroutine ffdev_parameters_print_charge_stat()
         write(DEV_OUT,30) i, adjustl(types(i)%name), types(i)%qcount, &
                           types(i)%minq, types(i)%maxq, types(i)%aveq, types(i)%sdq
     end do
+
+  5 format('PAC source: ',A)
 
  10 format('# ID Type #Atoms     MinQ     MaxQ      <Q>     s(Q)')
  20 format('# -- ---- ------ -------- -------- -------- --------')

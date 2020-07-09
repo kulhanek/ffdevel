@@ -126,18 +126,20 @@ subroutine ffdev_atdens_print
             write(DEV_OUT,50,ADVANCE='NO')
         end if
         if( atdens_bp(z) .ne. 0 ) then
-            write(DEV_OUT,40) atdens_ap(z)
+            write(DEV_OUT,40,ADVANCE='NO') atdens_ap(z)
         else
-            write(DEV_OUT,50)
+            write(DEV_OUT,50,ADVANCE='NO')
         end if
+        write(DEV_OUT,40,ADVANCE='NO') ffdev_atdens_b(i)
     end do
 
   5 format('# Atom density source  : ',A)
   6 format('# Modulation by charge : ',A)
- 10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+  ')
- 20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------')
+ 10 format('# ID Type  Z  El   B-     B0     B+     A-     A0     A+      Bx  ')
+ 20 format('# -- ---- --- -- ------ ------ ------ ------ ------ ------  ------')
  30 format(I4,1X,A4,1X,I3,1X,A2)
  40 format(1X,F6.3)
+ 42 format(2X,F6.3)
  50 format(7X)
 
 end subroutine ffdev_atdens_print

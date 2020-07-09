@@ -62,14 +62,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         end select
 
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
-        select case(PACSource)
-            case(PAC_SOURCE_TOPOLOGY)
-                write(DEV_OUT,335) 'topology'
-            case(PAC_SOURCE_GEO)
-                write(DEV_OUT,335) 'geometry'
-            case(PAC_SOURCE_GEO_HIRSHFELD)
-                write(DEV_OUT,335) 'hirshfeld'
-        end select
+        write(DEV_OUT,335) trim(ffdev_topology_nb_mode_to_string(PACSource))
 
         write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
@@ -122,30 +115,10 @@ subroutine ffdev_parameters_ctrl_control(fin)
     end if
 
     if( prmfile_get_string_by_key(fin,'pac_source', string)) then
-        select case(trim(string))
-            case('topology')
-                PACSource = PAC_SOURCE_TOPOLOGY
-                write(DEV_OUT,330) trim(string)
-            case('geometry')
-                PACSource = PAC_SOURCE_GEO
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,330) trim(string)
-            case('hirshfeld')
-                PACSource = PAC_SOURCE_GEO_HIRSHFELD
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,330) trim(string)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
-        end select
+        PACSource = ffdev_parameters_pac_source_from_string(string)
+        write(DEV_OUT,330) trim(ffdev_topology_nb_mode_to_string(PACSource))
     else
-        select case(PACSource)
-            case(PAC_SOURCE_TOPOLOGY)
-                write(DEV_OUT,335) 'topology'
-            case(PAC_SOURCE_GEO)
-                write(DEV_OUT,335) 'geometry'
-            case(PAC_SOURCE_GEO_HIRSHFELD)
-                write(DEV_OUT,335) 'hirshfeld'
-        end select
+        write(DEV_OUT,335) trim(ffdev_topology_nb_mode_to_string(PACSource))
     end if
 
     if( prmfile_get_logical_by_key(fin,'dih_only_defined', OnlyDefinedDihItems)) then
