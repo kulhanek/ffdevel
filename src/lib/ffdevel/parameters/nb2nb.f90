@@ -69,8 +69,6 @@ character(80) function ffdev_nb2nb_nb2lj_mode_to_string(mode)
             ffdev_nb2nb_nb2lj_mode_to_string = 'MINIMUM'
         case(NB2LJ_MODE_OVERLAY)
             ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY'
-        case(NB2LJ_MODE_OVERLAY_WEIGHTED)
-            ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY-WEIGHTED'
         case(NB2LJ_MODE_OVERLAY_REP)
             ffdev_nb2nb_nb2lj_mode_to_string = 'OVERLAY-REPULSION'
         case(NB2LJ_MODE_OVERLAY_DISP)
@@ -99,8 +97,6 @@ integer function ffdev_nb2nb_nb2lj_mode_from_string(string)
             ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_MINIMUM
         case('OVERLAY')
             ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY
-        case('OVERLAY-WEIGHTED')
-            ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY_WEIGHTED
         case('OVERLAY-REPULSION')
             ffdev_nb2nb_nb2lj_mode_from_string = NB2LJ_MODE_OVERLAY_REP
         case('OVERLAY-DISPERSION')
@@ -157,11 +153,6 @@ subroutine ffdev_nb2nb_init_nbtypes
             idx = idx + 1
         end do
     end do
-
-    call execute_command_line('mkdir -p ' // trim(NBPotPath), exitstat = estat )
-    if( estat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPath!')
-    end if
 
 end subroutine ffdev_nb2nb_init_nbtypes
 
@@ -322,6 +313,7 @@ subroutine ffdev_nb2nb_conv_sum
 
     use ffdev_nb2nb_dat
     use ffdev_parameters_dat
+    use prmfile
 
     implicit none
     integer                 :: gnbt
@@ -329,6 +321,10 @@ subroutine ffdev_nb2nb_conv_sum
 
     write(DEV_OUT,*)
     write(DEV_OUT,10) trim(ffdev_nb2nb_nb2lj_mode_to_string(NB2LJMode))
+    write(DEV_OUT,12) prmfile_onoff(NB2LJWeighted)
+    if( NB2LJWeighted ) then
+        write(DEV_OUT,14) NB2LJTemp
+    end if
 
     write(DEV_OUT,*)
     write(DEV_OUT,20)
@@ -342,6 +338,8 @@ subroutine ffdev_nb2nb_conv_sum
     write(DEV_OUT,*)
 
 10 format('# NB->LJ conversion method: ',A)
+12 format('# Boltzmann weighting:      ',A)
+14 format('# Temperature factor:       ',F10.2)
 
 20 format('# TypA TypB          Eps           R0          Err')
 30 format('# ---- ---- ------------ ------------ ------------')
@@ -403,7 +401,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
 
             call ffdev_nb2nb_write_LJ(gnbt,r0,eps)
             return
-        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_WEIGHTED,NB2LJ_MODE_OVERLAY_REP,NB2LJ_MODE_OVERLAY_DISP)
+        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_REP,NB2LJ_MODE_OVERLAY_DISP)
             ! nothing to be done here
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB2LJMode in ffdev_nb2nb_nb2nb!')
@@ -424,7 +422,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     select case(NB2LJMode)
         case(NB2LJ_MODE_MINIMUM)
             call ffdev_utils_exit(DEV_ERR,1,'Illegal exec path in ffdev_nb2nb_nb2nb!')
-        case(NB2LJ_MODE_OVERLAY,NB2LJ_MODE_OVERLAY_WEIGHTED)
+        case(NB2LJ_MODE_OVERLAY)
             NB2LJMinR   = NB2LJSigma
             NB2LJMaxR   = NB2LJCutoffR
         case(NB2LJ_MODE_OVERLAY_REP)
@@ -817,7 +815,7 @@ subroutine opt_shark_fce2(n, x, errval)
         enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
         elj = ffdev_nb2nb_ljene(r0,eps,r)
 
-        if( NB2LJ_MODE_OVERLAY_WEIGHTED .eq. NB2LJ_MODE_OVERLAY_WEIGHTED ) then
+        if( NB2LJWeighted ) then
             ! eps is positive, but minimum is at -eps
             w = exp(-(elj+eps)/(DEV_Rgas*NB2LJTemp))
         else
@@ -829,7 +827,11 @@ subroutine opt_shark_fce2(n, x, errval)
         r = r + dr
     end do
 
-    errval = sqrt(errval/sumw)
+    if( sumw .gt. 0.0d0 ) then
+        errval = sqrt(errval/sumw)
+    else
+        errval = 0.0d0
+    end if
 
     NB2LJErrFceEval = NB2LJErrFceEval + 1
 

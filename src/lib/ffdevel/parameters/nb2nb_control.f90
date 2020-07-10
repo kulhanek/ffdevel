@@ -45,10 +45,15 @@ subroutine ffdev_nb2lj_ctrl(fin)
     if( .not. prmfile_open_section(fin,'nb2lj') ) then
         write(DEV_OUT,115) ffdev_nb2nb_nb2lj_mode_to_string(NB2LJMode)
         write(DEV_OUT,125) NB2LJCutoffR
+        write(DEV_OUT,185) NB2LJTemp
+        write(DEV_OUT,195) prmfile_onoff(NB2LJWeighted)
         write(DEV_OUT,135) NB2LJIterGS
         write(DEV_OUT,145) NB2LJIterBS
         write(DEV_OUT,155) NB2LJIterOpt
         write(DEV_OUT,165) NB2LJIterErr
+        write(DEV_OUT,175) NBPotPath
+
+        call ffdev_nb2lj_ctrl_initdirs
         return
     end if
 
@@ -64,6 +69,12 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,120) NB2LJCutoffR
     else
         write(DEV_OUT,125) NB2LJCutoffR
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'weighted', NB2LJWeighted)) then
+        write(DEV_OUT,190) prmfile_onoff(NB2LJWeighted)
+    else
+        write(DEV_OUT,195) prmfile_onoff(NB2LJWeighted)
     end if
 
     if( prmfile_get_real8_by_key(fin,'temp', NB2LJTemp)) then
@@ -102,6 +113,8 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,175) NBPotPath
     end if
 
+    call ffdev_nb2lj_ctrl_initdirs
+
 
  10 format('=== [nb2lj] ====================================================================')
 
@@ -129,7 +142,31 @@ subroutine ffdev_nb2lj_ctrl(fin)
 180  format ('Temperature factor for weights (temp)  = ',f21.8)
 185  format ('Temperature factor for weights (temp)  = ',f21.8,'         (default)')
 
+190  format ('Boltzmann weighting (weighted)         = ',a12)
+195  format ('Boltzmann weighting (weighted)         = ',a12,'                  (default)')
+
 end subroutine ffdev_nb2lj_ctrl
+
+! ==============================================================================
+! function ffdev_nb2lj_ctrl_initdirs
+! ==============================================================================
+
+subroutine ffdev_nb2lj_ctrl_initdirs
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    implicit none
+    ! --------------------------------------------
+    integer         :: estat
+    ! --------------------------------------------------------------------------
+
+    call execute_command_line('mkdir -p ' // trim(NBPotPath), exitstat = estat )
+    if( estat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPath!')
+    end if
+
+end subroutine ffdev_nb2lj_ctrl_initdirs
 
 ! ------------------------------------------------------------------------------
 

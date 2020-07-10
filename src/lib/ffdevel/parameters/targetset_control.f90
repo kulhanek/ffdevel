@@ -654,24 +654,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,165) SaveSumLogsPath
 
         ! create directories
-        if( SavePts ) then
-            call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
-            if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SavePtsPath!')
-            end if
-        end if
-        if( SaveXYZR ) then
-            call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat  )
-            if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveXYZRPath!')
-            end if
-        end if
-        if( SaveSumLogs ) then
-            call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
-            if( estat .ne. 0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveSumLogsPath!')
-            end if
-        end if
+        call ffdev_targetset_ctrl_setup_initdirs
         return
     end if
 
@@ -724,25 +707,7 @@ subroutine ffdev_targetset_ctrl_setup(fin)
         write(DEV_OUT,165) SaveSumLogsPath
     end if
 
-    ! create directories
-    if( SavePts ) then
-        call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
-        if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SavePtsPath!')
-        end if
-    end if
-    if( SaveXYZR ) then
-        call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat )
-        if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveXYZRPath!')
-        end if
-    end if
-    if( SaveSumLogs ) then
-        call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
-        if( estat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveSumLogsPath!')
-        end if
-    end if
+    call ffdev_targetset_ctrl_setup_initdirs
 
  10 format('=== [setup] ====================================================================')
 
@@ -774,6 +739,42 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 165  format ('Save error summary path (savesumlogspath) = ',a25,'  (default)')
 
 end subroutine ffdev_targetset_ctrl_setup
+
+! ==============================================================================
+! function ffdev_targetset_ctrl_setup_initdirs
+! ==============================================================================
+
+subroutine ffdev_targetset_ctrl_setup_initdirs
+
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    ! --------------------------------------------
+    integer         :: estat
+    ! --------------------------------------------------------------------------
+
+    ! create directories
+    if( SavePts ) then
+        call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SavePtsPath!')
+        end if
+    end if
+    if( SaveXYZR ) then
+        call execute_command_line('mkdir -p ' // trim(SaveXYZRPath), exitstat = estat )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveXYZRPath!')
+        end if
+    end if
+    if( SaveSumLogs ) then
+        call execute_command_line('mkdir -p ' // trim(SaveSumLogsPath), exitstat = estat  )
+        if( estat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to create SaveSumLogsPath!')
+        end if
+    end if
+
+end subroutine ffdev_targetset_ctrl_setup_initdirs
 
 ! ==============================================================================
 ! subroutine ffdev_targetset_ctrl_optgeo

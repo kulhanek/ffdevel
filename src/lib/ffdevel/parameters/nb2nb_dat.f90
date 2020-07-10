@@ -36,11 +36,11 @@ real(DEVDP) :: ljdefrc          = 2.6d0     ! default Rc
 ! === [nb2lj] ==================================================================
 integer,parameter       :: NB2LJ_MODE_MINIMUM           = 1
 integer,parameter       :: NB2LJ_MODE_OVERLAY           = 2
-integer,parameter       :: NB2LJ_MODE_OVERLAY_WEIGHTED  = 3
-integer,parameter       :: NB2LJ_MODE_OVERLAY_REP       = 4
-integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 5
+integer,parameter       :: NB2LJ_MODE_OVERLAY_REP       = 3
+integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 4
 
 integer                 :: NB2LJMode                    = NB2LJ_MODE_OVERLAY
+logical                 :: NB2LJWeighted                = .false.
 real(DEVDP)             :: NB2LJCutoffR                 = 6.0           ! max range for r
 integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
