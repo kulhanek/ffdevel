@@ -26,4 +26,5 @@ ADD_SUBDIRECTORY(compenetop)
 ADD_SUBDIRECTORY(compgeo)
 ADD_SUBDIRECTORY(vdwgenprobe)
 ADD_SUBDIRECTORY(vdwenefilter)
+ADD_SUBDIRECTORY(densoverlap)
 

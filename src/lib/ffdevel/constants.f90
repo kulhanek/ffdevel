@@ -128,6 +128,7 @@ integer,parameter       :: DEV_NULL         = 456
 integer,parameter       :: DEV_PROFILE      = 371
 integer,parameter       :: DEV_ERRSUMLOG    = 387
 integer,parameter       :: DEV_NBPOT        = 149
+integer,parameter       :: DEV_CUBE         = 177
 
 ! verbosity levels
 integer,parameter       :: DEV_VERBOSITY_MINIMAL = 0
