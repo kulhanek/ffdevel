@@ -1263,9 +1263,9 @@ subroutine ffdev_geometry_info_point(geo,mode)
 
 ! '# ---- -------------------- ------ - - - -'
 
-  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
-  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
-  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,A1)
+  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 
