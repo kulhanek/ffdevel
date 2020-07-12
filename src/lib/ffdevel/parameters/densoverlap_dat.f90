@@ -29,20 +29,20 @@ logical             :: densoverlap_mod_by_charge = .false.
 
 ! atom densities ---------------------------------------------------------------
 
-integer,parameter   :: ATDENS_MAX_Z = 86
+integer,parameter   :: DENSOVERLAP_MAX_Z = 86
 
 ! log(S_{rho}) = -b*r + a
 ! bp, ap - cation (+1)
 ! b0, a0 - neutral atom
 ! bm, am - anion (-1)
 
-real(DEVDP)     :: densoverlap_bp(1:ATDENS_MAX_Z)
-real(DEVDP)     :: densoverlap_b0(1:ATDENS_MAX_Z)
-real(DEVDP)     :: densoverlap_bm(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_bp(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_b0(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_bm(1:DENSOVERLAP_MAX_Z)
 
-real(DEVDP)     :: densoverlap_ap(1:ATDENS_MAX_Z)
-real(DEVDP)     :: densoverlap_a0(1:ATDENS_MAX_Z)
-real(DEVDP)     :: densoverlap_am(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_ap(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_a0(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_am(1:DENSOVERLAP_MAX_Z)
 
 ! ------------------------------------------------------------------------------
 

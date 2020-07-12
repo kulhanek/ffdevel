@@ -1616,8 +1616,8 @@ character(80) function ffdev_topology_dampbj_mode_to_string(nb_mode)
             ffdev_topology_dampbj_mode_to_string = 'ORC - Use optimized Rc per type'
         case(DAMP_BJ_SRC)
             ffdev_topology_dampbj_mode_to_string = 'SRC - Use scaled optimized Rc per type'
-        case(DAMP_BJ_ATDENS)
-            ffdev_topology_dampbj_mode_to_string = 'ATDENS - Derived from atom densities'
+        case(DAMP_BJ_DO)
+            ffdev_topology_dampbj_mode_to_string = 'DO - Derived from electron density overlaps'
         case(DAMP_BJ_CONST)
             ffdev_topology_dampbj_mode_to_string = 'CONST - Constant Rc'
         case default
@@ -1645,8 +1645,8 @@ integer function ffdev_topology_dampbj_mode_from_string(string)
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ORC
         case('SRC')
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_SRC
-        case('ATDENS')
-            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_ATDENS
+        case('DO')
+            ffdev_topology_dampbj_mode_from_string = DAMP_BJ_DO
         case('CONST')
             ffdev_topology_dampbj_mode_from_string = DAMP_BJ_CONST
         case default
@@ -2293,7 +2293,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = top%nb_types(nbt)%rc
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
-                case(DAMP_BJ_ATDENS)
+                case(DAMP_BJ_DO)
                     rc =  ffdev_densoverlap_rc(agti,damp_fa) + ffdev_densoverlap_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
@@ -2339,7 +2339,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case(DAMP_BJ_CONST)
                     rc = damp_fa
-                case(DAMP_BJ_ATDENS)
+                case(DAMP_BJ_DO)
                     rc =  ffdev_densoverlap_rc(agti,damp_fa) + ffdev_densoverlap_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then

@@ -159,7 +159,7 @@ real(DEVDP) function ffdev_densoverlap_b(gti)
 
     ! get Z
     z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. ATDENS_MAX_Z) ) then
+    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
         call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_densoverlap_b')
     end if
 
@@ -222,7 +222,7 @@ real(DEVDP) function ffdev_densoverlap_a(gti)
 
     ! get Z
     z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. ATDENS_MAX_Z) ) then
+    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
         call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_densoverlap_a')
     end if
 

@@ -472,7 +472,7 @@ subroutine ffdev_parameters_reinit()
                     use_damp_fb     = .true.
                 case(DAMP_BJ_CONST)
                     use_damp_fa     = .true.
-               case(DAMP_BJ_ATDENS)
+               case(DAMP_BJ_DO)
                     use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
@@ -499,7 +499,7 @@ subroutine ffdev_parameters_reinit()
                     use_damp_fb     = .true.
                 case(DAMP_BJ_CONST)
                     use_damp_fa     = .true.
-               case(DAMP_BJ_ATDENS)
+               case(DAMP_BJ_DO)
                     use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
