@@ -15,38 +15,35 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_atdens_dat
+module ffdev_densoverlap_dat
 
 use ffdev_constants
 use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter   :: ATDENS_HF_UGBS       = 1
-integer,parameter   :: ATDENS_CC_UGBS       = 2
-integer,parameter   :: ATDENS_HF_DKH_ANORCC = 3
-integer,parameter   :: ATDENS_CC_DKH_ANORCC = 4
+integer,parameter   :: DO_HF_DKH_ANORCC = 1
 
-integer             :: atdens_source        = ATDENS_HF_DKH_ANORCC
-logical             :: atdens_mod_by_charge = .false.
+integer             :: densoverlap_source        = DO_HF_DKH_ANORCC
+logical             :: densoverlap_mod_by_charge = .false.
 
 ! atom densities ---------------------------------------------------------------
 
 integer,parameter   :: ATDENS_MAX_Z = 86
 
-! log(rho) = -b*r + a
-! bp, ap - cationt (+1)
+! log(S_{rho}) = -b*r + a
+! bp, ap - cation (+1)
 ! b0, a0 - neutral atom
 ! bm, am - anion (-1)
 
-real(DEVDP)     :: atdens_bp(1:ATDENS_MAX_Z)
-real(DEVDP)     :: atdens_b0(1:ATDENS_MAX_Z)
-real(DEVDP)     :: atdens_bm(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_bp(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_b0(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_bm(1:ATDENS_MAX_Z)
 
-real(DEVDP)     :: atdens_ap(1:ATDENS_MAX_Z)
-real(DEVDP)     :: atdens_a0(1:ATDENS_MAX_Z)
-real(DEVDP)     :: atdens_am(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_ap(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_a0(1:ATDENS_MAX_Z)
+real(DEVDP)     :: densoverlap_am(1:ATDENS_MAX_Z)
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_atdens_dat
+end module ffdev_densoverlap_dat

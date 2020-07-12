@@ -76,10 +76,10 @@ SET(FFDEVEL_SRC
         parameters/errors/pbpnl.f90
         parameters/errors/pbpnl_control.f90
 
-        parameters/atdens_dat.f90
-        parameters/atdens_db.f90
-        parameters/atdens.f90
-        parameters/atdens_control.f90
+        parameters/densoverlap_dat.f90
+        parameters/densoverlap_db.f90
+        parameters/densoverlap.f90
+        parameters/densoverlap_control.f90
         parameters/buried_dat.f90
         parameters/buried.f90
         parameters/buried_control.f90
