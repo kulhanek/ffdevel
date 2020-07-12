@@ -585,7 +585,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
     if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
-        if( prmfile_get_logical_by_key(fin,'pb_from_densoverlap', lpb_from_densoverlap)) then
+        if( prmfile_get_logical_by_key(fin,'pb_from_do', lpb_from_densoverlap)) then
             if( exec ) then
                 write(DEV_OUT,70) prmfile_onoff(lpb_from_densoverlap)
                 pb_from_densoverlap = lpb_from_densoverlap
@@ -619,23 +619,23 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
  10 format('=== [nbsetup] ==================================================================')
 
- 20 format('New NB mode (nb_mode)             = ',A)
- 25 format('NB mode (nb_mode)                 = ',A34,' (current)')
+ 20 format('New NB mode (nb_mode)                = ',A)
+ 25 format('NB mode (nb_mode)                    = ',A31,' (current)')
 
- 30 format('New combining rules (comb_rules)  = ',A)
- 35 format('Combining rules (comb_rules)      = ',A34,' (current)')
+ 30 format('New combining rules (comb_rules)     = ',A)
+ 35 format('Combining rules (comb_rules)         = ',A31,' (current)')
 
- 40 format('BJ damping mode (dampbj_mode)     = ',A)
- 45 format('BJ damping mode (dampbj_mode)     = ',A34,' (current)')
+ 40 format('BJ damping mode (dampbj_mode)        = ',A)
+ 45 format('BJ damping mode (dampbj_mode)        = ',A31,' (current)')
 
- 50 format('TT damping mode (damptt_mode)     = ',A)
- 55 format('TT damping mode (damptt_mode)     = ',A34,' (current)')
+ 50 format('TT damping mode (damptt_mode)        = ',A)
+ 55 format('TT damping mode (damptt_mode)        = ',A31,' (current)')
 
- 60 format('PA*PB as A (papb_as_A)            = ',A)
- 65 format('PA*PB as A (papb_as_A)            = ',A34,' (current)')
+ 60 format('PA*PB as A (papb_as_A)               = ',A)
+ 65 format('PA*PB as A (papb_as_A)               = ',A31,' (current)')
 
- 70 format('PB from DO (pb_from_densoverlap)  = ',A)
- 75 format('PB from DO (pb_from_densoverlap)  = ',A34,' (current)')
+ 70 format('PB from density overlap (pb_from_do) = ',A)
+ 75 format('PB from density overlap (pb_from_do) = ',A31,' (current)')
 
  15 format('=== SET ',I2.2)
 
