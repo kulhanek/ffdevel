@@ -258,8 +258,8 @@ integer     :: dampbj_mode                  = DAMP_BJ_DRC
 integer,parameter   :: DAMP_TT_COUPLED      = 101   ! pb and tb coupled via damp_pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
 integer,parameter   :: DAMP_TT_CONST        = 103   ! bfac = damp_fa
-integer,parameter   :: DAMP_TT_BFAC         = 104   ! bfac = damp_fa*atomic_bfac
-integer,parameter   :: DAMP_TT_BFAC_XDM     = 105   ! bfac = damp_fa*atomic_bfac*(xdm_vol/xdm_vol0)**damp_fb
+integer,parameter   :: DAMP_TT_DO           = 104   ! bfac = damp_fa*densoverlap_bfac
+integer,parameter   :: DAMP_TT_DO_XDM       = 105   ! bfac = damp_fa*densoverlap_bfac*(xdm_vol/xdm_vol0)**damp_fb
 
 integer     :: damptt_mode                  = DAMP_TT_COUPLED
 

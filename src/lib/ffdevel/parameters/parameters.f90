@@ -521,9 +521,9 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_tb      = .true.
                 case(DAMP_TT_CONST)
                     use_damp_fa     = .true.
-                case(DAMP_TT_BFAC)
+                case(DAMP_TT_DO)
                     use_damp_fa     = .true.
-                case(DAMP_TT_BFAC_XDM)
+                case(DAMP_TT_DO_XDM)
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
                 case default

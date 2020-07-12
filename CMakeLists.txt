@@ -175,7 +175,7 @@ IF(NOT DEFINED COMPOSITE_PROJECT)
     get_filename_component(FCOMP_NAME ${CMAKE_Fortran_COMPILER} NAME_WE)
 
     # default compiler setups - gfortran
-    SET(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=core-avx2 -fopenmp")
+    SET(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fopenmp")
     SET(CMAKE_Fortran_FLAGS_DEBUG   "-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow -fopenmp -Wall")
 
     # ifort

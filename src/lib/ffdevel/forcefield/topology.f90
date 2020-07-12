@@ -1554,10 +1554,10 @@ character(80) function ffdev_topology_damptt_mode_to_string(nb_mode)
             ffdev_topology_damptt_mode_to_string = 'FREEOPT - Use optimized TB per type'
         case(DAMP_TT_CONST)
             ffdev_topology_damptt_mode_to_string = 'CONST - constant'
-        case(DAMP_TT_BFAC)
-            ffdev_topology_damptt_mode_to_string = 'BFAC - Atomic b-factors'
-        case(DAMP_TT_BFAC_XDM)
-            ffdev_topology_damptt_mode_to_string = 'BFAC-XDM - Atomic b-factors + XDM volumes'
+        case(DAMP_TT_DO)
+            ffdev_topology_damptt_mode_to_string = 'DO - b-factors form density overlap'
+        case(DAMP_TT_DO_XDM)
+            ffdev_topology_damptt_mode_to_string = 'DO-XDM - b-factors form density overlap + XDM volumes'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_damptt_mode_to_string!')
     end select
@@ -1584,10 +1584,10 @@ integer function ffdev_topology_damptt_mode_from_string(string)
             ffdev_topology_damptt_mode_from_string = DAMP_TT_FREEOPT
         case('CONST')
             ffdev_topology_damptt_mode_from_string = DAMP_TT_CONST
-        case('BFAC')
-            ffdev_topology_damptt_mode_from_string = DAMP_TT_BFAC
-        case('BFAC-XDM')
-            ffdev_topology_damptt_mode_from_string = DAMP_TT_BFAC_XDM
+        case('DO')
+            ffdev_topology_damptt_mode_from_string = DAMP_TT_DO
+        case('DO-XDM')
+            ffdev_topology_damptt_mode_from_string = DAMP_TT_DO_XDM
             if( .not. xdm_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1,'XDM data are required for BFACXDM!')
             end if
@@ -2195,7 +2195,7 @@ subroutine ffdev_topology_update_nb_params(top)
                      'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_params!')
             end if
             select case(damptt_mode)
-                case(DAMP_TT_BFAC_XDM)
+                case(DAMP_TT_DO_XDM)
                     if( .not. xdm_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1, &
                              'XDM not loaded for DAMP_TT_BFAC_XDM in ffdev_topology_update_nb_params!')
@@ -2383,14 +2383,14 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                     nbpair%tb  = top%nb_types(nbt)%tb
                 case(DAMP_TT_CONST)
                     nbpair%tb  = damp_fa
-                case(DAMP_TT_BFAC)
+                case(DAMP_TT_DO)
                     tbii = damp_fa * ffdev_densoverlap_b(agti)
                     tbjj = damp_fa * ffdev_densoverlap_b(agtj)
 
                     call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
                     nbpair%tb  = tbij
 
-                case(DAMP_TT_BFAC_XDM)
+                case(DAMP_TT_DO_XDM)
                     tbii = damp_fa * ffdev_densoverlap_b(agti) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
                     tbjj = damp_fa * ffdev_densoverlap_b(agtj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
 
