@@ -411,7 +411,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
     use ffdev_utils
     use ffdev_disp_control
     use ffdev_buried_control
-    use ffdev_atdens_control
+    use ffdev_densoverlap_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -447,8 +447,8 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_disp_ctrl(fin,exec)
             case('buried')
                 call ffdev_buried_ctrl(fin,exec)
-            case('atdens')
-                call ffdev_atdens_ctrl(fin,exec)
+            case('densoverlap')
+                call ffdev_densoverlap_ctrl(fin,exec)
             case('files')
                 call ffdev_parameters_ctrl_files_exec(fin,exec)
         end select
@@ -478,7 +478,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     type(PRMFILE_TYPE)  :: fin
     logical             :: exec
     ! --------------------------------------------
-    logical                     :: changed,lcouple_pa_pb_forA,lpb_from_atdens
+    logical                     :: changed,lcouple_pa_pb_forA,lpb_from_densoverlap
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
     integer                     :: ldampbj_mode,ldamptt_mode
@@ -498,7 +498,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             write(DEV_OUT,65) prmfile_onoff(couple_pa_pb_forA)
         end if
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
-            write(DEV_OUT,75) prmfile_onoff(pb_from_atdens)
+            write(DEV_OUT,75) prmfile_onoff(pb_from_densoverlap)
         end if
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         if( ApplyCombiningRules ) then
@@ -585,14 +585,14 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
     if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
-        if( prmfile_get_logical_by_key(fin,'pb_from_atdens', lpb_from_atdens)) then
+        if( prmfile_get_logical_by_key(fin,'pb_from_densoverlap', lpb_from_densoverlap)) then
             if( exec ) then
-                write(DEV_OUT,70) prmfile_onoff(lpb_from_atdens)
-                pb_from_atdens = lpb_from_atdens
+                write(DEV_OUT,70) prmfile_onoff(lpb_from_densoverlap)
+                pb_from_densoverlap = lpb_from_densoverlap
                 changed = .true.
             end if
         else
-            write(DEV_OUT,75) prmfile_onoff(pb_from_atdens)
+            write(DEV_OUT,75) prmfile_onoff(pb_from_densoverlap)
         end if
     end if
 
@@ -634,8 +634,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
  60 format('PA*PB as A (papb_as_A)            = ',A)
  65 format('PA*PB as A (papb_as_A)            = ',A34,' (current)')
 
- 70 format('PB from AtomDens (pb_from_atdens) = ',A)
- 75 format('PB from AtomDens (pb_from_atdens) = ',A34,' (current)')
+ 70 format('PB from DO (pb_from_densoverlap)  = ',A)
+ 75 format('PB from DO (pb_from_densoverlap)  = ',A34,' (current)')
 
  15 format('=== SET ',I2.2)
 

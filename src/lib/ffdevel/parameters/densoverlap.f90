@@ -290,6 +290,9 @@ real(DEVDP) function ffdev_densoverlap_rc(gti,dens)
 
     ffdev_densoverlap_rc = (a - dens)/b
 
+    ! density overlaps are calculated for atom separation
+    ffdev_densoverlap_rc = ffdev_densoverlap_rc * 0.5d0
+
 end function ffdev_densoverlap_rc
 
 ! ==============================================================================

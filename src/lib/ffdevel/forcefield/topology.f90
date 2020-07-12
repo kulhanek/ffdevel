@@ -2232,7 +2232,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_utils
     use ffdev_xdm_dat
     use ffdev_disp_dat
-    use ffdev_atdens
+    use ffdev_densoverlap
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -2294,7 +2294,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_BJ_SRC)
                     rc = damp_fa * top%nb_types(nbt)%rc + damp_fb
                 case(DAMP_BJ_ATDENS)
-                    rc =  ffdev_atdens_rc(agti,damp_fa) + ffdev_atdens_rc(agtj,damp_fa)
+                    rc =  ffdev_densoverlap_rc(agti,damp_fa) + ffdev_densoverlap_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2307,9 +2307,9 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
 
         case(NB_VDW_EXP_DISPBJ)
             ! Pauli repulsion
-            if( pb_from_atdens ) then
-                pbii = damp_pb * ffdev_atdens_b(agti)
-                pbjj = damp_pb * ffdev_atdens_b(agtj)
+            if( pb_from_densoverlap ) then
+                pbii = damp_pb * ffdev_densoverlap_b(agti)
+                pbjj = damp_pb * ffdev_densoverlap_b(agtj)
 
                 call ffdev_topology_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
                 nbpair%pb  = pbij
@@ -2340,7 +2340,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_BJ_CONST)
                     rc = damp_fa
                 case(DAMP_BJ_ATDENS)
-                    rc =  ffdev_atdens_rc(agti,damp_fa) + ffdev_atdens_rc(agtj,damp_fa)
+                    rc =  ffdev_densoverlap_rc(agti,damp_fa) + ffdev_densoverlap_rc(agtj,damp_fa)
                 case default
                     if( .not. disp_data_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
@@ -2354,9 +2354,9 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
         case(NB_VDW_EXP_DISPTT)
 
             ! Pauli repulsion
-            if( pb_from_atdens ) then
-                pbii = damp_pb * ffdev_atdens_b(agti)
-                pbjj = damp_pb * ffdev_atdens_b(agtj)
+            if( pb_from_densoverlap ) then
+                pbii = damp_pb * ffdev_densoverlap_b(agti)
+                pbjj = damp_pb * ffdev_densoverlap_b(agtj)
 
                 call ffdev_topology_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
                 nbpair%pb  = pbij
@@ -2384,15 +2384,15 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
                 case(DAMP_TT_CONST)
                     nbpair%tb  = damp_fa
                 case(DAMP_TT_BFAC)
-                    tbii = damp_fa * ffdev_atdens_b(agti)
-                    tbjj = damp_fa * ffdev_atdens_b(agtj)
+                    tbii = damp_fa * ffdev_densoverlap_b(agti)
+                    tbjj = damp_fa * ffdev_densoverlap_b(agtj)
 
                     call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
                     nbpair%tb  = tbij
 
                 case(DAMP_TT_BFAC_XDM)
-                    tbii = damp_fa * ffdev_atdens_b(agti) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
-                    tbjj = damp_fa * ffdev_atdens_b(agtj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
+                    tbii = damp_fa * ffdev_densoverlap_b(agti) * (xdm_atoms(agti)%vave / xdm_atoms(agti)%v0ave)**damp_fb
+                    tbjj = damp_fa * ffdev_densoverlap_b(agtj) * (xdm_atoms(agtj)%vave / xdm_atoms(agtj)%v0ave)**damp_fb
 
                     call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
                     nbpair%tb  = tbij

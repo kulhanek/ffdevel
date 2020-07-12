@@ -34,7 +34,7 @@ program ffdev_optimize_program
     use ffdev_timers
     use ffdev_buried
     use ffdev_buried_control
-    use ffdev_atdens_control
+    use ffdev_densoverlap_control
     use ffdev_nb2nb_control
 
 !$ use omp_lib
@@ -83,7 +83,7 @@ program ffdev_optimize_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
     call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
-    call ffdev_atdens_ctrl(tmpfin,.false.)
+    call ffdev_densoverlap_ctrl(tmpfin,.false.)
     call ffdev_buried_ctrl(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
 

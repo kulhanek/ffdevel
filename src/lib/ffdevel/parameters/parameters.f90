@@ -32,7 +32,7 @@ subroutine ffdev_parameters_init()
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
-    use ffdev_atdens
+    use ffdev_densoverlap
     use ffdev_nb2nb
 
     implicit none
@@ -108,7 +108,7 @@ subroutine ffdev_parameters_init()
     call ffdev_nb2nb_init_nbtypes
     call ffdev_parameters_print_types()
     call ffdev_parameters_print_charge_stat()
-    call ffdev_atdens_print()
+    call ffdev_densoverlap_print()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
   5 format('Number of sets (topologies)              = ',I6)
