@@ -44,15 +44,15 @@ subroutine ffdev_densoverlap_update_db
     densoverlap_am(:) = 0.0d0
 
     select case(densoverlap_source)
-        case(DO_HF_DKH_ANORCC)
-            densoverlap_bm(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_bm
-            densoverlap_am(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_am
+        case(DO_PBE0_def2QZVPP)
+            densoverlap_bm(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_bm
+            densoverlap_am(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_am
 
-            densoverlap_b0(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_b0
-            densoverlap_a0(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_a0
+            densoverlap_b0(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_b0
+            densoverlap_a0(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_a0
 
-            densoverlap_bp(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_bp
-            densoverlap_ap(1:densoverlap_HF_DKH_ANORCC_maxZ) = densoverlap_HF_DKH_ANORCC_ap
+            densoverlap_bp(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_bp
+            densoverlap_ap(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_ap
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_densoverlap_update_db')
@@ -308,8 +308,8 @@ integer function ffdev_densoverlap_source_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
-        case('HF-DKH/ANORCC')
-            ffdev_densoverlap_source_from_string = DO_HF_DKH_ANORCC
+        case('PBE0/def2-QZVPP')
+            ffdev_densoverlap_source_from_string = DO_PBE0_def2QZVPP
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_densoverlap_source_from_string!')
     end select
@@ -329,8 +329,8 @@ character(80) function ffdev_densoverlap_source_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(DO_HF_DKH_ANORCC)
-            ffdev_densoverlap_source_to_string = 'HF-DKH/ANORCC'
+        case(DO_PBE0_def2QZVPP)
+            ffdev_densoverlap_source_to_string = 'PBE0/def2-QZVPP'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_densoverlap_source_to_string!')
     end select

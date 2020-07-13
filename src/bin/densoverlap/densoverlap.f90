@@ -199,7 +199,6 @@ subroutine read_cube()
     end if
 
     ! read density
-
     do i=1,NX
         do j=1,NY
             if( gautype ) then

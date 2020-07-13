@@ -22,9 +22,9 @@ use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter   :: DO_HF_DKH_ANORCC = 1
+integer,parameter   :: DO_PBE0_def2QZVPP = 1
 
-integer             :: densoverlap_source        = DO_HF_DKH_ANORCC
+integer             :: densoverlap_source        = DO_PBE0_def2QZVPP
 logical             :: densoverlap_mod_by_charge = .false.
 
 ! atom densities ---------------------------------------------------------------
