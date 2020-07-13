@@ -120,7 +120,7 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
 
-    if( PrintRSTSummary ) then
+    if( PrintRSTSummary .and. (fout .gt. 0) ) then
         ! print summary about RSTs
         write(fout,*)
         call ffdev_geometry_rstsum(fout,geo)
