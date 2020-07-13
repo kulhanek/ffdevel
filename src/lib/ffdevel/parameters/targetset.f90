@@ -73,6 +73,7 @@ subroutine ffdev_targetset_calc_all
     use ffdev_utils
     use ffdev_timers
     use ffdev_geometry
+    use ffdev_parallel_dat
 
     implicit none
     integer         :: i,j,k
@@ -101,39 +102,66 @@ subroutine ffdev_targetset_calc_all
     end do
 
     call ffdev_timers_start_timer(FFDEV_GEOOPT_TIMER)
-    !$omp parallel
-    !$omp single
-    ! optimize geometry
-    do i=1,nsets
-        if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
-        if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
-        do j=1,sets(i)%ngeos
-            sets(i)%geo(j)%trg_crd_optimized = .false.
-            if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
-                .and. sets(i)%geo(j)%trg_crd_loaded ) then
-                if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
-                    sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
-                else
-                    if( ResetKeptOptGeoAt .gt. 0 ) then
-                        if( mod(evalcounter,ResetKeptOptGeoAt) .eq. 0 ) then
-                            sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
-                            georeseted = georeseted + 1
+    if( ParallelGeoOptBlock ) then
+        !$omp parallel
+        !$omp single
+        ! optimize geometry
+        do i=1,nsets
+            if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
+            if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
+            do j=1,sets(i)%ngeos
+                sets(i)%geo(j)%trg_crd_optimized = .false.
+                if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
+                    .and. sets(i)%geo(j)%trg_crd_loaded ) then
+                    if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
+                        sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                    else
+                        if( ResetKeptOptGeoAt .gt. 0 ) then
+                            if( mod(evalcounter,ResetKeptOptGeoAt) .eq. 0 ) then
+                                sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                                georeseted = georeseted + 1
+                            end if
                         end if
                     end if
+                    !$omp task
+                    ! no output is allowed in parallel mode
+                    call ffdev_geoopt_run(0,sets(i)%top,sets(i)%geo(j))
+                    sets(i)%geo(j)%trg_crd_optimized = .true.
+                    !$omp end task
                 end if
-                !$omp task
-                if( GlbShowOptProgress ) then
-                    call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
-                else
-                    call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))
-                end if
-                sets(i)%geo(j)%trg_crd_optimized = .true.
-                !$omp end task
-            end if
+            end do
         end do
-    end do
-    !$omp end single
-    !$omp end parallel
+        !$omp end single
+        !$omp end parallel
+    else
+        ! optimize geometry
+        do i=1,nsets
+            if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
+            if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
+            do j=1,sets(i)%ngeos
+                sets(i)%geo(j)%trg_crd_optimized = .false.
+                if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
+                    .and. sets(i)%geo(j)%trg_crd_loaded ) then
+                    if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
+                        sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                    else
+                        if( ResetKeptOptGeoAt .gt. 0 ) then
+                            if( mod(evalcounter,ResetKeptOptGeoAt) .eq. 0 ) then
+                                sets(i)%geo(j)%crd = sets(i)%geo(j)%trg_crd
+                                georeseted = georeseted + 1
+                            end if
+                        end if
+                    end if
+                    if( GlbShowOptProgress ) then
+                        call ffdev_geoopt_run(DEV_OUT,sets(i)%top,sets(i)%geo(j))
+                    else
+                        call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))
+                    end if
+                    sets(i)%geo(j)%trg_crd_optimized = .true.
+                end if
+            end do
+        end do
+    end if
     call ffdev_timers_stop_timer(FFDEV_GEOOPT_TIMER)
 
     if( georeseted .gt. 0 ) then
@@ -141,43 +169,72 @@ subroutine ffdev_targetset_calc_all
     end if
 
     call ffdev_timers_start_timer(FFDEV_PROPS_TIMER)
-    !$omp parallel
-    !$omp single
-    ! calculate all energies, gradients, hessians
-    do i=1,nsets
-        do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
-                ! calculate hessian
-                !$omp task
-                call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
-                !$omp end task
-        ! for zerograd error we do not need trg_grd_loaded
-        ! else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
-        else if( errors_calc_grad ) then
-                !$omp task
-                call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
-                !$omp end task
-            else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
-                !$omp task
-                call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
-                !$omp end task
-            end if
+    if( ParallelErrorBlock ) then
+        !$omp parallel
+        !$omp single
+        ! calculate all energies, gradients, hessians
+        do i=1,nsets
+            do j=1,sets(i)%ngeos
+                if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
+                    ! calculate hessian
+                    !$omp task
+                    call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
+                    !$omp end task
+                ! for zerograd error we do not need trg_grd_loaded
+                ! else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
+                else if( errors_calc_grad ) then
+                    !$omp task
+                    call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
+                    !$omp end task
+                else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
+                    !$omp task
+                    call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
+                    !$omp end task
+                end if
+            end do
         end do
-    end do
 
-    ! calculate SAPT
-    do i=1,nsets
-        if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
-        do j=1,sets(i)%ngeos
-            if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
-                        .and. errors_calc_sapt ) ) cycle
-            !$omp task
-            call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
-            !$omp end task
+        ! calculate SAPT
+        do i=1,nsets
+            if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+            do j=1,sets(i)%ngeos
+                if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
+                            .and. errors_calc_sapt ) ) cycle
+                !$omp task
+                call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
+                !$omp end task
+            end do
         end do
-    end do
-    !$omp end single
-    !$omp end parallel
+        !$omp end single
+        !$omp end parallel
+    else
+        ! calculate all energies, gradients, hessians
+        do i=1,nsets
+            do j=1,sets(i)%ngeos
+                if( sets(i)%geo(j)%trg_hess_loaded .and. errors_calc_hess ) then
+                    ! calculate hessian
+                    call ffdev_hessian_num_all(sets(i)%top,sets(i)%geo(j))
+                ! for zerograd error we do not need trg_grd_loaded
+                ! else if( sets(i)%geo(j)%trg_grd_loaded .and. errors_calc_grad ) then
+                else if( errors_calc_grad ) then
+                    call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
+                else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
+                    call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
+                end if
+            end do
+        end do
+
+        ! calculate SAPT
+        do i=1,nsets
+            if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+            do j=1,sets(i)%ngeos
+                if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
+                            .and. errors_calc_sapt ) ) cycle
+                call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
+            end do
+        end do
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_PROPS_TIMER)
 
    ! update energies

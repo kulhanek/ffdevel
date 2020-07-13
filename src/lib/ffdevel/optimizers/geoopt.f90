@@ -78,6 +78,32 @@ subroutine ffdev_geoopt_reset_stat_counters()
 end subroutine ffdev_geoopt_reset_stat_counters
 
 !===============================================================================
+! subroutine ffdev_geoopt_print_stat_counters
+!===============================================================================
+
+subroutine ffdev_geoopt_print_stat_counters()
+
+    use ffdev_geoopt_dat
+
+    implicit none
+    ! --------------------------------------------------------------------------
+
+    if( NumberOfRuns .eq. 0 ) return
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,5)
+    write(DEV_OUT,10) NumberOfRuns
+    write(DEV_OUT,20) NumberOfFailedRuns
+    write(DEV_OUT,30) NumberOfGrdEvals
+
+  5 format("# >> GeoOpt Statistics")
+ 10 format('#    Number of geometry optimizations (all)    : ',I9)
+ 20 format('#    Number of geometry optimizations (failed) : ',I9)
+ 30 format('#    Number of gradient evaluations            : ',I9)
+
+end subroutine ffdev_geoopt_print_stat_counters
+
+!===============================================================================
 ! subroutine ffdev_geoopt_run
 !===============================================================================
 
@@ -110,6 +136,10 @@ subroutine ffdev_geoopt_run(fout,top,geo)
             call opt_lbfgs(fout,top,geo)
     end select
 
+    !$omp atomic
+    NumberOfRuns =  NumberOfRuns + 1
+    !$omp end atomic
+
 end subroutine ffdev_geoopt_run
 
 !===============================================================================
@@ -122,12 +152,15 @@ subroutine ffdev_geoopt_opentraj(top)
     use ffdev_topology
     use smf_periodic_table_dat
     use smf_xyzfile
+    use ffdev_parallel_dat
 
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
     integer         :: i
     ! --------------------------------------------------------------------------
+
+    if( ParallelMode .and. ParallelGeoOptBlock ) return
 
     ! load xyz file
     call init_xyz(OptTrajFile)
@@ -154,9 +187,12 @@ subroutine ffdev_geoopt_closetraj()
     use ffdev_geoopt_dat
     use ffdev_topology
     use smf_xyzfile
+    use ffdev_parallel_dat
 
     implicit none
     ! --------------------------------------------------------------------------
+
+    if( ParallelMode .and. ParallelGeoOptBlock ) return
 
     call close_xyz(DEV_TRAJ,OptTrajFile)
     call free_xyz(OptTrajFile)
@@ -204,6 +240,10 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
+        !$omp atomic
+        NumberOfGrdEvals =  NumberOfGrdEvals + 1
+        !$omp end atomic
+
         ! rst penalty
         call ffdev_geometry_get_rst_penalty(geo)
 
@@ -214,19 +254,23 @@ subroutine opt_steepest_descent(fout,top,geo)
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
         if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange ) then
-            write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
-            write(fout,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
-            write(fout,'(a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
+            if( fout .gt. 0 ) then
+                write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
+                write(fout,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
+                write(fout,'(a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
+            end if
             exit
         end if
 
         if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
-            write(fout,'(/,a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
-            write(fout,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
-            write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
-            write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(fout,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
-            write(fout,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+            if( fout .gt. 0 ) then
+                write(fout,'(/,a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
+                write(fout,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
+                write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
+                write(fout,'(a,F16.4)')   ' >>> INFO: Max gradient component treshold : ', MaxG
+                write(fout,'(a,F16.4)')   ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
+                write(fout,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+            end if
             exit
         end if
 
@@ -269,8 +313,15 @@ subroutine opt_steepest_descent(fout,top,geo)
     end do
 
     !===============================================================================
+
+    if( istep .ge. NOptSteps ) then
+        !$omp atomic
+        NumberOfFailedRuns =  NumberOfFailedRuns + 1
+        !$omp end atomic
+    end if
+
     if( fout .gt. 0 ) then
-        if( istep .le. NOptSteps ) then
+        if( istep .lt. NOptSteps ) then
             write(fout,*)
             call ffdev_utils_heading(fout,'Final results', '-')
         else
@@ -347,6 +398,10 @@ subroutine opt_lbfgs(fout,top,geo)
         ! get potential energy and derivatives from FF
         call ffdev_gradient_all(top,geo)
 
+        !$omp atomic
+        NumberOfGrdEvals =  NumberOfGrdEvals + 1
+        !$omp end atomic
+
         ! rst penalty
         call ffdev_geometry_get_rst_penalty(geo)
 
@@ -366,12 +421,14 @@ subroutine opt_lbfgs(fout,top,geo)
         end if
 
         if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
-            write(fout,'(/,a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
-            write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
-            write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
-            write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
-            write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(fout,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
+            if( fout .gt. 0 ) then
+                write(fout,'(/,a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+                write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
+                write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
+                write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
+                write(fout,'(a,F16.4)') ' >>> INFO: Max gradient component treshold : ', MaxG
+                write(fout,'(a,F16.4)') ' >>> INFO: Last energy change              : ', abs(totene - lastenergy)
+            end if
             exit
         end if
 
@@ -390,7 +447,9 @@ subroutine opt_lbfgs(fout,top,geo)
 
         if( iflag .eq. 0 ) exit
         if( iflag .le. 0 ) then
-            write(fout,'(/,a,i2,/)') '>>> ERROR: Internal L-BFGS driver error! Code = ', iflag
+            if( fout .gt. 0 ) then
+                write(fout,'(/,a,i2,/)') '>>> ERROR: Internal L-BFGS driver error! Code = ', iflag
+            end if
             exit
         end if
 
@@ -398,6 +457,13 @@ subroutine opt_lbfgs(fout,top,geo)
     end do
 
     !===============================================================================
+
+    if( (istep .ge. NOptSteps) .or. (iflag .le. 0) ) then
+        !$omp atomic
+        NumberOfFailedRuns =  NumberOfFailedRuns + 1
+        !$omp end atomic
+    end if
+
     if( fout .gt. 0 ) then
         if( istep .le. NOptSteps ) then
             write(fout,*)
@@ -472,6 +538,7 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
     use ffdev_geometry
     use ffdev_geoopt_dat
     use smf_xyzfile
+    use ffdev_parallel_dat
 
     implicit none
     integer         :: fout
@@ -485,20 +552,24 @@ subroutine write_results(fout,istep,geo,rmsg,maxgrad,maxatom,done)
     real(DEVDP)     :: Ebn, Enb
     ! -----------------------------------------------------------------------------
 
-    ! write energies
-    if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
-        Ebn = geo%bond_ene +geo%angle_ene+geo%dih_ene+geo%impropr_ene
-        Enb = geo%ele14_ene+geo%rep14_ene+geo%dis14_ene + &
-              geo%ele_ene+geo%rep_ene+geo%dis_ene
-        write(fout,10) istep, geo%total_ene+geo%rst_energy,Ebn, &
-                       Enb,geo%rst_energy,rmsg,maxgrad,maxatom
+    if( fout .gt. 0 ) then
+        ! write energies
+        if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
+            Ebn = geo%bond_ene +geo%angle_ene+geo%dih_ene+geo%impropr_ene
+            Enb = geo%ele14_ene+geo%rep14_ene+geo%dis14_ene + &
+                  geo%ele_ene+geo%rep_ene+geo%dis_ene
+            write(fout,10) istep, geo%total_ene+geo%rst_energy,Ebn, &
+                           Enb,geo%rst_energy,rmsg,maxgrad,maxatom
+        end if
     end if
 
     ! write trajectory
-    if( OptTrajFile%opened ) then
-        if( (TrajSamples .gt. 0) .and. (mod(istep,TrajSamples) .eq. 0) ) then
-            OptTrajFile%cvs = geo%crd
-            call write_xyz(DEV_TRAJ,OptTrajFile)
+    if( .not. (ParallelMode .and. ParallelGeoOptBlock) ) then
+        if( OptTrajFile%opened ) then
+            if( (TrajSamples .gt. 0) .and. (mod(istep,TrajSamples) .eq. 0) ) then
+                OptTrajFile%cvs = geo%crd
+                call write_xyz(DEV_TRAJ,OptTrajFile)
+            end if
         end if
     end if
 

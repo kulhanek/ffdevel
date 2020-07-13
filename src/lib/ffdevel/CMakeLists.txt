@@ -10,6 +10,8 @@ SET(FFDEVEL_SRC
         ver.f90
         utils.f90
         timers.F90
+        parallel_dat.f90
+        parallel.f90
 
         forcefield/disp_dat.f90
         forcefield/disp.f90

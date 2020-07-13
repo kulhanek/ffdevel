@@ -36,8 +36,7 @@ program ffdev_optimize_program
     use ffdev_buried_control
     use ffdev_densoverlap_control
     use ffdev_nb2nb_control
-
-!$ use omp_lib
+    use ffdev_parallel
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -47,7 +46,7 @@ program ffdev_optimize_program
     type(PRMFILE_TYPE)          :: tmpfin
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
-    integer                     :: i, ncpu
+    integer                     :: i
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Optimize')
@@ -258,9 +257,7 @@ program ffdev_optimize_program
     call ffdev_utils_heading(DEV_OUT,'Starting real optimization', '!')
     call ffdev_utils_heading(DEV_OUT,'==========================', '!')
 
-    ncpu = 1
-    !$ ncpu = omp_get_max_threads()
-    write(*,'(A,I3)') '>>> INFO: Number of threads = ',ncpu
+    call ffdev_parallel_init
 
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
@@ -419,6 +416,7 @@ subroutine execute_ffopt(grpin,pid,exec)
     use ffdev_parameters_control
     use ffdev_ffopt_control
     use ffdev_ffopt
+    use ffdev_geoopt
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
@@ -444,8 +442,14 @@ subroutine execute_ffopt(grpin,pid,exec)
         ! print initial parameter list
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_INITIAL)
 
+        ! reset geoopt counters
+        call ffdev_geoopt_reset_stat_counters
+
         ! optimize
         call ffdev_ffopt_run
+
+        ! print geoopt stat
+        call ffdev_geoopt_print_stat_counters
 
         ! final results
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
@@ -464,6 +468,7 @@ subroutine execute_ffeval(grpin,pid,exec)
     use ffdev_parameters_control
     use ffdev_ffopt_control
     use ffdev_ffopt
+    use ffdev_geoopt
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
@@ -482,8 +487,14 @@ subroutine execute_ffeval(grpin,pid,exec)
         ! print final parameter list
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
+        ! reset geoopt counters
+        call ffdev_geoopt_reset_stat_counters
+
         ! get single point error
         call ffdev_ffopt_single_point
+
+        ! print geoopt stat
+        call ffdev_geoopt_print_stat_counters
     end if
 
     return

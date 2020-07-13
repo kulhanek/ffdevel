@@ -25,25 +25,32 @@ program ffdev_densoverlap_program
     implicit none
     character(len=MAX_PATH)     :: cubefile         ! cube file
     integer                     :: sep              ! separation
-    character(len=MAX_PATH)     :: string
+    character(len=MAX_PATH)     :: string, stype
     integer                     :: read_stat
     integer                     :: NX,NY,NZ
     real(DEVDP)                 :: DX,DY,DZ
     real(DEVDP)                 :: conv_factor
     real(DEVDP)                 :: integral
     real(DEVDP),allocatable     :: density(:,:,:)
+    logical                     :: gautype
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('Electron Density Overlap')
 
     ! test number of input arguments
-    if( command_argument_count() .ne. 2 ) then
+    if( command_argument_count() .ne. 3 ) then
         call print_usage()
         call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (two expected)!')
     end if
 
     call get_command_argument(1, cubefile)
     call get_command_argument(2, string)
+    call get_command_argument(3, stype)
+
+    gautype = .true.
+    if( stype .eq. 'orca' ) then
+        gautype = .false.
+    end if
 
     ! convert to int
     sep = -1
@@ -101,7 +108,7 @@ subroutine print_usage()
 
     return
 
-10 format('    densoverlap <cubefile> <separation>')
+10 format('    densoverlap <cubefile> <separation> <cubetype>')
 
 end subroutine print_usage
 
@@ -192,9 +199,14 @@ subroutine read_cube()
     end if
 
     ! read density
+
     do i=1,NX
         do j=1,NY
-            read(DEV_CUBE,'(6E14.5)',iostat = read_stat) (density(k,j,i),k=1,NZ)
+            if( gautype ) then
+                read(DEV_CUBE,'(6E13.5)',iostat = read_stat) (density(k,j,i),k=1,NZ)
+            else
+                read(DEV_CUBE,'(6E14.5)',iostat = read_stat) (density(k,j,i),k=1,NZ)
+            end if
             if( read_stat .ne. 0 ) then
                 call ffdev_utils_exit(DEV_ERR,1,'Unable to read line with electron density!')
             end if
