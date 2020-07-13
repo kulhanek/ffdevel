@@ -484,7 +484,9 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_EXP_DISPBJ)
             use_vdw_pa      = .true.
-            use_vdw_pb      = .true.
+            if( .not. pb_from_densoverlap ) then
+                use_vdw_pb      = .true.
+            end if
             use_damp_pb     = .true.
 
            select case(dampbj_mode)
@@ -511,7 +513,9 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_EXP_DISPTT)
             use_vdw_pa      = .true.
-            use_vdw_pb      = .true.
+            if( .not. pb_from_densoverlap ) then
+                use_vdw_pb      = .true.
+            end if
             use_damp_pb     = .true.
 
             select case(damptt_mode)
