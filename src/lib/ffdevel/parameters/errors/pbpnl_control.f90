@@ -76,16 +76,16 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 
  10 format('=== [pbpnl] ====================================================================')
 
-110  format ('Charge penalty (enabled)               = ',a12)
-115  format ('Charge penalty (enabled)               = ',a12,'                  (default)')
-130  format ('Charge penalty summary (summary)       = ',a12)
-135  format ('Charge penalty summary (summary)       = ',a12,'                  (default)')
+110  format ('PB penalty (enabled)                   = ',a12)
+115  format ('PB penalty (enabled)                   = ',a12,'                  (default)')
+130  format ('PB penalty summary (summary)           = ',a12)
+135  format ('PB penalty summary (summary)           = ',a12,'                  (default)')
 
-120  format ('Charge penalty weight (weight)         = ',f21.8)
-125  format ('Charge penalty weight (weight)         = ',f21.8,'         (default)')
+120  format ('PB penalty weight (weight)             = ',f21.8)
+125  format ('PB penalty weight (weight)             = ',f21.8,'         (default)')
 
-140  format ('Consider buried atoms (buried)         = ',a12)
-145  format ('Consider buried atoms (buried)         = ',a12,'                  (default)')
+140  format ('PB buried atoms (buried)               = ',a12)
+145  format ('PB buried atoms (buried)               = ',a12,'                  (default)')
 
 end subroutine ffdev_err_pbpnl_ctrl
 

@@ -77,6 +77,9 @@ SET(FFDEVEL_SRC
         parameters/errors/pbpnl_dat.f90
         parameters/errors/pbpnl.f90
         parameters/errors/pbpnl_control.f90
+        parameters/errors/qnb_dat.f90
+        parameters/errors/qnb.f90
+        parameters/errors/qnb_control.f90
 
         parameters/densoverlap_dat.f90
         parameters/densoverlap_db.f90

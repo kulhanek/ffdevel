@@ -95,18 +95,9 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_buried_dat
 
     implicit none
-    logical         :: printsum
     integer         :: i
     real(DEVDP)     :: totpnl, pnl, diff, w
     ! --------------------------------------------------------------------------
-
-    printsum = .false.
-    do i=1,nparams
-        if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
-        if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
-        printsum = .true.
-    end do
-    if( .not. printsum ) return
 
     write(DEV_OUT,*)
     write(DEV_OUT,5)

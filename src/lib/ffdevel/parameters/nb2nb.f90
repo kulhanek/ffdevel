@@ -116,10 +116,11 @@ subroutine ffdev_nb2nb_init_nbtypes
     use ffdev_nb2nb_dat
     use ffdev_parameters_dat
     use ffdev_utils
+    use ffdev_targetset_dat
 
     implicit none
     ! --------------------------------------------
-    integer         :: i,j,idx,alloc_status,estat
+    integer         :: i,j,idx,alloc_status,estat,gti,gtj,k,l
     ! --------------------------------------------------------------------------
 
     if( ApplyCombiningRules ) then
@@ -148,9 +149,44 @@ subroutine ffdev_nb2nb_init_nbtypes
             nb_types(idx)%PB    = 0
             nb_types(idx)%RC    = 0
             nb_types(idx)%TB    = 0
+            nb_types(idx)%SigNB = 0
+            nb_types(idx)%QNB   = 0
             nb_types(idx)%setid = 0
             nb_types(idx)%nbt   = 0
+            nb_types(idx)%num   = 0
             idx = idx + 1
+        end do
+    end do
+
+    ! count nb_types
+    do i=1,nsets
+        do j=1,sets(i)%top%nnb_types
+            gti = sets(i)%top%atom_types(sets(i)%top%nb_types(j)%ti)%glbtypeid
+            gtj = sets(i)%top%atom_types(sets(i)%top%nb_types(j)%tj)%glbtypeid
+
+            do k=1,nnb_types
+                if( ApplyCombiningRules ) then
+                    ! any of the nbpair
+                    if( ( (nb_types(k)%gti .eq. gti) .or. (nb_types(k)%gtj .eq. gtj) ) .or. &
+                        ( (nb_types(k)%gti .eq. gtj) .or. (nb_types(k)%gtj .eq. gti) ) ) then
+                        do l=1,sets(i)%top%nb_size
+                            if( sets(i)%top%nb_list(l)%nbt .eq. k ) then
+                                nb_types(k)%num = nb_types(k)%num + 1
+                            end if
+                        end do
+                    end if
+                else
+                    ! explicit pair
+                    if( ( (nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj) ) .or. &
+                        ( (nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti) ) ) then
+                        do l=1,sets(i)%top%nb_size
+                            if( sets(i)%top%nb_list(l)%nbt .eq. k ) then
+                                nb_types(k)%num = nb_types(k)%num + 1
+                            end if
+                        end do
+                    end if
+                end if
+            end do
         end do
     end do
 
@@ -386,7 +422,10 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     call ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     call ffdev_nb2nb_find_sig_for_nbpair(sig)
 
-    NB2LJSigma = sig
+    NB2LJSigma              = sig
+    nb_types(gnbt)%SigNB    = sig
+
+    nb_types(gnbt)%QNB = ffdev_nb2nb_calc_QNB(sig)
 
     ! write the source potential
     call ffdev_nb2nb_write_source_pot(gnbt)
@@ -723,6 +762,62 @@ subroutine ffdev_nb2nb_find_sig_for_nbpair(sig)
     sig = rm
 
 end subroutine ffdev_nb2nb_find_sig_for_nbpair
+
+! ==============================================================================
+! function ffdev_nb2nb_calc_QNB
+! ==============================================================================
+
+real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
+
+    implicit none
+    real(DEVDP)     :: sig
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: r,dr,e,q
+    ! --------------------------------------------------------------------------
+
+    r  = sig
+    dr = (NB2LJCutoffR-sig)/real(NB2LJIterErr,DEVDP)
+
+    q = 0.0d0
+    do i=1,NB2LJIterErr
+        e = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
+        q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*dr
+        r = r + dr
+    end do
+    q = q / (NB2LJCutoffR-sig)
+
+    ffdev_nb2nb_calc_QNB = q
+
+end function ffdev_nb2nb_calc_QNB
+
+! ==============================================================================
+! function ffdev_nb2nb_calc_QLJ
+! ==============================================================================
+
+real(DEVDP) function ffdev_nb2nb_calc_QLJ(sig,r0,eps)
+
+    implicit none
+    real(DEVDP)     :: sig,r0,eps
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: r,dr,e,q
+    ! --------------------------------------------------------------------------
+
+    r  = sig
+    dr = (NB2LJCutoffR-sig)/real(NB2LJIterErr,DEVDP)
+
+    q = 0.0d0
+    do i=1,NB2LJIterErr
+        e = ffdev_nb2nb_ljene(r0,eps,r)
+        q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*dr
+        r = r + dr
+    end do
+    q = q / (NB2LJCutoffR-sig)
+
+    ffdev_nb2nb_calc_QLJ = q
+
+end function ffdev_nb2nb_calc_QLJ
 
 ! ==============================================================================
 ! function ffdev_nb2nb_ljene

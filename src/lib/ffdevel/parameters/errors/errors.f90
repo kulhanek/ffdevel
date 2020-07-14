@@ -45,6 +45,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_zerograd
     use ffdev_err_probe
     use ffdev_err_pbpnl
+    use ffdev_err_qnb
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -70,6 +71,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_zerograd_init()
 
     call ffdev_err_pbpnl_init()
+    call ffdev_err_qnb_init()
 
 end subroutine ffdev_errors_init_all
 
@@ -93,6 +95,7 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
+    use ffdev_err_qnb_dat
 
     implicit none
     logical         :: opterror
@@ -161,6 +164,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_pbpnl_dat
     use ffdev_err_pbpnl
 
+    use ffdev_err_qnb_dat
+    use ffdev_err_qnb
+
     use ffdev_timers
 
     implicit none
@@ -187,6 +193,7 @@ subroutine ffdev_errors_error_only(error)
     error%chrgpnl = 0.0d0
     error%zerograd = 0.0d0
     error%pbpnl = 0.0d0
+    error%qnb = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
@@ -251,6 +258,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%pbpnl*PBPnlErrorWeight
     end if
 
+    if( EnableQNBError ) then
+        call ffdev_err_qnb_error(error)
+        error%total = error%total + error%qnb*QNBErrorWeight
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
@@ -274,6 +286,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
+    use ffdev_err_qnb_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -317,6 +330,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnablePBPnlError ) then
         write(DEV_OUT,60,ADVANCE='NO')
     end if
+    if( EnableQNBError ) then
+        write(DEV_OUT,60,ADVANCE='NO')
+    end if
 
  30 format('       Energy')
  33 format('        Bonds')
@@ -331,6 +347,7 @@ subroutine ffdev_errors_ffopt_header_I()
  44 format(' ZeroGradient')
  50 format('     ProbeEne')
  60 format('    PBPenalty')
+ 70 format('          QNB')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -352,6 +369,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
+    use ffdev_err_qnb_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -395,6 +413,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnablePBPnlError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableQNBError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
  50 format(' ------------')
 
@@ -418,6 +439,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
+    use ffdev_err_qnb_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -461,6 +483,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnablePBPnlError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%pbpnl
+    end if
+    if( EnableQNBError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%qnb
     end if
 
  15 format(1X,E12.5)
@@ -516,6 +541,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_pbpnl_dat
     use ffdev_err_pbpnl
 
+    use ffdev_err_qnb_dat
+    use ffdev_err_qnb
+
     implicit none
     integer     :: logmode
     logical     :: printme, printsum
@@ -526,7 +554,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary .or. &
-            PrintPBPnlErrorSummary ) ) then
+            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary ) ) then
         ! no error to report
         return
     end if
@@ -546,6 +574,10 @@ subroutine ffdev_errors_summary(logmode)
     ! individual summaries
     if( PrintPBPnlErrorSummary ) then
         call ffdev_err_pbpnl_summary
+    end if
+
+    if( PrintQNBErrorSummary ) then
+        call ffdev_err_qnb_summary
     end if
 
     if( PrintEnergyErrorSummary ) then

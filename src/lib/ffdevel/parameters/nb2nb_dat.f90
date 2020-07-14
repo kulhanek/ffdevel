@@ -69,6 +69,9 @@ type GLBNB_TYPE
     real(DEVDP)         :: PA, PB               ! repulsion parameters
     real(DEVDP)         :: RC                   ! BJ damping radius
     real(DEVDP)         :: TB                   ! TT damping factor
+    real(DEVDP)         :: SigNB                ! sigma for NB
+    real(DEVDP)         :: QNB                  ! partition function for NB
+    integer             :: num
     real(DEVDP)         :: errval
 end type GLBNB_TYPE
 
