@@ -35,6 +35,7 @@ program ffdev_densoverlap_program
     real(DEVDP)                 :: integral
     real(DEVDP),allocatable     :: density1(:,:,:)
     real(DEVDP),allocatable     :: density2(:,:,:)
+    logical                     :: symmetrize
     logical                     :: gautype
     ! --------------------------------------------------------------------------
 
@@ -58,8 +59,12 @@ program ffdev_densoverlap_program
     end if
 
     gautype = .true.
-    if( stype .eq. 'orca' ) then
+    if( (stype .eq. 'orca') .or. (stype .eq. 'sorca') ) then
         gautype = .false.
+    end if
+    symmetrize = .false.
+    if( (stype .eq. 'sgau') .or. (stype .eq. 'sorca') ) then
+        symmetrize = .true.
     end if
 
     ! convert to int
@@ -90,6 +95,12 @@ program ffdev_densoverlap_program
 
     write(DEV_OUT,50) NX*NY*(NZ-2*sep)
 
+    if( symmetrize ) then
+         write(DEV_OUT,55)
+        call symmetrize_density(density1)
+        call symmetrize_density(density2)
+    end if
+
     ! calculate overlap integral
     call calc_integral
 
@@ -104,6 +115,7 @@ program ffdev_densoverlap_program
  30 format('Separation (Ang)              : ',F16.6)
  40 format('Number of voxels (all)        : ',I9)
  50 format('Number of voxels (integrated) : ',I9)
+ 55 format('Symmetrizing density ...')
  60 format('Overlap integral              : ',E20.8)
 
 contains
@@ -120,11 +132,15 @@ subroutine print_usage()
     write(DEV_OUT,*)
     write(DEV_OUT,'(/,a,/)') '=== [usage] ===================================================================='
     write(DEV_OUT,10)
+    write(DEV_OUT,20)
+    write(DEV_OUT,30)
     write(DEV_OUT,*)
 
     return
 
-10 format('    densoverlap <cubefile1> [cubefile2] <separation> <gau/orca>')
+10 format('    densoverlap <cubefile1> [cubefile2] <separation> <gau/orca/sgau/sorca>')
+20 format('                gau/sgau   - cube file produced by gaussian (force symmetrization)')
+30 format('                orca/sorca - cube file produced by orca (force symmetrization)')
 
 end subroutine print_usage
 
@@ -339,6 +355,36 @@ subroutine read_cube2()
     close(DEV_CUBE)
 
 end subroutine read_cube2
+
+!===============================================================================
+! subroutine:  symmetrize_density
+!===============================================================================
+
+subroutine symmetrize_density(density)
+
+    implicit none
+    real(DEVDP) :: density(:,:,:)
+    ! --------------------------------------------
+    integer     :: i,j,k
+    real(DEVDP) :: dens
+    ! --------------------------------------------------------------------------
+
+    do k=1,NZ
+        do j=1,NY
+            do i=1,NX
+                dens = 0.0
+                dens = dens + density(i,j,k)
+                dens = dens + density(k,i,j)
+                dens = dens + density(j,k,i)
+                dens = dens / 3.0d0
+                density(i,j,k) = dens
+                density(k,i,j) = dens
+                density(j,k,i) = dens
+            end do
+        end do
+    end do
+
+end subroutine symmetrize_density
 
 !===============================================================================
 ! subroutine:  calc_integral
