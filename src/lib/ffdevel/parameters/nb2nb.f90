@@ -845,7 +845,6 @@ real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
     use ffdev_utils
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 

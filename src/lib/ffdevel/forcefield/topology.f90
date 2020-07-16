@@ -1446,6 +1446,7 @@ subroutine ffdev_topology_apply_NB_comb_rules(top)
     use ffdev_topology_lj
     use ffdev_topology_bj
     use ffdev_topology_tt
+    use ffdev_topology_exp
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1456,10 +1457,10 @@ subroutine ffdev_topology_apply_NB_comb_rules(top)
         case(NB_VDW_LJ)
             call ffdev_topology_LJ_apply_NB_comb_rules(top)
         case(NB_VDW_EXP_DISPBJ)
-            call ffdev_repulsion_apply_NB_comb_rules(top)
+            call ffdev_topology_EXP_apply_NB_comb_rules(top)
             call ffdev_topology_BJ_apply_NB_comb_rules(top)
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_repulsion_apply_NB_comb_rules(top)
+            call ffdev_topology_EXP_apply_NB_comb_rules(top)
             call ffdev_topology_TT_apply_NB_comb_rules(top)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
@@ -1610,23 +1611,25 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             rc  = 0.0d0
             select case(dampbj_mode)
                 case(DAMP_BJ_CONST)
-                    rc = damp_fa
+                    top%nb_types(nbt)%rc = damp_fa
             !---------------
                 case(DAMP_BJ_FREEOPT)
-                    rc = top%nb_types(nbt)%rc
+                    ! nothing
             !---------------
                 case(DAMP_BJ_DRC)
-                    rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
+                    top%nb_types(nbt)%rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
             !---------------
                 case(DAMP_BJ_DO)
-                    rc =  0.5d0*(ffdev_densoverlap_rcii(agti,damp_fa) + ffdev_densoverlap_rcii(agtj,damp_fa))
+                    top%nb_types(nbt)%rc = 0.5d0*(ffdev_densoverlap_rcii(agti,damp_fa) + ffdev_densoverlap_rcii(agtj,damp_fa))
             !---------------
                 case(DAMP_BJ_DO_FULL)
-                    rc =  ffdev_densoverlap_rcij(agti,agtj,damp_fa)
+                    top%nb_types(nbt)%rc = ffdev_densoverlap_rcij(agti,agtj,damp_fa)
             !---------------
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
             end select
+
+            rc = top%nb_types(nbt)%rc
 
             nbpair%rc6  = rc**6
             nbpair%rc8  = rc**8
@@ -1668,26 +1671,28 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             ! TT damping
             select case(damptt_mode)
                 case(DAMP_TT_CONST)
-                    nbpair%tb  = damp_fa
+                    top%nb_types(nbt)%tb  = damp_fa
             !---------------
                 case(DAMP_TT_FREEOPT)
-                    nbpair%tb  = top%nb_types(nbt)%tb
+                    ! nothing
             !---------------
                 case(DAMP_TT_COUPLED)
-                    nbpair%tb  = damp_fa * top%nb_types(nbt)%pb
+                    top%nb_types(nbt)%tb  = damp_fa * top%nb_types(nbt)%pb
             !---------------
                 case(DAMP_TT_DO)
                     tbii = ffdev_densoverlap_bii(agti)
                     tbjj = ffdev_densoverlap_bii(agtj)
-                    call ffdev_topology_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
-                    nbpair%tb  = damp_fa * tbij
+                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
+                    top%nb_types(nbt)%tb  = damp_fa * tbij
             !---------------
                 case(DAMP_TT_DO_FULL)
-                    nbpair%tb  = damp_fa * ffdev_densoverlap_bij(agti,agtj)
+                    top%nb_types(nbt)%tb  = damp_fa * ffdev_densoverlap_bij(agti,agtj)
             !---------------
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_update_nbpair_prms!')
             end select
+
+            nbpair%tb = top%nb_types(nbt)%tb
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')

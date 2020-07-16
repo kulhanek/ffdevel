@@ -35,7 +35,6 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     use ffdev_timers
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 

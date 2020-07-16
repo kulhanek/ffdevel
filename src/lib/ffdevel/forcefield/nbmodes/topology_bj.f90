@@ -93,8 +93,9 @@ subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
     real(DEVDP)     :: rcii,rcij,rcjj
     ! --------------------------------------------------------------------------
 
+    if( dampbj_mode .ne. DAMP_BJ_FREEOPT ) return
 
-    ! apply combining rules - Rc average
+    ! apply combining rules - Rc average, only FREEOPT
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 

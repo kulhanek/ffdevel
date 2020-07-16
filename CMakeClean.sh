@@ -33,4 +33,5 @@ if [ $# -gt 0 ]
         	rm -rf `find . -name 'qrc_*.cxx'`
 		rm -rf `find . -name '*.qrc.depends'`
 		rm -rf `find . -name '*_automoc.cpp'`
+        rm -rf `find . -name '*.mod'`
 	fi

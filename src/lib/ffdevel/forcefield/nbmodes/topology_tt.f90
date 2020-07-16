@@ -86,6 +86,7 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
 
     use ffdev_utils
     use ffdev_topology_utils
+    use ffdev_topology_exp
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -94,7 +95,9 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
     real(DEVDP)     :: tbii,tbij,tbjj
     ! --------------------------------------------------------------------------
 
-    ! apply combining rules
+    if( damptt_mode .ne. DAMP_TT_FREEOPT ) return
+
+    ! apply combining rules, only FREEOPT
     do i=1,top%nnb_types
         if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
@@ -105,7 +108,7 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
             tbii = top%nb_types(nbii)%tb
             tbjj = top%nb_types(nbjj)%tb
 
-            ! FIXME - repulsion rules
+            call ffdev_topology_EXP_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
 
             top%nb_types(i)%tb = tbij
 

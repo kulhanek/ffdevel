@@ -137,104 +137,86 @@ integer function ffdev_topology_EXP_comb_rules_from_string(string)
 
 end function ffdev_topology_EXP_comb_rules_from_string
 
-!! ==============================================================================
-!! subroutine ffdev_topology_apply_NB_comb_rules_EXP
-!! ==============================================================================
-!
-!subroutine ffdev_topology_apply_NB_comb_rules_EXPTT(top,comb_rules)
-!
-!    use ffdev_utils
-!
-!    implicit none
-!    type(TOPOLOGY)  :: top
-!    integer         :: comb_rules
-!    ! --------------------------------------------
-!    integer         :: i,nbii,nbjj
-!    real(DEVDP)     :: paii,paij,pajj
-!    real(DEVDP)     :: pbii,pbij,pbjj
-!    real(DEVDP)     :: tbii,tbij,tbjj
-!    real(DEVDP)     :: eaii,eaij,eajj
-!    ! --------------------------------------------------------------------------
-!
-!    ! apply combining rules
-!    do i=1,top%nnb_types
-!        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
-!
-!            ! get type parameters
-!            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-!            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
-!
-!            paii = top%nb_types(nbii)%pa
-!            pbii = top%nb_types(nbii)%pb
-!            tbii = top%nb_types(nbii)%tb
-!
-!            pajj = top%nb_types(nbjj)%pa
-!            pbjj = top%nb_types(nbjj)%pb
-!            tbjj = top%nb_types(nbjj)%tb
-!
-!            select case(comb_rules)
-!
-!                case(COMB_RULE_AM)
-!                    paij = 0.5d0 * (paii+pajj)
-!                    pbij = 0.5d0 * (pbii+pbjj)
-!                    tbij = 0.5d0 * (tbii+tbjj)
-!
-!                case(COMB_RULE_GS)
-!                    if( pbii+pbjj .gt. 0 ) then
-!                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
-!                    else
-!                        pbij = 0.5d0 * (pbii+pbjj)
-!                    end if
-!
-!                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
-!                    eaii = exp(paii)
-!                    eajj = exp(pajj)
-!                    eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
-!                    paij = log(eaij)
-!
-!                    if( tbii+tbjj .gt. 0 ) then
-!                        tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-!                    else
-!                        tbij = 0.5d0 * (tbii+tbjj)
-!                    end if
-!
-!                case(COMB_RULE_BA)
-!                    if( pbii+pbjj .gt. 0 ) then
-!                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
-!                    else
-!                        pbij = 0.5d0 * (pbii+pbjj)
-!                    end if
-!
-!                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
-!                    eaii = exp(paii)
-!                    eajj = exp(pajj)
-!                    eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
-!                    paij = log(eaij)
-!
-!                    if( tbii+tbjj .gt. 0 ) then
-!                        tbij = 2.0d0 * tbii*tbjj/(tbii+tbjj)
-!                    else
-!                        tbij = 0.5d0 * (tbii+tbjj)
-!                    end if
-!
-!                case(COMB_RULE_VS)
-!                    ! DOI:10.1021/acs.jctc.6b00209J. Chem. Theory Comput.2016, 12, 3851−3870
-!                    paij = 0.5d0 * (paii + pajj)  ! paij is exponential of Aij, etc. ...
-!                    pbij = sqrt(pbii*pbjj)
-!                    tbij = sqrt(tbii*tbjj)
-!
-!                case default
-!                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_apply_NB_comb_rules_EXPTT!')
-!            end select
-!
-!            top%nb_types(i)%pa = paij
-!            top%nb_types(i)%pb = pbij
-!            top%nb_types(i)%tb = tbij
-!
-!        end if
-!    end do
-!
-!end subroutine ffdev_topology_apply_NB_comb_rules_EXPTT
+! ==============================================================================
+! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! ==============================================================================
+
+subroutine ffdev_topology_EXP_apply_NB_comb_rules(top)
+
+    use ffdev_utils
+    use ffdev_topology_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: paii,paij,pajj
+    real(DEVDP)     :: pbii,pbij,pbjj
+    real(DEVDP)     :: eaii,eaij,eajj
+    ! --------------------------------------------------------------------------
+
+    ! apply combining rules
+    do i=1,top%nnb_types
+        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
+
+            ! get type parameters
+            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+
+            paii = top%nb_types(nbii)%pa
+            pbii = top%nb_types(nbii)%pb
+
+            pajj = top%nb_types(nbjj)%pa
+            pbjj = top%nb_types(nbjj)%pb
+
+            select case(exp_comb_rules)
+
+                case(EXP_COMB_RULE_AM)
+                    paij = 0.5d0 * (paii+pajj)
+                    pbij = 0.5d0 * (pbii+pbjj)
+
+                case(EXP_COMB_RULE_GS)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
+                    paij = log(eaij)
+
+                case(EXP_COMB_RULE_BA)
+                    if( pbii+pbjj .gt. 0 ) then
+                        pbij = 2.0d0 * pbii*pbjj/(pbii+pbjj)
+                    else
+                        pbij = 0.5d0 * (pbii+pbjj)
+                    end if
+
+                    ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                    eaii = exp(paii)
+                    eajj = exp(pajj)
+                    eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
+                    paij = log(eaij)
+
+                case(EXP_COMB_RULE_VS)
+                    ! DOI:10.1021/acs.jctc.6b00209J. Chem. Theory Comput.2016, 12, 3851−3870
+                    paij = 0.5d0 * (paii + pajj)  ! paij is exponential of Aij, etc. ...
+                    pbij = sqrt(pbii*pbjj)
+
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_apply_NB_comb_rules!')
+            end select
+
+            top%nb_types(i)%pa = paij
+            top%nb_types(i)%pb = pbij
+
+        end if
+    end do
+
+end subroutine ffdev_topology_EXP_apply_NB_comb_rules
 
 !===============================================================================
 ! subroutine ffdev_topology_EXP_apply_NB_comb_rules_PB
