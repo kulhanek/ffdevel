@@ -35,7 +35,6 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     use ffdev_timers
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 
@@ -87,9 +86,6 @@ subroutine ffdev_energy_all(top,geo,skipnb)
             case(NB_VDW_LJ)
                 call ffdev_energy_nb_LJ(top,geo)
 
-            case(NB_VDW_12_DISPBJ)
-                call ffdev_energy_nb_12_DISPBJ(top,geo)
-
             case(NB_VDW_EXP_DISPBJ)
                 call ffdev_energy_nb_EXP_DISPBJ(top,geo)
 
@@ -120,7 +116,6 @@ subroutine ffdev_energy_sapt(top,geo)
     use ffdev_timers
 
     use ffdev_nbmode_LJ
-    use ffdev_nbmode_12_DISPBJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
 
@@ -144,9 +139,6 @@ subroutine ffdev_energy_sapt(top,geo)
     select case(nb_mode)
         case(NB_VDW_LJ)
             call ffdev_energy_sapt_LJ(top,geo)
-
-        case(NB_VDW_12_DISPBJ)
-            call ffdev_energy_sapt_12_DISPBJ(top,geo)
 
         case(NB_VDW_EXP_DISPBJ)
             call ffdev_energy_sapt_EXP_DISPBJ(top,geo)

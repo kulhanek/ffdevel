@@ -457,51 +457,30 @@ subroutine ffdev_parameters_reinit()
             use_vdw_eps     = .true.
             use_vdw_r0      = .true.
 
-        case(NB_VDW_12_DISPBJ)
-            use_vdw_pa      = .true.
-
-            select case(dampbj_mode)
-                case(DAMP_BJ_DRC)
-                    use_damp_fa     = .true.
-                    use_damp_fb     = .true.
-                case(DAMP_BJ_ORC)
-                    use_vdw_rc      = .true.
-                case(DAMP_BJ_SRC)
-                    use_vdw_rc      = .true.
-                    use_damp_fa     = .true.
-                    use_damp_fb     = .true.
-                case(DAMP_BJ_CONST)
-                    use_damp_fa     = .true.
-               case(DAMP_BJ_DO)
-                    use_damp_fa     = .true.
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
-            end select
-
-            use_disp_s6     = .true.
-            use_disp_s8     = .true.
-            use_disp_s10    = .true.
-
         case(NB_VDW_EXP_DISPBJ)
             use_vdw_pa      = .true.
-            if( .not. pb_from_densoverlap ) then
-                use_vdw_pb      = .true.
-            end if
             use_damp_pb     = .true.
 
-           select case(dampbj_mode)
+            select case(pb_mode)
+                case(EXP_PB_FREEOPT)
+                    use_vdw_pa      = .true.
+                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
+                    ! nothing
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
+            end select
+
+            select case(dampbj_mode)
+                case(DAMP_BJ_CONST)
+                    use_damp_fa     = .true.
+                case(DAMP_BJ_FREEOPT)
+                    use_vdw_rc      = .true.
                 case(DAMP_BJ_DRC)
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
-                case(DAMP_BJ_ORC)
-                    use_vdw_rc      = .true.
-                case(DAMP_BJ_SRC)
-                    use_vdw_rc      = .true.
-                    use_damp_fa     = .true.
-                    use_damp_fb     = .true.
-                case(DAMP_BJ_CONST)
-                    use_damp_fa     = .true.
                case(DAMP_BJ_DO)
+                    use_damp_fa     = .true.
+               case(DAMP_BJ_DO_FULL)
                     use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
@@ -513,23 +492,28 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_EXP_DISPTT)
             use_vdw_pa      = .true.
-            if( .not. pb_from_densoverlap ) then
-                use_vdw_pb      = .true.
-            end if
             use_damp_pb     = .true.
 
+            select case(pb_mode)
+                case(EXP_PB_FREEOPT)
+                    use_vdw_pa      = .true.
+                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
+                    ! nothing
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
+            end select
+
             select case(damptt_mode)
-                case(DAMP_TT_COUPLED)
+                case(DAMP_TT_CONST)
                     use_damp_fa     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
-                case(DAMP_TT_CONST)
+                case(DAMP_TT_COUPLED)
                     use_damp_fa     = .true.
                 case(DAMP_TT_DO)
                     use_damp_fa     = .true.
-                case(DAMP_TT_DO_XDM)
+                case(DAMP_TT_DO_FULL)
                     use_damp_fa     = .true.
-                    use_damp_fb     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select

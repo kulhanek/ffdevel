@@ -216,37 +216,42 @@ real(DEVDP) :: glb_iscee                    = 1.0d0         ! global scaling for
 ! ==== vdW modes
 ! ==============================================================================
 
-! combining rules for nb_mode
-integer,parameter   :: COMB_RULE_NONE       = 05  ! input data
-
 ! ####################################################################
-integer,parameter   :: NB_VDW_LJ            = 1     ! Lenard-Jones
 ! Lenard-Jones
 ! Form: Enb = eps*( (ro/r)^12 - 2*(r0/r)^6 )
 ! Parameters: eps, r0
 ! Provides: energy, gradient, Hessian, sapt
 
 ! combining rules - applicable for NB_MODE_LJ
-integer,parameter   :: COMB_RULE_LB         = 11    ! LB (Lorentz-Berthelot)
-integer,parameter   :: COMB_RULE_WH         = 12    ! WH (Waldman-Hagler)
-integer,parameter   :: COMB_RULE_KG         = 13    ! KG (Kong)
-integer,parameter   :: COMB_RULE_FB         = 14    ! FB (Fender-Halsey-Berthelot)
+integer,parameter   :: LJ_COMB_RULE_LB      = 11    ! LB (Lorentz-Berthelot)
+integer,parameter   :: LJ_COMB_RULE_WH      = 12    ! WH (Waldman-Hagler)
+integer,parameter   :: LJ_COMB_RULE_KG      = 13    ! KG (Kong)
+integer,parameter   :: LJ_COMB_RULE_FB      = 14    ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-integer,parameter   :: NB_VDW_12_DISPBJ     = 20    ! 12-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
+! Born-Mayer repulsion
+integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
+integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
+integer,parameter   :: EXP_PB_DO_FULL       = 303       ! PB from density overlap - including dis-like
+integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
 
-! Pauli repulsion
-logical             :: couple_pa_pb_forA    = .false.
-logical             :: pb_from_densoverlap  = .false.
+integer     :: pb_mode                      =  EXP_PB_FREEOPT
+
+! combining rules - applicable for Born-Mayer repulsion
+integer,parameter   :: EXP_COMB_RULE_AM     = 391    ! arithmetic means
+integer,parameter   :: EXP_COMB_RULE_GS     = 392    ! Gilbert-Smith
+integer,parameter   :: EXP_COMB_RULE_BA     = 393    ! Bohm-Ahlrichs
+integer,parameter   :: EXP_COMB_RULE_VS     = 394    ! Vleet-Schmidt
+integer,parameter   :: REP_COMB_RULE_BDK    = 395    ! Bouchal-Durnik-Kulhanek
+
+! ####################################################################
 
 ! Becke-Johnson damping
-integer,parameter   :: DAMP_BJ_DRC          = 201       ! radii from Cx
-integer,parameter   :: DAMP_BJ_ORC          = 202       ! optimized radii
-integer,parameter   :: DAMP_BJ_SRC          = 203       ! scaled optimized radii
+integer,parameter   :: DAMP_BJ_CONST        = 201       ! constant
+integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! Rc free to optimize
+integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
 integer,parameter   :: DAMP_BJ_DO           = 204       ! derived from density overlaps
-integer,parameter   :: DAMP_BJ_CONST        = 205       ! constant
+integer,parameter   :: DAMP_BJ_DO_FULL      = 205       ! derived from density overlaps - including dis-like
 
 integer     :: dampbj_mode                  = DAMP_BJ_DRC
 
@@ -255,29 +260,23 @@ integer     :: dampbj_mode                  = DAMP_BJ_DRC
 ! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_fa for PB in fd6, fd8, fd8
 ! Provides: energy, gradient, sapt
 
-integer,parameter   :: DAMP_TT_COUPLED      = 101   ! pb and tb coupled via damp_pb
+integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_fa * pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
-integer,parameter   :: DAMP_TT_CONST        = 103   ! bfac = damp_fa
-integer,parameter   :: DAMP_TT_DO           = 104   ! bfac = damp_fa*densoverlap_bfac
-integer,parameter   :: DAMP_TT_DO_XDM       = 105   ! bfac = damp_fa*densoverlap_bfac*(xdm_vol/xdm_vol0)**damp_fb
+integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_fa
+integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_fa * densoverlap_bii
+integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_fa * densoverlap_bij
 
 integer     :: damptt_mode                  = DAMP_TT_COUPLED
 
-! applicable combination rules
-
-! combining rules - applicable for NB_VDW_12_DISPBJ a NB_VDW_EXP_DISPTT
-integer,parameter   :: COMB_RULE_AM         = 17    ! arithmetic means
-
-! combining rules - applicable for NB_VDW_EXP_DISPTT
-integer,parameter   :: COMB_RULE_GS         = 90    ! Gilbert-Smith
-integer,parameter   :: COMB_RULE_BA         = 91    ! Bohm-Ahlrichs
-integer,parameter   :: COMB_RULE_VS         = 92    ! Vleet-Schmidt
-
 ! ==============================================================================
+integer,parameter   :: NB_VDW_LJ            = 13    ! Lenard-Jones
+integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
 
 ! employed method for NB interactions
 integer     :: nb_mode                      = NB_VDW_LJ
-integer     :: nb_comb_rules                = COMB_RULE_LB
+integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
+integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 
 ! ------------------------------------------------------------------------------
 

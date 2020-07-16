@@ -73,7 +73,7 @@ subroutine ffdev_err_pbpnl_error(error)
         end if
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_densoverlap_b(params(i)%ti)
+                diff = params(i)%value - ffdev_densoverlap_bii(params(i)%ti)
                 error%pbpnl = error%pbpnl + w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_error!')
@@ -117,14 +117,14 @@ subroutine ffdev_err_pbpnl_summary()
 
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_densoverlap_b(params(i)%ti)
+                diff = params(i)%value - ffdev_densoverlap_bii(params(i)%ti)
                 pnl = w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_summary!')
         end select
         totpnl = totpnl + pnl
 
-        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_densoverlap_b(params(i)%ti), params(i)%value, diff, pnl
+        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_densoverlap_bii(params(i)%ti), params(i)%value, diff, pnl
     end do
 
     write(DEV_OUT,20)

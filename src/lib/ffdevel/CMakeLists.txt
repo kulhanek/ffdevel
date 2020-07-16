@@ -17,6 +17,7 @@ SET(FFDEVEL_SRC
         forcefield/disp.f90
         forcefield/disp_control.f90
         forcefield/topology_dat.f90
+        forcefield/topology_utils.f90
         forcefield/topology.f90
         forcefield/geometry_dat.f90
         forcefield/geometry.f90
@@ -29,9 +30,12 @@ SET(FFDEVEL_SRC
         forcefield/jacobian.f90
 
         forcefield/nbmodes/LJ.f90
-        forcefield/nbmodes/12-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPTT.f90
+        forcefield/nbmodes/topology_lj.f90
+        forcefield/nbmodes/topology_bj.f90
+        forcefield/nbmodes/topology_tt.f90
+        forcefield/nbmodes/topology_exp.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90
@@ -81,10 +85,6 @@ SET(FFDEVEL_SRC
         parameters/errors/qnb.f90
         parameters/errors/qnb_control.f90
 
-        parameters/densoverlap_dat.f90
-        parameters/densoverlap_db.f90
-        parameters/densoverlap.f90
-        parameters/densoverlap_control.f90
         parameters/buried_dat.f90
         parameters/buried.f90
         parameters/buried_control.f90
@@ -99,6 +99,12 @@ SET(FFDEVEL_SRC
         parameters/nb2nb.f90
         parameters/nb2nb_dat.f90
         parameters/nb2nb_control.f90
+        parameters/densoverlap_dat.f90
+        parameters/densoverlap.f90
+        parameters/densoverlap_control.f90
+
+        parameters/data/ip_db.f90
+        parameters/data/densoverlap_db.f90
 
         optimizers/geoopt_dat.f90
         optimizers/geoopt_control.f90

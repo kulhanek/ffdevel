@@ -59,6 +59,9 @@ real(DEVDP), parameter  :: DEV_KCL2HARTREE = 1.0d0 / DEV_HARTREE2KCL
 real(DEVDP), parameter  :: DEV_KJ2KCL   = 1.0d0 / 4.184d0
 real(DEVDP), parameter  :: DEV_KCL2KJ   = 1.0d0 / DEV_KJ2KCL
 
+! ev -> hartree
+real(DEVDP), parameter  :: DEV_eV2AU    = 0.03674930495120813d0
+
 ! eV -> kcal/mol
 real(DEVDP), parameter  :: DEV_eV2KCL   = 23.06035d0
 real(DEVDP), parameter  :: DEV_KCL2eV   = 1.0d0 / DEV_eV2KCL

@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_repulsion_control
+module ffdev_densoverlap_control
 
 use ffdev_constants
 use ffdev_variables
@@ -23,15 +23,15 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
-! subroutine ffdev_repulsion_ctrl
+! subroutine ffdev_densoverlap_ctrl
 ! ==============================================================================
 
-subroutine ffdev_repulsion_ctrl(fin,exec)
+subroutine ffdev_densoverlap_ctrl(fin,exec)
 
     use ffdev_utils
     use prmfile
-    use ffdev_repulsion_dat
-    use ffdev_repulsion
+    use ffdev_densoverlap_dat
+    use ffdev_densoverlap
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
@@ -43,39 +43,39 @@ subroutine ffdev_repulsion_ctrl(fin,exec)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'repulsion') ) then
-        write(DEV_OUT,115) ffdev_repulsion_source_to_string(repulsion_source)
-        write(DEV_OUT,55) prmfile_onoff(repulsion_mod_by_charge)
-        call ffdev_repulsion_update_db
+    if( .not. prmfile_open_section(fin,'densoverlap') ) then
+        write(DEV_OUT,115) ffdev_densoverlap_source_to_string(densoverlap_source)
+        write(DEV_OUT,55) prmfile_onoff(densoverlap_mod_by_charge)
+        call ffdev_densoverlap_update_db
         return
     end if
 
     if( prmfile_get_string_by_key(fin,'source', buffer)) then
-        lsource = ffdev_repulsion_source_from_string(buffer)
-        write(DEV_OUT,110) ffdev_repulsion_source_to_string(lsource)
-        if( exec ) repulsion_source = lsource
+        lsource = ffdev_densoverlap_source_from_string(buffer)
+        write(DEV_OUT,110) ffdev_densoverlap_source_to_string(lsource)
+        if( exec ) densoverlap_source = lsource
     else
-        write(DEV_OUT,115) ffdev_repulsion_source_to_string(repulsion_source)
+        write(DEV_OUT,115) ffdev_densoverlap_source_to_string(densoverlap_source)
     end if
 
-    if( prmfile_get_logical_by_key(fin,'modbycharge', repulsion_mod_by_charge)) then
-        write(DEV_OUT,50) prmfile_onoff(repulsion_mod_by_charge)
+    if( prmfile_get_logical_by_key(fin,'modbycharge', densoverlap_mod_by_charge)) then
+        write(DEV_OUT,50) prmfile_onoff(densoverlap_mod_by_charge)
     else
-        write(DEV_OUT,55) prmfile_onoff(repulsion_mod_by_charge)
+        write(DEV_OUT,55) prmfile_onoff(densoverlap_mod_by_charge)
     end if
 
-    call ffdev_repulsion_update_db
-    call ffdev_repulsion_print
+    call ffdev_densoverlap_update_db
+    call ffdev_densoverlap_print
 
- 10 format('== [repulsion] =================================================================')
+ 10 format('== [densoverlap] =================================================================')
 
 110  format ('Density overlap source (source)        = ',a29)
 115  format ('Density overlap source (source)        = ',a29,' (default)')
  50  format ('Modulation by charge (modbycharge)     = ',a12)
  55  format ('Modulation by charge (modbycharge)     = ',a12,'                  (default)')
 
-end subroutine ffdev_repulsion_ctrl
+end subroutine ffdev_densoverlap_ctrl
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_repulsion_control
+end module ffdev_densoverlap_control

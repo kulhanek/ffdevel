@@ -301,7 +301,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                 case(NB_VDW_LJ)
                     ! nothing to do
 
-                case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
+                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
                     do nbt=1,nnb_types
                         pa = 6.0d0 * nb_types(nbt)%eps * exp(lj2exp6_alpha)/(lj2exp6_alpha - 6.0d0)
                         if( pa .gt. 0 ) then
@@ -321,14 +321,14 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_nb2nb_switch_nbmode!')
             end select
     !---------------------------------------------
-        case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
+        case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
             select case(to_nb_mode)
                 case(NB_VDW_LJ)
                     do nbt=1,nnb_types
                         call ffdev_nb2nb_nb2lj(nbt)
                     end do
 
-                case(NB_VDW_EXP_DISPTT,NB_VDW_12_DISPBJ,NB_VDW_EXP_DISPBJ)
+                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
                     ! nothing to do
 
                 case default
@@ -392,6 +392,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     use ffdev_nb2nb_dat
     use ffdev_parameters_dat
     use ffdev_targetset_dat
+    use ffdev_topology_utils
     use ffdev_utils
 
     implicit none
@@ -858,9 +859,6 @@ real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
     select case(nb_mode)
         case(NB_VDW_LJ)
             ffdev_nb2nb_nbpair = ffdev_energy_nbpair_LJ(nbpair,r)
-
-        case(NB_VDW_12_DISPBJ)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_12_DISPBJ(nbpair,r)
 
         case(NB_VDW_EXP_DISPBJ)
             ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r)

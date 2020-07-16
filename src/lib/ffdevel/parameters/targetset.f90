@@ -90,7 +90,7 @@ subroutine ffdev_targetset_calc_all
     ! apply combining rules
     if( ApplyCombiningRules ) then
         do i=1,nsets
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top,nb_comb_rules)
+            call ffdev_topology_apply_NB_comb_rules(sets(i)%top)
         end do
     end if
 
