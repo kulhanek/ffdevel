@@ -15,19 +15,31 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_densoverlap_dat
+module ffdev_repulsion_dat
 
 use ffdev_constants
 use ffdev_variables
 
 ! ------------------------------------------------------------------------------
+! combination rules for repulsion
+
+integer,parameter   :: REP_COMB_RULE_GS     =   1       ! Gilbert-Smith
+integer,parameter   :: REP_COMB_RULE_BA     =   2       ! Bohm-Ahlrichs
+integer,parameter   :: REP_COMB_RULE_VS     =   3       ! Vleet-Schmidt
+integer,parameter   :: REP_COMB_RULE_BDK    =   4       ! Bouchal-Durnik-Kulhanek
+integer,parameter   :: REP_COMB_RULE_TB     =  10       ! tabulated
+
+integer             :: rep_comb_rules       = REP_COMB_RULE_VS
+
+! ------------------------------------------------------------------------------
+! density overlap
 
 integer,parameter   :: DO_PBE0_def2QZVPP = 1
 
-integer             :: densoverlap_source        = DO_PBE0_def2QZVPP
-logical             :: densoverlap_mod_by_charge = .false.
+integer             :: do_source            = DO_PBE0_def2QZVPP
+logical             :: do_mod_by_charge     = .false.
 
-! atom densities ---------------------------------------------------------------
+! overlap of electron densities of isolated atoms ------------------------------
 
 integer,parameter   :: DENSOVERLAP_MAX_Z = 86
 
@@ -36,14 +48,14 @@ integer,parameter   :: DENSOVERLAP_MAX_Z = 86
 ! b0, a0 - neutral atom
 ! bm, am - anion (-1)
 
-real(DEVDP)     :: densoverlap_bp(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_b0(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_bm(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_bp(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_b0(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_bm(1:DENSOVERLAP_MAX_Z)
 
-real(DEVDP)     :: densoverlap_ap(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_a0(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_am(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_ap(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_a0(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: do_am(1:DENSOVERLAP_MAX_Z)
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_densoverlap_dat
+end module ffdev_repulsion_dat

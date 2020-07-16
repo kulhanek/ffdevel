@@ -15,56 +15,56 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_densoverlap
+module ffdev_repulsion
 
-use ffdev_densoverlap_dat
+use ffdev_repulsion_dat
 use ffdev_constants
 use ffdev_variables
 
 contains
 
 ! ==============================================================================
-! subroutine ffdev_densoverlap_update_db
+! subroutine ffdev_repulsion_update_db
 ! ==============================================================================
 
-subroutine ffdev_densoverlap_update_db
+subroutine ffdev_repulsion_update_db
 
     use ffdev_utils
-    use ffdev_densoverlap_db
+    use ffdev_repulsion_db
 
     implicit none
     ! --------------------------------------------------------------------------
 
-    densoverlap_bp(:) = 0.0d0
-    densoverlap_b0(:) = 0.0d0
-    densoverlap_bm(:) = 0.0d0
+    repulsion_bp(:) = 0.0d0
+    repulsion_b0(:) = 0.0d0
+    repulsion_bm(:) = 0.0d0
 
-    densoverlap_ap(:) = 0.0d0
-    densoverlap_a0(:) = 0.0d0
-    densoverlap_am(:) = 0.0d0
+    repulsion_ap(:) = 0.0d0
+    repulsion_a0(:) = 0.0d0
+    repulsion_am(:) = 0.0d0
 
-    select case(densoverlap_source)
+    select case(repulsion_source)
         case(DO_PBE0_def2QZVPP)
-            densoverlap_bm(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_bm
-            densoverlap_am(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_am
+            repulsion_bm(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_bm
+            repulsion_am(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_am
 
-            densoverlap_b0(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_b0
-            densoverlap_a0(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_a0
+            repulsion_b0(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_b0
+            repulsion_a0(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_a0
 
-            densoverlap_bp(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_bp
-            densoverlap_ap(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_ap
+            repulsion_bp(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_bp
+            repulsion_ap(1:repulsion_PBE0_def2QZVPP_maxZ) = repulsion_PBE0_def2QZVPP_ap
 
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_densoverlap_update_db')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_repulsion_update_db')
     end select
 
-end subroutine ffdev_densoverlap_update_db
+end subroutine ffdev_repulsion_update_db
 
 ! ==============================================================================
-! subroutine ffdev_densoverlap_print
+! subroutine ffdev_repulsion_print
 ! ==============================================================================
 
-subroutine ffdev_densoverlap_print
+subroutine ffdev_repulsion_print
 
     use ffdev_utils
     use smf_periodic_table_dat
@@ -79,8 +79,8 @@ subroutine ffdev_densoverlap_print
     call ffdev_utils_heading(DEV_OUT,'Linearized Electron Density Overlaps', '=')
 
     write(DEV_OUT,*)
-    write(DEV_OUT,5) trim(ffdev_densoverlap_source_to_string(densoverlap_source))
-    write(DEV_OUT,6) prmfile_onoff(densoverlap_mod_by_charge)
+    write(DEV_OUT,5) trim(ffdev_repulsion_source_to_string(repulsion_source))
+    write(DEV_OUT,6) prmfile_onoff(repulsion_mod_by_charge)
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -89,43 +89,43 @@ subroutine ffdev_densoverlap_print
      do i=1,ntypes
         z = types(i)%z
         write(DEV_OUT,30,ADVANCE='NO') i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z))
-        if( densoverlap_bm(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_bm(z)
+        if( repulsion_bm(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_bm(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        if( densoverlap_b0(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_b0(z)
+        if( repulsion_b0(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_b0(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        if( densoverlap_bp(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_bp(z)
+        if( repulsion_bp(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_bp(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
 
-        if( densoverlap_bm(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_am(z)
+        if( repulsion_bm(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_am(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        if( densoverlap_b0(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_a0(z)
+        if( repulsion_b0(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_a0(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        if( densoverlap_bp(z) .ne. 0 ) then
-            write(DEV_OUT,40,ADVANCE='NO') densoverlap_ap(z)
+        if( repulsion_bp(z) .ne. 0 ) then
+            write(DEV_OUT,40,ADVANCE='NO') repulsion_ap(z)
         else
             write(DEV_OUT,50,ADVANCE='NO')
         end if
-        if( densoverlap_mod_by_charge ) then
+        if( repulsion_mod_by_charge ) then
             write(DEV_OUT,42,ADVANCE='NO') types(i)%aveq
         else
             write(DEV_OUT,42,ADVANCE='NO') 0.0d0
         end if
-        write(DEV_OUT,40) ffdev_densoverlap_b(i)
+        write(DEV_OUT,40) ffdev_repulsion_b(i)
     end do
 
   5 format('# Electron density overlap source : ',A)
@@ -137,13 +137,13 @@ subroutine ffdev_densoverlap_print
  42 format(2X,F6.3)
  50 format(7X)
 
-end subroutine ffdev_densoverlap_print
+end subroutine ffdev_repulsion_print
 
 ! ==============================================================================
-! function ffdev_densoverlap_b
+! function ffdev_repulsion_b
 ! ==============================================================================
 
-real(DEVDP) function ffdev_densoverlap_b(gti)
+real(DEVDP) function ffdev_repulsion_b(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -155,58 +155,58 @@ real(DEVDP) function ffdev_densoverlap_b(gti)
     real(DEVDP) :: q, b1, b2
     ! --------------------------------------------------------------------------
 
-    ffdev_densoverlap_b = 1.0 ! default b
+    ffdev_repulsion_b = 1.0 ! default b
 
     ! get Z
     z = types(gti)%z
     if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_densoverlap_b')
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_repulsion_b')
     end if
 
     ! effective charge of type
     q = types(gti)%aveq
 
     ! no modulation by charge or zero charge or no extrapolation/interpolation data
-    if( (.not. densoverlap_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
-        ( (densoverlap_bp(z) .eq. 0.0d0) .and. (densoverlap_bm(z) .eq. 0.0d0) ) ) then
-        ffdev_densoverlap_b = densoverlap_b0(z)
-        if( ffdev_densoverlap_b .eq. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_densoverlap_b')
+    if( (.not. repulsion_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
+        ( (repulsion_bp(z) .eq. 0.0d0) .and. (repulsion_bm(z) .eq. 0.0d0) ) ) then
+        ffdev_repulsion_b = repulsion_b0(z)
+        if( ffdev_repulsion_b .eq. 0.0d0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_repulsion_b')
         end if
         return
     end if
 
     ! modulation by charge
-        b1 = densoverlap_b0(z)
+        b1 = repulsion_b0(z)
     if( q .gt. 0.0d0 ) then
         ! positive mode ( q > 0 )
-        if( densoverlap_bp(z) .ne. 0.0d0 ) then
+        if( repulsion_bp(z) .ne. 0.0d0 ) then
             ! interpolation
-            b2 = densoverlap_bp(z) - densoverlap_b0(z)
+            b2 = repulsion_bp(z) - repulsion_b0(z)
         else
             ! extrapolation
-            b2 = densoverlap_b0(z) - densoverlap_bm(z)
+            b2 = repulsion_b0(z) - repulsion_bm(z)
         end if
     else
         ! negative mode ( q < 0 )
-        if( densoverlap_bm(z) .ne. 0.0d0 ) then
+        if( repulsion_bm(z) .ne. 0.0d0 ) then
             ! interpolation
-            b2 = densoverlap_b0(z) - densoverlap_bm(z)
+            b2 = repulsion_b0(z) - repulsion_bm(z)
         else
             ! extrapolation
-            b2 = densoverlap_bp(z) - densoverlap_b0(z)
+            b2 = repulsion_bp(z) - repulsion_b0(z)
         end if
     end if
 
-    ffdev_densoverlap_b = b1 + b2*q
+    ffdev_repulsion_b = b1 + b2*q
 
-end function ffdev_densoverlap_b
+end function ffdev_repulsion_b
 
 ! ==============================================================================
-! function ffdev_densoverlap_a
+! function ffdev_repulsion_a
 ! ==============================================================================
 
-real(DEVDP) function ffdev_densoverlap_a(gti)
+real(DEVDP) function ffdev_repulsion_a(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -218,58 +218,58 @@ real(DEVDP) function ffdev_densoverlap_a(gti)
     real(DEVDP) :: q, a1, a2
     ! --------------------------------------------------------------------------
 
-    ffdev_densoverlap_a = 0.0 ! default a
+    ffdev_repulsion_a = 0.0 ! default a
 
     ! get Z
     z = types(gti)%z
     if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_densoverlap_a')
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_repulsion_a')
     end if
 
     ! effective charge of type
     q = types(gti)%aveq
 
     ! no modulation by charge or zero charge or no extrapolation/interpolation data
-    if( (.not. densoverlap_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
-        ( (densoverlap_bp(z) .eq. 0.0d0) .and. (densoverlap_bm(z) .eq. 0.0d0) ) ) then
-        ffdev_densoverlap_a = densoverlap_a0(z)
-        if( ffdev_densoverlap_a .eq. 0.0d0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_densoverlap_a')
+    if( (.not. repulsion_mod_by_charge) .or. (q .eq. 0.0d0) .or. &
+        ( (repulsion_bp(z) .eq. 0.0d0) .and. (repulsion_bm(z) .eq. 0.0d0) ) ) then
+        ffdev_repulsion_a = repulsion_a0(z)
+        if( ffdev_repulsion_a .eq. 0.0d0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_repulsion_a')
         end if
         return
     end if
 
     ! modulation by charge
-    a1 = densoverlap_a0(z)
+    a1 = repulsion_a0(z)
     if( q .gt. 0.0d0 ) then
         ! positive mode ( q > 0 )
-        if( densoverlap_bp(z) .ne. 0.0d0 ) then
+        if( repulsion_bp(z) .ne. 0.0d0 ) then
             ! interpolation
-            a2 = densoverlap_ap(z) - densoverlap_a0(z)
+            a2 = repulsion_ap(z) - repulsion_a0(z)
         else
             ! extrapolation
-            a2 = densoverlap_a0(z) - densoverlap_am(z)
+            a2 = repulsion_a0(z) - repulsion_am(z)
         end if
     else
         ! negative mode ( q < 0 )
-        if( densoverlap_bm(z) .ne. 0.0d0 ) then
+        if( repulsion_bm(z) .ne. 0.0d0 ) then
             ! interpolation
-            a2 = densoverlap_a0(z) - densoverlap_am(z)
+            a2 = repulsion_a0(z) - repulsion_am(z)
         else
             ! extrapolation
-            a2 = densoverlap_ap(z) - densoverlap_a0(z)
+            a2 = repulsion_ap(z) - repulsion_a0(z)
         end if
     end if
 
-    ffdev_densoverlap_a = a1 + a2*q
+    ffdev_repulsion_a = a1 + a2*q
 
-end function ffdev_densoverlap_a
+end function ffdev_repulsion_a
 
 ! ==============================================================================
-! function ffdev_densoverlap_rc
+! function ffdev_repulsion_rc
 ! ==============================================================================
 
-real(DEVDP) function ffdev_densoverlap_rc(gti,dens)
+real(DEVDP) function ffdev_repulsion_rc(gti,dens)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -281,25 +281,25 @@ real(DEVDP) function ffdev_densoverlap_rc(gti,dens)
     real(DEVDP) :: b, a
     ! --------------------------------------------------------------------------
 
-    b = ffdev_densoverlap_b(gti)
-    a = ffdev_densoverlap_a(gti)
+    b = ffdev_repulsion_b(gti)
+    a = ffdev_repulsion_a(gti)
 
     if( b .eq. 0.0d0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_densoverlap_rc')
+        call ffdev_utils_exit(DEV_ERR,1,'No atodens_b data for given Z in ffdev_repulsion_rc')
     end if
 
-    ffdev_densoverlap_rc = (a - dens)/b
+    ffdev_repulsion_rc = (a - dens)/b
 
     ! density overlaps are calculated for atom separation
-    ffdev_densoverlap_rc = ffdev_densoverlap_rc * 0.5d0
+    ffdev_repulsion_rc = ffdev_repulsion_rc * 0.5d0
 
-end function ffdev_densoverlap_rc
+end function ffdev_repulsion_rc
 
 ! ==============================================================================
-! subroutine ffdev_densoverlap_source_from_string
+! subroutine ffdev_repulsion_source_from_string
 ! ==============================================================================
 
-integer function ffdev_densoverlap_source_from_string(string)
+integer function ffdev_repulsion_source_from_string(string)
 
     use ffdev_utils
 
@@ -309,18 +309,18 @@ integer function ffdev_densoverlap_source_from_string(string)
 
     select case(trim(string))
         case('PBE0/def2-QZVPP')
-            ffdev_densoverlap_source_from_string = DO_PBE0_def2QZVPP
+            ffdev_repulsion_source_from_string = DO_PBE0_def2QZVPP
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_densoverlap_source_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_repulsion_source_from_string!')
     end select
 
-end function ffdev_densoverlap_source_from_string
+end function ffdev_repulsion_source_from_string
 
 ! ==============================================================================
-! subroutine ffdev_densoverlap_source_to_string
+! subroutine ffdev_repulsion_source_to_string
 ! ==============================================================================
 
-character(80) function ffdev_densoverlap_source_to_string(mode)
+character(80) function ffdev_repulsion_source_to_string(mode)
 
     use ffdev_utils
 
@@ -330,13 +330,13 @@ character(80) function ffdev_densoverlap_source_to_string(mode)
 
     select case(mode)
         case(DO_PBE0_def2QZVPP)
-            ffdev_densoverlap_source_to_string = 'PBE0/def2-QZVPP'
+            ffdev_repulsion_source_to_string = 'PBE0/def2-QZVPP'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_densoverlap_source_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_repulsion_source_to_string!')
     end select
 
-end function ffdev_densoverlap_source_to_string
+end function ffdev_repulsion_source_to_string
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_densoverlap
+end module ffdev_repulsion
