@@ -1450,7 +1450,6 @@ subroutine ffdev_topology_apply_NB_comb_rules(top)
 
     implicit none
     type(TOPOLOGY)  :: top
-    integer         :: comb_rules
     ! --------------------------------------------------------------------------
 
     select case(nb_mode)

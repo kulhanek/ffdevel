@@ -331,7 +331,7 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,60,ADVANCE='NO')
     end if
     if( EnableQNBError ) then
-        write(DEV_OUT,60,ADVANCE='NO')
+        write(DEV_OUT,70,ADVANCE='NO')
     end if
 
  30 format('       Energy')

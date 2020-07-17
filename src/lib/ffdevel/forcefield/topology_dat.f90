@@ -235,7 +235,7 @@ integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overla
 integer,parameter   :: EXP_PB_DO_FULL       = 303       ! PB from density overlap - including dis-like
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
 
-integer     :: pb_mode                      =  EXP_PB_FREEOPT
+integer     :: pb_mode                      = EXP_PB_FREEOPT
 
 ! combining rules - applicable for Born-Mayer repulsion
 integer,parameter   :: EXP_COMB_RULE_AM     = 391    ! arithmetic means
@@ -253,7 +253,7 @@ integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
 integer,parameter   :: DAMP_BJ_DO           = 204       ! derived from density overlaps
 integer,parameter   :: DAMP_BJ_DO_FULL      = 205       ! derived from density overlaps - including dis-like
 
-integer     :: dampbj_mode                  = DAMP_BJ_DRC
+integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 
 ! Tang–Toennies damping
 ! Form: Enb = exp(PA*PB)*exp(-PB*r) - disp_s6*fd6*C6/r^6 - disp_s8*fd8*C8/r^8 - disp_s6*fd10*C10/r^10
@@ -266,7 +266,7 @@ integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_fa
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_fa * densoverlap_bii
 integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_fa * densoverlap_bij
 
-integer     :: damptt_mode                  = DAMP_TT_COUPLED
+integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
 ! ==============================================================================
 integer,parameter   :: NB_VDW_LJ            = 13    ! Lenard-Jones

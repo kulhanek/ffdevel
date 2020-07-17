@@ -120,7 +120,7 @@ subroutine ffdev_nb2nb_init_nbtypes
 
     implicit none
     ! --------------------------------------------
-    integer         :: i,j,idx,alloc_status,estat,gti,gtj,k,l
+    integer         :: i,j,idx,alloc_status,gti,gtj,k,l
     ! --------------------------------------------------------------------------
 
     if( ApplyCombiningRules ) then

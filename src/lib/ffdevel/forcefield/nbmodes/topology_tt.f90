@@ -37,13 +37,15 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
 
     select case(nb_mode)
         case(DAMP_TT_CONST)
-            ffdev_topology_TT_damptt_mode_to_string = 'CONST - constant'
+            ffdev_topology_TT_damptt_mode_to_string = 'CONST - a single constant TB'
         case(DAMP_TT_FREEOPT)
-            ffdev_topology_TT_damptt_mode_to_string = 'FREEOPT - Use optimized TB per type'
+            ffdev_topology_TT_damptt_mode_to_string = 'FREEOPT - Optimized TB per type'
         case(DAMP_TT_COUPLED)
-            ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_pb to PB'
+            ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_fa to PB'
         case(DAMP_TT_DO)
-            ffdev_topology_TT_damptt_mode_to_string = 'DO - b-factors form density overlap'
+            ffdev_topology_TT_damptt_mode_to_string = 'DO - TB from density overlap'
+        case(DAMP_TT_DO_FULL)
+            ffdev_topology_TT_damptt_mode_to_string = 'DO-FULL - TB from density overlap including unlike types'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_TT_damptt_mode_to_string!')
     end select
@@ -72,6 +74,8 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_COUPLED
         case('DO')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO
+        case('DO-FULL')
+            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO_FULL
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_TT_damptt_mode_from_string!')
     end select
@@ -99,20 +103,20 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
 
     ! apply combining rules, only FREEOPT
     do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        ! discard like atoms
+        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
-            tbii = top%nb_types(nbii)%tb
-            tbjj = top%nb_types(nbjj)%tb
+        ! get type parameters
+        nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+        nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
 
-            call ffdev_topology_EXP_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
+        tbii = top%nb_types(nbii)%tb
+        tbjj = top%nb_types(nbjj)%tb
 
-            top%nb_types(i)%tb = tbij
+        call ffdev_topology_EXP_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
 
-        end if
+        top%nb_types(i)%tb = tbij
     end do
 
 end subroutine ffdev_topology_TT_apply_NB_comb_rules

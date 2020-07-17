@@ -92,7 +92,6 @@ subroutine ffdev_topology_LJ_apply_NB_comb_rules(top)
 
     implicit none
     type(TOPOLOGY)  :: top
-    integer         :: comb_rules
     ! --------------------------------------------
     integer         :: i,nbii,nbjj
     real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
@@ -100,41 +99,41 @@ subroutine ffdev_topology_LJ_apply_NB_comb_rules(top)
 
     ! apply combining rules
     do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        ! discard like atoms
+        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
-            r0ii  = top%nb_types(nbii)%r0
-            epsii = top%nb_types(nbii)%eps
+        ! get type parameters
+        nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+        nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
 
-            r0jj  = top%nb_types(nbjj)%r0
-            epsjj = top%nb_types(nbjj)%eps
+        r0ii  = top%nb_types(nbii)%r0
+        epsii = top%nb_types(nbii)%eps
 
-            select case(lj_comb_rules)
-                case(LJ_COMB_RULE_LB)
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = sqrt(epsii*epsjj)
-                case(LJ_COMB_RULE_WH)
-                    r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
-                    epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
-                case(LJ_COMB_RULE_KG)
-                    k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
-                    l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
-                    r0ij = (l/k)**(1.0d0/6.0d0)
-                    epsij = k / (r0ij**6)
-                case(LJ_COMB_RULE_FB)
-                    r0ij = (r0ii+r0jj)*0.5d0
-                    epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_LJ_apply_NB_comb_rules!')
-            end select
+        r0jj  = top%nb_types(nbjj)%r0
+        epsjj = top%nb_types(nbjj)%eps
 
-            top%nb_types(i)%r0 = r0ij
-            top%nb_types(i)%eps = epsij
+        select case(lj_comb_rules)
+            case(LJ_COMB_RULE_LB)
+                r0ij = (r0ii+r0jj)*0.5d0
+                epsij = sqrt(epsii*epsjj)
+            case(LJ_COMB_RULE_WH)
+                r0ij = ((r0ii**6 + r0jj**6)*0.5d0)**(1.0d0/6.0d0)
+                epsij = sqrt( epsii*r0ii**6 * epsjj*r0jj**6 )/r0ij**6
+            case(LJ_COMB_RULE_KG)
+                k = sqrt(epsii*r0ii**6 * epsjj*r0jj**6)
+                l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
+                r0ij = (l/k)**(1.0d0/6.0d0)
+                epsij = k / (r0ij**6)
+            case(LJ_COMB_RULE_FB)
+                r0ij = (r0ii+r0jj)*0.5d0
+                epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_LJ_apply_NB_comb_rules!')
+        end select
 
-        end if
+        top%nb_types(i)%r0 = r0ij
+        top%nb_types(i)%eps = epsij
     end do
 
 end subroutine ffdev_topology_LJ_apply_NB_comb_rules

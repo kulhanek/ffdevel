@@ -463,7 +463,7 @@ subroutine ffdev_parameters_reinit()
 
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
-                    use_vdw_pa      = .true.
+                    use_vdw_pb      = .true.
                 case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
                     ! nothing
                 case default
@@ -496,7 +496,7 @@ subroutine ffdev_parameters_reinit()
 
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
-                    use_vdw_pa      = .true.
+                    use_vdw_pb      = .true.
                 case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
                     ! nothing
                 case default

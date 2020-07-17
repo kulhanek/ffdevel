@@ -97,19 +97,20 @@ subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
 
     ! apply combining rules - Rc average, only FREEOPT
     do i=1,top%nnb_types
-        if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) then
 
-            ! get type parameters
-            nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-            nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        ! discard like atoms
+        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
-            rcii = top%nb_types(nbii)%rc
-            rcjj = top%nb_types(nbjj)%rc
+        ! get type parameters
+        nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
+        nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
 
-            rcij = 0.5d0 * (rcii+rcjj)
+        rcii = top%nb_types(nbii)%rc
+        rcjj = top%nb_types(nbjj)%rc
 
-            top%nb_types(i)%rc = rcij
-        end if
+        rcij = 0.5d0 * (rcii+rcjj)
+
+        top%nb_types(i)%rc = rcij
     end do
 
 end subroutine ffdev_topology_BJ_apply_NB_comb_rules

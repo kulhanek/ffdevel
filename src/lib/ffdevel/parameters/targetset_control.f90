@@ -636,7 +636,6 @@ subroutine ffdev_targetset_ctrl_setup(fin)
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
-    integer             :: estat
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)

@@ -1270,60 +1270,6 @@ subroutine ffdev_geometry_info_point(geo,mode)
 end subroutine ffdev_geometry_info_point
 
 ! ==============================================================================
-! subroutine ffdev_geometry_info_point_ext
-! ==============================================================================
-
-subroutine ffdev_geometry_info_point_ext(geo,relative)
-
-    implicit none
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------
-    character(len=40)   :: lname
-    logical             :: relative
-    character(len=1)    :: enef, prbf, chrgf
-    ! --------------------------------------------------------------------------
-
-    enef = 'F'
-    if( geo%trg_ene_loaded ) then
-        if( geo%trg_ene_generic ) then
-            enef = 'T'
-        else
-            enef = 'S'
-        end if
-    end if
-
-    prbf = 'F'
-    if( geo%trg_probe_ene_loaded ) then
-        if( geo%trg_probe_ene_generic ) then
-            prbf = 'T'
-        else
-            prbf = 'S'
-        end if
-    end if
-
-    chrgf = 'F'
-    if( geo%sup_chrg_loaded ) then
-        if( geo%sup_chrg_generic ) then
-            chrgf = 'T'
-        else
-            chrgf = 'S'
-        end if
-    end if
-
-    lname = trim(geo%name)
-    if( relative ) then
-
-    else
-
-    end if
-
-! '# ---- -------------------- ------ - - - -'
-  10 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
-  15 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1)
-
-end subroutine ffdev_geometry_info_point_ext
-
-! ==============================================================================
 ! subroutine ffdev_geometry_info_ene
 ! ==============================================================================
 

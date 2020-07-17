@@ -67,7 +67,7 @@ subroutine ffdev_densoverlap_ctrl(fin,exec)
     call ffdev_densoverlap_update_db
     call ffdev_densoverlap_print
 
- 10 format('== [densoverlap] =================================================================')
+ 10 format('== [densoverlap] ===============================================================')
 
 110  format ('Density overlap source (source)        = ',a29)
 115  format ('Density overlap source (source)        = ',a29,' (default)')

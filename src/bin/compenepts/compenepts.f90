@@ -32,6 +32,7 @@ program ffdev_compenepts_program
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo1
     type(GEOMETRY)          :: geo2
+    real(DEVDP)             :: nb14_ene1,nb14_ene2,nb_ene1,nb_ene2
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('Compare Energy between Two Geometries')
@@ -102,17 +103,23 @@ program ffdev_compenepts_program
     write(DEV_OUT,*)
     write(DEV_OUT,200)
     write(DEV_OUT,210)
-    ! FIXME
-!    write(DEV_OUT,300) geo1%bond_ene,geo1%bond_ene,geo2%bond_ene-geo1%bond_ene
-!    write(DEV_OUT,310) geo1%angle_ene,geo2%angle_ene,geo2%angle_ene-geo1%angle_ene
-!    write(DEV_OUT,320) geo1%dih_ene,geo2%dih_ene,geo2%dih_ene-geo1%dih_ene
-!    write(DEV_OUT,330) geo1%impropr_ene,geo2%impropr_ene,geo2%impropr_ene-geo1%impropr_ene
-!    write(DEV_OUT,340) geo1%ele14_ene,geo2%ele14_ene,geo2%ele14_ene-geo1%ele14_ene
-!    write(DEV_OUT,350) geo1%nb14_ene,geo2%nb14_ene,geo2%nb14_ene-geo1%nb14_ene
-!    write(DEV_OUT,360) geo1%ele_ene,geo2%ele_ene,geo2%ele_ene-geo1%ele_ene
-!    write(DEV_OUT,370) geo1%nb_ene,geo2%nb_ene,geo2%nb_ene-geo1%nb_ene
-!    write(DEV_OUT,380) geo1%total_ene,geo2%total_ene,geo2%total_ene-geo1%total_ene
 
+    write(DEV_OUT,300) geo1%bond_ene,geo1%bond_ene,geo2%bond_ene-geo1%bond_ene
+    write(DEV_OUT,310) geo1%angle_ene,geo2%angle_ene,geo2%angle_ene-geo1%angle_ene
+    write(DEV_OUT,320) geo1%dih_ene,geo2%dih_ene,geo2%dih_ene-geo1%dih_ene
+    write(DEV_OUT,330) geo1%impropr_ene,geo2%impropr_ene,geo2%impropr_ene-geo1%impropr_ene
+
+    write(DEV_OUT,340) geo1%ele14_ene,geo2%ele14_ene,geo2%ele14_ene-geo1%ele14_ene
+    nb14_ene1 = geo1%rep14_ene + geo1%dis14_ene
+    nb14_ene2 = geo2%rep14_ene + geo2%dis14_ene
+    write(DEV_OUT,350) nb14_ene1,nb14_ene2,nb14_ene2-nb14_ene1
+
+    write(DEV_OUT,360) geo1%ele_ene,geo2%ele_ene,geo2%ele_ene-geo1%ele_ene
+    nb_ene1 = geo1%rep_ene + geo1%dis_ene
+    nb_ene2 = geo2%rep_ene + geo2%dis_ene
+    write(DEV_OUT,370) nb_ene1,nb_ene2,nb_ene2-nb_ene1
+
+    write(DEV_OUT,380) geo1%total_ene,geo2%total_ene,geo2%total_ene-geo1%total_ene
 
     call ffdev_utils_footer('Compare Energy between Two Geometries')
 
