@@ -37,13 +37,18 @@ integer,parameter   :: DENSOVERLAP_MAX_Z = 86
 ! b0, a0 - neutral atom
 ! bm, am - anion (-1)
 
-real(DEVDP)     :: densoverlap_bp(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_b0(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_bm(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_bpii(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_b0ii(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_bmii(1:DENSOVERLAP_MAX_Z)
 
-real(DEVDP)     :: densoverlap_ap(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_a0(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_am(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_apii(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_a0ii(1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_amii(1:DENSOVERLAP_MAX_Z)
+
+real(DEVDP)     :: densoverlap_b0ij(1:DENSOVERLAP_MAX_Z,1:DENSOVERLAP_MAX_Z)
+real(DEVDP)     :: densoverlap_a0ij(1:DENSOVERLAP_MAX_Z,1:DENSOVERLAP_MAX_Z)
+
+
 
 ! ------------------------------------------------------------------------------
 

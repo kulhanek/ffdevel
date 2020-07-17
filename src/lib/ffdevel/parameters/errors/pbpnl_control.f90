@@ -36,6 +36,7 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
+    character(80)               :: string
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -45,8 +46,12 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnablePBPnlError)
         write(DEV_OUT,135) prmfile_onoff(PrintPBPnlErrorSummary)
 
-        write(DEV_OUT,125) PBPnlErrorWeight
-        write(DEV_OUT,145) prmfile_onoff(PBPNLBuriedAtoms)
+        write(DEV_OUT,145) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
+        write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
+
+        write(DEV_OUT,123) PBPnlErrorWeight
+        write(DEV_OUT,125) PBPnlErrorWeight1
+        write(DEV_OUT,128) PBPnlErrorWeight2
         return
     end if
 
@@ -62,16 +67,34 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintPBPnlErrorSummary)
     end if
 
-    if( prmfile_get_real8_by_key(fin,'weight', PBPnlErrorWeight)) then
-        write(DEV_OUT,120) PBPnlErrorWeight
+    if( prmfile_get_string_by_key(fin,'mode', string)) then
+        PBPNLMode = ffdev_err_pbpnl_control_mode_from_string(string)
+        write(DEV_OUT,140) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
     else
-        write(DEV_OUT,125) PBPnlErrorWeight
+        write(DEV_OUT,145) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
     end if
 
-    if( prmfile_get_logical_by_key(fin,'buried', PBPNLBuriedAtoms)) then
-        write(DEV_OUT,140) prmfile_onoff(PBPNLBuriedAtoms)
+    if( prmfile_get_string_by_key(fin,'source', string)) then
+        PBPNLSource = ffdev_err_pbpnl_control_source_from_string(string)
+        write(DEV_OUT,150) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
     else
-        write(DEV_OUT,145) prmfile_onoff(PBPNLBuriedAtoms)
+        write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'weight', PBPnlErrorWeight)) then
+        write(DEV_OUT,122) PBPnlErrorWeight
+    else
+        write(DEV_OUT,123) PBPnlErrorWeight
+    end if
+    if( prmfile_get_real8_by_key(fin,'weight1', PBPnlErrorWeight1)) then
+        write(DEV_OUT,120) PBPnlErrorWeight1
+    else
+        write(DEV_OUT,125) PBPnlErrorWeight1
+    end if
+    if( prmfile_get_real8_by_key(fin,'weight2', PBPnlErrorWeight2)) then
+        write(DEV_OUT,127) PBPnlErrorWeight2
+    else
+        write(DEV_OUT,128) PBPnlErrorWeight2
     end if
 
  10 format('=== [pbpnl] ====================================================================')
@@ -81,13 +104,123 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 130  format ('PB penalty summary (summary)           = ',a12)
 135  format ('PB penalty summary (summary)           = ',a12,'                  (default)')
 
-120  format ('PB penalty weight (weight)             = ',f21.8)
-125  format ('PB penalty weight (weight)             = ',f21.8,'         (default)')
+122  format ('PB penalty weight (weight)             = ',f21.8)
+123  format ('PB penalty weight (weight)             = ',f21.8,'         (default)')
 
-140  format ('PB buried atoms (buried)               = ',a12)
-145  format ('PB buried atoms (buried)               = ',a12,'                  (default)')
+120  format ('PB penalty weight#1 (weight1)          = ',f21.8)
+125  format ('PB penalty weight#1 (weight1)          = ',f21.8,'         (default)')
+
+127  format ('PB penalty weight#2 (weight2)          = ',f21.8)
+128  format ('PB penalty weight#2 (weight2)          = ',f21.8,'         (default)')
+
+140  format ('PB penalty mode (mode)                 = ',a12)
+145  format ('PB penalty mode (mode)                 = ',a12,'                  (default)')
+
+150  format ('PB source (source)                     = ',a12)
+155  format ('PB source (source)                     = ',a12,'                  (default)')
 
 end subroutine ffdev_err_pbpnl_ctrl
+
+! ==============================================================================
+! subroutine ffdev_err_pbpnl_control_source_to_string
+! ==============================================================================
+
+character(80) function ffdev_err_pbpnl_control_source_to_string(source)
+
+    use ffdev_utils
+    use ffdev_err_pbpnl_dat
+
+    implicit none
+    integer  :: source
+    ! --------------------------------------------------------------------------
+
+    select case(source)
+        case(PB_PNL_SOURCE_DO)
+            ffdev_err_pbpnl_control_source_to_string = 'DO - Density overlaps'
+        case(PB_PNL_SOURCE_IP)
+            ffdev_err_pbpnl_control_source_to_string = 'IP - Ionization potentials'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_source_to_string!')
+    end select
+
+end function ffdev_err_pbpnl_control_source_to_string
+
+! ==============================================================================
+! subroutine ffdev_err_pbpnl_control_source_from_string
+! ==============================================================================
+
+integer function ffdev_err_pbpnl_control_source_from_string(string)
+
+    use ffdev_utils
+    use ffdev_err_pbpnl_dat
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('DO')
+            ffdev_err_pbpnl_control_source_from_string = PB_PNL_SOURCE_DO
+        case('IP')
+            ffdev_err_pbpnl_control_source_from_string = PB_PNL_SOURCE_IP
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
+                                            // '" in ffdev_err_pbpnl_control_source_from_string!')
+    end select
+
+end function ffdev_err_pbpnl_control_source_from_string
+
+! ==============================================================================
+! subroutine ffdev_err_pbpnl_control_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_err_pbpnl_control_mode_to_string(mode)
+
+    use ffdev_utils
+    use ffdev_err_pbpnl_dat
+
+    implicit none
+    integer  :: mode
+    ! --------------------------------------------------------------------------
+
+    select case(mode)
+        case(PB_PNL_MODE_ALL)
+            ffdev_err_pbpnl_control_mode_to_string = 'ALL'
+        case(PB_PNL_MODE_BURIED)
+            ffdev_err_pbpnl_control_mode_to_string = 'BURIED'
+        case(PB_PNL_MODE_NOH)
+            ffdev_err_pbpnl_control_mode_to_string = 'NOH'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_mode_to_string!')
+    end select
+
+end function ffdev_err_pbpnl_control_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_err_pbpnl_control_mode_from_string
+! ==============================================================================
+
+integer function ffdev_err_pbpnl_control_mode_from_string(string)
+
+    use ffdev_utils
+    use ffdev_err_pbpnl_dat
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('ALL')
+            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_ALL
+        case('BURIED')
+            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_BURIED
+        case('NOH')
+            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_NOH
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_err_pbpnl_control_mode_from_string!')
+    end select
+
+end function ffdev_err_pbpnl_control_mode_from_string
 
 ! ------------------------------------------------------------------------------
 

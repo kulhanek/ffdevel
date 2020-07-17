@@ -36,9 +36,12 @@ subroutine ffdev_err_pbpnl_init
 
     EnablePBPnlError        = .false.
     PrintPBPnlErrorSummary  = .false.
+    PBPNLMode               = PB_PNL_MODE_ALL
+    PBPNLSource             = PB_PNL_SOURCE_DO
     PBPnlErrorWeight        = 1.0
+    PBPnlErrorWeight1       = 1.0
+    PBPnlErrorWeight2       = 0.0
     PBPnlFce                = PB_PNL_QUADRATIC
-    PBPNLBuriedAtoms        = .false.
 
 end subroutine ffdev_err_pbpnl_init
 
@@ -59,7 +62,7 @@ subroutine ffdev_err_pbpnl_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i
-    real(DEVDP)         :: diff,w
+    real(DEVDP)         :: diff,w,pb0
     ! --------------------------------------------------------------------------
 
     error%pbpnl = 0.0d0
@@ -67,16 +70,39 @@ subroutine ffdev_err_pbpnl_error(error)
     do i=1,nparams
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
-        w = 1.0d0
-        if( PBPNLBuriedAtoms ) then
-            w = 1.0d0 - buried_atoms(params(i)%ti)%weight
-        end if
+
+        ! weight
+        select case(PBPNLMode)
+            case(PB_PNL_MODE_ALL)
+                w = PBPnlErrorWeight1
+            case(PB_PNL_MODE_BURIED)
+                w = PBPnlErrorWeight2 * buried_atoms(params(i)%ti)%weight + &
+                    PBPnlErrorWeight1 * (1.0d0 - buried_atoms(params(i)%ti)%weight)
+            case(PB_PNL_MODE_NOH)
+                if( types(params(i)%ti)%z .ne. 1 ) then
+                    w = PBPnlErrorWeight1 ! no-H
+                else
+                    w = PBPnlErrorWeight2 ! H
+                end if
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented mode in ffdev_err_pbpnl_error!')
+        end select
+
+        select case(PBPNLSource)
+            case(PB_PNL_SOURCE_DO)
+                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+            case(PB_PNL_SOURCE_IP)
+                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
+        end select
+
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_densoverlap_bii(params(i)%ti)
+                diff = params(i)%value - pb0
                 error%pbpnl = error%pbpnl + w*diff**2
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_error!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented rst fce in ffdev_err_pbpnl_error!')
         end select
     end do
 
@@ -96,7 +122,7 @@ subroutine ffdev_err_pbpnl_summary()
 
     implicit none
     integer         :: i
-    real(DEVDP)     :: totpnl, pnl, diff, w
+    real(DEVDP)     :: totpnl, pnl, diff, w, pb0
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -110,14 +136,35 @@ subroutine ffdev_err_pbpnl_summary()
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
         if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
 
-        w = 1.0d0
-        if( PBPNLBuriedAtoms ) then
-            w = 1.0d0 - buried_atoms(params(i)%ti)%weight
-        end if
+        ! weight
+        select case(PBPNLMode)
+            case(PB_PNL_MODE_ALL)
+                w = PBPnlErrorWeight1
+            case(PB_PNL_MODE_BURIED)
+                w = PBPnlErrorWeight1 * buried_atoms(params(i)%ti)%weight + &
+                    PBPnlErrorWeight2 * (1.0d0 - buried_atoms(params(i)%ti)%weight)
+            case(PB_PNL_MODE_NOH)
+                if( types(params(i)%ti)%z .eq. 1 ) then
+                    w = PBPnlErrorWeight2 ! H
+                else
+                    w = PBPnlErrorWeight1 ! no-H
+                end if
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented mode in ffdev_err_pbpnl_summary!')
+        end select
+
+        select case(PBPNLSource)
+            case(PB_PNL_SOURCE_DO)
+                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+            case(PB_PNL_SOURCE_IP)
+                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
+        end select
 
         select case(PBPnlFce)
             case(PB_PNL_QUADRATIC)
-                diff = params(i)%value - ffdev_densoverlap_bii(params(i)%ti)
+                diff = params(i)%value - pb0
                 pnl = w*diff**2
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_summary!')

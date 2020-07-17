@@ -46,7 +46,8 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
     implicit none
     integer         :: gti
     ! --------------------------------------------
-    integer         :: z,ip
+    integer         :: z
+    real(DEVDP)     :: ip
     ! --------------------------------------------------------------------------
 
     z = types(gti)%z
@@ -57,7 +58,7 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
 
     ip = ionization_potential(z) * DEV_eV2AU
 
-    ffdev_bfac_from_ip = 2.0d0*sqrt(2.0d0 * ip)
+    ffdev_bfac_from_ip = DEV_AU2A*2.0d0*sqrt(2.0d0 * ip)
 
 end function ffdev_bfac_from_ip
 
