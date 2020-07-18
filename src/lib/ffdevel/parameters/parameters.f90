@@ -510,6 +510,8 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_tb      = .true.
                 case(DAMP_TT_COUPLED)
                     use_damp_fa     = .true.
+                case(DAMP_TT_IP)
+                    use_damp_fa     = .true.
                 case(DAMP_TT_DO)
                     use_damp_fa     = .true.
                 case(DAMP_TT_DO_FULL)

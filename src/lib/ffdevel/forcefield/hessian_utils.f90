@@ -315,7 +315,7 @@ subroutine ffdev_hessian_calc_freqs(geo)
     ! get optimal work size
     lwork = -1
     call dsyev('V','L',geo%natoms*3, geo%nmodes, geo%natoms*3, geo%freq, tmp, lwork, info)
-    lwork = tmp(1)
+    lwork = INT(tmp(1))
 
     ! allocate data
     allocate(work(lwork), stat = alloc_stat)
@@ -455,7 +455,7 @@ subroutine ffdev_hessian_calc_trg_freqs(geo)
     ! get optimal work size
     lwork = -1
     call dsyev('V','L',geo%natoms*3, geo%trg_nmodes, geo%natoms*3, geo%trg_freq, tmp, lwork, info)
-    lwork = tmp(1)
+    lwork = INT(tmp(1))
 
     ! allocate data
     allocate(work(lwork), stat = alloc_stat)

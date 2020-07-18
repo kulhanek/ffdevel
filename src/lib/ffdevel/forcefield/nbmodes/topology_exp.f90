@@ -43,7 +43,7 @@ character(80) function ffdev_topology_EXP_pb_mode_to_string(lpb_mode)
         case(EXP_PB_DO_FULL)
             ffdev_topology_EXP_pb_mode_to_string = 'DO-FULL - PB from density overlap including unlike'
         case(EXP_PB_IP)
-            ffdev_topology_EXP_pb_mode_to_string = 'IP - Derived from ionization potentials'
+            ffdev_topology_EXP_pb_mode_to_string = 'IP - PB derived from ionization potentials'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_pb_mode_to_string!')
     end select
@@ -138,106 +138,115 @@ integer function ffdev_topology_EXP_comb_rules_from_string(string)
 end function ffdev_topology_EXP_comb_rules_from_string
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules_EXP
+! subroutine ffdev_topology_EXP_update_nb_params
 ! ==============================================================================
 
-subroutine ffdev_topology_EXP_apply_NB_comb_rules(top)
+subroutine ffdev_topology_EXP_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
     use ffdev_densoverlap
     use ffdev_ip_db
 
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: i,nbii,nbjj,ti,tj,agti,agtj
-    real(DEVDP)     :: paii,paij,pajj
-    real(DEVDP)     :: pbii,pbij,pbjj
-    real(DEVDP)     :: eaii,eaij,eajj
+    integer         :: i,ti,agti,tj,agtj
     ! --------------------------------------------------------------------------
 
-    ! apply combining rules
+    ! first update PB for like only types
+    select case(pb_mode)
+        case(EXP_PB_FREEOPT,EXP_PB_DO_FULL)
+            ! nothing to do
+    !---------------
+        case(EXP_PB_DO)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%pb = ffdev_densoverlap_bii(agti)
+            end do
+    !---------------
+        case(EXP_PB_IP)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%pb = ffdev_bfac_from_ip(agti)
+            end do
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
+    end select
+
+    ! then PB unlike types
+    select case(pb_mode)
+        case(EXP_PB_FREEOPT)
+            if( ApplyCombiningRules ) then
+                call ffdev_topology_EXP_update_nb_params_PB(top)
+            end if
+    !---------------
+        case(EXP_PB_DO,EXP_PB_IP)
+            if( .not. ApplyCombiningRules ) then
+                ! we need to apply combining rules for unlike atoms
+                call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_DO,EXP_PB_IP requires ApplyCombiningRules!')
+            end if
+            call ffdev_topology_EXP_update_nb_params_PB(top)
+    !---------------
+        case(EXP_PB_DO_FULL)
+            do i=1,top%nnb_types
+                ti   = top%nb_types(i)%ti
+                tj   = top%nb_types(i)%tj
+                agti = top%atom_types(ti)%glbtypeid
+                agtj = top%atom_types(tj)%glbtypeid
+                top%nb_types(i)%pb = ffdev_densoverlap_bij(agti,agtj)
+            end do
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params II!')
+    end select
+
+    ! and finally PA
+    if( ApplyCombiningRules ) then
+        call ffdev_topology_EXP_update_nb_params_PA(top)
+    end if
+
+end subroutine ffdev_topology_EXP_update_nb_params
+
+!===============================================================================
+! subroutine ffdev_topology_EXP_update_nb_params_PB
+!===============================================================================
+
+subroutine ffdev_topology_EXP_update_nb_params_PB(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: pbii,pbjj,pbij
+    ! --------------------------------------------------------------------------
+
+   ! apply combining rules
     do i=1,top%nnb_types
 
         ! discard like atoms
         if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
-        ! for unlike atoms
-        ti      = top%nb_types(i)%ti
-        tj      = top%nb_types(i)%tj
-        agti    = top%atom_types(ti)%glbtypeid
-        agtj    = top%atom_types(tj)%glbtypeid
-
         ! get type parameters
-        nbii = ffdev_topology_find_nbtype_by_tindex(top,ti,ti)
-        nbjj = ffdev_topology_find_nbtype_by_tindex(top,tj,tj)
+        nbii = top%nb_types(i)%nbii
+        nbjj = top%nb_types(i)%nbjj
 
-        ! PB
-        select case(pb_mode)
-            case(EXP_PB_FREEOPT)
-                pbii = top%nb_types(nbii)%pb
-                pbjj = top%nb_types(nbjj)%pb
-                call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-        !---------------
-            case(EXP_PB_DO)
-                pbii = ffdev_densoverlap_bii(agti)
-                pbjj = ffdev_densoverlap_bii(agtj)
-                call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-        !---------------
-            case(EXP_PB_DO_FULL)
-                pbii = ffdev_densoverlap_bii(agti)
-                pbjj = ffdev_densoverlap_bii(agtj)
-                pbij = ffdev_densoverlap_bij(agti,agtj)
-        !---------------
-            case(EXP_PB_IP)
-                pbii = ffdev_bfac_from_ip(agti)
-                pbjj = ffdev_bfac_from_ip(agtj)
-                call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-        !---------------
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_update_nbpair_prms!')
-        end select
+        pbii  = top%nb_types(nbii)%pb
+        pbjj  = top%nb_types(nbjj)%pb
 
-        ! PA
-        paii = top%nb_types(nbii)%pa
-        pajj = top%nb_types(nbjj)%pa
-        select case(exp_comb_rules)
+        call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
 
-            case(EXP_COMB_RULE_AM)
-                paij = 0.5d0 * (paii+pajj)      ! paij is exponential of Aij, etc. ...
-
-            case(EXP_COMB_RULE_GS)
-                ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
-                eaii = exp(paii)
-                eajj = exp(pajj)
-                eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
-                paij = log(eaij)                ! paij is exponential of Aij, etc. ...
-
-            case(EXP_COMB_RULE_BA)
-                ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
-                eaii = exp(paii)
-                eajj = exp(pajj)
-                eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
-                paij = log(eaij)                ! paij is exponential of Aij, etc. ...
-
-            case(EXP_COMB_RULE_VS)
-                ! DOI:10.1021/acs.jctc.6b00209J. Chem. Theory Comput.2016, 12, 3851−3870
-                paij = 0.5d0 * (paii + pajj)    ! paij is exponential of Aij, etc. ...
-
-        case(REP_COMB_RULE_BDK)
-                paij = 0.5d0 * (paii+pajj)      ! paij is exponential of Aij, etc. ...
-
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_apply_NB_comb_rules!')
-        end select
-
-        top%nb_types(i)%pa = paij
         top%nb_types(i)%pb = pbij
 
     end do
 
-end subroutine ffdev_topology_EXP_apply_NB_comb_rules
+end subroutine ffdev_topology_EXP_update_nb_params_PB
 
 !===============================================================================
 ! subroutine ffdev_topology_EXP_apply_NB_comb_rules_PB
@@ -251,7 +260,6 @@ subroutine ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
     real(DEVDP)     :: pbii,pbjj,pbij
     ! --------------------------------------------------------------------------
 
-    !write(*,*) pbii,pbjj
     select case(exp_comb_rules)
         case(EXP_COMB_RULE_AM)
             pbij = 0.5d0 * (pbii+pbjj)
@@ -286,6 +294,76 @@ subroutine ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
     end select
 
 end subroutine ffdev_topology_EXP_apply_NB_comb_rules_PB
+
+!===============================================================================
+! subroutine ffdev_topology_EXP_update_nb_params_PA
+!===============================================================================
+
+subroutine ffdev_topology_EXP_update_nb_params_PA(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: pbii,pbjj,pbij,paii,pajj,paij,eaii,eajj,eaij
+    ! --------------------------------------------------------------------------
+
+   ! apply combining rules
+    do i=1,top%nnb_types
+
+        ! discard like atoms
+        if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
+
+        ! get type parameters
+        nbii = top%nb_types(i)%nbii
+        nbjj = top%nb_types(i)%nbjj
+
+        ! PA
+        paii = top%nb_types(nbii)%pa
+        pajj = top%nb_types(nbjj)%pa
+
+        ! helpers for some rules
+        pbii  = top%nb_types(nbii)%pb
+        pbjj  = top%nb_types(nbjj)%pb
+        pbij  = top%nb_types(i)%pb
+
+        select case(exp_comb_rules)
+
+            case(EXP_COMB_RULE_AM)
+                paij = 0.5d0 * (paii+pajj)      ! paij is exponential of Aij, etc. ...
+
+            case(EXP_COMB_RULE_GS)
+                ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                eaii = exp(paii)
+                eajj = exp(pajj)
+                eaij = ( ( (eaii*pbii)**(1.0d0/pbii) * (eajj*pbjj)**(1.0d0/pbjj) )**(pbij/2.0d0) ) / pbij
+                paij = log(eaij)                ! paij is exponential of Aij, etc. ...
+
+            case(EXP_COMB_RULE_BA)
+                ! Z. Phys. D - Atoms, Molecules and Clusters 1, 91-101 (1986)
+                eaii = exp(paii)
+                eajj = exp(pajj)
+                eaij = ( (eaii)**(1.0d0/pbii) * (eajj)**(1.0d0/pbjj) )**(pbij/2.0d0)
+                paij = log(eaij)                ! paij is exponential of Aij, etc. ...
+
+            case(EXP_COMB_RULE_VS)
+                ! DOI:10.1021/acs.jctc.6b00209J. Chem. Theory Comput.2016, 12, 3851−3870
+                paij = 0.5d0 * (paii + pajj)    ! paij is exponential of Aij, etc. ...
+
+        case(REP_COMB_RULE_BDK)
+                paij = 0.5d0 * (paii+pajj)      ! paij is exponential of Aij, etc. ...
+
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_apply_NB_comb_rules!')
+        end select
+
+        top%nb_types(i)%pa = paij
+
+    end do
+
+end subroutine ffdev_topology_EXP_update_nb_params_PA
 
 ! ------------------------------------------------------------------------------
 

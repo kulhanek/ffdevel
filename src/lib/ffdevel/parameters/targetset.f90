@@ -87,17 +87,11 @@ subroutine ffdev_targetset_calc_all
 
     georeseted = 0
 
-    ! apply combining rules
-    if( ApplyCombiningRules ) then
-        do i=1,nsets
-            call ffdev_topology_apply_NB_comb_rules(sets(i)%top)
-        end do
-    end if
-
     ! PARALLEL !!!!! ensure that NB parameters are updated before the parallel section !!!!!
     do i=1,nsets
         if( sets(i)%top%nb_params_update ) then
             call ffdev_topology_update_nb_params(sets(i)%top)
+            call ffdev_topology_update_nb_pairs(sets(i)%top)
         end if
     end do
 

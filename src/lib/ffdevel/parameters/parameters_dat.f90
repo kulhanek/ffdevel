@@ -117,9 +117,6 @@ real(DEVDP),allocatable     :: prmchrgs     ! values
 
 ! ------------------------------------------------------------------------------
 
-! derived setup
-logical                 :: ApplyCombiningRules        = .false.           ! apply combination rules in every error evaluation
-
 ! NBParamsMode
 integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0     ! normal setup depending on a probe mode of target sets
                                                                 ! either all nb_types or probe/probed structure

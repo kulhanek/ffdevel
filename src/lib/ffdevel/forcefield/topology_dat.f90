@@ -147,6 +147,7 @@ type NB_TYPE
     real(DEVDP)         :: RC                   ! BJ damping radius
     real(DEVDP)         :: TB                   ! TT damping factor
     logical             :: ffoptactive          ! this type is subject of ffopt
+    integer             :: nbii, nbjj           ! links to like nb_types
 end type NB_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -265,6 +266,7 @@ integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
 integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_fa
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_fa * densoverlap_bii
 integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_fa * densoverlap_bij
+integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_fa * f(ionization potential)
 
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
@@ -277,7 +279,8 @@ integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
 integer     :: nb_mode                      = NB_VDW_LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
 integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
-
+! derived setup
+logical     :: ApplyCombiningRules          = .false.           ! apply combination rules in every error evaluation
 ! ------------------------------------------------------------------------------
 
 real(DEVDP) :: glb_iscnb                    = 1.0d0         ! global scaling for 1-4 NB interactions

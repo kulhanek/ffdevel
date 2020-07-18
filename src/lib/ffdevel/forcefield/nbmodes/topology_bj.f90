@@ -78,10 +78,10 @@ integer function ffdev_topology_BJ_dampbj_mode_from_string(string)
 end function ffdev_topology_BJ_dampbj_mode_from_string
 
 ! ==============================================================================
-! subroutine ffdev_topology_BJ_apply_NB_comb_rules
+! subroutine ffdev_topology_BJ_update_nb_params
 ! ==============================================================================
 
-subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
+subroutine ffdev_topology_BJ_update_nb_params(top)
 
     use ffdev_utils
     use ffdev_topology_utils
@@ -93,8 +93,6 @@ subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
     real(DEVDP)     :: rcii,rcij,rcjj
     ! --------------------------------------------------------------------------
 
-    if( dampbj_mode .ne. DAMP_BJ_FREEOPT ) return
-
     ! apply combining rules - Rc average, only FREEOPT
     do i=1,top%nnb_types
 
@@ -102,8 +100,8 @@ subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
         if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
         ! get type parameters
-        nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-        nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        nbii = top%nb_types(i)%nbii
+        nbjj = top%nb_types(i)%nbjj
 
         rcii = top%nb_types(nbii)%rc
         rcjj = top%nb_types(nbjj)%rc
@@ -113,7 +111,7 @@ subroutine ffdev_topology_BJ_apply_NB_comb_rules(top)
         top%nb_types(i)%rc = rcij
     end do
 
-end subroutine ffdev_topology_BJ_apply_NB_comb_rules
+end subroutine ffdev_topology_BJ_update_nb_params
 
 ! ------------------------------------------------------------------------------
 

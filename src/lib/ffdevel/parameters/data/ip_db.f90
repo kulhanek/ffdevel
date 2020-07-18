@@ -47,7 +47,6 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
     integer         :: gti
     ! --------------------------------------------
     integer         :: z
-    real(DEVDP)     :: ip
     ! --------------------------------------------------------------------------
 
     z = types(gti)%z
@@ -56,9 +55,8 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
         call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_bfac_from_ip!')
     end if
 
-    ip = ionization_potential(z) * DEV_eV2AU
-
-    ffdev_bfac_from_ip = DEV_AU2A*2.0d0*sqrt(2.0d0 * ip)
+    ! in A^-1 => 1.0 / DEV_AU2A
+    ffdev_bfac_from_ip = sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
 
 end function ffdev_bfac_from_ip
 

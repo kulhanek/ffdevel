@@ -42,10 +42,12 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
             ffdev_topology_TT_damptt_mode_to_string = 'FREEOPT - Optimized TB per type'
         case(DAMP_TT_COUPLED)
             ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_fa to PB'
+        case(DAMP_TT_IP)
+            ffdev_topology_TT_damptt_mode_to_string = 'IP - TB derived from ionization potentials'
         case(DAMP_TT_DO)
-            ffdev_topology_TT_damptt_mode_to_string = 'DO - TB from density overlap'
+            ffdev_topology_TT_damptt_mode_to_string = 'DO - TB derived from density overlap'
         case(DAMP_TT_DO_FULL)
-            ffdev_topology_TT_damptt_mode_to_string = 'DO-FULL - TB from density overlap including unlike types'
+            ffdev_topology_TT_damptt_mode_to_string = 'DO-FULL - TB derived from density overlap including unlike types'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_TT_damptt_mode_to_string!')
     end select
@@ -72,6 +74,8 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_FREEOPT
         case('COUPLED')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_COUPLED
+        case('IP')
+            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP
         case('DO')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO
         case('DO-FULL')
@@ -83,10 +87,10 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
 end function ffdev_topology_TT_damptt_mode_from_string
 
 ! ==============================================================================
-! subroutine ffdev_topology_TT_apply_NB_comb_rules
+! subroutine ffdev_topology_TT_update_nb_params
 ! ==============================================================================
 
-subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
+subroutine ffdev_topology_TT_update_nb_params(top)
 
     use ffdev_utils
     use ffdev_topology_utils
@@ -99,8 +103,6 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
     real(DEVDP)     :: tbii,tbij,tbjj
     ! --------------------------------------------------------------------------
 
-    if( damptt_mode .ne. DAMP_TT_FREEOPT ) return
-
     ! apply combining rules, only FREEOPT
     do i=1,top%nnb_types
 
@@ -108,8 +110,8 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
         if( top%nb_types(i)%ti .eq. top%nb_types(i)%tj ) cycle
 
         ! get type parameters
-        nbii = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%ti,top%nb_types(i)%ti)
-        nbjj = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(i)%tj,top%nb_types(i)%tj)
+        nbii = top%nb_types(i)%nbii
+        nbjj = top%nb_types(i)%nbjj
 
         tbii = top%nb_types(nbii)%tb
         tbjj = top%nb_types(nbjj)%tb
@@ -119,7 +121,7 @@ subroutine ffdev_topology_TT_apply_NB_comb_rules(top)
         top%nb_types(i)%tb = tbij
     end do
 
-end subroutine ffdev_topology_TT_apply_NB_comb_rules
+end subroutine ffdev_topology_TT_update_nb_params
 
 ! ------------------------------------------------------------------------------
 

@@ -17,7 +17,6 @@ SET(FFDEVEL_SRC
         forcefield/disp.f90
         forcefield/disp_control.f90
         forcefield/topology_dat.f90
-        forcefield/topology_utils.f90
         forcefield/topology.f90
         forcefield/geometry_dat.f90
         forcefield/geometry.f90

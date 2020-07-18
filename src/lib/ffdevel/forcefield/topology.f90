@@ -1181,12 +1181,21 @@ subroutine ffdev_topology_init_nbij(top)
     integer         :: i,nbt,ti,tj
     ! --------------------------------------------------------------------------
 
+    ! for nb_pairs
     do i=1,top%nb_size
         nbt = top%nb_list(i)%nbt
-        ti = top%nb_types(nbt)%ti
-        tj = top%nb_types(nbt)%tj
+        ti  = top%nb_types(nbt)%ti
+        tj  = top%nb_types(nbt)%tj
         top%nb_list(i)%nbtii = ffdev_topology_find_nbtype_by_tindex(top,ti,ti)
         top%nb_list(i)%nbtjj = ffdev_topology_find_nbtype_by_tindex(top,tj,tj)
+    end do
+
+    ! for nb_types
+    do i=1,top%nnb_types
+        ti = top%nb_types(i)%ti
+        tj = top%nb_types(i)%tj
+        top%nb_types(i)%nbii = ffdev_topology_find_nbtype_by_tindex(top,ti,ti)
+        top%nb_types(i)%nbjj = ffdev_topology_find_nbtype_by_tindex(top,tj,tj)
     end do
 
 end subroutine ffdev_topology_init_nbij
@@ -1437,10 +1446,10 @@ integer function ffdev_topology_nb_mode_from_string(string)
 end function ffdev_topology_nb_mode_from_string
 
 ! ==============================================================================
-! subroutine ffdev_topology_apply_NB_comb_rules
+! subroutine ffdev_topology_update_nb_params
 ! ==============================================================================
 
-subroutine ffdev_topology_apply_NB_comb_rules(top)
+subroutine ffdev_topology_update_nb_params(top)
 
     use ffdev_utils
     use ffdev_topology_lj
@@ -1454,26 +1463,29 @@ subroutine ffdev_topology_apply_NB_comb_rules(top)
 
     select case(nb_mode)
         case(NB_VDW_LJ)
-            call ffdev_topology_LJ_apply_NB_comb_rules(top)
+            call ffdev_topology_LJ_update_nb_params(top)
+    ! ------------------------
         case(NB_VDW_EXP_DISPBJ)
-            call ffdev_topology_EXP_apply_NB_comb_rules(top)
-            call ffdev_topology_BJ_apply_NB_comb_rules(top)
+            call ffdev_topology_EXP_update_nb_params(top)
+            call ffdev_topology_BJ_update_nb_params(top)
+    ! ------------------------
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_topology_EXP_apply_NB_comb_rules(top)
-            call ffdev_topology_TT_apply_NB_comb_rules(top)
+            call ffdev_topology_EXP_update_nb_params(top)
+            call ffdev_topology_TT_update_nb_params(top)
+    ! ------------------------
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_topology_apply_NB_comb_rules!')
+            call ffdev_utils_exit(DEV_ERR,1,'nb_mode not implemented in ffdev_topology_update_nb_params!')
     end select
 
     top%nb_params_update = .true.
 
-end subroutine ffdev_topology_apply_NB_comb_rules
+end subroutine ffdev_topology_update_nb_params
 
 !===============================================================================
-! subroutine ffdev_topology_update_nb_params
+! subroutine ffdev_topology_update_nb_pairs
 !===============================================================================
 
-subroutine ffdev_topology_update_nb_params(top)
+subroutine ffdev_topology_update_nb_pairs(top)
 
     use ffdev_topology_dat
     use ffdev_utils
@@ -1493,15 +1505,15 @@ subroutine ffdev_topology_update_nb_params(top)
         case(NB_VDW_EXP_DISPBJ)
             if( .not. disp_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1, &
-                     'DISP not loaded for NB_VDW_EXP_DISPBJ in ffdev_topology_update_nb_params!')
+                     'DISP not loaded for NB_VDW_EXP_DISPBJ in ffdev_topology_update_nb_pairs!')
             end if
         case(NB_VDW_EXP_DISPTT)
             if( .not. disp_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1, &
-                     'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_params!')
+                     'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_pairs!')
             end if
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_params!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_pairs!')
     end select
 
     ! regular NB list
@@ -1517,7 +1529,7 @@ subroutine ffdev_topology_update_nb_params(top)
     ! turn off the update
     top%nb_params_update = .false.
 
-end subroutine ffdev_topology_update_nb_params
+end subroutine ffdev_topology_update_nb_pairs
 
 !===============================================================================
 ! subroutine ffdev_topology_update_nb_params
@@ -1538,7 +1550,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     type(NB_PAIR)   :: nbpair
     ! --------------------------------------------
     integer         :: i,j,nbt,agti,agtj,nbtii,nbtjj,ti,tj
-    real(DEVDP)     :: rc,tbii,tbjj,tbij,pbii,pbjj,pbij
+    real(DEVDP)     :: rc
     ! --------------------------------------------------------------------------
 
     nbpair%crgij = 0.0d0
@@ -1573,31 +1585,9 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             ! LJ parameters
             nbpair%pa =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
             nbpair%c6 = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
-
+    ! ------------------------
         case(NB_VDW_EXP_DISPBJ)
-
-            select case(pb_mode)
-                case(EXP_PB_FREEOPT)
-                    ! nothing to do
-            !---------------
-                case(EXP_PB_DO)
-                    pbii = ffdev_densoverlap_bii(agti)
-                    pbjj = ffdev_densoverlap_bii(agtj)
-                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-                    top%nb_types(nbt)%pb  = pbij
-            !---------------
-                case(EXP_PB_DO_FULL)
-                    top%nb_types(nbt)%pb  = ffdev_densoverlap_bij(agti,agtj)
-            !---------------
-                case(EXP_PB_IP)
-                    pbii = ffdev_bfac_from_ip(agti)
-                    pbjj = ffdev_bfac_from_ip(agtj)
-                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-                    top%nb_types(nbt)%pb  = pbij
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_update_nbpair_prms!')
-            end select
-
+            ! exp
             nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
 
@@ -1606,59 +1596,13 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
-            ! RC for BJ damping
-            rc  = 0.0d0
-            select case(dampbj_mode)
-                case(DAMP_BJ_CONST)
-                    top%nb_types(nbt)%rc = damp_fa
-            !---------------
-                case(DAMP_BJ_FREEOPT)
-                    ! nothing
-            !---------------
-                case(DAMP_BJ_DRC)
-                    top%nb_types(nbt)%rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
-            !---------------
-                case(DAMP_BJ_DO)
-                    top%nb_types(nbt)%rc = 0.5d0*(ffdev_densoverlap_rcii(agti,damp_fa) + ffdev_densoverlap_rcii(agtj,damp_fa))
-            !---------------
-                case(DAMP_BJ_DO_FULL)
-                    top%nb_types(nbt)%rc = ffdev_densoverlap_rcij(agti,agtj,damp_fa)
-            !---------------
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_update_nbpair_prms!')
-            end select
-
             rc = top%nb_types(nbt)%rc
-
             nbpair%rc6  = rc**6
             nbpair%rc8  = rc**8
             nbpair%rc10 = rc**10
-
+    ! ------------------------
         case(NB_VDW_EXP_DISPTT)
-
-            select case(pb_mode)
-                case(EXP_PB_FREEOPT)
-                    ! nothing to do
-            !---------------
-                case(EXP_PB_DO)
-                    pbii = ffdev_densoverlap_bii(agti)
-                    pbjj = ffdev_densoverlap_bii(agtj)
-                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-                    top%nb_types(nbt)%pb  = pbij
-            !---------------
-                case(EXP_PB_DO_FULL)
-                    top%nb_types(nbt)%pb  = ffdev_densoverlap_bij(agti,agtj)
-            !---------------
-                case(EXP_PB_IP)
-                    pbii = ffdev_bfac_from_ip(agti)
-                    pbjj = ffdev_bfac_from_ip(agtj)
-                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(pbii,pbjj,pbij)
-                    top%nb_types(nbt)%pb  = pbij
-            !---------------
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_update_nbpair_prms!')
-            end select
-
+            ! exp
             nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
 
@@ -1668,31 +1612,8 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
             ! TT damping
-            select case(damptt_mode)
-                case(DAMP_TT_CONST)
-                    top%nb_types(nbt)%tb  = damp_fa
-            !---------------
-                case(DAMP_TT_FREEOPT)
-                    ! nothing
-            !---------------
-                case(DAMP_TT_COUPLED)
-                    top%nb_types(nbt)%tb  = damp_fa * top%nb_types(nbt)%pb
-            !---------------
-                case(DAMP_TT_DO)
-                    tbii = ffdev_densoverlap_bii(agti)
-                    tbjj = ffdev_densoverlap_bii(agtj)
-                    call ffdev_topology_EXP_apply_NB_comb_rules_PB(tbii,tbjj,tbij)
-                    top%nb_types(nbt)%tb  = damp_fa * tbij
-            !---------------
-                case(DAMP_TT_DO_FULL)
-                    top%nb_types(nbt)%tb  = damp_fa * ffdev_densoverlap_bij(agti,agtj)
-            !---------------
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_update_nbpair_prms!')
-            end select
-
             nbpair%tb = top%nb_types(nbt)%tb
-
+    ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')
     end select
