@@ -88,7 +88,6 @@ end function ffdev_topology_LJ_comb_rules_from_string
 subroutine ffdev_topology_LJ_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top

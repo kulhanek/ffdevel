@@ -84,7 +84,86 @@ end function ffdev_topology_BJ_dampbj_mode_from_string
 subroutine ffdev_topology_BJ_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
+    use ffdev_disp_dat
+    use ffdev_densoverlap
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,ti,agti,tj,agtj
+    ! --------------------------------------------------------------------------
+
+    ! first update RC from external sources
+    select case(dampbj_mode)
+        case(DAMP_BJ_CONST)
+            do i=1,top%nnb_types
+                top%nb_types(i)%tb = damp_fa
+            end do
+    !---------------
+        case(DAMP_BJ_FREEOPT)
+            ! nothing
+    !---------------
+        case(DAMP_BJ_DRC)
+            do i=1,top%nnb_types
+                ti   = top%nb_types(i)%ti
+                tj   = top%nb_types(i)%tj
+                agti = top%atom_types(ti)%glbtypeid
+                agtj = top%atom_types(tj)%glbtypeid
+                top%nb_types(i)%rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
+            end do
+    !---------------
+        case(DAMP_BJ_DO)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%rc = ffdev_densoverlap_rcii(agti,damp_fa)
+            end do
+    !---------------
+        case(DAMP_BJ_DO_FULL)
+            do i=1,top%nnb_types
+                ti   = top%nb_types(i)%ti
+                tj   = top%nb_types(i)%tj
+                agti = top%atom_types(ti)%glbtypeid
+                agtj = top%atom_types(tj)%glbtypeid
+                top%nb_types(i)%rc = ffdev_densoverlap_rcij(agti,agtj,damp_fa)
+            end do
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_BJ_update_nb_params I!')
+    end select
+
+    ! apply combining rules if necessary
+    select case(dampbj_mode)
+        case(DAMP_BJ_CONST,DAMP_BJ_DRC,DAMP_BJ_DO_FULL)
+            ! nothing
+    !---------------
+        case(DAMP_BJ_FREEOPT)
+            if( ApplyCombiningRules ) then
+                call ffdev_topology_BJ_update_nb_params_RC(top)
+            end if
+    !---------------
+        case(DAMP_BJ_DO)
+            if( .not. ApplyCombiningRules ) then
+                ! we need to apply combining rules for unlike atoms
+                call ffdev_utils_exit(DEV_ERR,1,'DAMP_BJ_DO requires ApplyCombiningRules!')
+            end if
+            call ffdev_topology_BJ_update_nb_params_RC(top)
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'RC mode not implemented in ffdev_topology_BJ_update_nb_params II!')
+    end select
+
+end subroutine ffdev_topology_BJ_update_nb_params
+
+!===============================================================================
+! subroutine ffdev_topology_BJ_update_nb_params_RC
+!===============================================================================
+
+subroutine ffdev_topology_BJ_update_nb_params_RC(top)
+
+    use ffdev_utils
+    use ffdev_topology_exp
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -92,7 +171,6 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
     integer         :: i,nbii,nbjj
     real(DEVDP)     :: rcii,rcij,rcjj
     ! --------------------------------------------------------------------------
-
     ! apply combining rules - Rc average, only FREEOPT
     do i=1,top%nnb_types
 
@@ -111,7 +189,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
         top%nb_types(i)%rc = rcij
     end do
 
-end subroutine ffdev_topology_BJ_update_nb_params
+end subroutine ffdev_topology_BJ_update_nb_params_RC
 
 ! ------------------------------------------------------------------------------
 

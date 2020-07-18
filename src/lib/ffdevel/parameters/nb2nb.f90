@@ -392,7 +392,6 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     use ffdev_nb2nb_dat
     use ffdev_parameters_dat
     use ffdev_targetset_dat
-    use ffdev_topology_utils
     use ffdev_utils
 
     implicit none

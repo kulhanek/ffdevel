@@ -612,10 +612,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         nb_mode = to_nb_mode
 
         do i=1,nsets
-            ! apply comb rules
-            if( ApplyCombiningRules ) then
-                call ffdev_topology_apply_NB_comb_rules(sets(i)%top)
-            end if
+            ! update NB parameters
+            call ffdev_topology_update_nb_params(sets(i)%top)
 
             if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
                 ! new set of parameters

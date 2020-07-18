@@ -1173,7 +1173,6 @@ end subroutine ffdev_topology_gen_fragments
 subroutine ffdev_topology_init_nbij(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1201,13 +1200,91 @@ subroutine ffdev_topology_init_nbij(top)
 end subroutine ffdev_topology_init_nbij
 
 ! ==============================================================================
+! function ffdev_topology_find_nbtype
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype_by_aindex(top,ai,aj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: ai,aj
+    ! --------------------------------------------
+    integer         :: ti,tj
+    ! --------------------------------------------------------------------------
+
+    ! convert to types
+    ti = top%atoms(ai)%typeid
+    tj = top%atoms(aj)%typeid
+
+    ffdev_topology_find_nbtype_by_aindex = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+end function ffdev_topology_find_nbtype_by_aindex
+
+! ==============================================================================
+! function ffdev_topology_find_nbtype_by_tindex
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    integer         :: ti,tj
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,top%nnb_types
+        if(  ( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) .or. &
+             ( (top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti) ) ) then
+             ffdev_topology_find_nbtype_by_tindex = i
+             return
+        end if
+    end do
+
+    ! not found
+    ffdev_topology_find_nbtype_by_tindex = 0
+    return
+
+end function ffdev_topology_find_nbtype_by_tindex
+
+! ==============================================================================
+! function ffdev_topology_find_nbtype_by_types
+! ==============================================================================
+
+integer function ffdev_topology_find_nbtype_by_types(top,sti,stj)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    character(*)    :: sti,stj
+    ! --------------------------------------------
+    integer         :: i,ti,tj
+    ! --------------------------------------------------------------------------
+
+    ti = 0
+    tj = 0
+
+    do i=1,top%natom_types
+        if( top%atom_types(i)%name .eq. sti ) ti = i
+        if( top%atom_types(i)%name .eq. stj ) tj = i
+    end do
+
+    ffdev_topology_find_nbtype_by_types = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
+
+end function ffdev_topology_find_nbtype_by_types
+
+! ==============================================================================
 ! function ffdev_topology_switch_to_probe_mode
 ! ==============================================================================
 
 subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types)
 
     use ffdev_utils
-    use ffdev_topology_utils
     use ffdev_parameters_dat
 
     implicit none
@@ -1299,7 +1376,6 @@ end subroutine ffdev_topology_switch_to_probe_mode
 subroutine ffdev_topology_gen_sapt_list_for_refs(top,nrefs,natomsrefs)
 
     use ffdev_utils
-    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1361,7 +1437,6 @@ end subroutine ffdev_topology_gen_sapt_list_for_refs
 subroutine ffdev_topology_gen_sapt_list_for_probes(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1490,6 +1565,7 @@ subroutine ffdev_topology_update_nb_pairs(top)
     use ffdev_topology_dat
     use ffdev_utils
     use ffdev_disp_dat
+    use ffdev_xdm_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1511,6 +1587,12 @@ subroutine ffdev_topology_update_nb_pairs(top)
             if( .not. disp_data_loaded ) then
                 call ffdev_utils_exit(DEV_ERR,1, &
                      'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_pairs!')
+            end if
+            if( dampbj_mode .eq. DAMP_TT_IP_XDM ) then
+                if( .not. xdm_data_loaded ) then
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                         'XDM not loaded for DAMP_TT_IP_XDM in ffdev_topology_update_nb_pairs!')
+                end if
             end if
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_pairs!')
@@ -1612,7 +1694,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
             ! TT damping
-            nbpair%tb = top%nb_types(nbt)%tb
+            nbpair%tb = damp_fa * top%nb_types(nbt)%tb
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')

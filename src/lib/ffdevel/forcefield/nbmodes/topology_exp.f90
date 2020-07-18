@@ -44,6 +44,8 @@ character(80) function ffdev_topology_EXP_pb_mode_to_string(lpb_mode)
             ffdev_topology_EXP_pb_mode_to_string = 'DO-FULL - PB from density overlap including unlike'
         case(EXP_PB_IP)
             ffdev_topology_EXP_pb_mode_to_string = 'IP - PB derived from ionization potentials'
+        case(EXP_PB_IP_XDM)
+            ffdev_topology_EXP_pb_mode_to_string = 'IP-XDM - PB derived from ionization potentials + XDM mods'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_pb_mode_to_string!')
     end select
@@ -71,6 +73,8 @@ integer function ffdev_topology_EXP_pb_mode_from_string(string)
             ffdev_topology_EXP_pb_mode_from_string = EXP_PB_DO_FULL
         case('IP')
             ffdev_topology_EXP_pb_mode_from_string = EXP_PB_IP
+        case('IP-XDM')
+            ffdev_topology_EXP_pb_mode_from_string = EXP_PB_IP_XDM
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_EXP_pb_mode_from_string!')
     end select
@@ -146,6 +150,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     use ffdev_utils
     use ffdev_densoverlap
     use ffdev_ip_db
+    use ffdev_xdm_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -153,9 +158,9 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     integer         :: i,ti,agti,tj,agtj
     ! --------------------------------------------------------------------------
 
-    ! first update PB for like only types
+    ! first update PB from external sources
     select case(pb_mode)
-        case(EXP_PB_FREEOPT,EXP_PB_DO_FULL)
+        case(EXP_PB_FREEOPT)
             ! nothing to do
     !---------------
         case(EXP_PB_DO)
@@ -166,32 +171,6 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
                 top%nb_types(i)%pb = ffdev_densoverlap_bii(agti)
             end do
     !---------------
-        case(EXP_PB_IP)
-            do i=1,top%nnb_types
-                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
-                ti   = top%nb_types(i)%ti
-                agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%pb = ffdev_bfac_from_ip(agti)
-            end do
-    !---------------
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
-    end select
-
-    ! then PB unlike types
-    select case(pb_mode)
-        case(EXP_PB_FREEOPT)
-            if( ApplyCombiningRules ) then
-                call ffdev_topology_EXP_update_nb_params_PB(top)
-            end if
-    !---------------
-        case(EXP_PB_DO,EXP_PB_IP)
-            if( .not. ApplyCombiningRules ) then
-                ! we need to apply combining rules for unlike atoms
-                call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_DO,EXP_PB_IP requires ApplyCombiningRules!')
-            end if
-            call ffdev_topology_EXP_update_nb_params_PB(top)
-    !---------------
         case(EXP_PB_DO_FULL)
             do i=1,top%nnb_types
                 ti   = top%nb_types(i)%ti
@@ -200,6 +179,43 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
                 agtj = top%atom_types(tj)%glbtypeid
                 top%nb_types(i)%pb = ffdev_densoverlap_bij(agti,agtj)
             end do
+    !---------------
+        case(EXP_PB_IP)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%pb = ffdev_bfac_from_ip(agti)
+            end do
+    !---------------
+        case(EXP_PB_IP_XDM)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%pb = ffdev_bfac_from_ip(agti) * (xdm_atoms(agti)%v0ave / xdm_atoms(agti)%vave)**(1.0d0/3.0d0)
+            end do
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
+    end select
+
+    ! apply combining rules if necessary
+    select case(pb_mode)
+        case(EXP_PB_FREEOPT)
+            if( ApplyCombiningRules ) then
+                call ffdev_topology_EXP_update_nb_params_PB(top)
+            end if
+    !---------------
+        case(EXP_PB_DO,EXP_PB_IP,EXP_PB_IP_XDM)
+            if( .not. ApplyCombiningRules ) then
+                ! we need to apply combining rules for unlike atoms
+                call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_DO, EXP_PB_IP, or EXP_PB_IP_XDM requires ApplyCombiningRules!')
+            end if
+            call ffdev_topology_EXP_update_nb_params_PB(top)
+    !---------------
+        case(EXP_PB_DO_FULL)
+            ! nothing
     !---------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params II!')

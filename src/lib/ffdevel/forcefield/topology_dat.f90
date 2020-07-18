@@ -235,6 +235,7 @@ integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
 integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
 integer,parameter   :: EXP_PB_DO_FULL       = 303       ! PB from density overlap - including dis-like
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
+integer,parameter   :: EXP_PB_IP_XDM        = 305       ! PB from ionization potential + XDM mod
 
 integer     :: pb_mode                      = EXP_PB_FREEOPT
 
@@ -267,6 +268,7 @@ integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_fa
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_fa * densoverlap_bii
 integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_fa * densoverlap_bij
 integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_fa * f(ionization potential)
+integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_fa * f(ionization potential) * XDM mod
 
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 

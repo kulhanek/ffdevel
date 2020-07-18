@@ -42,12 +42,14 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
             ffdev_topology_TT_damptt_mode_to_string = 'FREEOPT - Optimized TB per type'
         case(DAMP_TT_COUPLED)
             ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_fa to PB'
-        case(DAMP_TT_IP)
-            ffdev_topology_TT_damptt_mode_to_string = 'IP - TB derived from ionization potentials'
         case(DAMP_TT_DO)
             ffdev_topology_TT_damptt_mode_to_string = 'DO - TB derived from density overlap'
         case(DAMP_TT_DO_FULL)
             ffdev_topology_TT_damptt_mode_to_string = 'DO-FULL - TB derived from density overlap including unlike types'
+        case(DAMP_TT_IP)
+            ffdev_topology_TT_damptt_mode_to_string = 'IP - TB derived from ionization potentials'
+        case(DAMP_TT_IP_XDM)
+            ffdev_topology_TT_damptt_mode_to_string = 'IP-XDM - TB derived from ionization potentials + XDM mods'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_TT_damptt_mode_to_string!')
     end select
@@ -74,12 +76,14 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_FREEOPT
         case('COUPLED')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_COUPLED
-        case('IP')
-            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP
         case('DO')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO
         case('DO-FULL')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO_FULL
+        case('IP')
+            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP
+        case('IP-XDM')
+            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP_XDM
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_TT_damptt_mode_from_string!')
     end select
@@ -93,7 +97,98 @@ end function ffdev_topology_TT_damptt_mode_from_string
 subroutine ffdev_topology_TT_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_topology_utils
+    use ffdev_densoverlap
+    use ffdev_ip_db
+    use ffdev_xdm_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,ti,agti,tj,agtj
+    ! --------------------------------------------------------------------------
+
+    ! first update TB from external sources
+    select case(damptt_mode)
+        case(DAMP_TT_CONST)
+            do i=1,top%nnb_types
+                top%nb_types(i)%tb = 1.0d0
+            end do
+    !---------------
+        case(DAMP_TT_FREEOPT)
+            ! nothing
+    !---------------
+        case(DAMP_TT_COUPLED)
+            do i=1,top%nnb_types
+                top%nb_types(i)%tb = top%nb_types(i)%pb
+            end do
+    !---------------
+        case(DAMP_TT_DO)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%tb = ffdev_densoverlap_bii(agti)
+            end do
+    !---------------
+        case(DAMP_TT_DO_FULL)
+            do i=1,top%nnb_types
+                ti   = top%nb_types(i)%ti
+                tj   = top%nb_types(i)%tj
+                agti = top%atom_types(ti)%glbtypeid
+                agtj = top%atom_types(tj)%glbtypeid
+                top%nb_types(i)%tb = ffdev_densoverlap_bij(agti,agtj)
+            end do
+    !---------------
+        case(DAMP_TT_IP)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%tb = ffdev_bfac_from_ip(agti)
+            end do
+    !---------------
+        case(DAMP_TT_IP_XDM)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%tb = ffdev_bfac_from_ip(agti) * (xdm_atoms(agti)%v0ave / xdm_atoms(agti)%vave)**(1.0d0/3.0d0)
+            end do
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_TT_update_nb_params I!')
+    end select
+
+    ! apply combining rules if necessary
+    select case(damptt_mode)
+        case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_DO_FULL)
+            ! nothing
+    !---------------
+        case(DAMP_TT_FREEOPT)
+            if( ApplyCombiningRules ) then
+                call ffdev_topology_TT_update_nb_params_TB(top)
+            end if
+    !---------------
+        case(DAMP_TT_DO,DAMP_TT_IP,DAMP_TT_IP_XDM)
+            if( .not. ApplyCombiningRules ) then
+                ! we need to apply combining rules for unlike atoms
+                call ffdev_utils_exit(DEV_ERR,1,'DAMP_TT_DO, DAMP_TT_IP, or DAMP_TT_IP_XDM requires ApplyCombiningRules!')
+            end if
+            call ffdev_topology_TT_update_nb_params_TB(top)
+    !---------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_topology_TT_update_nb_params II!')
+    end select
+
+end subroutine ffdev_topology_TT_update_nb_params
+
+!===============================================================================
+! subroutine ffdev_topology_TT_update_nb_params_TB
+!===============================================================================
+
+subroutine ffdev_topology_TT_update_nb_params_TB(top)
+
+    use ffdev_utils
     use ffdev_topology_exp
 
     implicit none
@@ -121,7 +216,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
         top%nb_types(i)%tb = tbij
     end do
 
-end subroutine ffdev_topology_TT_update_nb_params
+end subroutine ffdev_topology_TT_update_nb_params_TB
 
 ! ------------------------------------------------------------------------------
 

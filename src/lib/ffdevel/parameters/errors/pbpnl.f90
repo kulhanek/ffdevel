@@ -57,6 +57,8 @@ subroutine ffdev_err_pbpnl_error(error)
     use ffdev_parameters_dat
     use ffdev_densoverlap
     use ffdev_buried_dat
+    use ffdev_xdm_dat
+    use ffdev_ip_db
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -92,7 +94,10 @@ subroutine ffdev_err_pbpnl_error(error)
             case(PB_PNL_SOURCE_DO)
                 pb0 = ffdev_densoverlap_bii(params(i)%ti)
             case(PB_PNL_SOURCE_IP)
-                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+                pb0 = ffdev_bfac_from_ip(params(i)%ti)
+            case(PB_PNL_SOURCE_IP_XDM)
+                pb0 = ffdev_bfac_from_ip(params(i)%ti) * &
+                      (xdm_atoms(params(i)%ti)%v0ave / xdm_atoms(params(i)%ti)%vave)**(1.0d0/3.0d0)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select
@@ -119,6 +124,8 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_parameters_dat
     use ffdev_densoverlap
     use ffdev_buried_dat
+    use ffdev_xdm_dat
+    use ffdev_ip_db
 
     implicit none
     integer         :: i
@@ -157,7 +164,10 @@ subroutine ffdev_err_pbpnl_summary()
             case(PB_PNL_SOURCE_DO)
                 pb0 = ffdev_densoverlap_bii(params(i)%ti)
             case(PB_PNL_SOURCE_IP)
-                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+                pb0 = ffdev_bfac_from_ip(params(i)%ti)
+            case(PB_PNL_SOURCE_IP_XDM)
+                pb0 = ffdev_bfac_from_ip(params(i)%ti) * &
+                      (xdm_atoms(params(i)%ti)%v0ave / xdm_atoms(params(i)%ti)%vave)**(1.0d0/3.0d0)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select
@@ -171,7 +181,7 @@ subroutine ffdev_err_pbpnl_summary()
         end select
         totpnl = totpnl + pnl
 
-        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), ffdev_densoverlap_bii(params(i)%ti), params(i)%value, diff, pnl
+        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), pb0, params(i)%value, diff, pnl
     end do
 
     write(DEV_OUT,20)

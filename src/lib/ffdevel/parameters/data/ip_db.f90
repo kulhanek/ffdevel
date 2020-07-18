@@ -56,7 +56,7 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
     end if
 
     ! in A^-1 => 1.0 / DEV_AU2A
-    ffdev_bfac_from_ip = sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
+    ffdev_bfac_from_ip = 2.0d0 * sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
 
 end function ffdev_bfac_from_ip
 

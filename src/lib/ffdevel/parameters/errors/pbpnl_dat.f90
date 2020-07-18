@@ -30,6 +30,7 @@ integer,parameter   :: PB_PNL_MODE_NOH      = 3
 ! PB source
 integer,parameter   :: PB_PNL_SOURCE_DO     = 1     ! Density overlap
 integer,parameter   :: PB_PNL_SOURCE_IP     = 2     ! Ionization potential
+integer,parameter   :: PB_PNL_SOURCE_IP_XDM = 3     ! Ionization potential + XDM mods
 
 ! restraint form
 integer,parameter   :: PB_PNL_QUADRATIC     = 1

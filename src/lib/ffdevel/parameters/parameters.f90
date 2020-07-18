@@ -464,7 +464,7 @@ subroutine ffdev_parameters_reinit()
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
+                 case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP,EXP_PB_IP_XDM)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -497,7 +497,7 @@ subroutine ffdev_parameters_reinit()
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP)
+                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP,EXP_PB_IP_XDM)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -510,11 +510,9 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_tb      = .true.
                 case(DAMP_TT_COUPLED)
                     use_damp_fa     = .true.
-                case(DAMP_TT_IP)
+                case(DAMP_TT_DO,DAMP_TT_DO_FULL)
                     use_damp_fa     = .true.
-                case(DAMP_TT_DO)
-                    use_damp_fa     = .true.
-                case(DAMP_TT_DO_FULL)
+                case(DAMP_TT_IP,DAMP_TT_IP_XDM)
                     use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
