@@ -36,8 +36,6 @@ subroutine ffdev_err_mue_ctrl(fin)
 
     implicit none
     type(PRMFILE_TYPE)          :: fin
-    ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: string
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)

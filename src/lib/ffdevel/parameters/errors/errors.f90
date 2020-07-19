@@ -44,6 +44,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_chrgpnl
     use ffdev_err_zerograd
     use ffdev_err_probe
+    use ffdev_err_papnl
     use ffdev_err_pbpnl
     use ffdev_err_qnb
     use ffdev_err_mue
@@ -71,6 +72,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_chrgpnl_init()
     call ffdev_err_zerograd_init()
 
+    call ffdev_err_papnl_init()
     call ffdev_err_pbpnl_init()
     call ffdev_err_qnb_init()
     call ffdev_err_mue_init()
@@ -96,6 +98,7 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
+    use ffdev_err_papnl_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
 
@@ -163,6 +166,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_probe_dat
     use ffdev_err_probe
 
+    use ffdev_err_papnl_dat
+    use ffdev_err_papnl
+
     use ffdev_err_pbpnl_dat
     use ffdev_err_pbpnl
 
@@ -197,6 +203,7 @@ subroutine ffdev_errors_error_only(error)
     error%probe_ene = 0.0d0
     error%chrgpnl = 0.0d0
     error%zerograd = 0.0d0
+    error%papnl = 0.0d0
     error%pbpnl = 0.0d0
     error%qnb = 0.0d0
     error%mue = 0.0d0
@@ -259,6 +266,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%zerograd*ZeroGradErrorWeight
     end if
 
+    if( EnablePAPnlError ) then
+        call ffdev_err_papnl_error(error)
+        error%total = error%total + error%papnl*PAPnlErrorWeight
+    end if
+
     if( EnablePBPnlError ) then
         call ffdev_err_pbpnl_error(error)
         error%total = error%total + error%pbpnl*PBPnlErrorWeight
@@ -296,6 +308,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
+    use ffdev_err_papnl_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_mue_dat
@@ -339,6 +352,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableZeroGradError ) then
         write(DEV_OUT,44,ADVANCE='NO')
     end if
+    if( EnablePAPnlError ) then
+        write(DEV_OUT,59,ADVANCE='NO')
+    end if
     if( EnablePBPnlError ) then
         write(DEV_OUT,60,ADVANCE='NO')
     end if
@@ -361,6 +377,7 @@ subroutine ffdev_errors_ffopt_header_I()
  43 format('  ChrgPenalty')
  44 format(' ZeroGradient')
  50 format('     ProbeEne')
+ 59 format('    PAPenalty')
  60 format('    PBPenalty')
  70 format('          QNB')
  80 format('          MUE')
@@ -384,6 +401,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
+    use ffdev_err_papnl_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_mue_dat
@@ -427,6 +445,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableZeroGradError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnablePAPnlError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
     if( EnablePBPnlError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
@@ -458,6 +479,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_chrgpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
+    use ffdev_err_papnl_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_mue_dat
@@ -501,6 +523,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableZeroGradError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%zerograd
+    end if
+    if( EnablePAPnlError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%papnl
     end if
     if( EnablePBPnlError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%pbpnl
@@ -562,6 +587,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_probe_dat
     use ffdev_err_probe
 
+    use ffdev_err_papnl_dat
+    use ffdev_err_papnl
+
     use ffdev_err_pbpnl_dat
     use ffdev_err_pbpnl
 
@@ -578,7 +606,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary .or. &
-            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary ) ) then
+            PrintPAPnlErrorSummary .or. PrintPBPnlErrorSummary .or. PrintQNBErrorSummary ) ) then
         ! no error to report
         return
     end if
@@ -596,6 +624,10 @@ subroutine ffdev_errors_summary(logmode)
     write(DEV_OUT,1)
 
     ! individual summaries
+    if( PrintPAPnlErrorSummary ) then
+        call ffdev_err_papnl_summary
+    end if
+
     if( PrintPBPnlErrorSummary ) then
         call ffdev_err_pbpnl_summary
     end if

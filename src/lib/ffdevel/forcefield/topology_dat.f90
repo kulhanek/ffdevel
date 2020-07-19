@@ -297,6 +297,9 @@ real(DEVDP) :: damp_fa  = 1.0d0
 real(DEVDP) :: damp_fb  = 0.0d0
 real(DEVDP) :: damp_pb  = 1.0d0
 
+! Pauli repulsion K factor for PAPNL
+real(DEVDP) :: pauli_k  = 1.0d0
+
 ! ------------------------------------------------------------------------------
 
 end module ffdev_topology_dat

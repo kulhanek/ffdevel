@@ -98,10 +98,10 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,128) PBPnlErrorWeight2
     end if
 
-    if( PBPNLSource .eq. PB_PNL_SOURCE_IP_XDM ) then
+    if( PBPNLSource .eq. PBPNL_SOURCE_IP_XDM ) then
         if( .not. xdm_data_loaded ) then
             call ffdev_utils_exit(DEV_ERR,1, &
-                 'XDM not loaded for PB_PNL_SOURCE_IP_XDM in ffdev_err_pbpnl_ctrl!')
+                 'XDM not loaded for PBPNL_SOURCE_IP_XDM in ffdev_err_pbpnl_ctrl!')
         end if
     end if
 
@@ -143,11 +143,11 @@ character(80) function ffdev_err_pbpnl_control_source_to_string(source)
     ! --------------------------------------------------------------------------
 
     select case(source)
-        case(PB_PNL_SOURCE_DO)
+        case(PBPNL_SOURCE_DO)
             ffdev_err_pbpnl_control_source_to_string = 'DO - Density overlaps'
-        case(PB_PNL_SOURCE_IP)
+        case(PBPNL_SOURCE_IP)
             ffdev_err_pbpnl_control_source_to_string = 'IP - Ionization potentials'
-        case(PB_PNL_SOURCE_IP_XDM)
+        case(PBPNL_SOURCE_IP_XDM)
             ffdev_err_pbpnl_control_source_to_string = 'IP-XDM - Ionization potentials + XDM mods'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_source_to_string!')
@@ -170,11 +170,11 @@ integer function ffdev_err_pbpnl_control_source_from_string(string)
 
     select case(trim(string))
         case('DO')
-            ffdev_err_pbpnl_control_source_from_string = PB_PNL_SOURCE_DO
+            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_DO
         case('IP')
-            ffdev_err_pbpnl_control_source_from_string = PB_PNL_SOURCE_IP
+            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_IP
         case('IP-XDM')
-            ffdev_err_pbpnl_control_source_from_string = PB_PNL_SOURCE_IP_XDM
+            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_IP_XDM
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
                                             // '" in ffdev_err_pbpnl_control_source_from_string!')
@@ -196,11 +196,11 @@ character(80) function ffdev_err_pbpnl_control_mode_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(PB_PNL_MODE_ALL)
+        case(PBPNL_MODE_ALL)
             ffdev_err_pbpnl_control_mode_to_string = 'ALL'
-        case(PB_PNL_MODE_BURIED)
+        case(PBPNL_MODE_BURIED)
             ffdev_err_pbpnl_control_mode_to_string = 'BURIED'
-        case(PB_PNL_MODE_NOH)
+        case(PBPNL_MODE_NOH)
             ffdev_err_pbpnl_control_mode_to_string = 'NOH'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_mode_to_string!')
@@ -223,11 +223,11 @@ integer function ffdev_err_pbpnl_control_mode_from_string(string)
 
     select case(trim(string))
         case('ALL')
-            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_ALL
+            ffdev_err_pbpnl_control_mode_from_string = PBPNL_MODE_ALL
         case('BURIED')
-            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_BURIED
+            ffdev_err_pbpnl_control_mode_from_string = PBPNL_MODE_BURIED
         case('NOH')
-            ffdev_err_pbpnl_control_mode_from_string = PB_PNL_MODE_NOH
+            ffdev_err_pbpnl_control_mode_from_string = PBPNL_MODE_NOH
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_err_pbpnl_control_mode_from_string!')
     end select

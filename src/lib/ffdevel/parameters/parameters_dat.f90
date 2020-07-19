@@ -63,8 +63,11 @@ integer,parameter       :: REALM_ELE_SQ     = 26
 integer,parameter       :: REALM_GLB_SCEE   = 27
 integer,parameter       :: REALM_GLB_SCNB   = 28
 
+! Pauli repulsion K factor
+integer,parameter       :: REALM_PAULI_K    = 29
+
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_GLB_SCNB
+integer,parameter       :: REALM_LAST    = REALM_PAULI_K
 
 ! ------------------------------------------------------------------------------
 
@@ -222,6 +225,10 @@ real(DEVDP)     :: MinGlbSCEE
 real(DEVDP)     :: MaxGlbSCEE
 real(DEVDP)     :: MinGlbSCNB
 real(DEVDP)     :: MaxGlbSCNB
+
+! Pauli repulsion K factor
+real(DEVDP)     :: MinPauliK
+real(DEVDP)     :: MaxPauliK
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

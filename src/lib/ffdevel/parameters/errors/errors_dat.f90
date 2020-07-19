@@ -47,6 +47,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: chrgpnl
     real(DEVDP)         :: zerograd
     real(DEVDP)         :: probe_ene
+    real(DEVDP)         :: papnl
     real(DEVDP)         :: pbpnl
     real(DEVDP)         :: qnb
     real(DEVDP)         :: mue
