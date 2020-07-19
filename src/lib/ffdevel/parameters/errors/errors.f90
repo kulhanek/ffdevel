@@ -271,7 +271,7 @@ subroutine ffdev_errors_error_only(error)
 
     if( EnableMUEError ) then
         call ffdev_err_mue_error(error)
-        error%total = error%total + error%qnb*MUEErrorWeight
+        error%total = error%total + error%mue*MUEErrorWeight
     end if
 
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
