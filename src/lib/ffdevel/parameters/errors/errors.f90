@@ -46,6 +46,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_probe
     use ffdev_err_pbpnl
     use ffdev_err_qnb
+    use ffdev_err_mue
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -72,6 +73,7 @@ subroutine ffdev_errors_init_all()
 
     call ffdev_err_pbpnl_init()
     call ffdev_err_qnb_init()
+    call ffdev_err_mue_init()
 
 end subroutine ffdev_errors_init_all
 
@@ -167,6 +169,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_qnb_dat
     use ffdev_err_qnb
 
+    use ffdev_err_mue_dat
+    use ffdev_err_mue
+
     use ffdev_timers
 
     implicit none
@@ -194,6 +199,7 @@ subroutine ffdev_errors_error_only(error)
     error%zerograd = 0.0d0
     error%pbpnl = 0.0d0
     error%qnb = 0.0d0
+    error%mue = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
@@ -263,6 +269,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%qnb*QNBErrorWeight
     end if
 
+    if( EnableMUEError ) then
+        call ffdev_err_mue_error(error)
+        error%total = error%total + error%qnb*MUEErrorWeight
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
@@ -287,6 +298,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_mue_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -333,6 +345,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableQNBError ) then
         write(DEV_OUT,70,ADVANCE='NO')
     end if
+    if( EnableMUEError ) then
+        write(DEV_OUT,80,ADVANCE='NO')
+    end if
 
  30 format('       Energy')
  33 format('        Bonds')
@@ -348,6 +363,7 @@ subroutine ffdev_errors_ffopt_header_I()
  50 format('     ProbeEne')
  60 format('    PBPenalty')
  70 format('          QNB')
+ 80 format('          MUE')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -370,6 +386,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_mue_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -416,6 +433,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableQNBError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableMUEError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
  50 format(' ------------')
 
@@ -440,6 +460,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_mue_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -486,6 +507,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableQNBError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%qnb
+    end if
+    if( EnableMUEError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%mue
     end if
 
  15 format(1X,E12.5)

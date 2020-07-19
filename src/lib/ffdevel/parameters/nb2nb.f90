@@ -702,7 +702,7 @@ subroutine ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     ! Golden-section search
     ! https://en.wikipedia.org/wiki/Golden-section_search
 
-    r1 = 1.0d0
+    r1 = 0.5d0
     r4 = NB2LJCutoffR
     gr = (1.0d0 + sqrt(5.0d0)) * 0.5d0
 
@@ -741,7 +741,7 @@ subroutine ffdev_nb2nb_find_sig_for_nbpair(sig)
     ! Bisection method
     ! https://en.wikipedia.org/wiki/Bisection_method
 
-    r1 = 1.0d0
+    r1 = 0.5d0
     r2 = NB2LJCutoffR
 
     f1 = ffdev_nb2nb_nbpair(NB2LJNBPair,r1)

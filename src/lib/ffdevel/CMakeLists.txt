@@ -83,6 +83,9 @@ SET(FFDEVEL_SRC
         parameters/errors/qnb_dat.f90
         parameters/errors/qnb.f90
         parameters/errors/qnb_control.f90
+        parameters/errors/mue_dat.f90
+        parameters/errors/mue.f90
+        parameters/errors/mue_control.f90
 
         parameters/buried_dat.f90
         parameters/buried.f90

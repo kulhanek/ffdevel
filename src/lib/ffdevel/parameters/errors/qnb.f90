@@ -125,8 +125,8 @@ subroutine ffdev_err_qnb_summary()
 10 format('# ID TypA TypB   Num        Q(NB)      Q(LJ)      G(NB)      G(LJ)    G(diff)    Penalty')
 20 format('# -- ---- ---- ------- ---------- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,A4,1X,I7,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
-40 format('# Final penalty               =                                             ',F10.3)
-45 format('# Final penalty (all weights) =                                             ',F10.3)
+40 format('# Final penalty               =                                               ',F10.3)
+45 format('# Final penalty (all weights) =                                               ',F10.3)
 
 end subroutine ffdev_err_qnb_summary
 

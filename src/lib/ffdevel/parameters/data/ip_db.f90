@@ -61,5 +61,39 @@ real(DEVDP) function ffdev_bfac_from_ip(gti)
 end function ffdev_bfac_from_ip
 
 ! ==============================================================================
+! function ffdev_bfac_from_ip_xdm
+! ==============================================================================
+
+real(DEVDP) function ffdev_bfac_from_ip_xdm(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+    use ffdev_xdm_dat
+
+    implicit none
+    integer         :: gti
+    ! --------------------------------------------
+    integer         :: z
+    ! --------------------------------------------------------------------------
+
+    z = types(gti)%z
+
+    if( (z .gt. ionization_potential_maxZ) .or. (z .le. 0) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_bfac_from_ip_xdm!')
+    end if
+
+    if( .not. xdm_data_loaded ) then
+        call ffdev_utils_exit(DEV_ERR,1,'XDM not loaded in ffdev_bfac_from_ip_xdm!')
+    end if
+
+    ! in A^-1 => 1.0 / DEV_AU2A
+    ffdev_bfac_from_ip_xdm = 2.0d0 * sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
+    ! XDM mod, DOI: 10.1021/ct1001494
+    ffdev_bfac_from_ip_xdm = ffdev_bfac_from_ip_xdm * &
+                        (xdm_atoms(gti)%v0ave / xdm_atoms(gti)%vave)**(1.0d0/3.0d0)
+
+end function ffdev_bfac_from_ip_xdm
+
+! ==============================================================================
 
 end module ffdev_ip_db

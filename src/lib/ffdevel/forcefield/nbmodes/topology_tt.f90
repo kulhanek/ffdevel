@@ -99,7 +99,6 @@ subroutine ffdev_topology_TT_update_nb_params(top)
     use ffdev_utils
     use ffdev_densoverlap
     use ffdev_ip_db
-    use ffdev_xdm_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -152,7 +151,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_bfac_from_ip(agti) * (xdm_atoms(agti)%v0ave / xdm_atoms(agti)%vave)**(1.0d0/3.0d0)
+                top%nb_types(i)%tb = ffdev_bfac_from_ip_xdm(agti)
             end do
     !---------------
         case default

@@ -57,7 +57,6 @@ subroutine ffdev_err_pbpnl_error(error)
     use ffdev_parameters_dat
     use ffdev_densoverlap
     use ffdev_buried_dat
-    use ffdev_xdm_dat
     use ffdev_ip_db
 
     implicit none
@@ -96,8 +95,7 @@ subroutine ffdev_err_pbpnl_error(error)
             case(PB_PNL_SOURCE_IP)
                 pb0 = ffdev_bfac_from_ip(params(i)%ti)
             case(PB_PNL_SOURCE_IP_XDM)
-                pb0 = ffdev_bfac_from_ip(params(i)%ti) * &
-                      (xdm_atoms(params(i)%ti)%v0ave / xdm_atoms(params(i)%ti)%vave)**(1.0d0/3.0d0)
+                pb0 = ffdev_bfac_from_ip_xdm(params(i)%ti)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select
@@ -126,6 +124,7 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_buried_dat
     use ffdev_xdm_dat
     use ffdev_ip_db
+    use ffdev_err_pbpnl_control
 
     implicit none
     integer         :: i
@@ -134,6 +133,8 @@ subroutine ffdev_err_pbpnl_summary()
 
     write(DEV_OUT,*)
     write(DEV_OUT,5)
+    write(DEV_OUT,7)  ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
+    write(DEV_OUT,8)  ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
@@ -166,8 +167,7 @@ subroutine ffdev_err_pbpnl_summary()
             case(PB_PNL_SOURCE_IP)
                 pb0 = ffdev_bfac_from_ip(params(i)%ti)
             case(PB_PNL_SOURCE_IP_XDM)
-                pb0 = ffdev_bfac_from_ip(params(i)%ti) * &
-                      (xdm_atoms(params(i)%ti)%v0ave / xdm_atoms(params(i)%ti)%vave)**(1.0d0/3.0d0)
+                pb0 = ffdev_bfac_from_ip_xdm(params(i)%ti)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select
@@ -181,7 +181,7 @@ subroutine ffdev_err_pbpnl_summary()
         end select
         totpnl = totpnl + pnl
 
-        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), pb0, params(i)%value, diff, pnl
+        write(DEV_OUT,30) i, trim(types(params(i)%ti)%name), pb0, params(i)%value, w, diff, pnl
     end do
 
     write(DEV_OUT,20)
@@ -189,9 +189,11 @@ subroutine ffdev_err_pbpnl_summary()
     write(DEV_OUT,45) totpnl*PBPnlErrorWeight
 
  5 format('# Pauli Repulsion PB Penalties')
-10 format('# ID Type    PB(Tab)    PB(Opt)       Diff    Penalty')
-20 format('# -- ---- ---------- ---------- ---------- ----------')
-30 format(I4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
+ 7 format('# PBPNL Mode: ')
+ 8 format('# PB Source:  ')
+10 format('# ID Type    PB(Tab)    PB(Opt)       Diff     Weight   Penalty')
+20 format('# -- ---- ---------- ---------- ---------- ---------- ----------')
+30 format(I4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.5,1X,F10.5,1X,F10.5)
 40 format('# Final penalty               =            ',F10.3)
 45 format('# Final penalty (all weights) =            ',F10.3)
 
