@@ -182,7 +182,7 @@ subroutine ffdev_err_papnl_summary()
 
  5 format('# Pauli Repulsion PA Penalties')
  7 format('# PAPNL Mode: ',A)
- 8 format('# PB Source:  ',A)
+ 8 format('# PA Source:  ',A)
 10 format('# ID Type    PA(Tab)    PA(Opt)       Diff     Weight   Penalty')
 20 format('# -- ---- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5)

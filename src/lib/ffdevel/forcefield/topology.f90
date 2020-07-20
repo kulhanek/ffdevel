@@ -1694,7 +1694,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
             ! TT damping
-            nbpair%tb = damp_fa * top%nb_types(nbt)%tb
+            nbpair%tb = damp_tb * top%nb_types(nbt)%tb
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')

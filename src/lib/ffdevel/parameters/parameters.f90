@@ -134,7 +134,7 @@ subroutine ffdev_parameters_reinit()
     integer     :: i, j, k, parmid, ai, refid
     logical     :: use_vdw_eps, use_vdw_r0
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc, use_vdw_tb
-    logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb
+    logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_pauli_k
     ! --------------------------------------------------------------------------
 
@@ -446,6 +446,7 @@ subroutine ffdev_parameters_reinit()
     use_damp_fa     = .false.
     use_damp_fb     = .false.
     use_damp_pb     = .false.
+    use_damp_tb     = .false.
 
     use_disp_s6     = .false.
     use_disp_s8     = .false.
@@ -509,15 +510,15 @@ subroutine ffdev_parameters_reinit()
 
             select case(damptt_mode)
                 case(DAMP_TT_CONST)
-                    use_damp_fa     = .true.
+                    use_damp_tb     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
                 case(DAMP_TT_COUPLED)
-                    use_damp_fa     = .true.
+                    use_damp_tb     = .true.
                 case(DAMP_TT_DO,DAMP_TT_DO_FULL)
-                    use_damp_fa     = .true.
+                    use_damp_tb     = .true.
                 case(DAMP_TT_IP,DAMP_TT_IP_XDM)
-                    use_damp_fa     = .true.
+                    use_damp_tb     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -709,6 +710,21 @@ subroutine ffdev_parameters_reinit()
         nparams = nparams + 1
         params(nparams)%value = damp_pb
         params(nparams)%realm = REALM_DAMP_PB
+        params(nparams)%enabled = .false.
+        params(nparams)%identity = 0
+        params(nparams)%pn    = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ti   = 0
+        params(nparams)%tj   = 0
+        params(nparams)%tk   = 0
+        params(nparams)%tl   = 0
+    end if
+
+    if( use_damp_tb ) then
+        ! =====================
+        nparams = nparams + 1
+        params(nparams)%value = damp_tb
+        params(nparams)%realm = REALM_DAMP_TB
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
@@ -1107,7 +1123,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-           case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB, &
+           case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB, &
                 REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10, &
                 REALM_GLB_SCEE,REALM_GLB_SCNB,REALM_PAULI_K)
                 find_parameter_by_ids = i
@@ -2131,6 +2147,8 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_DAMP_FB
         case('damp_pb')
             ffdev_parameters_get_realmid = REALM_DAMP_PB
+        case('damp_tb')
+            ffdev_parameters_get_realmid = REALM_DAMP_TB
 
         case('disp_s6')
             ffdev_parameters_get_realmid = REALM_DISP_S6
@@ -2219,6 +2237,8 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'damp_fb'
         case(REALM_DAMP_PB)
             ffdev_parameters_get_realm_name = 'damp_pb'
+        case(REALM_DAMP_TB)
+            ffdev_parameters_get_realm_name = 'damp_tb'
 
         case(REALM_DISP_S6)
             ffdev_parameters_get_realm_name = 'disp_s6'
@@ -2275,7 +2295,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_ELE_SQ,REALM_PAC)
             ! nothing to do
-        case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB)
+        case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB)
             ! nothing to do
         case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
             ! nothing to do
@@ -2705,6 +2725,8 @@ subroutine ffdev_parameters_to_tops
                 damp_fb = params(i)%value
             case(REALM_DAMP_PB)
                 damp_pb = params(i)%value
+            case(REALM_DAMP_TB)
+                damp_tb = params(i)%value
 
             case(REALM_DISP_S6)
                 disp_s6 = params(i)%value
@@ -2872,8 +2894,11 @@ subroutine ffdev_params_reset_ranges
      MaxDampFA    =      2.0d0
      MinDampFB    =      0.0d0
      MaxDampFB    =      6.0d0
-     MinDampPB    =      0.0d0
-     MaxDampPB    =      2.0d0
+
+     MinDampPB    =      0.5d0
+     MaxDampPB    =      1.5d0
+     MinDampTB    =      0.5d0
+     MaxDampTB    =      1.5d0
 
 ! dispersion scaling
      MinDispS6    =      0.0d0
@@ -2889,8 +2914,8 @@ subroutine ffdev_params_reset_ranges
      MaxGlbSCNB   =      4.0d0
 
 ! Pauli repulsion K factor
-     MinPauliK    =       0.0d0
-     MaxPauliK    =      20.0d0
+     MinPauliK    =       5.0d0
+     MaxPauliK    =      15.0d0
 
 end subroutine ffdev_params_reset_ranges
 
@@ -3024,6 +3049,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinDampFB
         case(REALM_DAMP_PB)
             ffdev_params_get_lower_bound = MinDampPB
+        case(REALM_DAMP_TB)
+            ffdev_params_get_lower_bound = MinDampTB
 
         case(REALM_DISP_S6)
             ffdev_params_get_lower_bound = MinDispS6
@@ -3110,6 +3137,8 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
             MinDampFB = mvalue
         case(REALM_DAMP_PB)
             MinDampPB = mvalue
+        case(REALM_DAMP_TB)
+            MinDampTB = mvalue
 
         case(REALM_DISP_S6)
             MinDispS6 = mvalue
@@ -3222,6 +3251,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDampFB
         case(REALM_DAMP_PB)
             ffdev_params_get_upper_bound = MaxDampPB
+        case(REALM_DAMP_TB)
+            ffdev_params_get_upper_bound = MaxDampTB
 
         case(REALM_DISP_S6)
             ffdev_params_get_upper_bound = MaxDispS6
@@ -3308,6 +3339,8 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxDampFB = mvalue
         case(REALM_DAMP_PB)
             MaxDampPB = mvalue
+        case(REALM_DAMP_TB)
+            MaxDampTB = mvalue
 
         case(REALM_DISP_S6)
             MaxDispS6 = mvalue

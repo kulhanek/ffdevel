@@ -259,16 +259,16 @@ integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 
 ! Tang–Toennies damping
 ! Form: Enb = exp(PA*PB)*exp(-PB*r) - disp_s6*fd6*C6/r^6 - disp_s8*fd8*C8/r^8 - disp_s6*fd10*C10/r^10
-! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_fa for PB in fd6, fd8, fd8
+! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_tb for TB in fd6, fd8, fd8
 ! Provides: energy, gradient, sapt
 
-integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_fa * pb
+integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_tb * pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
-integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_fa
-integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_fa * densoverlap_bii
-integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_fa * densoverlap_bij
-integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_fa * f(ionization potential)
-integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_fa * f(ionization potential) * XDM mod
+integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_tb
+integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_tb * densoverlap_bii
+integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_tb * densoverlap_bij
+integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_tb * f(ionization potential)
+integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_tb * f(ionization potential) * XDM mod
 
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
@@ -296,6 +296,7 @@ real(DEVDP) :: disp_s10 = 1.0d0
 real(DEVDP) :: damp_fa  = 1.0d0
 real(DEVDP) :: damp_fb  = 0.0d0
 real(DEVDP) :: damp_pb  = 1.0d0
+real(DEVDP) :: damp_tb  = 1.0d0
 
 ! Pauli repulsion K factor for PAPNL
 real(DEVDP) :: pauli_k  = 1.0d0

@@ -53,18 +53,20 @@ integer,parameter       :: REALM_DISP_S10   = 21
 
 integer,parameter       :: REALM_DAMP_FA    = 22
 integer,parameter       :: REALM_DAMP_FB    = 23
+
 integer,parameter       :: REALM_DAMP_PB    = 24
+integer,parameter       :: REALM_DAMP_TB    = 25
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 25
-integer,parameter       :: REALM_ELE_SQ     = 26
+integer,parameter       :: REALM_PAC        = 26
+integer,parameter       :: REALM_ELE_SQ     = 27
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_GLB_SCEE   = 27
-integer,parameter       :: REALM_GLB_SCNB   = 28
+integer,parameter       :: REALM_GLB_SCEE   = 28
+integer,parameter       :: REALM_GLB_SCNB   = 29
 
 ! Pauli repulsion K factor
-integer,parameter       :: REALM_PAULI_K    = 29
+integer,parameter       :: REALM_PAULI_K    = 30
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_PAULI_K
@@ -210,8 +212,11 @@ real(DEVDP)     :: MinDampFA
 real(DEVDP)     :: MaxDampFA
 real(DEVDP)     :: MinDampFB
 real(DEVDP)     :: MaxDampFB
+
 real(DEVDP)     :: MinDampPB
 real(DEVDP)     :: MaxDampPB
+real(DEVDP)     :: MinDampTB
+real(DEVDP)     :: MaxDampTB
 
 ! dispersion scaling
 real(DEVDP)     :: MinDispS6

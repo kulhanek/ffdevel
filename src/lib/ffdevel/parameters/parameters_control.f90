@@ -1172,6 +1172,7 @@ subroutine change_realms(realm,enable,options,nchanged)
     use ffdev_parameters
     use ffdev_parameters_dat
     use ffdev_utils
+    use ffdev_buried_dat
 
     implicit none
     character(*)    :: realm
@@ -1303,11 +1304,25 @@ subroutine change_realms(realm,enable,options,nchanged)
         ! these two options have application only for NB
         ! but for simplicity we will consider them for all parameters
         if( is_realm_option(options,'like') ) then
+            if( params(i)%ti .le. 0 ) cycle
+            if( params(i)%tj .le. 0 ) cycle
             if( params(i)%ti .ne. params(i)%tj ) cycle
         end if
+
         if( is_realm_option(options,'unlike') ) then
+            if( params(i)%ti .le. 0 ) cycle
+            if( params(i)%tj .le. 0 ) cycle
             if( params(i)%ti .eq. params(i)%tj ) cycle
         end if
+
+        if( is_realm_option(options,'buried') ) then
+            if( params(i)%ti .le. 0 ) cycle
+            if( params(i)%tj .le. 0 ) cycle
+            ! 0.0 - buried
+            ! 1.0 - exposed
+            if( (buried_atoms(params(i)%ti)%weight .gt. 0.5d0) .or. (buried_atoms(params(i)%tj)%weight .gt. 0.5d0) ) cycle
+        end if
+
         if( is_realm_option(options,'types') ) then
             if( (tk .eq. 0) .and. (tl .eq. 0) ) then
                 ! bond or NB
@@ -1336,16 +1351,6 @@ subroutine change_realms(realm,enable,options,nchanged)
         if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) .or. (pid .eq. i) ) then
             if( params(i)%identity .eq. 0 ) then
                 lenable = enable
-                ! FIXME
-!                select case(LastNBMode)
-!                    case(NB_MODE_LJ)
-!                        if( params(i)%realm .eq. REALM_VDW_ALPHA ) lenable = .false.
-!                        ! FIXME
-!                    case(NB_MODE_EXP6)
-!                        ! FIXME
-!                    case default
-!                        call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB mode in change_realms!')
-!                end select
                 if( realmid .eq. REALM_DIH_C ) then
                     if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
                         ! do nothing
