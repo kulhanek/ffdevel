@@ -70,8 +70,5 @@ logical                 :: errors_calc_grad     = .false.
 logical                 :: errors_calc_hess     = .false.
 
 ! ------------------------------------------------------------------------------
-integer                 :: ProgramIndex                 = 0
-
-! ------------------------------------------------------------------------------
 
 end module ffdev_errors_dat

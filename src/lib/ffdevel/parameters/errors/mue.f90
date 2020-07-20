@@ -56,7 +56,6 @@ subroutine ffdev_err_mue_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j
-    real(DEVDP)         :: mue
     ! --------------------------------------------------------------------------
 
     error%mue = 0.0d0

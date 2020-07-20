@@ -108,6 +108,58 @@ integer function ffdev_nb2nb_nb2lj_mode_from_string(string)
 end function ffdev_nb2nb_nb2lj_mode_from_string
 
 ! ==============================================================================
+! function ffdev_nb2nb_initdirs
+! ==============================================================================
+
+subroutine ffdev_nb2nb_initdirs
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    implicit none
+    ! --------------------------------------------
+    integer         :: estat
+    ! --------------------------------------------------------------------------
+
+    call execute_command_line('mkdir -p ' // trim(NBPotPathCore), exitstat = estat )
+    if( estat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPathCore in ffdev_nb2nb_initdirs!')
+    end if
+
+end subroutine ffdev_nb2nb_initdirs
+
+! ==============================================================================
+! function ffdev_nb2nb_initdirs_for_prog
+! ==============================================================================
+
+subroutine ffdev_nb2nb_initdirs_for_prog(conv)
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    implicit none
+    logical                 :: conv
+    ! --------------------------------------------
+    integer                 :: estat
+    ! --------------------------------------------------------------------------
+
+    if( conv ) then
+        write(NBPotPathPrg,10) trim(NBPotPathCore), CurrentProgID
+    else
+        write(NBPotPathPrg,20) trim(NBPotPathCore), CurrentProgID
+    end if
+
+    call execute_command_line('mkdir -p ' // trim(NBPotPathPrg), exitstat = estat )
+    if( estat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPathPrg in ffdev_nb2nb_initdirs_for_prog!')
+    end if
+
+ 10 format(A,'/',I3.3,'-conv')
+ 20 format(A,'/',I3.3,'-fin')
+
+end subroutine ffdev_nb2nb_initdirs_for_prog
+
+! ==============================================================================
 ! function ffdev_nb2nb_init_nbtypes
 ! ==============================================================================
 
@@ -283,6 +335,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
     use ffdev_topology_dat
     use ffdev_utils
 
+
     implicit none
     integer         :: from_nb_mode,to_nb_mode
     ! --------------------------------------------
@@ -323,7 +376,10 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
     !---------------------------------------------
         case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
             select case(to_nb_mode)
+
                 case(NB_VDW_LJ)
+
+                    call ffdev_nb2nb_initdirs_for_prog(.true.)
                     do nbt=1,nnb_types
                         call ffdev_nb2nb_nb2lj(nbt)
                     end do
@@ -382,6 +438,57 @@ subroutine ffdev_nb2nb_conv_sum
 40 format(2X,A4,1X,A4,1X,F12.6,1X,F12.6,1X,F12.6)
 
 end subroutine ffdev_nb2nb_conv_sum
+
+
+! ==============================================================================
+! subroutine ffdev_nb2nb_write_all_current_pots
+! ==============================================================================
+
+subroutine ffdev_nb2nb_write_all_current_pots
+
+    use ffdev_nb2nb_dat
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+    use ffdev_utils
+
+    implicit none
+    ! --------------------------------------------
+    type(TOPOLOGY),target   :: top
+    integer                 :: gnbt,nbt
+    real(DEVDP)             :: sig
+    ! --------------------------------------------------------------------------
+
+    call ffdev_nb2nb_initdirs_for_prog(.false.)
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,10) trim(NBPotPathPrg)
+
+    call ffdev_nb2nb_gather_nbtypes
+
+    do gnbt = 1, nnb_types
+        top =  sets(nb_types(gnbt)%setid)%top
+        nbt =  nb_types(gnbt)%nbt
+
+        ! setup potential
+        NB2LJNBPair%ai       = 0
+        NB2LJNBPair%aj       = 0
+        NB2LJNBPair%nbt      = nbt
+        NB2LJNBPair%dt       = 0
+        NB2LJNBPair%nbtii    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%ti,top%nb_types(nbt)%ti)
+        NB2LJNBPair%nbtjj    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%tj,top%nb_types(nbt)%tj)
+        call ffdev_topology_update_nbpair_prms(top,NB2LJNBPair)
+
+        ! required for print interval
+        call ffdev_nb2nb_find_sig_for_nbpair(sig)
+        NB2LJSigma              = sig
+
+        ! write the source potential
+        call ffdev_nb2nb_write_source_pot(gnbt)
+    end do
+
+ 10 format('> Writing NB summary to: ',A)
+
+end subroutine ffdev_nb2nb_write_all_current_pots
 
 ! ==============================================================================
 ! subroutine ffdev_nb2nb_nb2lj
@@ -591,7 +698,7 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
     character(len=MAX_PATH) :: name
     ! --------------------------------------------------------------------------
 
-    name = trim(NBPotPath) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
+    name = trim(NBPotPathPrg) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
            // '-' // trim(types(nb_types(gnbt)%gtj)%name) // '.nb'
 
     ! open file
@@ -631,7 +738,7 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     character(len=MAX_PATH) :: name
     ! --------------------------------------------------------------------------
 
-    name = trim(NBPotPath) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
+    name = trim(NBPotPathPrg) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
            // '-' // trim(types(nb_types(gnbt)%gtj)%name) // '.lj'
 
     ! open file
@@ -669,7 +776,7 @@ subroutine ffdev_nb2nb_write_source_prms(gnbt,r0,eps,sig)
     character(len=MAX_PATH) :: name
     ! --------------------------------------------------------------------------
 
-    name = trim(NBPotPath) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
+    name = trim(NBPotPathPrg) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
            // '-' // trim(types(nb_types(gnbt)%gtj)%name) // '.prms'
 
     ! open file

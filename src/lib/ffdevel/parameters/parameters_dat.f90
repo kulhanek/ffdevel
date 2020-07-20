@@ -99,7 +99,7 @@ type PARM_TYPE
     real(DEVDP)             :: mass
     integer,pointer         :: ids(:)
     logical                 :: probe
-    ! derived LJ parameters
+    ! for amber FF output, LJ parameters
     logical                 :: print_nb
     real(DEVDP)             :: eps
     real(DEVDP)             :: r0

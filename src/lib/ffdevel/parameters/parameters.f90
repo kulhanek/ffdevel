@@ -1586,6 +1586,8 @@ subroutine ffdev_parameters_save_amber(name)
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
+    use ffdev_nb2nb
+    use ffdev_nb2nb_dat
 
     implicit none
     character(*)    :: name
@@ -1858,47 +1860,32 @@ subroutine ffdev_parameters_save_amber(name)
         write(DEV_PRMS,*)
     end if
 
-    ! NB
     enable_section = .false.
-    ! FIXME
-!    do i=1,ntypes
-!        types(i)%print_nb = .false.
-!    end do
-!    do i=1,nparams
-!        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) .or. &
-!            ( params(i)%realm .eq. REALM_VDW_ALPHA ) ) then
-!            ! we need LJ or EXP6 to be able to print parameters
-!            ok = .false.
-!            do j=1,nsets
-!                if( params(i)%ids(j) .ne. 0 ) then
-!                    ok = (sets(j)%top%nb_mode .eq. NB_MODE_LJ) .or. (sets(j)%top%nb_mode .eq. NB_MODE_EXP6)
-!                end if
-!            end do
-!            if( ok ) then
-!                enable_section = .true.
-!                types(params(i)%ti)%print_nb = .true.
-!                types(params(i)%tj)%print_nb = .true.
-!            end if
-!        end if
-!    end do
-    ! FIXME
-!    ! extract parameters
-!    do i=1,ntypes
-!        if( .not. types(i)%print_nb ) cycle
-!        do j=1,nsets
-!            if( (sets(j)%top%nb_mode .eq. NB_MODE_LJ) .or. (sets(j)%top%nb_mode .eq. NB_MODE_EXP6) ) then
-!                nbt = ffdev_topology_find_nbtype_by_types(sets(j)%top,types(i)%name,types(i)%name)
-!                if( nbt .ne. 0 ) then
-!                    types(i)%r0 = sets(j)%top%nb_types(nbt)%r0
-!                    types(i)%eps = sets(j)%top%nb_types(nbt)%eps
-!                    exit
-!                end if
-!            end if
-!        end do
-!    end do
-!    ! print parameters
+    do i=1,nparams
+        if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) ) then
+            enable_section = .true.
+            exit
+        end if
+    end do
 
     if( enable_section ) then
+
+        ! collect data
+        call ffdev_nb2nb_gather_nbtypes
+
+        ! reset data
+        do i=1,ntypes
+            types(i)%r0 = 0.0d0
+            types(i)%eps = 0.0d0
+        end do
+        ! populate data
+        do i=1,nnb_types
+            if( nb_types(i)%gti .eq. nb_types(i)%gtj ) then
+                types(i)%r0  = nb_types(i)%r0
+                types(i)%eps = nb_types(i)%eps
+            end if
+        end do
+        ! write data
         write(DEV_PRMS,20) 'NONB'
         do i=1,ntypes
             if( .not. types(i)%print_nb ) cycle

@@ -51,9 +51,9 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,145) NB2LJIterBS
         write(DEV_OUT,155) NB2LJIterOpt
         write(DEV_OUT,165) NB2LJIterErr
-        write(DEV_OUT,175) NBPotPath
+        write(DEV_OUT,175) NBPotPathCore
 
-        call ffdev_nb2lj_ctrl_initdirs
+        call ffdev_nb2nb_initdirs
         return
     end if
 
@@ -107,14 +107,13 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,165) NB2LJIterErr
     end if
 
-    if( prmfile_get_string_by_key(fin,'nbpotpath', NBPotPath)) then
-        write(DEV_OUT,170) NBPotPath
+    if( prmfile_get_string_by_key(fin,'nbpotpath', NBPotPathCore)) then
+        write(DEV_OUT,170) NBPotPathCore
     else
-        write(DEV_OUT,175) NBPotPath
+        write(DEV_OUT,175) NBPotPathCore
     end if
 
-    call ffdev_nb2lj_ctrl_initdirs
-
+    call ffdev_nb2nb_initdirs
 
  10 format('=== [nb2lj] ====================================================================')
 
@@ -146,27 +145,6 @@ subroutine ffdev_nb2lj_ctrl(fin)
 195  format ('Boltzmann weighting (weighted)         = ',a12,'                  (default)')
 
 end subroutine ffdev_nb2lj_ctrl
-
-! ==============================================================================
-! function ffdev_nb2lj_ctrl_initdirs
-! ==============================================================================
-
-subroutine ffdev_nb2lj_ctrl_initdirs
-
-    use ffdev_nb2nb_dat
-    use ffdev_utils
-
-    implicit none
-    ! --------------------------------------------
-    integer         :: estat
-    ! --------------------------------------------------------------------------
-
-    call execute_command_line('mkdir -p ' // trim(NBPotPath), exitstat = estat )
-    if( estat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPath!')
-    end if
-
-end subroutine ffdev_nb2lj_ctrl_initdirs
 
 ! ------------------------------------------------------------------------------
 

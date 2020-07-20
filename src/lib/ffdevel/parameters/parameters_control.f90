@@ -714,7 +714,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
             case(REALM_ELE_SQ)
                 read(line,*,err=100,end=100) realm, lvalue
-            case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB)
+            case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
                 read(line,*,err=100,end=100) realm, lvalue

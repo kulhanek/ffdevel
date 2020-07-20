@@ -41,7 +41,7 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
         case(DAMP_TT_FREEOPT)
             ffdev_topology_TT_damptt_mode_to_string = 'FREEOPT - Optimized TB per type'
         case(DAMP_TT_COUPLED)
-            ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_fa to PB'
+            ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_tb to PB'
         case(DAMP_TT_DO)
             ffdev_topology_TT_damptt_mode_to_string = 'DO - TB derived from density overlap'
         case(DAMP_TT_DO_FULL)

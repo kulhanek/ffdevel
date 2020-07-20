@@ -207,7 +207,11 @@ program ffdev_optimize_program
         end if
 
         if( string .eq. 'FFMANIP' ) then
-            call execute_ffmanip(fin,.false.)
+            write(DEV_OUT,*)
+            write(string,110) i
+            call ffdev_utils_heading(DEV_OUT,trim(string), ':')
+            call execute_ffmanip(fin,i,.false.)
+            i = i + 1
         end if
 
         if( string .eq. 'MMOPT' ) then
@@ -218,9 +222,7 @@ program ffdev_optimize_program
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
-
             call execute_ffopt(fin,i,.false.)
-
             i = i + 1
         end if
 
@@ -228,9 +230,7 @@ program ffdev_optimize_program
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
-
             call execute_ffeval(fin,i,.false.)
-
             i = i + 1
         end if
 
@@ -302,7 +302,11 @@ program ffdev_optimize_program
 
     ! ffmanip -------------------------------------
         if( string .eq. 'FFMANIP' ) then
-            call execute_ffmanip(fin,.true.)
+            write(DEV_OUT,*)
+            write(string,110) i
+            call ffdev_utils_heading(DEV_OUT,trim(string), ':')
+            call execute_ffmanip(fin,i,.true.)
+            i = i + 1
         end if
 
     ! mmopt ---------------------------------------
@@ -315,9 +319,7 @@ program ffdev_optimize_program
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
-
             call execute_ffopt(fin,i,.true.)
-
             i = i + 1
         end if
 
@@ -326,9 +328,7 @@ program ffdev_optimize_program
             write(DEV_OUT,*)
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
-
             call execute_ffeval(fin,i,.true.)
-
             i = i + 1
         end if
 
@@ -417,6 +417,7 @@ subroutine execute_ffopt(grpin,pid,exec)
     use ffdev_ffopt_control
     use ffdev_ffopt
     use ffdev_geoopt
+    use ffdev_nb2nb
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
@@ -453,6 +454,9 @@ subroutine execute_ffopt(grpin,pid,exec)
 
         ! final results
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
+
+        ! write NB potentials
+        call ffdev_nb2nb_write_all_current_pots
     end if
 
     return
@@ -469,6 +473,7 @@ subroutine execute_ffeval(grpin,pid,exec)
     use ffdev_ffopt_control
     use ffdev_ffopt
     use ffdev_geoopt
+    use ffdev_nb2nb
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
@@ -495,6 +500,10 @@ subroutine execute_ffeval(grpin,pid,exec)
 
         ! print geoopt stat
         call ffdev_geoopt_print_stat_counters
+
+        ! write NB potentials
+        call ffdev_nb2nb_write_all_current_pots
+
     end if
 
     return
@@ -529,15 +538,18 @@ end subroutine execute_mmopt
 ! subroutine:  execute_ffmanip
 !===============================================================================
 
-subroutine execute_ffmanip(grpin,exec)
+subroutine execute_ffmanip(grpin,pid,exec)
 
     use ffdev_parameters_control
     use ffdev_ffopt_control
 
     implicit none
     type(PRMFILE_TYPE)  :: grpin
+    integer             :: pid
     logical             :: exec
     ! --------------------------------------------------------------------------
+
+   CurrentProgID = pid
 
     if( exec ) then
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
