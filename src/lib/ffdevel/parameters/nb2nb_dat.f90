@@ -41,13 +41,15 @@ integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 4
 
 integer                 :: NB2LJMode                    = NB2LJ_MODE_OVERLAY
 logical                 :: NB2LJWeighted                = .false.
-real(DEVDP)             :: NB2LJCutoffR                 = 6.0           ! max range for r
+real(DEVDP)             :: NB2LJCutoffR                 = 10.0          ! max range for r
+real(DEVDP)             :: NB2LJCutoffRQNB              = 5.0           ! max range for QNB isovalues
 integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
-integer                 :: NB2LJIterOpt                 = 1000          ! precision - overlay optimization
-integer                 :: NB2LJIterErr                 = 1000          ! precision - error discretization
+integer                 :: NB2LJIterOpt                 = 200           ! precision - overlay optimization
 real(DEVDP)             :: NB2LJSharkInitialStep        = 0.2           ! CMA-AS optimizer setup
 real(DEVDP)             :: NB2LJTemp                    = 300.0         ! temp factor for weights
+real(DEVDP)             :: NB2LJQNBdr                   = 0.001         ! dr in partition function calculation, overlay calculation
+real(DEVDP)             :: NB2LJQNBdrPrint              = 0.01          ! for printing
 character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
 character(len=MAX_PATH) :: NBPotPathPrg
 
@@ -59,6 +61,11 @@ real(DEVDP)             :: NB2LJMaxR
 type(NB_PAIR)           :: NB2LJNBPair
 integer                 :: NB2LJErrFceEval
 real(DEVDP),allocatable :: NB2LJprms(:),NB2LJtmp_xg(:),NB2LJtmp_ub(:),NB2LJtmp_lb(:)
+! QNB isoline
+logical                 :: QNBModeEps = .true.
+real(DEVDP)             :: QNBR0
+real(DEVDP)             :: QNBEps
+real(DEVDP)             :: QNBTrg
 
 ! global NB types
 
@@ -70,7 +77,10 @@ type GLBNB_TYPE
     real(DEVDP)         :: PA, PB               ! repulsion parameters
     real(DEVDP)         :: RC                   ! BJ damping radius
     real(DEVDP)         :: TB                   ! TT damping factor
+! NB parameters
     real(DEVDP)         :: SigNB                ! sigma for NB
+    real(DEVDP)         :: R0NB                 ! r0 for NB
+    real(DEVDP)         :: EpsNB                ! r0 for NB
     real(DEVDP)         :: QNB                  ! partition function for NB
     integer             :: num
     real(DEVDP)         :: errval

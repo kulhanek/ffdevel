@@ -121,11 +121,11 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 127  format ('PB penalty weight#2 (weight2)          = ',f21.8)
 128  format ('PB penalty weight#2 (weight2)          = ',f21.8,'         (default)')
 
-140  format ('PB penalty mode (mode)                 = ',a12)
-145  format ('PB penalty mode (mode)                 = ',a12,'                  (default)')
+140  format ('PB penalty mode (mode)                 = ',a)
+145  format ('PB penalty mode (mode)                 = ',a27,'   (default)')
 
-150  format ('PB source (source)                     = ',a12)
-155  format ('PB source (source)                     = ',a12,'                  (default)')
+150  format ('PB source (source)                     = ',a)
+155  format ('PB source (source)                     = ',a27,'   (default)')
 
 end subroutine ffdev_err_pbpnl_ctrl
 

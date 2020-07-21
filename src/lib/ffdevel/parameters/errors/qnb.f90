@@ -57,7 +57,7 @@ subroutine ffdev_err_qnb_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i
-    real(DEVDP)         :: gnb,sig,r0,eps,glj
+    real(DEVDP)         :: gnb,r0,eps,glj
     ! --------------------------------------------------------------------------
 
     error%qnb = 0.0d0
@@ -65,10 +65,9 @@ subroutine ffdev_err_qnb_error(error)
     do i=1,nnb_types
         gnb = NB2LJTemp*DEV_Rgas*log(nb_types(i)%QNB)
         ! take LJ parameters from topology
-        sig = nb_types(i)%SigNB
         r0 = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
         eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
-        glj = NB2LJTemp*DEV_Rgas*log(ffdev_nb2nb_calc_QLJ(sig,r0,eps))
+        glj = NB2LJTemp*DEV_Rgas*log(ffdev_nb2nb_calc_QLJ(r0,eps))
 
         error%qnb = error%qnb + nb_types(i)%num*(glj-gnb)**2
     end do
@@ -90,7 +89,7 @@ subroutine ffdev_err_qnb_summary()
 
     implicit none
     integer         :: i
-    real(DEVDP)     :: gnb,sig,r0,eps,glj,qnb,qlj,diff,totqnb,pnl
+    real(DEVDP)     :: gnb,r0,eps,glj,qnb,qlj,diff,totqnb,pnl
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -104,10 +103,9 @@ subroutine ffdev_err_qnb_summary()
         qnb = nb_types(i)%QNB
         gnb = NB2LJTemp*DEV_Rgas*log(qnb)
         ! take LJ parameters from topology
-        sig = nb_types(i)%SigNB
         r0 = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
         eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
-        qlj = ffdev_nb2nb_calc_QLJ(sig,r0,eps)
+        qlj = ffdev_nb2nb_calc_QLJ(r0,eps)
         glj = NB2LJTemp*DEV_Rgas*log(qlj)
         diff = glj-gnb
         pnl = nb_types(i)%num*diff**2
@@ -125,8 +123,8 @@ subroutine ffdev_err_qnb_summary()
 10 format('# ID TypA TypB   Num        Q(NB)      Q(LJ)      G(NB)      G(LJ)    G(diff)    Penalty')
 20 format('# -- ---- ---- ------- ---------- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,A4,1X,I7,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
-40 format('# Final penalty               =                                               ',F10.3)
-45 format('# Final penalty (all weights) =                                               ',F10.3)
+40 format('# Final penalty               =                                               ',F10.4)
+45 format('# Final penalty (all weights) =                                               ',F10.4)
 
 end subroutine ffdev_err_qnb_summary
 

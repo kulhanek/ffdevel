@@ -114,11 +114,11 @@ subroutine ffdev_err_papnl_ctrl(fin)
 127  format ('PA penalty weight#2 (weight2)          = ',f21.8)
 128  format ('PA penalty weight#2 (weight2)          = ',f21.8,'         (default)')
 
-140  format ('PA penalty mode (mode)                 = ',a12)
-145  format ('PA penalty mode (mode)                 = ',a12,'                  (default)')
+140  format ('PA penalty mode (mode)                 = ',a)
+145  format ('PA penalty mode (mode)                 = ',a27,'   (default)')
 
-150  format ('PA source (source)                     = ',a12)
-155  format ('PA source (source)                     = ',a12,'                  (default)')
+150  format ('PA source (source)                     = ',a)
+155  format ('PA source (source)                     = ',a27,'   (default)')
 
 end subroutine ffdev_err_papnl_ctrl
 

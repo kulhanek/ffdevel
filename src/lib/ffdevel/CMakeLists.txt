@@ -120,6 +120,7 @@ SET(FFDEVEL_SRC
         optimizers/ffopt.f90
         optimizers/shark-ml1.cpp
         optimizers/shark-ml2.cpp
+        optimizers/shark-ml3.cpp
 
         dftd3/sizes.f90
         dftd3/api.f90

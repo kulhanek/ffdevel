@@ -50,7 +50,7 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,135) NB2LJIterGS
         write(DEV_OUT,145) NB2LJIterBS
         write(DEV_OUT,155) NB2LJIterOpt
-        write(DEV_OUT,165) NB2LJIterErr
+        write(DEV_OUT,165) NB2LJQNBdr
         write(DEV_OUT,175) NBPotPathCore
 
         call ffdev_nb2nb_initdirs
@@ -101,10 +101,10 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,155) NB2LJIterOpt
     end if
 
-    if( prmfile_get_integer_by_key(fin,'itererr', NB2LJIterErr)) then
-        write(DEV_OUT,160) NB2LJIterErr
+    if( prmfile_get_real8_by_key(fin,'dr', NB2LJQNBdr)) then
+        write(DEV_OUT,160) NB2LJQNBdr
     else
-        write(DEV_OUT,165) NB2LJIterErr
+        write(DEV_OUT,165) NB2LJQNBdr
     end if
 
     if( prmfile_get_string_by_key(fin,'nbpotpath', NBPotPathCore)) then
@@ -132,8 +132,8 @@ subroutine ffdev_nb2lj_ctrl(fin)
 150  format ('Num of iters in OPT (iteropt)          = ',i12)
 155  format ('Num of iters in OPT (iteropt)          = ',i12,'                  (default)')
 
-160  format ('Num of iters in ERR (itererr)          = ',i12)
-165  format ('Num of iters in ERR (itererr)          = ',i12,'                  (default)')
+160  format ('dr for overlay, printing, QNB (dr)     = ',f21.8)
+165  format ('dr for overlay, printing, QNB (dr)     = ',f21.8,'         (default)')
 
 170  format ('NB potential summary path (nbpotpath)  = ',a12)
 175  format ('NB potential summary path (nbpotpath)  = ',a12,'                  (default)')
