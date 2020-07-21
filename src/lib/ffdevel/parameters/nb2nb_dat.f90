@@ -42,14 +42,15 @@ integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 4
 integer                 :: NB2LJMode                    = NB2LJ_MODE_OVERLAY
 logical                 :: NB2LJWeighted                = .false.
 real(DEVDP)             :: NB2LJCutoffR                 = 10.0          ! max range for r
-real(DEVDP)             :: NB2LJCutoffRQNB              = 5.0           ! max range for QNB isovalues
 integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
-integer                 :: NB2LJIterOpt                 = 200           ! precision - overlay optimization
+integer                 :: NB2LJIterOpt                 = 100           ! precision - overlay optimization
 real(DEVDP)             :: NB2LJSharkInitialStep        = 0.2           ! CMA-AS optimizer setup
 real(DEVDP)             :: NB2LJTemp                    = 300.0         ! temp factor for weights
 real(DEVDP)             :: NB2LJQNBdr                   = 0.001         ! dr in partition function calculation, overlay calculation
-real(DEVDP)             :: NB2LJQNBdrPrint              = 0.01          ! for printing
+real(DEVDP)             :: NB2LJQNBdrPrint              = 0.02          ! for printing
+logical                 :: NB2LJCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
+real(DEVDP)             :: NB2LJCutoffRQNB              = 5.0           ! max range for QNB isovalues
 character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
 character(len=MAX_PATH) :: NBPotPathPrg
 
