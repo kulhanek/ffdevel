@@ -25,7 +25,7 @@ extern "C" void shark_create3_(int* nactparms,double* initial_step,double* initi
     for(size_t i=0; i < NumOfParams3; i++){
             params(i) = initial_params[i];
     }
-    tmp_x3 = shared_ptr<double>(new double[NumOfParams3]);
+    tmp_x3 = shared_ptr<double>(new double[NumOfParams3],std::default_delete<double[]>());
 
     // currently only CMA is supported
     CMAOpt3 = shared_ptr<CMA>(new CMA(RnG3));

@@ -753,6 +753,8 @@ subroutine ffdev_targetset_ctrl_setup_initdirs
     integer         :: estat
     ! --------------------------------------------------------------------------
 
+    estat = 0
+
     ! create directories
     if( SavePts ) then
         call execute_command_line('mkdir -p ' // trim(SavePtsPath), exitstat = estat )

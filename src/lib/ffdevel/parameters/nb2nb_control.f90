@@ -50,7 +50,10 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,135) NB2LJIterGS
         write(DEV_OUT,145) NB2LJIterBS
         write(DEV_OUT,155) NB2LJIterOpt
-        write(DEV_OUT,165) NB2LJQNBdr
+        write(DEV_OUT,165) NB2LJdr
+        write(DEV_OUT,205) NB2LJdrPrint
+        write(DEV_OUT,215) prmfile_onoff(NB2LJCalcQNBIsoline)
+        write(DEV_OUT,225) NB2LJCutoffRQNB
         write(DEV_OUT,175) NBPotPathCore
 
         call ffdev_nb2nb_initdirs
@@ -101,10 +104,28 @@ subroutine ffdev_nb2lj_ctrl(fin)
         write(DEV_OUT,155) NB2LJIterOpt
     end if
 
-    if( prmfile_get_real8_by_key(fin,'dr', NB2LJQNBdr)) then
-        write(DEV_OUT,160) NB2LJQNBdr
+    if( prmfile_get_real8_by_key(fin,'dr', NB2LJdr)) then
+        write(DEV_OUT,160) NB2LJdr
     else
-        write(DEV_OUT,165) NB2LJQNBdr
+        write(DEV_OUT,165) NB2LJdr
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'dr_print', NB2LJdrPrint)) then
+        write(DEV_OUT,200) NB2LJdrPrint
+    else
+        write(DEV_OUT,205) NB2LJdrPrint
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'qnb', NB2LJCalcQNBIsoline)) then
+        write(DEV_OUT,210) prmfile_onoff(NB2LJCalcQNBIsoline)
+    else
+        write(DEV_OUT,215) prmfile_onoff(NB2LJCalcQNBIsoline)
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'qnbcutoff', NB2LJCutoffRQNB)) then
+        write(DEV_OUT,220) NB2LJCutoffRQNB
+    else
+        write(DEV_OUT,225) NB2LJCutoffRQNB
     end if
 
     if( prmfile_get_string_by_key(fin,'nbpotpath', NBPotPathCore)) then
@@ -132,8 +153,17 @@ subroutine ffdev_nb2lj_ctrl(fin)
 150  format ('Num of iters in OPT (iteropt)          = ',i12)
 155  format ('Num of iters in OPT (iteropt)          = ',i12,'                  (default)')
 
-160  format ('dr for overlay, printing, QNB (dr)     = ',f21.8)
-165  format ('dr for overlay, printing, QNB (dr)     = ',f21.8,'         (default)')
+160  format ('dr for overlay and QNB calc. (dr)      = ',f21.8)
+165  format ('dr for overlay and QNB calc. (dr)      = ',f21.8,'         (default)')
+
+200  format ('dr for printing (dr_print)             = ',f21.8)
+205  format ('dr for printing (dr_print)             = ',f21.8,'         (default)')
+
+210  format ('Put QNB isoline into NB sum. (qnb)     = ',a12)
+215  format ('Put QNB isoline into NB sum. (qnb)     = ',a12,'                  (default)')
+
+220  format ('QNB isoline r-cutoff (qnbcutoff)       = ',a12)
+225  format ('QNB isoline r-cutoff (qnbcutoff)       = ',a12,'                  (default)')
 
 170  format ('NB potential summary path (nbpotpath)  = ',a12)
 175  format ('NB potential summary path (nbpotpath)  = ',a12,'                  (default)')

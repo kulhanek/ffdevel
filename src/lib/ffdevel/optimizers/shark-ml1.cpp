@@ -26,7 +26,7 @@ extern "C" void shark_create1_(int* nactparms,int* method,double* initial_step,d
     for(size_t i=0; i < NumOfParams1; i++){
             params(i) = initial_params[i];
     }
-    tmp_x1 = shared_ptr<double>(new double[NumOfParams1]);
+    tmp_x1 = shared_ptr<double>(new double[NumOfParams1],std::default_delete<double[]>());
 
     // currently only CMA is supported
     OptMethod1 = *method;

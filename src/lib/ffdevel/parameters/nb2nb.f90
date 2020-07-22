@@ -143,6 +143,8 @@ subroutine ffdev_nb2nb_initdirs_for_prog(conv)
     integer                 :: estat
     ! --------------------------------------------------------------------------
 
+    estat = 0
+
     if( conv ) then
         write(NBPotPathPrg,10) trim(NBPotPathCore), CurrentProgID
     else
@@ -664,58 +666,65 @@ real(DEVDP) function ffdev_nb2nb_qnb_eps(r0,qnb)
     real(DEVDP)             :: r0,qnb
     ! --------------------------------------------
     real(DEVDP)             :: errval
+! DEBUG
+!    real(DEVDP)             :: qlj
     integer                 :: alloc_status,istep
     ! --------------------------------------------------------------------------
 
+    ffdev_nb2nb_qnb_eps = 0.0d0
+
     NB2LJNParams = 1
 
-    ! allocate working array
-    allocate(NB2LJtmp_xg(NB2LJNParams),stat=alloc_status)
+        ! allocate working array
+    allocate(NB2LJtmp_lb(NB2LJNParams),NB2LJtmp_ub(NB2LJNParams),NB2LJprms(NB2LJNParams),&
+             NB2LJtmp_xg(NB2LJNParams),stat=alloc_status)
     if( alloc_status .ne. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SHARK optimization in ffdev_nb2nb_qnb_eps!')
     end if
 
-    ffdev_nb2nb_qnb_eps = 0.0d0 ! initial value of eps
+    QNBModeEps  = .true.
+    QNBR0       = r0
+    QNBTrg      = qnb
 
-    QNBModeEps = .true.
-    QNBR0 = r0
-    QNBTrg = qnb
-    NB2LJtmp_xg(1) = ffdev_nb2nb_qnb_eps ! initial guess
+    ! eps
+    NB2LJtmp_lb(1)  = 0.0d0
+    NB2LJtmp_ub(1)  = 1.0d0
+    NB2LJprms(1)    = 0.50d0
+
+    ! box data
+    call ffdev_nb2nb_nb2nb_box_prms(NB2LJprms,NB2LJtmp_xg)
+
+! DEBUG
+!    write(*,*) r0, qnb
 
     ! init optimizer
     call shark_create3(NB2LJNParams,NB2LJSharkInitialStep,NB2LJtmp_xg)
 
-!    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-!        write(DEV_OUT,*)
-!        write(DEV_OUT,10) r0, qnb
-!        write(DEV_OUT,*)
-!        write(DEV_OUT,20)
-!        write(DEV_OUT,30)
-!    end if
-
     NB2LJErrFceEval = 0
     do istep = 1, NB2LJIterOpt
         call shark_dostep3(errval)
-!        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-!            write(DEV_OUT,40) istep,NB2LJErrFceEval,errval
-!        end if
+! DEBUG
+!        write(*,*) istep,NB2LJErrFceEval,errval
     end do
 
     ! get solution
     call shark_getsol3(NB2LJtmp_xg)
 
-    ffdev_nb2nb_qnb_eps = NB2LJtmp_xg(1)    ! result
+    ! unbox data
+    call ffdev_nb2nb_nb2nb_unbox_prms(NB2LJtmp_xg,NB2LJprms)
+    ffdev_nb2nb_qnb_eps = NB2LJprms(1)    ! result
+
+! DEBUG
+!    qlj = ffdev_nb2nb_calc_QLJ(QNBR0,ffdev_nb2nb_qnb_eps)
+!    write(*,*) QNBR0,ffdev_nb2nb_qnb_eps, QNBTrg, qlj
 
     ! destroy optimizer
     call shark_destroy3()
 
+    deallocate(NB2LJtmp_lb)
+    deallocate(NB2LJtmp_ub)
+    deallocate(NB2LJprms)
     deallocate(NB2LJtmp_xg)
-
-!10 format('Getting eps for constant QNB: r0=',F10.3,' QNB=',F10.3)
-!
-!20 format('#     Step FceEvals          Error')
-!30 format('# -------- -------- --------------')
-!40 format(I10,1X,I8,1X,E14.6)
 
 end function ffdev_nb2nb_qnb_eps
 
@@ -788,13 +797,22 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
 
     do while(r .le. NB2LJCutoffR)
         enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
-        if( r .le. NB2LJCutoffRQNB ) then
-            qnbeps = ffdev_nb2nb_qnb_eps(r,nb_types(gnbt)%QNB)
-            write(DEV_NBPOT,10) r, enb, -qnbeps
+        if( NB2LJCalcQNBIsoline ) then
+            if( r .le. NB2LJCutoffRQNB ) then
+                qnbeps = ffdev_nb2nb_qnb_eps(r,nb_types(gnbt)%QNB)
+                if( qnbeps .gt. 0.0d0 ) then
+                    ! put negative sign to compare qnbeps with NB or LJ potential
+                    write(DEV_NBPOT,10) r, enb, -qnbeps
+                else
+                    write(DEV_NBPOT,20) r, enb
+                end if
+            else
+                write(DEV_NBPOT,20) r, enb
+            end if
         else
             write(DEV_NBPOT,20) r, enb
         end if
-        r = r + NB2LJQNBdrPrint
+        r = r + NB2LJdrPrint
     end do
 
     close(DEV_NBPOT)
@@ -848,7 +866,7 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     do while(r .le. NB2LJCutoffR)
         enb = ffdev_nb2nb_ljene(r0,eps,r)
         write(DEV_NBPOT,10) r,enb
-        r = r + NB2LJQNBdrPrint
+        r = r + NB2LJdrPrint
     end do
 
     close(DEV_NBPOT)
@@ -957,21 +975,26 @@ real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
     implicit none
     real(DEVDP)     :: sig
     ! --------------------------------------------
-    real(DEVDP)     :: r,e,q
+    real(DEVDP)     :: r,e,q,n
     ! --------------------------------------------------------------------------
 
     r  = sig
 
     q = 0.0d0
-    do while ( r .le. NB2LJCutoffR )
+    n = 0.0d0
+    do while ( r .le. (sig + NB2LJCutoffR) )
         e = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
-        q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJQNBdr
-        r = r + NB2LJQNBdr
+        if( e .lt. 0.0d0 ) then
+            q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJdr
+        end if
+        r = r + NB2LJdr
+        n = n + NB2LJdr
     end do
-    ! FIXME - commented normalization is not right?
-    ! q = q / (NB2LJCutoffR-sig)
 
-    ffdev_nb2nb_calc_QNB = q
+    ffdev_nb2nb_calc_QNB = 1.0d0
+    if( n .gt. 0.0d0 ) then
+        ffdev_nb2nb_calc_QNB = q / n
+    end if
 
 end function ffdev_nb2nb_calc_QNB
 
@@ -984,24 +1007,28 @@ real(DEVDP) function ffdev_nb2nb_calc_QLJ(r0,eps)
     implicit none
     real(DEVDP)     :: r0,eps
     ! --------------------------------------------
-    real(DEVDP)     :: r,e,q
+    real(DEVDP)     :: r,e,q,n,sig
     ! --------------------------------------------------------------------------
 
     ! start from sigma derived from r0
-    r  = r0 / 2.0d0**(1.0d0/6.0d0)
-
-    !write(*,*) r,r0,eps
+    sig  = r0 / 2.0d0**(1.0d0/6.0d0)
+    r = sig
 
     q = 0.0d0
-    do while ( r .le. NB2LJCutoffR )
+    n = 0.0d0
+    do while ( r .le. (sig + NB2LJCutoffR) )
         e = ffdev_nb2nb_ljene(r0,eps,r)
-        q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJQNBdr
-        r = r + NB2LJQNBdr
+        if( e .lt. 0.0d0 ) then
+            q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJdr
+        end if
+        r = r + NB2LJdr
+        n = n + NB2LJdr
     end do
-    ! FIXME - commented normalization is not right?
-    ! q = q / (NB2LJCutoffR-sig)
 
-    ffdev_nb2nb_calc_QLJ = q
+    ffdev_nb2nb_calc_QLJ = 1.0d0
+    if( n .gt. 0.0d0 ) then
+        ffdev_nb2nb_calc_QLJ = q / n
+    end if
 
 end function ffdev_nb2nb_calc_QLJ
 
@@ -1102,7 +1129,7 @@ subroutine opt_shark_fce2(n, x, errval)
 
         errval = errval + w*(enb-elj)**2
         sumw = sumw + w
-        r = r + NB2LJQNBdr
+        r = r + NB2LJdr
     end do
 
     if( sumw .gt. 0.0d0 ) then
@@ -1132,13 +1159,15 @@ subroutine opt_shark_fce3(n, x, errval)
     real(DEVDP)     :: eps,r0,qlj
     ! --------------------------------------------------------------------------
 
+    call ffdev_nb2nb_nb2nb_unbox_prms(x,NB2LJprms)
+
     ! calculate QNB for LJ
     if( QNBModeEps ) then
-        eps = x(1)
+        eps = NB2LJprms(1)
         r0 = QNBR0
     else
         eps = QNBEps
-        r0 = x(1)
+        r0 = NB2LJprms(1)
     end if
 
     qlj = ffdev_nb2nb_calc_QLJ(r0,eps)
