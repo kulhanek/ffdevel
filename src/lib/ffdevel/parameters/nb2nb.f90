@@ -340,7 +340,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
 
     use ffdev_topology_dat
     use ffdev_utils
-
+    use ffdev_parameters_dat
 
     implicit none
     integer         :: from_nb_mode,to_nb_mode
@@ -384,9 +384,12 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
             select case(to_nb_mode)
 
                 case(NB_VDW_LJ)
-
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,10) trim(NBPotPathPrg)
                     call ffdev_nb2nb_initdirs_for_prog(.true.)
                     do nbt=1,nnb_types
+                        write(DEV_OUT,20) trim(types(nb_types(nbt)%gti)%name) &
+                                          // '-' // trim(types(nb_types(nbt)%gtj)%name)
                         call ffdev_nb2nb_nb2lj(nbt)
                     end do
 
@@ -400,6 +403,9 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(from) in ffdev_nb2nb_switch_nbmode!')
     end select
+
+ 10 format('> Writing NB->LJ conversion summary to: ',A)
+ 20 format('  > Converting ',A)
 
 end subroutine ffdev_nb2nb_switch_nbmode
 
