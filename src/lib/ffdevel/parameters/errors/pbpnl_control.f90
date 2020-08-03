@@ -49,6 +49,7 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 
         write(DEV_OUT,145) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
         write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
+        write(DEV_OUT,165) prmfile_onoff(PBPNLIncludeProbes)
 
         write(DEV_OUT,123) PBPnlErrorWeight
         write(DEV_OUT,125) PBPnlErrorWeight1
@@ -82,6 +83,12 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'probes', PBPNLIncludeProbes)) then
+        write(DEV_OUT,160) prmfile_onoff(PBPNLIncludeProbes)
+    else
+        write(DEV_OUT,165) prmfile_onoff(PBPNLIncludeProbes)
+    end if
+
     if( prmfile_get_real8_by_key(fin,'weight', PBPnlErrorWeight)) then
         write(DEV_OUT,122) PBPnlErrorWeight
     else
@@ -111,6 +118,8 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 115  format ('PB penalty (enabled)                   = ',a12,'                  (default)')
 130  format ('PB penalty summary (summary)           = ',a12)
 135  format ('PB penalty summary (summary)           = ',a12,'                  (default)')
+160  format ('PB include probes (probes)             = ',a12)
+165  format ('PB include probes (probes)             = ',a12,'                  (default)')
 
 122  format ('PB penalty weight (weight)             = ',f21.8)
 123  format ('PB penalty weight (weight)             = ',f21.8,'         (default)')

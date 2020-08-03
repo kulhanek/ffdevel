@@ -34,7 +34,7 @@ program ffdev_optimize_program
     use ffdev_timers
     use ffdev_buried
     use ffdev_buried_control
-    use ffdev_densoverlap_control
+    use ffdev_atomoverlap_control
     use ffdev_nb2nb_control
     use ffdev_parallel
 
@@ -82,7 +82,7 @@ program ffdev_optimize_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
     call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
-    call ffdev_densoverlap_ctrl(tmpfin,.false.)
+    call ffdev_atomoverlap_ctrl(tmpfin,.false.)
     call ffdev_buried_ctrl(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
 
@@ -607,6 +607,14 @@ subroutine execute_check_gradient(grpin,exec)
     ! --------------------------------------------------------------------------
 
     if( .not. exec ) return
+
+    ! PARALLEL !!!!! ensure that NB parameters are updated before the parallel section !!!!!
+    do i=1,nsets
+        if( sets(i)%top%nb_params_update ) then
+            call ffdev_topology_update_nb_params(sets(i)%top)
+            call ffdev_topology_update_nb_pairs(sets(i)%top)
+        end if
+    end do
 
     do i=1,nsets
         do j=1,sets(i)%ngeos

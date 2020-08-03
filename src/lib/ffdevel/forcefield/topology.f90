@@ -1299,13 +1299,13 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
 
     top%probe_size = probe_size
 
-    if( unique_probe_types ) then
-        ! label atom types with probe
-        do i=top%natoms - top%probe_size+1,top%natoms
-            it = top%atoms(i)%typeid
-            top%atom_types(it)%probe = .true.
-        end do
+    ! label atom types with probe
+    do i=top%natoms - top%probe_size+1,top%natoms
+        it = top%atoms(i)%typeid
+        top%atom_types(it)%probe = .true.
+    end do
 
+    if( unique_probe_types ) then
         ! test probe atom type overlaps
         do i=1,top%natoms - top%probe_size
             it = top%atoms(i)%typeid
@@ -1489,6 +1489,10 @@ character(80) function ffdev_topology_nb_mode_to_string(nb_mode)
             ffdev_topology_nb_mode_to_string = 'EXP-DISPBJ - Exp/Disp with BJ damping'
         case(NB_VDW_EXP_DISPTT)
             ffdev_topology_nb_mode_to_string = 'EXP-DISPTT - Exp/Disp with TT damping'
+        case(NB_VDW_EXPDO_DISPTT)
+            ffdev_topology_nb_mode_to_string = 'EXPDO-DISPTT - Exp(Density overlap)/Disp with TT damping'
+        case(NB_VDW_EXPWO_DISPTT)
+            ffdev_topology_nb_mode_to_string = 'EXPWO-DISPTT - Exp(Wavefunction overlap)/Disp with TT damping'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_nb_mode_to_string!')
     end select
@@ -1514,6 +1518,10 @@ integer function ffdev_topology_nb_mode_from_string(string)
             ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPBJ
         case('EXP-DISPTT')
             ffdev_topology_nb_mode_from_string = NB_VDW_EXP_DISPTT
+        case('EXPDO-DISPTT')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXPDO_DISPTT
+        case('EXPWO-DISPTT')
+            ffdev_topology_nb_mode_from_string = NB_VDW_EXPWO_DISPTT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_nb_mode_from_string!')
     end select
@@ -1545,6 +1553,14 @@ subroutine ffdev_topology_update_nb_params(top)
             call ffdev_topology_BJ_update_nb_params(top)
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
+            call ffdev_topology_EXP_update_nb_params(top)
+            call ffdev_topology_TT_update_nb_params(top)
+    ! ------------------------
+        case(NB_VDW_EXPDO_DISPTT)
+            call ffdev_topology_EXP_update_nb_params(top)
+            call ffdev_topology_TT_update_nb_params(top)
+    ! ------------------------
+        case(NB_VDW_EXPWO_DISPTT)
             call ffdev_topology_EXP_update_nb_params(top)
             call ffdev_topology_TT_update_nb_params(top)
     ! ------------------------
@@ -1588,7 +1604,29 @@ subroutine ffdev_topology_update_nb_pairs(top)
                 call ffdev_utils_exit(DEV_ERR,1, &
                      'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_pairs!')
             end if
-            if( dampbj_mode .eq. DAMP_TT_IP_XDM ) then
+            if( damptt_mode .eq. DAMP_TT_IP_XDM ) then
+                if( .not. xdm_data_loaded ) then
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                         'XDM not loaded for DAMP_TT_IP_XDM in ffdev_topology_update_nb_pairs!')
+                end if
+            end if
+        case(NB_VDW_EXPDO_DISPTT)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1, &
+                     'DISP not loaded for NB_VDW_EXPDO_DISPTT in ffdev_topology_update_nb_pairs!')
+            end if
+            if( damptt_mode .eq. DAMP_TT_IP_XDM ) then
+                if( .not. xdm_data_loaded ) then
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                         'XDM not loaded for DAMP_TT_IP_XDM in ffdev_topology_update_nb_pairs!')
+                end if
+            end if
+        case(NB_VDW_EXPWO_DISPTT)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1, &
+                     'DISP not loaded for NB_VDW_EXPWO_DISPTT in ffdev_topology_update_nb_pairs!')
+            end if
+            if( damptt_mode .eq. DAMP_TT_IP_XDM ) then
                 if( .not. xdm_data_loaded ) then
                     call ffdev_utils_exit(DEV_ERR,1, &
                          'XDM not loaded for DAMP_TT_IP_XDM in ffdev_topology_update_nb_pairs!')
@@ -1623,7 +1661,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_utils
     use ffdev_xdm_dat
     use ffdev_disp_dat
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
     use ffdev_ip_db
     use ffdev_topology_exp
 
@@ -1683,7 +1721,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%rc8  = rc**8
             nbpair%rc10 = rc**10
     ! ------------------------
-        case(NB_VDW_EXP_DISPTT)
+        case(NB_VDW_EXP_DISPTT,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT)
             ! exp
             nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)

@@ -31,6 +31,8 @@ SET(FFDEVEL_SRC
         forcefield/nbmodes/LJ.f90
         forcefield/nbmodes/EXP-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPTT.f90
+        forcefield/nbmodes/EXPDO-DISPTT.f90
+        forcefield/nbmodes/EXPWO-DISPTT.f90
         forcefield/nbmodes/topology_lj.f90
         forcefield/nbmodes/topology_bj.f90
         forcefield/nbmodes/topology_tt.f90
@@ -104,12 +106,12 @@ SET(FFDEVEL_SRC
         parameters/nb2nb.f90
         parameters/nb2nb_dat.f90
         parameters/nb2nb_control.f90
-        parameters/densoverlap_dat.f90
-        parameters/densoverlap.f90
-        parameters/densoverlap_control.f90
+        parameters/atomoverlap_dat.f90
+        parameters/atomoverlap.f90
+        parameters/atomoverlap_control.f90
 
         parameters/data/ip_db.f90
-        parameters/data/densoverlap_db.f90
+        parameters/data/atomoverlap_db.f90
 
         optimizers/geoopt_dat.f90
         optimizers/geoopt_control.f90

@@ -42,6 +42,7 @@ logical     :: EnablePBPnlError
 logical     :: PrintPBPnlErrorSummary
 integer     :: PBPNLMode
 integer     :: PBPNLSource
+logical     :: PBPNLIncludeProbes
 
 real(DEVDP) :: PBPnlErrorWeight     ! global
 real(DEVDP) :: PBPnlErrorWeight1    ! high

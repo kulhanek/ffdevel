@@ -37,6 +37,8 @@ subroutine ffdev_energy_all(top,geo,skipnb)
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
+    use ffdev_nbmode_EXPDO_DISPTT
+    use ffdev_nbmode_EXPWO_DISPTT
 
     implicit none
     type(TOPOLOGY)      :: top
@@ -92,6 +94,12 @@ subroutine ffdev_energy_all(top,geo,skipnb)
             case(NB_VDW_EXP_DISPTT)
                 call ffdev_energy_nb_EXP_DISPTT(top,geo)
 
+            case(NB_VDW_EXPDO_DISPTT)
+                call ffdev_energy_nb_EXPDO_DISPTT(top,geo)
+
+            case(NB_VDW_EXPWO_DISPTT)
+                call ffdev_energy_nb_EXPWO_DISPTT(top,geo)
+
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
         end select
@@ -118,6 +126,8 @@ subroutine ffdev_energy_sapt(top,geo)
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
+    use ffdev_nbmode_EXPDO_DISPTT
+    use ffdev_nbmode_EXPWO_DISPTT
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -145,6 +155,12 @@ subroutine ffdev_energy_sapt(top,geo)
 
         case(NB_VDW_EXP_DISPTT)
             call ffdev_energy_sapt_EXP_DISPTT(top,geo)
+
+        case(NB_VDW_EXPDO_DISPTT)
+            call ffdev_energy_sapt_EXPDO_DISPTT(top,geo)
+
+        case(NB_VDW_EXPWO_DISPTT)
+            call ffdev_energy_sapt_EXPWO_DISPTT(top,geo)
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt!')

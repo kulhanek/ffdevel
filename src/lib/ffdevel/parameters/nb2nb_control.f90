@@ -162,8 +162,8 @@ subroutine ffdev_nb2lj_ctrl(fin)
 210  format ('Put QNB isoline into NB sum. (qnb)     = ',a12)
 215  format ('Put QNB isoline into NB sum. (qnb)     = ',a12,'                  (default)')
 
-220  format ('QNB isoline r-cutoff (qnbcutoff)       = ',a12)
-225  format ('QNB isoline r-cutoff (qnbcutoff)       = ',a12,'                  (default)')
+220  format ('QNB isoline r-cutoff (qnbcutoff)       = ',f21.8)
+225  format ('QNB isoline r-cutoff (qnbcutoff)       = ',f21.8,'         (default)')
 
 170  format ('NB potential summary path (nbpotpath)  = ',a12)
 175  format ('NB potential summary path (nbpotpath)  = ',a12,'                  (default)')

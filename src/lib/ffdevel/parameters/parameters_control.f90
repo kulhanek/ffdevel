@@ -411,7 +411,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
     use ffdev_utils
     use ffdev_disp_control
     use ffdev_buried_control
-    use ffdev_densoverlap_control
+    use ffdev_atomoverlap_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -447,8 +447,8 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_disp_ctrl(fin,exec)
             case('buried')
                 call ffdev_buried_ctrl(fin,exec)
-            case('densoverlap')
-                call ffdev_densoverlap_ctrl(fin,exec)
+            case('atomoverlap')
+                call ffdev_atomoverlap_ctrl(fin,exec)
             case('files')
                 call ffdev_parameters_ctrl_files_exec(fin,exec)
         end select
@@ -505,7 +505,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(pb_mode)
         end if
         if( ApplyCombiningRules ) then
-            if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+        if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) .or. &
+            (to_nb_mode .eq. NB_VDW_EXPDO_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXPWO_DISPTT) ) then
                 write(DEV_OUT,37) ffdev_topology_EXP_comb_rules_to_string(exp_comb_rules)
             end if
             if( nb_mode .eq. NB_VDW_LJ ) then
@@ -532,7 +533,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 ! ---------------------------
     if( ApplyCombiningRules ) then
-        if( to_nb_mode .eq. NB_VDW_EXP_DISPBJ .or. to_nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+        if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) .or. &
+            (to_nb_mode .eq. NB_VDW_EXPDO_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXPWO_DISPTT) ) then
             if( prmfile_get_string_by_key(fin,'exp_comb_rules', string)) then
                 lcomb_rules = ffdev_topology_EXP_comb_rules_from_string(string)
                 write(DEV_OUT,32) ffdev_topology_EXP_comb_rules_to_string(lcomb_rules)
@@ -559,7 +561,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
-    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
+    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) .or. &
+        (to_nb_mode .eq. NB_VDW_EXPDO_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXPWO_DISPTT) ) then
         if( prmfile_get_string_by_key(fin,'pb_mode', string)) then
             lpb_mode= ffdev_topology_EXP_pb_mode_from_string(string)
             write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lpb_mode)
@@ -587,7 +590,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
-    if( to_nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXPDO_DISPTT) .or. &
+        (to_nb_mode .eq. NB_VDW_EXPWO_DISPTT)) then
         if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
             ldamptt_mode = ffdev_topology_TT_damptt_mode_from_string(string)
             write(DEV_OUT,50) ffdev_topology_TT_damptt_mode_to_string(ldamptt_mode)

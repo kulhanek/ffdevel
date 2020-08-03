@@ -37,6 +37,8 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
+    use ffdev_nbmode_EXPDO_DISPTT
+    use ffdev_nbmode_EXPWO_DISPTT
 
     implicit none
     type(TOPOLOGY)      :: top
@@ -94,6 +96,12 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
             case(NB_VDW_EXP_DISPTT)
                 call ffdev_gradient_nb_EXP_DISPTT(top,geo)
+
+            case(NB_VDW_EXPDO_DISPTT)
+                call ffdev_gradient_nb_EXPDO_DISPTT(top,geo)
+
+            case(NB_VDW_EXPWO_DISPTT)
+                call ffdev_gradient_nb_EXPWO_DISPTT(top,geo)
 
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_gradient_all!')

@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_densoverlap_dat
+module ffdev_atomoverlap_dat
 
 use ffdev_constants
 use ffdev_variables
@@ -23,33 +23,28 @@ use ffdev_variables
 ! ------------------------------------------------------------------------------
 ! density overlap
 
-integer,parameter   :: DO_PBE0_def2QZVPP = 1
+integer,parameter   :: AO_PBE0_def2QZVPP = 1
 
-integer             :: densoverlap_source            = DO_PBE0_def2QZVPP
-logical             :: densoverlap_mod_by_charge     = .false.
+integer             :: atomoverlap_source            = AO_PBE0_def2QZVPP
 
 ! overlap of electron densities of isolated atoms ------------------------------
 
+! model log(Sij) =  a0 + log(1.0+b0*R+(b0*R)**2/3.0) - b0*R
+
 integer,parameter   :: DENSOVERLAP_MAX_Z = 86
 
-! log(S_{rho}) = -b*r + a
-! bp, ap - cation (+1)
-! b0, a0 - neutral atom
-! bm, am - anion (-1)
-
-real(DEVDP)     :: densoverlap_bpii(1:DENSOVERLAP_MAX_Z)
 real(DEVDP)     :: densoverlap_b0ii(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_bmii(1:DENSOVERLAP_MAX_Z)
-
-real(DEVDP)     :: densoverlap_apii(1:DENSOVERLAP_MAX_Z)
 real(DEVDP)     :: densoverlap_a0ii(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_amii(1:DENSOVERLAP_MAX_Z)
 
-real(DEVDP)     :: densoverlap_b0ij(1:DENSOVERLAP_MAX_Z,1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_a0ij(1:DENSOVERLAP_MAX_Z,1:DENSOVERLAP_MAX_Z)
+! overlap of WFs of isolated atoms ---------------------------------------------
 
+! model log(Sij^2/R) = a0 + 2.0*log(1.0+b0*R/2.0+(b0*R)**2/12.0) -log(R)  - b0*R
 
+integer,parameter   :: WFOVERLAP_MAX_Z = 86
+
+real(DEVDP)     :: wfoverlap_b0ii(1:WFOVERLAP_MAX_Z)
+real(DEVDP)     :: wfoverlap_a0ii(1:WFOVERLAP_MAX_Z)
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_densoverlap_dat
+end module ffdev_atomoverlap_dat

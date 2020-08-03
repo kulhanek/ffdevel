@@ -447,9 +447,9 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                         end if
                     case('boltzmannProbe')
                         ! FIXME - add tunable value for Temp
-                        if( sets(i)%geo(j)%trg_probe_ene .gt. 0d0 ) then
+                        !if( sets(i)%geo(j)%trg_probe_ene .gt. 0d0 ) then
                             sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*300.0d0))
-                        end if
+                        !end if
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select

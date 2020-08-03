@@ -32,7 +32,7 @@ subroutine ffdev_parameters_init()
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
     use ffdev_nb2nb
 
     implicit none
@@ -108,7 +108,7 @@ subroutine ffdev_parameters_init()
     call ffdev_nb2nb_init_nbtypes
     call ffdev_parameters_print_types()
     call ffdev_parameters_print_charge_stat()
-    call ffdev_densoverlap_print()
+    call ffdev_atomoverlap_print()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
   5 format('Number of sets (topologies)              = ',I6)
@@ -468,7 +468,7 @@ subroutine ffdev_parameters_reinit()
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                 case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP,EXP_PB_IP_XDM)
+                 case(EXP_PB_DO,EXP_PB_IP,EXP_PB_IP_XDM)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -484,8 +484,6 @@ subroutine ffdev_parameters_reinit()
                     use_damp_fb     = .true.
                case(DAMP_BJ_DO)
                     use_damp_fa     = .true.
-               case(DAMP_BJ_DO_FULL)
-                    use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -494,7 +492,7 @@ subroutine ffdev_parameters_reinit()
             use_disp_s8     = .true.
             use_disp_s10    = .true.
 
-        case(NB_VDW_EXP_DISPTT)
+        case(NB_VDW_EXP_DISPTT,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT)
             use_vdw_pa      = .true.
             use_damp_pb     = .true.
             use_pauli_k     = .true.
@@ -502,7 +500,7 @@ subroutine ffdev_parameters_reinit()
             select case(pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                case(EXP_PB_DO,EXP_PB_DO_FULL,EXP_PB_IP,EXP_PB_IP_XDM)
+                case(EXP_PB_DO,EXP_PB_IP,EXP_PB_IP_XDM)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -515,7 +513,7 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_tb      = .true.
                 case(DAMP_TT_COUPLED)
                     use_damp_tb     = .true.
-                case(DAMP_TT_DO,DAMP_TT_DO_FULL)
+                case(DAMP_TT_DO)
                     use_damp_tb     = .true.
                 case(DAMP_TT_IP,DAMP_TT_IP_XDM)
                     use_damp_tb     = .true.
@@ -1279,7 +1277,8 @@ subroutine ffdev_parameters_gen_unique_types()
                     types(i)%ids(j) = k
                     types(i)%z = sets(j)%top%atom_types(k)%z
                     types(i)%mass = sets(j)%top%atom_types(k)%mass
-                    types(i)%probe = sets(j)%top%atom_types(k)%probe
+                    ! this is cummulative set - if any is probe
+                    types(i)%probe = types(i)%probe .or. sets(j)%top%atom_types(k)%probe
                     sets(j)%top%atom_types(k)%glbtypeid = i
                     exit
                 end if

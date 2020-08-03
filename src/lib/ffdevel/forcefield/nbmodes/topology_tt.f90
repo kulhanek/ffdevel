@@ -44,8 +44,6 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
             ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_tb to PB'
         case(DAMP_TT_DO)
             ffdev_topology_TT_damptt_mode_to_string = 'DO - TB derived from density overlap'
-        case(DAMP_TT_DO_FULL)
-            ffdev_topology_TT_damptt_mode_to_string = 'DO-FULL - TB derived from density overlap including unlike types'
         case(DAMP_TT_IP)
             ffdev_topology_TT_damptt_mode_to_string = 'IP - TB derived from ionization potentials'
         case(DAMP_TT_IP_XDM)
@@ -78,8 +76,6 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_COUPLED
         case('DO')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO
-        case('DO-FULL')
-            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_DO_FULL
         case('IP')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP
         case('IP-XDM')
@@ -97,7 +93,7 @@ end function ffdev_topology_TT_damptt_mode_from_string
 subroutine ffdev_topology_TT_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
     use ffdev_ip_db
 
     implicit none
@@ -126,16 +122,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_densoverlap_bii(agti)
-            end do
-    !---------------
-        case(DAMP_TT_DO_FULL)
-            do i=1,top%nnb_types
-                ti   = top%nb_types(i)%ti
-                tj   = top%nb_types(i)%tj
-                agti = top%atom_types(ti)%glbtypeid
-                agtj = top%atom_types(tj)%glbtypeid
-                top%nb_types(i)%tb = ffdev_densoverlap_bij(agti,agtj)
+                top%nb_types(i)%tb = ffdev_atomoverlap_do_bii(agti)
             end do
     !---------------
         case(DAMP_TT_IP)
@@ -160,7 +147,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
 
     ! apply combining rules if necessary
     select case(damptt_mode)
-        case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_DO_FULL)
+        case(DAMP_TT_CONST,DAMP_TT_COUPLED)
             ! nothing
     !---------------
         case(DAMP_TT_FREEOPT)

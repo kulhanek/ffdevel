@@ -38,6 +38,7 @@ subroutine ffdev_err_pbpnl_init
     PrintPBPnlErrorSummary  = .false.
     PBPNLMode               = PBPNL_MODE_ALL
     PBPNLSource             = PBPNL_SOURCE_DO
+    PBPNLIncludeProbes      = .false.
     PBPnlErrorWeight        = 1.0
     PBPnlErrorWeight1       = 1.0
     PBPnlErrorWeight2       = 0.0
@@ -55,7 +56,7 @@ subroutine ffdev_err_pbpnl_error(error)
     use ffdev_errors_dat
     use ffdev_err_pbpnl_dat
     use ffdev_parameters_dat
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
     use ffdev_buried_dat
     use ffdev_ip_db
 
@@ -88,10 +89,16 @@ subroutine ffdev_err_pbpnl_error(error)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented mode in ffdev_err_pbpnl_error!')
         end select
+        ! probes
+        if( PBPNLIncludeProbes .and. types(params(i)%ti)%probe ) then
+            w = PBPnlErrorWeight1
+        end if
+
+        ! write(*,*) trim(types(params(i)%ti)%name), PBPNLIncludeProbes, types(params(i)%ti)%probe
 
         select case(PBPNLSource)
             case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+                pb0 = ffdev_atomoverlap_do_bii(params(i)%ti)
             case(PBPNL_SOURCE_IP)
                 pb0 = ffdev_bfac_from_ip(params(i)%ti)
             case(PBPNL_SOURCE_IP_XDM)
@@ -120,7 +127,7 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_err_pbpnl_dat
     use ffdev_utils
     use ffdev_parameters_dat
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
     use ffdev_buried_dat
     use ffdev_xdm_dat
     use ffdev_ip_db
@@ -160,10 +167,14 @@ subroutine ffdev_err_pbpnl_summary()
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented mode in ffdev_err_pbpnl_summary!')
         end select
+        ! probes
+        if( PBPNLIncludeProbes .and. types(params(i)%ti)%probe ) then
+            w = PBPnlErrorWeight1
+        end if
 
         select case(PBPNLSource)
             case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_densoverlap_bii(params(i)%ti)
+                pb0 = ffdev_atomoverlap_do_bii(params(i)%ti)
             case(PBPNL_SOURCE_IP)
                 pb0 = ffdev_bfac_from_ip(params(i)%ti)
             case(PBPNL_SOURCE_IP_XDM)

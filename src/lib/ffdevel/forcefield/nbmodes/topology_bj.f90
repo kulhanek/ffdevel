@@ -85,7 +85,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
 
     use ffdev_utils
     use ffdev_disp_dat
-    use ffdev_densoverlap
+    use ffdev_atomoverlap
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -117,16 +117,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%rc = ffdev_densoverlap_rcii(agti,damp_fa)
-            end do
-    !---------------
-        case(DAMP_BJ_DO_FULL)
-            do i=1,top%nnb_types
-                ti   = top%nb_types(i)%ti
-                tj   = top%nb_types(i)%tj
-                agti = top%atom_types(ti)%glbtypeid
-                agtj = top%atom_types(tj)%glbtypeid
-                top%nb_types(i)%rc = ffdev_densoverlap_rcij(agti,agtj,damp_fa)
+                top%nb_types(i)%rc = ffdev_atomoverlap_rcii(agti,damp_fa)
             end do
     !---------------
         case default
@@ -135,7 +126,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
 
     ! apply combining rules if necessary
     select case(dampbj_mode)
-        case(DAMP_BJ_CONST,DAMP_BJ_DRC,DAMP_BJ_DO_FULL)
+        case(DAMP_BJ_CONST,DAMP_BJ_DRC)
             ! nothing
     !---------------
         case(DAMP_BJ_FREEOPT)

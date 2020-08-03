@@ -319,6 +319,14 @@
 			<Option weight="5" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/EXPDO-DISPTT.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/EXPWO-DISPTT.f90">
+			<Option weight="5" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/lib/ffdevel/forcefield/nbmodes/LJ.f90">
 			<Option weight="4" />
 			<Option target="&lt;{~None~}&gt;" />

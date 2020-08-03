@@ -233,7 +233,6 @@ integer,parameter   :: LJ_COMB_RULE_FB      = 14    ! FB (Fender-Halsey-Berthelo
 ! Born-Mayer repulsion
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
 integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
-integer,parameter   :: EXP_PB_DO_FULL       = 303       ! PB from density overlap - including dis-like
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
 integer,parameter   :: EXP_PB_IP_XDM        = 305       ! PB from ionization potential + XDM mod
 
@@ -244,7 +243,10 @@ integer,parameter   :: EXP_COMB_RULE_AM     = 391    ! arithmetic means
 integer,parameter   :: EXP_COMB_RULE_GS     = 392    ! Gilbert-Smith
 integer,parameter   :: EXP_COMB_RULE_BA     = 393    ! Bohm-Ahlrichs
 integer,parameter   :: EXP_COMB_RULE_VS     = 394    ! Vleet-Schmidt
-integer,parameter   :: REP_COMB_RULE_BDK    = 395    ! Bouchal-Durnik-Kulhanek
+integer,parameter   :: EXP_COMB_RULE_D1     = 395    ! test
+integer,parameter   :: EXP_COMB_RULE_D2     = 396    ! test
+integer,parameter   :: EXP_COMB_RULE_W1     = 397    ! test
+integer,parameter   :: EXP_COMB_RULE_W2     = 398    ! test
 
 ! ####################################################################
 
@@ -253,7 +255,6 @@ integer,parameter   :: DAMP_BJ_CONST        = 201       ! constant
 integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! Rc free to optimize
 integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
 integer,parameter   :: DAMP_BJ_DO           = 204       ! derived from density overlaps
-integer,parameter   :: DAMP_BJ_DO_FULL      = 205       ! derived from density overlaps - including dis-like
 
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 
@@ -266,7 +267,6 @@ integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_tb * pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
 integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_tb
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_tb * densoverlap_bii
-integer,parameter   :: DAMP_TT_DO_FULL      = 105   ! tb = damp_tb * densoverlap_bij
 integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_tb * f(ionization potential)
 integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_tb * f(ionization potential) * XDM mod
 
@@ -276,6 +276,8 @@ integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 integer,parameter   :: NB_VDW_LJ            = 13    ! Lenard-Jones
 integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
 integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_EXPDO_DISPTT  = 42    ! Exp(DO)-Tang–Toennies
+integer,parameter   :: NB_VDW_EXPWO_DISPTT  = 43    ! Exp(WO)-Tang–Toennies
 
 ! employed method for NB interactions
 integer     :: nb_mode                      = NB_VDW_LJ
