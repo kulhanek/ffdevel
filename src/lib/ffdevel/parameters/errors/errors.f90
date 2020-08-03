@@ -198,6 +198,7 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_angles = 0.0d0
     error%ihess_dihedrals = 0.0d0
     error%ihess_impropers = 0.0d0
+    error%sapt_ele = 0.0d0
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
     error%probe_ene = 0.0d0
@@ -216,7 +217,8 @@ subroutine ffdev_errors_error_only(error)
 
     if( EnableSAPTError ) then
         call ffdev_err_sapt_error(error)
-        error%total = error%total + error%sapt_rep * SAPTRepErrorWeight &
+        error%total = error%total + error%sapt_ele * SAPTEleErrorWeight &
+                                  + error%sapt_rep * SAPTRepErrorWeight &
                                   + error%sapt_dis * SAPTDispErrorWeight
     end if
 

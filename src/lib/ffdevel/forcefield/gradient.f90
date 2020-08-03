@@ -37,8 +37,6 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
-    use ffdev_nbmode_EXPDO_DISPTT
-    use ffdev_nbmode_EXPWO_DISPTT
 
     implicit none
     type(TOPOLOGY)      :: top
@@ -64,6 +62,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
+    geo%pen_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -97,12 +96,6 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
             case(NB_VDW_EXP_DISPTT)
                 call ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
-            case(NB_VDW_EXPDO_DISPTT)
-                call ffdev_gradient_nb_EXPDO_DISPTT(top,geo)
-
-            case(NB_VDW_EXPWO_DISPTT)
-                call ffdev_gradient_nb_EXPWO_DISPTT(top,geo)
-
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_gradient_all!')
         end select
@@ -110,7 +103,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
                   + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
-                  + geo%ele_ene + geo%rep_ene + geo%dis_ene
+                  + geo%ele_ene + geo%pen_ene + geo%rep_ene + geo%dis_ene
 
 end subroutine ffdev_gradient_all
 

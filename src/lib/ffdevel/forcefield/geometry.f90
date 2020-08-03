@@ -48,6 +48,7 @@ subroutine ffdev_geometry_init(geo)
     geo%dis14_ene = 0
 
     geo%ele_ene = 0
+    geo%pen_ene = 0
     geo%rep_ene = 0
     geo%dis_ene = 0
 
@@ -1286,6 +1287,7 @@ subroutine ffdev_geometry_info_ene(geo)
     write(DEV_OUT,131) geo%dih_ene + geo%impropr_ene
     write(DEV_OUT,10)
     write(DEV_OUT,210) geo%ele_ene
+    write(DEV_OUT,220) geo%pen_ene
     write(DEV_OUT,230) geo%rep_ene
     write(DEV_OUT,240) geo%dis_ene
 
@@ -1293,7 +1295,7 @@ subroutine ffdev_geometry_info_ene(geo)
     write(DEV_OUT,330) geo%rep14_ene
     write(DEV_OUT,340) geo%dis14_ene
     write(DEV_OUT,10)
-    write(DEV_OUT,172) geo%ele_ene + geo%ele14_ene
+    write(DEV_OUT,172) geo%ele_ene + geo%ele14_ene + geo%pen_ene
     write(DEV_OUT,174) geo%rep_ene + geo%rep14_ene
     write(DEV_OUT,176) geo%dis_ene + geo%dis14_ene
     write(DEV_OUT,10)
@@ -1311,6 +1313,7 @@ subroutine ffdev_geometry_info_ene(geo)
  10 format('---------------------------------')
  20 format('=================================')
 210 format('Eele       = ',F20.7)
+220 format('Epen       = ',F20.7)
 230 format('Erep       = ',F20.7)
 240 format('Edis       = ',F20.7)
 

@@ -80,13 +80,12 @@ subroutine ffdev_err_probe_error(error)
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
                     emm = sets(i)%geo(j)%sapt_rep
-                    err = emm - sets(i)%geo(j)%trg_probe_ene
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_rep + sets(i)%geo(j)%sapt_dis
-                    err = emm - sets(i)%geo(j)%trg_probe_ene
+                    emm = sets(i)%geo(j)%sapt_total
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_error!')
             end select
+            err = emm - sets(i)%geo(j)%trg_probe_ene
             serene = serene + sets(i)%geo(j)%weight * err**2
             sumw = sumw + sets(i)%geo(j)%weight
 
@@ -134,7 +133,6 @@ subroutine ffdev_err_probe_summary
 
     serene = 0.0
     nene = 0
-
     maxerr = 0.0d0
     sumw = 0.0d0
 
@@ -153,15 +151,15 @@ subroutine ffdev_err_probe_summary
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
                     emm = sets(i)%geo(j)%sapt_rep
-                    err = emm - sets(i)%geo(j)%trg_probe_ene
                     string = 'REP'
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_rep + sets(i)%geo(j)%sapt_dis
-                    err = emm - sets(i)%geo(j)%trg_probe_ene
+                    emm = sets(i)%geo(j)%sapt_total
                     string = 'TOT'
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_summary!')
             end select
+
+            err = emm - sets(i)%geo(j)%trg_probe_ene
             if( abs(err) .gt. abs(maxerr) ) then
                 maxerr = err
             end if
@@ -169,7 +167,9 @@ subroutine ffdev_err_probe_summary
             sumw = sumw + sets(i)%geo(j)%weight
 
             write(DEV_OUT,30) i, j, trim(string), sets(i)%geo(j)%weight, &
-                              sets(i)%geo(j)%trg_probe_ene, emm, err
+                              sets(i)%geo(j)%trg_probe_ene, &
+                              sets(i)%geo(j)%sapt_ele, sets(i)%geo(j)%sapt_pen, &
+                              sets(i)%geo(j)%sapt_rep, sets(i)%geo(j)%sapt_dis, emm, err
         end do
         if( printsum ) write(DEV_OUT,20)
     end do
@@ -184,9 +184,9 @@ subroutine ffdev_err_probe_summary
     write(DEV_OUT,45)  ProbeErrorWeight*errtot
 
  5 format('# Probe errors')
-10 format('# SET GeoID Mode Weight EProb(TGR)  EProb(MM)     Err(E)')
-20 format('# --- ----- ---- ------ ---------- ---------- ----------')
-30 format(I5,1X,I5,1X,A4,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3)
+10 format('# SET GeoID Mode Weight EProb(TGR)   Eele(MM)   Epen(MM)   Erep(MM)   Edis(MM)  EProb(MM)     Err(E)')
+20 format('# --- ----- ---- ------ ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+30 format(I5,1X,I5,1X,A4,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 
 35 format('# Maximum signed error (MSE)                =',1X,F10.3)
 40 format('# Root mean square error (RMSE)             =',1X,F10.3)

@@ -126,6 +126,10 @@ type NB_PAIR
         real(DEVDP) ::  rc8
         real(DEVDP) ::  rc10
         real(DEVDP) ::  tb
+    ! penetration energy
+        real(DEVDP) ::  Z1,Z2
+        real(DEVDP) ::  q1,q2
+        real(DEVDP) ::  peb,pec
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -210,43 +214,45 @@ logical     :: dih_cos_only     = .false.       ! .true. -> SUM Vn*cos(n*phi-gam
 ! ==== electrostatics
 ! ==============================================================================
 
-real(DEVDP) :: ele_qscale                   = 1.0d0         ! scaling factor for charges
-real(DEVDP) :: glb_iscee                    = 1.0d0         ! global scaling for 1-4 electrostatics
+real(DEVDP) :: ele_qscale                   = 1.0d0     ! scaling factor for charges
+real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4 electrostatics
 
 ! ==============================================================================
 ! ==== vdW modes
 ! ==============================================================================
 
+integer,parameter   :: PEN_MODE1            = 84        ! test mode
+
 ! ####################################################################
-! Lenard-Jones
-! Form: Enb = eps*( (ro/r)^12 - 2*(r0/r)^6 )
-! Parameters: eps, r0
-! Provides: energy, gradient, Hessian, sapt
 
 ! combining rules - applicable for NB_MODE_LJ
-integer,parameter   :: LJ_COMB_RULE_LB      = 11    ! LB (Lorentz-Berthelot)
-integer,parameter   :: LJ_COMB_RULE_WH      = 12    ! WH (Waldman-Hagler)
-integer,parameter   :: LJ_COMB_RULE_KG      = 13    ! KG (Kong)
-integer,parameter   :: LJ_COMB_RULE_FB      = 14    ! FB (Fender-Halsey-Berthelot)
+integer,parameter   :: LJ_COMB_RULE_LB      = 11        ! LB (Lorentz-Berthelot)
+integer,parameter   :: LJ_COMB_RULE_WH      = 12        ! WH (Waldman-Hagler)
+integer,parameter   :: LJ_COMB_RULE_KG      = 13        ! KG (Kong)
+integer,parameter   :: LJ_COMB_RULE_FB      = 14        ! FB (Fender-Halsey-Berthelot)
 
 ! ####################################################################
-! Born-Mayer repulsion
+
+! exp_mode
+integer,parameter   :: EXP_BM               = 64        ! Born-Mayer
+integer,parameter   :: EXP_DO               = 67        ! Density overlap
+integer,parameter   :: EXP_WO               = 68        ! Wavefunction overlap
+
+! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
 integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
 integer,parameter   :: EXP_PB_IP_XDM        = 305       ! PB from ionization potential + XDM mod
 
-integer     :: pb_mode                      = EXP_PB_FREEOPT
-
 ! combining rules - applicable for Born-Mayer repulsion
-integer,parameter   :: EXP_COMB_RULE_AM     = 391    ! arithmetic means
-integer,parameter   :: EXP_COMB_RULE_GS     = 392    ! Gilbert-Smith
-integer,parameter   :: EXP_COMB_RULE_BA     = 393    ! Bohm-Ahlrichs
-integer,parameter   :: EXP_COMB_RULE_VS     = 394    ! Vleet-Schmidt
-integer,parameter   :: EXP_COMB_RULE_D1     = 395    ! test
-integer,parameter   :: EXP_COMB_RULE_D2     = 396    ! test
-integer,parameter   :: EXP_COMB_RULE_W1     = 397    ! test
-integer,parameter   :: EXP_COMB_RULE_W2     = 398    ! test
+integer,parameter   :: EXP_COMB_RULE_AM     = 391       ! arithmetic means
+integer,parameter   :: EXP_COMB_RULE_GS     = 392       ! Gilbert-Smith
+integer,parameter   :: EXP_COMB_RULE_BA     = 393       ! Bohm-Ahlrichs
+integer,parameter   :: EXP_COMB_RULE_VS     = 394       ! Vleet-Schmidt
+integer,parameter   :: EXP_COMB_RULE_D1     = 395       ! test
+integer,parameter   :: EXP_COMB_RULE_D2     = 396       ! test
+integer,parameter   :: EXP_COMB_RULE_W1     = 397       ! test
+integer,parameter   :: EXP_COMB_RULE_W2     = 398       ! test
 
 ! ####################################################################
 
@@ -256,33 +262,36 @@ integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! Rc free to optimize
 integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
 integer,parameter   :: DAMP_BJ_DO           = 204       ! derived from density overlaps
 
-integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
-
 ! Tang–Toennies damping
-! Form: Enb = exp(PA*PB)*exp(-PB*r) - disp_s6*fd6*C6/r^6 - disp_s8*fd8*C8/r^8 - disp_s6*fd10*C10/r^10
-! Parameters: PA, PB, disp_s6, disp_s8, disp_s6, damp_tb for TB in fd6, fd8, fd8
-! Provides: energy, gradient, sapt
-
 integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_tb * pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
 integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_tb
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_tb * densoverlap_bii
+integer,parameter   :: DAMP_TT_WO           = 105   ! tb = damp_tb * wfoverlap_bii
 integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_tb * f(ionization potential)
 integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_tb * f(ionization potential) * XDM mod
 
-integer     :: damptt_mode                  = DAMP_TT_FREEOPT
-
 ! ==============================================================================
+! nb_mode
 integer,parameter   :: NB_VDW_LJ            = 13    ! Lenard-Jones
 integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
 integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
-integer,parameter   :: NB_VDW_EXPDO_DISPTT  = 42    ! Exp(DO)-Tang–Toennies
-integer,parameter   :: NB_VDW_EXPWO_DISPTT  = 43    ! Exp(WO)-Tang–Toennies
 
 ! employed method for NB interactions
 integer     :: nb_mode                      = NB_VDW_LJ
+! PEN
+logical     :: pen_enabled                  = .false.           ! penetration energy
+integer     :: pen_mode                     = PEN_MODE1
+! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
+! EXP
+integer     :: exp_mode                     = EXP_BM
+integer     :: pb_mode                      = EXP_PB_FREEOPT
 integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
+! DISP
+integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
+integer     :: damptt_mode                  = DAMP_TT_FREEOPT
+
 ! derived setup
 logical     :: ApplyCombiningRules          = .false.           ! apply combination rules in every error evaluation
 ! ------------------------------------------------------------------------------

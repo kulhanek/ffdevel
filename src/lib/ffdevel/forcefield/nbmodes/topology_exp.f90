@@ -24,6 +24,56 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
+! subroutine ffdev_topology_EXP_exp_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: lexp_mode
+    ! --------------------------------------------------------------------------
+
+    select case(lexp_mode)
+        case(EXP_BM)
+            ffdev_topology_EXP_exp_mode_to_string = 'EXP-BM - Born-Mayer model'
+        case(EXP_DO)
+            ffdev_topology_EXP_exp_mode_to_string = 'EXP-DO - Density overlap'
+        case(EXP_WO)
+            ffdev_topology_EXP_exp_mode_to_string = 'EXP-WO - Wavefunction overlap'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_exp_mode_to_string!')
+    end select
+
+end function ffdev_topology_EXP_exp_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_EXP_exp_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_EXP_exp_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('EXP-BM')
+            ffdev_topology_EXP_exp_mode_from_string = EXP_BM
+        case('EXP-DO')
+            ffdev_topology_EXP_exp_mode_from_string = EXP_DO
+        case('EXP-WO')
+            ffdev_topology_EXP_exp_mode_from_string = EXP_WO
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_EXP_exp_mode_from_string!')
+    end select
+
+end function ffdev_topology_EXP_exp_mode_from_string
+
+! ==============================================================================
 ! subroutine ffdev_topology_EXP_pb_mode_to_string
 ! ==============================================================================
 
@@ -162,7 +212,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: i,ti,agti,tj,agtj
+    integer         :: i,ti,agti
     ! --------------------------------------------------------------------------
 
     ! first update PB from external sources

@@ -203,12 +203,13 @@ subroutine ffdev_err_energy_summary
 
             write(DEV_OUT,70) sets(i)%geo(j)%bond_ene, sets(i)%geo(j)%angle_ene, sets(i)%geo(j)%dih_ene, &
                               sets(i)%geo(j)%impropr_ene, sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
-                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%ele14_ene, sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%ele14_ene, &
+                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%pen_ene, sets(i)%geo(j)%ele14_ene, &
+                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ele14_ene, &
                               sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%rep14_ene, sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene, &
                               sets(i)%geo(j)%dis_ene, sets(i)%geo(j)%dis14_ene, sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene, &
                               sets(i)%geo(j)%bond_ene + sets(i)%geo(j)%angle_ene + &
                               sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
-                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%ele14_ene + &
+                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ele14_ene + &
                               sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene + &
                               sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene
 
@@ -247,12 +248,12 @@ subroutine ffdev_err_energy_summary
 40 format('# Root mean square error (RMSE)       =  ',F10.3,1X,F10.3,1X,F10.3)
 45 format('# Final RMSE (all weights)            =  ',F10.3,1X,F10.3,1X,F10.3)
 
-50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel      E14el    Etotele' &
+50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel       Epen      E14el    Etotele' &
           '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')
-60 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
+60 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
           ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
-70 format(1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2, &
-          1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.2)
+70 format(1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3, &
+          1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 
 end subroutine ffdev_err_energy_summary
 

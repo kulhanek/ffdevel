@@ -26,6 +26,7 @@ use ffdev_variables
 logical                 :: EnableSAPTError
 logical                 :: PrintSAPTErrorSummary
 
+real(DEVDP)             :: SAPTEleErrorWeight
 real(DEVDP)             :: SAPTRepErrorWeight
 real(DEVDP)             :: SAPTDispErrorWeight
 

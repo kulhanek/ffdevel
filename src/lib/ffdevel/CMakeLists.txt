@@ -31,12 +31,11 @@ SET(FFDEVEL_SRC
         forcefield/nbmodes/LJ.f90
         forcefield/nbmodes/EXP-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPTT.f90
-        forcefield/nbmodes/EXPDO-DISPTT.f90
-        forcefield/nbmodes/EXPWO-DISPTT.f90
         forcefield/nbmodes/topology_lj.f90
         forcefield/nbmodes/topology_bj.f90
         forcefield/nbmodes/topology_tt.f90
         forcefield/nbmodes/topology_exp.f90
+        forcefield/nbmodes/topology_pen.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90

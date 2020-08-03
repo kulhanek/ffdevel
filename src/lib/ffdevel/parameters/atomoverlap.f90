@@ -63,7 +63,7 @@ subroutine ffdev_atomoverlap_print
     use prmfile
 
     implicit none
-    integer :: z, i, zi, zj, ti, tj
+    integer :: i,z
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -104,7 +104,6 @@ real(DEVDP) function ffdev_atomoverlap_do_bii(gti)
     integer     :: gti
     ! --------------------------------------------
     integer     :: z
-    real(DEVDP) :: q, b1, b2
     ! --------------------------------------------------------------------------
 
     ffdev_atomoverlap_do_bii = 1.0 ! default b
@@ -132,7 +131,6 @@ real(DEVDP) function ffdev_atomoverlap_do_aii(gti)
     integer     :: gti
     ! --------------------------------------------
     integer     :: z
-    real(DEVDP) :: q, a1, a2
     ! --------------------------------------------------------------------------
 
     ffdev_atomoverlap_do_aii = 0.0 ! default a
@@ -146,6 +144,60 @@ real(DEVDP) function ffdev_atomoverlap_do_aii(gti)
     ffdev_atomoverlap_do_aii = densoverlap_a0ii(z)
 
 end function ffdev_atomoverlap_do_aii
+
+! ==============================================================================
+! function ffdev_atomoverlap_wo_bii
+! ==============================================================================
+
+real(DEVDP) function ffdev_atomoverlap_wo_bii(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    ffdev_atomoverlap_wo_bii = 1.0 ! default b
+
+    ! get Z
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomoverlap_wo_bii')
+    end if
+
+    ffdev_atomoverlap_wo_bii = wfoverlap_b0ii(z)
+
+end function ffdev_atomoverlap_wo_bii
+
+! ==============================================================================
+! function ffdev_atomoverlap_wo_aii
+! ==============================================================================
+
+real(DEVDP) function ffdev_atomoverlap_wo_aii(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    ffdev_atomoverlap_wo_aii = 0.0 ! default a
+
+    ! get Z
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomoverlap_wo_aii')
+    end if
+
+    ffdev_atomoverlap_wo_aii = wfoverlap_a0ii(z)
+
+end function ffdev_atomoverlap_wo_aii
 
 ! ==============================================================================
 ! function ffdev_atomoverlap_rcii

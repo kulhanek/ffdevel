@@ -39,7 +39,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3,upe,tb
     real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
-    real(DEVDP)     :: V_aa,V_bb,V_ee
+    real(DEVDP)     :: V_aa,V_bb,V_ee,V_pe,er,pr
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -55,21 +55,6 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         j    = top%nb_list(ip)%aj
         dt   = top%nb_list(ip)%dt
 
-        ! electrostatics
-        crgij = top%nb_list(ip)%crgij
-
-        ! repulsion
-        pa   = top%nb_list(ip)%pa
-        pb   = top%nb_list(ip)%pb
-
-        ! dispersion coefficients
-        c6   = top%nb_list(ip)%c6
-        c8   = top%nb_list(ip)%c8
-        c10  = top%nb_list(ip)%c10
-
-        ! TT damping factor
-        tb   = top%nb_list(ip)%tb
-
         ! calculate dx, r and r2
         dxa1 = geo%crd(1,i) - geo%crd(1,j)
         dxa2 = geo%crd(2,i) - geo%crd(2,j)
@@ -80,7 +65,45 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         r2a = 1.0d0/r2
         r   = sqrt(r2)
 
-        upe = exp(-pb*r)
+    ! electrostatics
+        crgij = top%nb_list(ip)%crgij
+        V_ee  = crgij/r
+
+        V_pe  = 0.0d0
+        if( pen_enabled ) then
+
+        end if
+
+    ! repulsion
+        pa   = top%nb_list(ip)%pa
+        pb   = top%nb_list(ip)%pb
+
+        select case(exp_mode)
+            case(EXP_BM)
+                er  = pb*r
+                upe = exp(-er)
+            case(EXP_DO)
+                er = pb*r
+                pr = 1.0d0 + er + er**2/3.0d0
+                upe = exp(-er)
+            case(EXP_WO)
+                er = pb*r
+                pr = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+                upe = exp(-er)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
+        end select
+
+        V_aa = pa*upe
+
+    ! dispersion
+        ! dispersion coefficients
+        c6   = top%nb_list(ip)%c6
+        c8   = top%nb_list(ip)%c8
+        c10  = top%nb_list(ip)%c10
+
+        ! TT damping factor
+        tb   = top%nb_list(ip)%tb
 
         arg = tb*r
         pe  = exp(-arg)
@@ -110,12 +133,11 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         sump = sump * arg / real(10,DEVDP)
         fd10 = fd10 - pe*sump
 
-        V_ee = crgij/r
-        V_aa = pa*upe
         V_bb = - fd6*c6*r6a - fd8*c8*r8a - fd10*c10*r10a
 
         if( dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + V_ee
+            geo%pen_ene = geo%ele_ene + V_pe
             geo%rep_ene = geo%rep_ene + V_aa
             geo%dis_ene = geo%dis_ene + V_bb
         else
@@ -123,6 +145,8 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
             inv_scnb = glb_iscnb * top%dihedral_types(dt)%inv_scnb
 
             geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
+            ! FIXME
+            ! do not add penetration??
             geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
             geo%dis14_ene = geo%dis14_ene + inv_scnb * V_bb
         end if
@@ -148,7 +172,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
     real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3,tb
     real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10
     real(DEVDP)     :: V_aa,V_bb,pe,V_ee,arg,upe,sump,suma
-    real(DEVDP)     :: fd6,fd8,fd10
+    real(DEVDP)     :: fd6,fd8,fd10,er,pr
     ! --------------------------------------------------------------------------
 
     geo%sapt_ele = 0.0d0
@@ -183,7 +207,21 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         r2a  = 1.0d0/r2
         r    = sqrt(r2)
 
-        upe  = exp(-pb*r)
+        select case(exp_mode)
+            case(EXP_BM)
+                er  = pb*r
+                upe = exp(-er)
+            case(EXP_DO)
+                er = pb*r
+                pr = 1.0d0 + er + er**2/3.0d0
+                upe = exp(-er)
+            case(EXP_WO)
+                er = pb*r
+                pr = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+                upe = exp(-er)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
+        end select
 
         arg = tb*r
         pe   = exp(-arg)

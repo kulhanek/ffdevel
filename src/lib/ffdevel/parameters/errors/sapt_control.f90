@@ -45,6 +45,7 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,115) prmfile_onoff(EnableSAPTError)
         write(DEV_OUT,135) prmfile_onoff(PrintSAPTErrorSummary)
 
+        write(DEV_OUT,215) SAPTEleErrorWeight
         write(DEV_OUT,225) SAPTRepErrorWeight
         write(DEV_OUT,325) SAPTDispErrorWeight
 
@@ -65,6 +66,11 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintSAPTErrorSummary)
     end if
 
+    if( prmfile_get_real8_by_key(fin,'weight_ele', SAPTEleErrorWeight)) then
+        write(DEV_OUT,210) SAPTEleErrorWeight
+    else
+        write(DEV_OUT,215) SAPTEleErrorWeight
+    end if
     if( prmfile_get_real8_by_key(fin,'weight_rep', SAPTRepErrorWeight)) then
         write(DEV_OUT,220) SAPTRepErrorWeight
     else
@@ -95,6 +101,8 @@ subroutine ffdev_err_sapt_ctrl(fin)
 130  format ('Print SAPT summary (summary)           = ',a12)
 135  format ('Print SAPT summary (summary)           = ',a12,'                  (default)')
 
+210  format ('SAPT error weight (weight_ele)         = ',f21.8)
+215  format ('SAPT error weight (weight_ele)         = ',f21.8,'         (default)')
 220  format ('SAPT error weight (weight_rep)         = ',f21.8)
 225  format ('SAPT error weight (weight_rep)         = ',f21.8,'         (default)')
 320  format ('SAPT error weight (weight_disp)        = ',f21.8)

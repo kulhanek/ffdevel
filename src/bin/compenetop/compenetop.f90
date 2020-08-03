@@ -106,17 +106,19 @@ program ffdev_compenetop_program
     write(DEV_OUT,*)
     write(DEV_OUT,200)
     write(DEV_OUT,210)
-    ! FIXME
-!    write(DEV_OUT,300) geo1%bond_ene,geo1%bond_ene,geo2%bond_ene-geo1%bond_ene
-!    write(DEV_OUT,310) geo1%angle_ene,geo2%angle_ene,geo2%angle_ene-geo1%angle_ene
-!    write(DEV_OUT,320) geo1%dih_ene,geo2%dih_ene,geo2%dih_ene-geo1%dih_ene
-!    write(DEV_OUT,330) geo1%impropr_ene,geo2%impropr_ene,geo2%impropr_ene-geo1%impropr_ene
-!    write(DEV_OUT,340) geo1%ele14_ene,geo2%ele14_ene,geo2%ele14_ene-geo1%ele14_ene
-!    write(DEV_OUT,350) geo1%nb14_ene,geo2%nb14_ene,geo2%nb14_ene-geo1%nb14_ene
-!    write(DEV_OUT,360) geo1%ele_ene,geo2%ele_ene,geo2%ele_ene-geo1%ele_ene
-!    write(DEV_OUT,370) geo1%nb_ene,geo2%nb_ene,geo2%nb_ene-geo1%nb_ene
-!    write(DEV_OUT,380) geo1%total_ene,geo2%total_ene,geo2%total_ene-geo1%total_ene
 
+    write(DEV_OUT,300) geo1%bond_ene,geo1%bond_ene,geo2%bond_ene-geo1%bond_ene
+    write(DEV_OUT,310) geo1%angle_ene,geo2%angle_ene,geo2%angle_ene-geo1%angle_ene
+    write(DEV_OUT,320) geo1%dih_ene,geo2%dih_ene,geo2%dih_ene-geo1%dih_ene
+    write(DEV_OUT,330) geo1%impropr_ene,geo2%impropr_ene,geo2%impropr_ene-geo1%impropr_ene
+    write(DEV_OUT,340) geo1%ele14_ene,geo2%ele14_ene,geo2%ele14_ene-geo1%ele14_ene
+    write(DEV_OUT,350) geo1%rep14_ene,geo2%rep14_ene,geo2%rep14_ene-geo1%rep14_ene
+    write(DEV_OUT,355) geo1%dis14_ene,geo2%dis14_ene,geo2%dis14_ene-geo1%dis14_ene
+    write(DEV_OUT,360) geo1%ele_ene,geo2%ele_ene,geo2%ele_ene-geo1%ele_ene
+    write(DEV_OUT,365) geo1%pen_ene,geo2%pen_ene,geo2%pen_ene-geo1%pen_ene
+    write(DEV_OUT,370) geo1%rep_ene,geo2%rep_ene,geo2%rep_ene-geo1%rep_ene
+    write(DEV_OUT,375) geo1%dis_ene,geo2%dis_ene,geo2%dis_ene-geo1%dis_ene
+    write(DEV_OUT,380) geo1%total_ene,geo2%total_ene,geo2%total_ene-geo1%total_ene
 
     call ffdev_utils_footer('Compare Energy between Two Topologies')
 
@@ -131,9 +133,12 @@ program ffdev_compenetop_program
 320 format('# Edihedrals = ',F20.7,1X,F20.7,1X,F20.7)
 330 format('# Eimpropers = ',F20.7,1X,F20.7,1X,F20.7)
 340 format('# E14ele     = ',F20.7,1X,F20.7,1X,F20.7)
-350 format('# E14vdw     = ',F20.7,1X,F20.7,1X,F20.7)
+350 format('# E14rep     = ',F20.7,1X,F20.7,1X,F20.7)
+355 format('# E14dis     = ',F20.7,1X,F20.7,1X,F20.7)
 360 format('# Eele       = ',F20.7,1X,F20.7,1X,F20.7)
-370 format('# Evdw       = ',F20.7,1X,F20.7,1X,F20.7)
+365 format('# Epen       = ',F20.7,1X,F20.7,1X,F20.7)
+370 format('# Erep       = ',F20.7,1X,F20.7,1X,F20.7)
+375 format('# Edis       = ',F20.7,1X,F20.7,1X,F20.7)
 380 format('# Etotal     = ',F20.7,1X,F20.7,1X,F20.7)
 
 contains

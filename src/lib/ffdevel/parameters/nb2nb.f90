@@ -360,7 +360,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                 case(NB_VDW_LJ)
                     ! nothing to do
 
-                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT)
+                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
                     do nbt=1,nnb_types
                         pa = 6.0d0 * nb_types(nbt)%eps * exp(lj2exp6_alpha)/(lj2exp6_alpha - 6.0d0)
                         if( pa .gt. 0 ) then
@@ -380,7 +380,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_nb2nb_switch_nbmode!')
             end select
     !---------------------------------------------
-        case(NB_VDW_EXP_DISPTT,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT,NB_VDW_EXP_DISPBJ)
+        case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
             select case(to_nb_mode)
 
                 case(NB_VDW_LJ)
@@ -393,7 +393,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                         call ffdev_nb2nb_nb2lj(nbt)
                     end do
 
-                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT)
+                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
                     ! nothing to do
 
                 case default
@@ -1068,8 +1068,6 @@ real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
     use ffdev_nbmode_EXP_DISPTT
-    use ffdev_nbmode_EXPDO_DISPTT
-    use ffdev_nbmode_EXPWO_DISPTT
 
     implicit none
     type(NB_PAIR)   :: nbpair
@@ -1087,12 +1085,6 @@ real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
 
         case(NB_VDW_EXP_DISPTT)
             ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXP_DISPTT(nbpair,r)
-
-        case(NB_VDW_EXPDO_DISPTT)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXPDO_DISPTT(nbpair,r)
-
-        case(NB_VDW_EXPWO_DISPTT)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXPWO_DISPTT(nbpair,r)
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_nb2nb_nbpair!')

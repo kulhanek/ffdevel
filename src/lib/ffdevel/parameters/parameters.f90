@@ -492,7 +492,7 @@ subroutine ffdev_parameters_reinit()
             use_disp_s8     = .true.
             use_disp_s10    = .true.
 
-        case(NB_VDW_EXP_DISPTT,NB_VDW_EXPDO_DISPTT,NB_VDW_EXPWO_DISPTT)
+        case(NB_VDW_EXP_DISPTT)
             use_vdw_pa      = .true.
             use_damp_pb     = .true.
             use_pauli_k     = .true.
@@ -514,6 +514,8 @@ subroutine ffdev_parameters_reinit()
                 case(DAMP_TT_COUPLED)
                     use_damp_tb     = .true.
                 case(DAMP_TT_DO)
+                    use_damp_tb     = .true.
+                case(DAMP_TT_WO)
                     use_damp_tb     = .true.
                 case(DAMP_TT_IP,DAMP_TT_IP_XDM)
                     use_damp_tb     = .true.
