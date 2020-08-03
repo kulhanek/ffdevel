@@ -105,6 +105,7 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
     ! --------------------------------------------------------------------------
 
     geo%sapt_ele = 0.0d0
+    geo%sapt_pen = 0.0d0
     geo%sapt_rep = 0.0d0
     geo%sapt_dis = 0.0d0
 

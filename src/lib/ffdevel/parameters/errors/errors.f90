@@ -322,7 +322,10 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,30,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,41,ADVANCE='NO')
+        write(DEV_OUT,21,ADVANCE='NO')
+    end if
+    if( EnableSAPTError ) then
+        write(DEV_OUT,42,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,42,ADVANCE='NO')
@@ -374,6 +377,7 @@ subroutine ffdev_errors_ffopt_header_I()
  36 format('       d(NBs)')
  38 format('    Impropers')
  39 format('         RMSD')
+ 21 format('    SAPT(Ele)')
  41 format('    SAPT(Rep)')
  42 format('   SAPT(Disp)')
  43 format('  ChrgPenalty')
@@ -412,6 +416,9 @@ subroutine ffdev_errors_ffopt_header_II()
     ! --------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
@@ -492,6 +499,9 @@ subroutine ffdev_errors_ffopt_results(error)
 
     if( EnableEnergyError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%energy
+    end if
+    if( EnableSAPTError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep

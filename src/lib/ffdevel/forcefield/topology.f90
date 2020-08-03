@@ -170,7 +170,10 @@ subroutine ffdev_topology_load(top,name)
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [atom_types] section!')
         end if
-        top%atom_types(i)%probe = .false.
+        top%atom_types(i)%probe  = .false.
+        top%atom_types(i)%ffoptactive  = .false.
+        top%atom_types(i)%pen_pa = 4.0d0
+        top%atom_types(i)%pen_pb = 4.0d0
     end do
 
     ! read bonds -------------------------------------
@@ -1531,6 +1534,7 @@ subroutine ffdev_topology_update_nb_params(top)
     use ffdev_topology_bj
     use ffdev_topology_tt
     use ffdev_topology_exp
+    use ffdev_topology_pen
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1543,10 +1547,12 @@ subroutine ffdev_topology_update_nb_params(top)
         case(NB_VDW_EXP_DISPBJ)
             call ffdev_topology_EXP_update_nb_params(top)
             call ffdev_topology_BJ_update_nb_params(top)
+            call ffdev_topology_PEN_update_nb_params(top)
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
             call ffdev_topology_EXP_update_nb_params(top)
             call ffdev_topology_TT_update_nb_params(top)
+            call ffdev_topology_PEN_update_nb_params(top)
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'nb_mode not implemented in ffdev_topology_update_nb_params!')
@@ -1626,6 +1632,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_atomoverlap
     use ffdev_ip_db
     use ffdev_topology_exp
+    use ffdev_topology_pen
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1646,6 +1653,15 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     nbpair%rc10  = 0.0d0
     nbpair%tb    = 0.0d0
 
+    nbpair%Z1    = 0.0d0
+    nbpair%Z2    = 0.0d0
+    nbpair%q1    = 0.0d0
+    nbpair%q2    = 0.0d0
+    nbpair%pepa1 = 0.0d0
+    nbpair%pepb1 = 0.0d0
+    nbpair%pepa2 = 0.0d0
+    nbpair%pepb2 = 0.0d0
+
     i       = nbpair%ai     ! not need to be defined
     j       = nbpair%aj     ! not need to be defined
     nbt     = nbpair%nbt
@@ -1660,6 +1676,18 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     ! FIXME - better value
     if( (i .ne. 0 ) .and. (j .ne. 0) ) then
         nbpair%crgij = 332.05221729d0 * top%atoms(i)%charge * top%atoms(j)%charge * ele_qscale * ele_qscale
+    end if
+
+    if( pen_enabled .and. ((i .ne. 0 ) .and. (j .ne. 0)) ) then
+        nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
+        nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
+        nbpair%pepa1 = top%atom_types(ti)%pen_pa
+        nbpair%pepb1 = top%atom_types(ti)%pen_pb
+
+        nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+        nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
+        nbpair%pepa2 = top%atom_types(tj)%pen_pa
+        nbpair%pepb2 = top%atom_types(tj)%pen_pb
     end if
 
     select case(nb_mode)

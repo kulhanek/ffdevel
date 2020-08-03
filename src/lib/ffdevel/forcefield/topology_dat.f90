@@ -129,7 +129,8 @@ type NB_PAIR
     ! penetration energy
         real(DEVDP) ::  Z1,Z2
         real(DEVDP) ::  q1,q2
-        real(DEVDP) ::  peb,pec
+        real(DEVDP) ::  pepa1,pepb1
+        real(DEVDP) ::  pepa2,pepb2
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -140,6 +141,10 @@ type ATOM_TYPE
     integer                 :: z
     logical                 :: probe            ! probe
     integer                 :: glbtypeid        ! global type id
+    logical                 :: ffoptactive      ! this type is subject of ffopt
+    ! penetration energy
+    real(DEVDP)             :: pen_pa
+    real(DEVDP)             :: pen_pb
 end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -221,7 +226,14 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 ! ==== vdW modes
 ! ==============================================================================
 
-integer,parameter   :: PEN_MODE1            = 84        ! test mode
+integer,parameter   :: PEN_PA_FREEOPT       = 784        ! test mode
+integer,parameter   :: PEN_PA_CONST         = 785        ! test mode
+integer,parameter   :: PEN_PA_LDO           = 786        ! test mode
+integer,parameter   :: PEN_PA_DO            = 787        ! test mode
+
+integer,parameter   :: PEN_PB_FREEOPT       = 794        ! test mode
+integer,parameter   :: PEN_PB_CONST         = 795        ! test mode
+integer,parameter   :: PEN_PB_COUPLED       = 796        ! test mode
 
 ! ####################################################################
 
@@ -281,12 +293,14 @@ integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
 integer     :: nb_mode                      = NB_VDW_LJ
 ! PEN
 logical     :: pen_enabled                  = .false.           ! penetration energy
-integer     :: pen_mode                     = PEN_MODE1
+integer     :: pen_pa_mode                  = PEN_PA_FREEOPT
+integer     :: pen_pb_mode                  = PEN_PB_COUPLED
+
 ! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
 ! EXP
 integer     :: exp_mode                     = EXP_BM
-integer     :: pb_mode                      = EXP_PB_FREEOPT
+integer     :: exp_pb_mode                  = EXP_PB_FREEOPT
 integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 ! DISP
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
@@ -299,18 +313,23 @@ logical     :: ApplyCombiningRules          = .false.           ! apply combinat
 real(DEVDP) :: glb_iscnb                    = 1.0d0         ! global scaling for 1-4 NB interactions
 
 ! tuneable parameters
-real(DEVDP) :: disp_s6  = 1.0d0
-real(DEVDP) :: disp_s8  = 1.0d0
-real(DEVDP) :: disp_s10 = 1.0d0
+real(DEVDP) :: disp_s6  =  1.0d0
+real(DEVDP) :: disp_s8  =  1.0d0
+real(DEVDP) :: disp_s10 =  1.0d0
 
 ! damping
-real(DEVDP) :: damp_fa  = 1.0d0
-real(DEVDP) :: damp_fb  = 0.0d0
-real(DEVDP) :: damp_pb  = 1.0d0
-real(DEVDP) :: damp_tb  = 1.0d0
+real(DEVDP) :: damp_fa  =  1.0d0
+real(DEVDP) :: damp_fb  =  0.0d0
+real(DEVDP) :: damp_pb  =  1.0d0
+real(DEVDP) :: damp_tb  =  1.0d0
 
 ! Pauli repulsion K factor for PAPNL
-real(DEVDP) :: pauli_k  = 1.0d0
+real(DEVDP) :: pauli_k  =  1.0d0
+
+! penetration energy
+real(DEVDP) :: pen_fa   =  1.0d0
+real(DEVDP) :: pen_fb   =  1.0d0
+real(DEVDP) :: pen_fc   = -5.0d0
 
 ! ------------------------------------------------------------------------------
 

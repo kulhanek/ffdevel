@@ -486,9 +486,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     logical                     :: changed
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
-    integer                     :: ldampbj_mode,ldamptt_mode,lpb_mode
+    integer                     :: ldampbj_mode,ldamptt_mode,lexp_pb_mode
     integer                     :: from_nb_mode,to_nb_mode
-    integer                     :: lcomb_rules,lexp_mode,lpen_mode
+    integer                     :: lcomb_rules,lexp_mode,lpen_pa_mode,lpen_pb_mode
     logical                     :: lpen_enabled
     ! --------------------------------------------------------------------------
 
@@ -499,7 +499,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         if( nb_mode .ne. NB_VDW_LJ ) then
             write(DEV_OUT,95)  prmfile_onoff(pen_enabled)
-            write(DEV_OUT,105) ffdev_topology_PEN_pen_mode_to_string(pen_mode)
+            write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
+            write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
         end if
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
             write(DEV_OUT,45) ffdev_topology_BJ_dampbj_mode_to_string(dampbj_mode)
@@ -509,7 +510,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         end if
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
             write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
-            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(pb_mode)
+            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
         end if
         if( ApplyCombiningRules ) then
         if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
@@ -549,15 +550,27 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         else
             write(DEV_OUT,95) prmfile_onoff(pen_enabled)
         end if
-        if( prmfile_get_string_by_key(fin,'pen_mode', string)) then
-            lpen_mode = ffdev_topology_PEN_pen_mode_from_string(string)
-            write(DEV_OUT,100) ffdev_topology_PEN_pen_mode_to_string(lpen_mode)
+    !----------
+        if( prmfile_get_string_by_key(fin,'pen_pa_mode', string)) then
+            lpen_pa_mode = ffdev_topology_PEN_pa_mode_from_string(string)
+            write(DEV_OUT,100) ffdev_topology_PEN_pa_mode_to_string(lpen_pa_mode)
             if( exec ) then
-                pen_mode = lpen_mode
+                pen_pa_mode = lpen_pa_mode
                 changed = .true.
             end if
         else
-            write(DEV_OUT,105) ffdev_topology_PEN_pen_mode_to_string(pen_mode)
+            write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
+        end if
+    !----------
+        if( prmfile_get_string_by_key(fin,'pen_pb_mode', string)) then
+            lpen_pb_mode = ffdev_topology_PEN_pb_mode_from_string(string)
+            write(DEV_OUT,110) ffdev_topology_PEN_pb_mode_to_string(lpen_pb_mode)
+            if( exec ) then
+                pen_pb_mode = lpen_pb_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
         end if
     ! EXP
         if( prmfile_get_string_by_key(fin,'exp_mode', string)) then
@@ -568,17 +581,17 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
                 changed = .true.
             end if
         else
-            write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
+            write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
         end if
-        if( prmfile_get_string_by_key(fin,'pb_mode', string)) then
-            lpb_mode = ffdev_topology_EXP_pb_mode_from_string(string)
-            write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lpb_mode)
+        if( prmfile_get_string_by_key(fin,'exp_pb_mode', string)) then
+            lexp_pb_mode = ffdev_topology_EXP_pb_mode_from_string(string)
+            write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lexp_pb_mode)
             if( exec ) then
-                pb_mode = lpb_mode
+                exp_pb_mode = lexp_pb_mode
                 changed = .true.
             end if
         else
-            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(pb_mode)
+            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
         end if
     end if
 
@@ -686,14 +699,17 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
  80 format('EXP mode (exp_mode)                  = ',A)
  85 format('EXP mode (exp_mode)                  = ',A31,' (current)')
 
- 70 format('EXP(PB) mode (pb_mode)               = ',A)
- 75 format('EXP(PB) mode (pb_mode)               = ',A31,' (current)')
+ 70 format('EXP PB mode (exp_pb_mode)            = ',A)
+ 75 format('EXP PB mode (exp_pb_mode)            = ',A31,' (current)')
 
  90 format('Penetration energy (pen_enabled)     = ',A)
  95 format('Penetration energy (pen_enabled)     = ',A31,' (current)')
 
-100 format('Pen energy mode (pen_mode)           = ',A)
-105 format('Pen energy mode (pen_mode)           = ',A31,' (current)')
+100 format('Pen energy PA mode (pen_pa_mode)     = ',A)
+105 format('Pen energy PA mode (pen_pa_mode)     = ',A31,' (current)')
+
+110 format('Pen energy PB mode (pen_pb_mode)     = ',A)
+115 format('Pen energy PB mode (pen_pb_mode)     = ',A31,' (current)')
 
  15 format('=== SET ',I2.2)
 

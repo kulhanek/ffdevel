@@ -216,7 +216,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     ! --------------------------------------------------------------------------
 
     ! first update PB from external sources
-    select case(pb_mode)
+    select case(exp_pb_mode)
         case(EXP_PB_FREEOPT)
             ! nothing to do
     !---------------
@@ -249,7 +249,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     end select
 
     ! apply combining rules if necessary
-    select case(pb_mode)
+    select case(exp_pb_mode)
         case(EXP_PB_FREEOPT)
             if( ApplyCombiningRules ) then
                 call ffdev_topology_EXP_update_nb_params_PB(top)

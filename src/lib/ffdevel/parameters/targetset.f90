@@ -246,6 +246,7 @@ subroutine ffdev_targetset_calc_all
                     sets(i)%geo(j)%dis14_ene    = sets(i)%geo(j)%dis14_ene - sets( sets(i)%refs(k) )%geo(1)%dis14_ene
 
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
+                    sets(i)%geo(j)%pen_ene      = sets(i)%geo(j)%pen_ene - sets( sets(i)%refs(k) )%geo(1)%pen_ene
                     sets(i)%geo(j)%rep_ene      = sets(i)%geo(j)%rep_ene - sets( sets(i)%refs(k) )%geo(1)%rep_ene
                     sets(i)%geo(j)%dis_ene      = sets(i)%geo(j)%dis_ene - sets( sets(i)%refs(k) )%geo(1)%dis_ene
 
@@ -295,7 +296,10 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%TB
                 case(REALM_VDW_RC)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%RC
-                    ! nothing to be here
+                case(REALM_PEN_PA)
+                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%pen_pa
+                case(REALM_PEN_PB)
+                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%pen_pb
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
             end select
