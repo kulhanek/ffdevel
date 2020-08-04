@@ -180,7 +180,7 @@ subroutine ffdev_targetset_calc_all
                     !$omp task
                     call ffdev_gradient_all(sets(i)%top,sets(i)%geo(j))
                     !$omp end task
-                else if( sets(i)%geo(j)%trg_ene_loaded .and. errors_calc_ene ) then
+                else if( (sets(i)%geo(j)%trg_ene_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) .and. errors_calc_ene ) then
                     !$omp task
                     call ffdev_energy_all(sets(i)%top,sets(i)%geo(j))
                     !$omp end task
@@ -192,8 +192,7 @@ subroutine ffdev_targetset_calc_all
         do i=1,nsets
             if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
             do j=1,sets(i)%ngeos
-                if( .not. ( (sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded) &
-                            .and. errors_calc_sapt ) ) cycle
+                if( .not. ( sets(i)%geo(j)%trg_sapt_loaded .and. errors_calc_sapt ) ) cycle
                 !$omp task
                 call ffdev_energy_sapt(sets(i)%top,sets(i)%geo(j))
                 !$omp end task

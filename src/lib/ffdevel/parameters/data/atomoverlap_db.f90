@@ -15,10 +15,10 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_atomoverlap_db
+module ffdev_atomicdata_db
 
 use ffdev_constants
-use ffdev_atomoverlap_dat
+use ffdev_atomicdata_dat
 
 ! ==============================================================================
 
@@ -47,4 +47,4 @@ real(DEVDP)     :: wfoverlap_PBE0_def2QZVPP_a0(1:18) = (/ &
 
 ! ==============================================================================
 
-end module ffdev_atomoverlap_db
+end module ffdev_atomicdata_db

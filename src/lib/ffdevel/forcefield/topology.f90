@@ -1176,6 +1176,7 @@ end subroutine ffdev_topology_gen_fragments
 subroutine ffdev_topology_init_nbij(top)
 
     use ffdev_utils
+    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1203,85 +1204,6 @@ subroutine ffdev_topology_init_nbij(top)
 end subroutine ffdev_topology_init_nbij
 
 ! ==============================================================================
-! function ffdev_topology_find_nbtype
-! ==============================================================================
-
-integer function ffdev_topology_find_nbtype_by_aindex(top,ai,aj)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: ai,aj
-    ! --------------------------------------------
-    integer         :: ti,tj
-    ! --------------------------------------------------------------------------
-
-    ! convert to types
-    ti = top%atoms(ai)%typeid
-    tj = top%atoms(aj)%typeid
-
-    ffdev_topology_find_nbtype_by_aindex = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
-
-end function ffdev_topology_find_nbtype_by_aindex
-
-! ==============================================================================
-! function ffdev_topology_find_nbtype_by_tindex
-! ==============================================================================
-
-integer function ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    integer         :: ti,tj
-    ! --------------------------------------------
-    integer         :: i
-    ! --------------------------------------------------------------------------
-
-    do i=1,top%nnb_types
-        if(  ( (top%nb_types(i)%ti .eq. ti) .and. (top%nb_types(i)%tj .eq. tj) ) .or. &
-             ( (top%nb_types(i)%ti .eq. tj) .and. (top%nb_types(i)%tj .eq. ti) ) ) then
-             ffdev_topology_find_nbtype_by_tindex = i
-             return
-        end if
-    end do
-
-    ! not found
-    ffdev_topology_find_nbtype_by_tindex = 0
-    return
-
-end function ffdev_topology_find_nbtype_by_tindex
-
-! ==============================================================================
-! function ffdev_topology_find_nbtype_by_types
-! ==============================================================================
-
-integer function ffdev_topology_find_nbtype_by_types(top,sti,stj)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    character(*)    :: sti,stj
-    ! --------------------------------------------
-    integer         :: i,ti,tj
-    ! --------------------------------------------------------------------------
-
-    ti = 0
-    tj = 0
-
-    do i=1,top%natom_types
-        if( top%atom_types(i)%name .eq. sti ) ti = i
-        if( top%atom_types(i)%name .eq. stj ) tj = i
-    end do
-
-    ffdev_topology_find_nbtype_by_types = ffdev_topology_find_nbtype_by_tindex(top,ti,tj)
-
-end function ffdev_topology_find_nbtype_by_types
-
-! ==============================================================================
 ! function ffdev_topology_switch_to_probe_mode
 ! ==============================================================================
 
@@ -1289,6 +1211,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
 
     use ffdev_utils
     use ffdev_parameters_dat
+    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1313,7 +1236,7 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
         do i=1,top%natoms - top%probe_size
             it = top%atoms(i)%typeid
             if( top%atom_types(it)%probe ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Atom type of probe cannot be used in probed structure!')
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type of probe cannot be used in probed part of the structure!')
             end if
         end do
     end if
@@ -1356,20 +1279,6 @@ subroutine ffdev_topology_switch_to_probe_mode(top,probe_size,unique_probe_types
     ! regenerate nbtii and nbtjj indexes
     call ffdev_topology_init_nbij(top)
 
-! erase all NB parameters except of probe and probe/probed structure
-    if( unique_probe_types ) then
-        if( NBParamsMode .eq. NB_PARAMS_MODE_NORMAL ) then
-            do i=1,top%nnb_types
-                if( top%atom_types(top%nb_types(i)%ti)%probe .or. top%atom_types(top%nb_types(i)%tj)%probe ) cycle
-                top%nb_types(i)%eps = 0.0d0
-                top%nb_types(i)%r0  = 0.0d0
-                top%nb_types(i)%pa  = 0.0d0
-                top%nb_types(i)%pb  = 0.0d0
-                top%nb_types(i)%rc  = 0.0d0
-            end do
-        end if
-    end if
-
 end subroutine ffdev_topology_switch_to_probe_mode
 
 ! ==============================================================================
@@ -1379,6 +1288,7 @@ end subroutine ffdev_topology_switch_to_probe_mode
 subroutine ffdev_topology_gen_sapt_list_for_refs(top,nrefs,natomsrefs)
 
     use ffdev_utils
+    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1433,45 +1343,46 @@ subroutine ffdev_topology_gen_sapt_list_for_refs(top,nrefs,natomsrefs)
 
 end subroutine ffdev_topology_gen_sapt_list_for_refs
 
-! ==============================================================================
-! subroutine ffdev_topology_gen_sapt_list_for_probes
-! ==============================================================================
-
-subroutine ffdev_topology_gen_sapt_list_for_probes(top)
-
-    use ffdev_utils
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    ! --------------------------------------------
-    integer         :: i,j,ip,alloc_status
-    ! --------------------------------------------------------------------------
-
-    if( top%probe_size .le. 0 ) return        !
-    if( top%sapt_size .gt. 0 ) return
-
-    ! calculate size of SAPT list
-    top%sapt_size = (top%natoms - top%probe_size)*top%probe_size
-
-    allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
-    if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list_for_probes!')
-    end if
-
-    ip = 1
-    do i=1,top%natoms - top%probe_size
-        do j=top%natoms - top%probe_size+1,top%natoms
-            top%sapt_list(ip)%ai    = i
-            top%sapt_list(ip)%aj    = j
-            top%sapt_list(ip)%dt    = 0
-            top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
-            top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
-            top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,j,j)
-            ip = ip + 1
-        end do
-    end do
-
-end subroutine ffdev_topology_gen_sapt_list_for_probes
+!! ==============================================================================
+!! subroutine ffdev_topology_gen_sapt_list_for_probes
+!! ==============================================================================
+!
+!subroutine ffdev_topology_gen_sapt_list_for_probes(top)
+!
+!    use ffdev_utils
+!    use ffdev_topology_utils
+!
+!    implicit none
+!    type(TOPOLOGY)  :: top
+!    ! --------------------------------------------
+!    integer         :: i,j,ip,alloc_status
+!    ! --------------------------------------------------------------------------
+!
+!    if( top%probe_size .le. 0 ) return        !
+!    if( top%sapt_size .gt. 0 ) return
+!
+!    ! calculate size of SAPT list
+!    top%sapt_size = (top%natoms - top%probe_size)*top%probe_size
+!
+!    allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
+!    if( alloc_status .ne. 0 ) then
+!        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list_for_probes!')
+!    end if
+!
+!    ip = 1
+!    do i=1,top%natoms - top%probe_size
+!        do j=top%natoms - top%probe_size+1,top%natoms
+!            top%sapt_list(ip)%ai    = i
+!            top%sapt_list(ip)%aj    = j
+!            top%sapt_list(ip)%dt    = 0
+!            top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
+!            top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
+!            top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,j,j)
+!            ip = ip + 1
+!        end do
+!    end do
+!
+!end subroutine ffdev_topology_gen_sapt_list_for_probes
 
 ! ==============================================================================
 ! subroutine ffdev_topology_nb_mode_to_string
@@ -1594,12 +1505,6 @@ subroutine ffdev_topology_update_nb_pairs(top)
                 call ffdev_utils_exit(DEV_ERR,1, &
                      'DISP not loaded for NB_VDW_EXP_DISPTT in ffdev_topology_update_nb_pairs!')
             end if
-            if( damptt_mode .eq. DAMP_TT_IP_XDM ) then
-                if( .not. xdm_data_loaded ) then
-                    call ffdev_utils_exit(DEV_ERR,1, &
-                         'XDM not loaded for DAMP_TT_IP_XDM in ffdev_topology_update_nb_pairs!')
-                end if
-            end if
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nb_pairs!')
     end select
@@ -1629,7 +1534,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_utils
     use ffdev_xdm_dat
     use ffdev_disp_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_ip_db
     use ffdev_topology_exp
     use ffdev_topology_pen

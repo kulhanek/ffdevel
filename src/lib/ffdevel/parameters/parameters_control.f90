@@ -50,17 +50,8 @@ subroutine ffdev_parameters_ctrl_control(fin)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'control') ) then
-        select case(NBParamsMode)
-            case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,25) 'normal'
-            case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,25) 'like-only'
-            case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,25) 'like-all'
-            case(NB_PARAMS_MODE_ALL)
-                write(DEV_OUT,25) 'all'
-        end select
 
+        write(DEV_OUT,25) ffdev_parameters_prmsmode_to_string(NBParamsMode)
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
         write(DEV_OUT,335) trim(ffdev_topology_nb_mode_to_string(PACSource))
 
@@ -73,39 +64,22 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,235) trim(LoadCharges)
         write(DEV_OUT,95)  GlbRngSeed
         write(DEV_OUT,105) Verbosity
+
+        if( NBParamsMode .eq. NB_PARAMS_MODE_LIKE_ONLY ) then
+            ApplyCombiningRules = .true.
+        end if
         return
     end if
 
     if( prmfile_get_string_by_key(fin,'nb_params', string)) then
-        select case(trim(string))
-            case('normal')
-                NBParamsMode = NB_PARAMS_MODE_NORMAL
-                write(DEV_OUT,20) trim(string)
-            case('like-only')
-                NBParamsMode = NB_PARAMS_MODE_LIKE_ONLY
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,20) trim(string)
-            case('like-all')
-                NBParamsMode = NB_PARAMS_MODE_LIKE_ALL
-                ApplyCombiningRules = .true.
-                write(DEV_OUT,20) trim(string)
-            case('all')
-                NBParamsMode = NB_PARAMS_MODE_ALL
-                write(DEV_OUT,20) trim(string)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_params ('//trim(string)//')')
-        end select
+        NBParamsMode = ffdev_parameters_prmsmode_from_string(string)
+        write(DEV_OUT,20) ffdev_parameters_prmsmode_to_string(NBParamsMode)
     else
-        select case(NBParamsMode)
-            case(NB_PARAMS_MODE_NORMAL)
-                write(DEV_OUT,25) 'normal'
-            case(NB_PARAMS_MODE_LIKE_ONLY)
-                write(DEV_OUT,25) 'like-only'
-            case(NB_PARAMS_MODE_LIKE_ALL)
-                write(DEV_OUT,25) 'like-all'
-            case(NB_PARAMS_MODE_ALL)
-                write(DEV_OUT,25) 'all'
-        end select
+        write(DEV_OUT,25) ffdev_parameters_prmsmode_to_string(NBParamsMode)
+    end if
+
+    if( NBParamsMode .eq. NB_PARAMS_MODE_LIKE_ONLY ) then
+        ApplyCombiningRules = .true.
     end if
 
     if( prmfile_get_logical_by_key(fin,'pac_as_prms', PACAsPrms)) then
@@ -224,6 +198,55 @@ subroutine ffdev_parameters_ctrl_control(fin)
 335  format ('PAC source for stat (pac_source)         = ',A12,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
+
+! ==============================================================================
+! subroutine ffdev_parameters_prmsmode_to_string
+! ==============================================================================
+
+character(80) function ffdev_parameters_prmsmode_to_string(source)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer  :: source
+    ! --------------------------------------------------------------------------
+
+    select case(source)
+        case(NB_PARAMS_MODE_LIKE_ONLY)
+            ffdev_parameters_prmsmode_to_string = 'like-only - only nbii parameters are considered'
+        case(NB_PARAMS_MODE_ALL)
+            ffdev_parameters_prmsmode_to_string = 'all - all nbparameters are considered'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_prmsmode_to_string!')
+    end select
+
+end function ffdev_parameters_prmsmode_to_string
+
+! ==============================================================================
+! subroutine ffdev_parameters_prmsmode_from_string
+! ==============================================================================
+
+integer function ffdev_parameters_prmsmode_from_string(string)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('like-only')
+            ffdev_parameters_prmsmode_from_string = NB_PARAMS_MODE_LIKE_ONLY
+        case('all')
+            ffdev_parameters_prmsmode_from_string = NB_PARAMS_MODE_ALL
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
+                                            // '" in ffdev_parameters_prmsmode_from_string!')
+    end select
+
+end function ffdev_parameters_prmsmode_from_string
 
 !===============================================================================
 !-------------------------------------------------------------------------------
@@ -411,7 +434,7 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
     use ffdev_utils
     use ffdev_disp_control
     use ffdev_buried_control
-    use ffdev_atomoverlap_control
+    use ffdev_atomicdata_control
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -420,9 +443,6 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
     logical                     :: rst
     character(PRMFILE_MAX_PATH) :: string
     ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'FFMANIP', ':')
 
     rst = prmfile_first_section(fin)
     do while( rst )
@@ -447,8 +467,8 @@ subroutine ffdev_parameters_ctrl_ffmanip(fin,exec)
                 call ffdev_disp_ctrl(fin,exec)
             case('buried')
                 call ffdev_buried_ctrl(fin,exec)
-            case('atomoverlap')
-                call ffdev_atomoverlap_ctrl(fin,exec)
+            case('atomicdata')
+                call ffdev_atomicdata_ctrl(fin,exec)
             case('files')
                 call ffdev_parameters_ctrl_files_exec(fin,exec)
         end select
@@ -778,6 +798,8 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
             case(REALM_ELE_SQ)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB)
+                read(line,*,err=100,end=100) realm, lvalue
+            case(REALM_PEN_FA,REALM_PEN_FB,REALM_PEN_FC)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
                 read(line,*,err=100,end=100) realm, lvalue

@@ -56,9 +56,8 @@ subroutine ffdev_err_pbpnl_error(error)
     use ffdev_errors_dat
     use ffdev_err_pbpnl_dat
     use ffdev_parameters_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_buried_dat
-    use ffdev_ip_db
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -98,11 +97,11 @@ subroutine ffdev_err_pbpnl_error(error)
 
         select case(PBPNLSource)
             case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_atomoverlap_do_bii(params(i)%ti)
+                pb0 = ffdev_atomicdata_do_bii(params(i)%ti)
+            case(PBPNL_SOURCE_WO)
+                pb0 = ffdev_atomicdata_wo_bii(params(i)%ti)
             case(PBPNL_SOURCE_IP)
-                pb0 = ffdev_bfac_from_ip(params(i)%ti)
-            case(PBPNL_SOURCE_IP_XDM)
-                pb0 = ffdev_bfac_from_ip_xdm(params(i)%ti)
+                pb0 = ffdev_atomicdata_ip_bii(params(i)%ti)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select
@@ -127,10 +126,9 @@ subroutine ffdev_err_pbpnl_summary()
     use ffdev_err_pbpnl_dat
     use ffdev_utils
     use ffdev_parameters_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_buried_dat
     use ffdev_xdm_dat
-    use ffdev_ip_db
     use ffdev_err_pbpnl_control
 
     implicit none
@@ -174,11 +172,11 @@ subroutine ffdev_err_pbpnl_summary()
 
         select case(PBPNLSource)
             case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_atomoverlap_do_bii(params(i)%ti)
+                pb0 = ffdev_atomicdata_do_bii(params(i)%ti)
+            case(PBPNL_SOURCE_WO)
+                pb0 = ffdev_atomicdata_wo_bii(params(i)%ti)
             case(PBPNL_SOURCE_IP)
-                pb0 = ffdev_bfac_from_ip(params(i)%ti)
-            case(PBPNL_SOURCE_IP_XDM)
-                pb0 = ffdev_bfac_from_ip_xdm(params(i)%ti)
+                pb0 = ffdev_atomicdata_ip_bii(params(i)%ti)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
         end select

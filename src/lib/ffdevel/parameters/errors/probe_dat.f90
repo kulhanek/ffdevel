@@ -26,6 +26,7 @@ use ffdev_variables
 logical                 :: EnableProbeError
 logical                 :: PrintProbeErrorSummary
 real(DEVDP)             :: ProbeErrorWeight
+logical                 :: ProbeErrorPenToRep
 
 ! ------------------------------------------------------------------------------
 

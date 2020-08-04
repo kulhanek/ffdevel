@@ -267,6 +267,12 @@ subroutine ffdev_nb2nb_gather_nbtypes
     integer         :: gti,gtj
     ! --------------------------------------------------------------------------
 
+    ! reset setid
+    do k=1,nnb_types
+        nb_types(k)%setid = 0
+    end do
+
+    ! get data
     do i=1,nsets
         do j=1,sets(i)%top%nnb_types
             gti = sets(i)%top%atom_types(sets(i)%top%nb_types(j)%ti)%glbtypeid
@@ -459,6 +465,7 @@ end subroutine ffdev_nb2nb_conv_sum
 subroutine ffdev_nb2nb_write_all_current_pots
 
     use ffdev_nb2nb_dat
+    use ffdev_topology_utils
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
@@ -519,6 +526,7 @@ end subroutine ffdev_nb2nb_write_all_current_pots
 subroutine ffdev_nb2nb_nb2lj(gnbt)
 
     use ffdev_nb2nb_dat
+    use ffdev_topology_utils
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils

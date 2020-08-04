@@ -37,13 +37,19 @@ character(80) function ffdev_topology_PEN_pa_mode_to_string(lpen_mode)
 
     select case(lpen_mode)
         case(PEN_PA_FREEOPT)
-            ffdev_topology_PEN_pa_mode_to_string = 'FREEOPT'
+            ffdev_topology_PEN_pa_mode_to_string = 'FREEOPT - use optimized PA per type'
         case(PEN_PA_CONST)
-            ffdev_topology_PEN_pa_mode_to_string = 'CONST'
-        case(PEN_PA_LDO)
-            ffdev_topology_PEN_pa_mode_to_string = 'LDO'
+            ffdev_topology_PEN_pa_mode_to_string = 'CONST - set to pen_fa'
+        case(PEN_PA_RDO)
+            ffdev_topology_PEN_pa_mode_to_string = 'RDO'
+        case(PEN_PA_DRC)
+            ffdev_topology_PEN_pa_mode_to_string = 'DRC'
         case(PEN_PA_DO)
-            ffdev_topology_PEN_pa_mode_to_string = 'DO'
+            ffdev_topology_PEN_pa_mode_to_string = 'DO - density overlap (from bii)'
+        case(PEN_PA_WO)
+            ffdev_topology_PEN_pa_mode_to_string = 'WO - wavefunction overlap (from bii)'
+        case(PEN_PA_COUPLED)
+            ffdev_topology_PEN_pa_mode_to_string = 'COUPLED - PA coupled by pen_fa to EXP(PB)'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_PEN_pa_mode_to_string!')
     end select
@@ -67,10 +73,16 @@ integer function ffdev_topology_PEN_pa_mode_from_string(string)
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_FREEOPT
         case('CONST')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_CONST
-        case('LDO')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_LDO
+        case('RDO')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_RDO
+        case('DRC')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_DRC
         case('DO')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_DO
+        case('WO')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_WO
+        case('COUPLED')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_COUPLED
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_PEN_pa_mode_from_string!')
     end select
@@ -91,11 +103,11 @@ character(80) function ffdev_topology_PEN_pb_mode_to_string(lpen_mode)
 
     select case(lpen_mode)
         case(PEN_PB_FREEOPT)
-            ffdev_topology_PEN_pb_mode_to_string = 'FREEOPT'
+            ffdev_topology_PEN_pb_mode_to_string = 'FREEOPT - use optimized PB per type'
         case(PEN_PB_CONST)
-            ffdev_topology_PEN_pb_mode_to_string = 'CONST'
+            ffdev_topology_PEN_pb_mode_to_string = 'CONST - set to pen_fb'
         case(PEN_PB_COUPLED)
-            ffdev_topology_PEN_pb_mode_to_string = 'COUPLED'
+            ffdev_topology_PEN_pb_mode_to_string = 'COUPLED - PB coupled by pen_fb to PA'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_PEN_pb_mode_to_string!')
     end select
@@ -174,12 +186,14 @@ end function ffdev_topology_PEN_get_valZ
 subroutine ffdev_topology_PEN_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
+    use ffdev_disp_dat
+    use ffdev_topology_utils
 
     implicit none
     type(TOPOLOGY)  :: top
     ! --------------------------------------------
-    integer         :: i
+    integer         :: i,nbtii
     real(DEVDP)     :: r
     ! --------------------------------------------------------------------------
 
@@ -189,12 +203,21 @@ subroutine ffdev_topology_PEN_update_nb_params(top)
                 ! nothing to do
             case(PEN_PA_CONST)
                 top%atom_types(i)%pen_pa = pen_fa
-            case(PEN_PA_LDO)
-                r = ffdev_atomoverlap_rcii(top%atom_types(i)%glbtypeid,pen_fc)
+            case(PEN_PA_RDO)
+                r = ffdev_atomicdata_rcii(top%atom_types(i)%glbtypeid,pen_fc)
+                if( r .le. 0.0d0 ) r = 1.0d0
+                top%atom_types(i)%pen_pa = pen_fa / r
+            case(PEN_PA_DRC)
+                r = disp_pairs(top%atom_types(i)%glbtypeid,top%atom_types(i)%glbtypeid)%rc
                 if( r .le. 0.0d0 ) r = 1.0d0
                 top%atom_types(i)%pen_pa = pen_fa / r
             case(PEN_PA_DO)
-                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomoverlap_do_bii(top%atom_types(i)%glbtypeid)
+                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_do_bii(top%atom_types(i)%glbtypeid)
+            case(PEN_PA_WO)
+                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_wo_bii(top%atom_types(i)%glbtypeid)
+            case(PEN_PA_COUPLED)
+                nbtii = ffdev_topology_find_nbtype_by_tindex(top,i,i)
+                top%atom_types(i)%pen_pa = pen_fa * top%nb_types(nbtii)%PB
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'PEN_PA_MODE mode not implemented in ffdev_topology_PEN_update_nb_params!')
         end select

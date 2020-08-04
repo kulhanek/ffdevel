@@ -105,13 +105,6 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,128) PBPnlErrorWeight2
     end if
 
-    if( PBPNLSource .eq. PBPNL_SOURCE_IP_XDM ) then
-        if( .not. xdm_data_loaded ) then
-            call ffdev_utils_exit(DEV_ERR,1, &
-                 'XDM not loaded for PBPNL_SOURCE_IP_XDM in ffdev_err_pbpnl_ctrl!')
-        end if
-    end if
-
  10 format('=== [pbpnl] ====================================================================')
 
 110  format ('PB penalty (enabled)                   = ',a12)
@@ -156,8 +149,8 @@ character(80) function ffdev_err_pbpnl_control_source_to_string(source)
             ffdev_err_pbpnl_control_source_to_string = 'DO - Density overlaps'
         case(PBPNL_SOURCE_IP)
             ffdev_err_pbpnl_control_source_to_string = 'IP - Ionization potentials'
-        case(PBPNL_SOURCE_IP_XDM)
-            ffdev_err_pbpnl_control_source_to_string = 'IP-XDM - Ionization potentials + XDM mods'
+        case(PBPNL_SOURCE_WO)
+            ffdev_err_pbpnl_control_source_to_string = 'WO - Wavefunction overlaps'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_source_to_string!')
     end select
@@ -182,8 +175,8 @@ integer function ffdev_err_pbpnl_control_source_from_string(string)
             ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_DO
         case('IP')
             ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_IP
-        case('IP-XDM')
-            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_IP_XDM
+        case('WO')
+            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_WO
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
                                             // '" in ffdev_err_pbpnl_control_source_from_string!')

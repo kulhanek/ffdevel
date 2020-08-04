@@ -48,8 +48,6 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
             ffdev_topology_TT_damptt_mode_to_string = 'WO - TB derived from wavefunction overlap'
         case(DAMP_TT_IP)
             ffdev_topology_TT_damptt_mode_to_string = 'IP - TB derived from ionization potentials'
-        case(DAMP_TT_IP_XDM)
-            ffdev_topology_TT_damptt_mode_to_string = 'IP-XDM - TB derived from ionization potentials + XDM mods'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_TT_damptt_mode_to_string!')
     end select
@@ -82,8 +80,6 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_WO
         case('IP')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP
-        case('IP-XDM')
-            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_IP_XDM
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_TT_damptt_mode_from_string!')
     end select
@@ -97,7 +93,7 @@ end function ffdev_topology_TT_damptt_mode_from_string
 subroutine ffdev_topology_TT_update_nb_params(top)
 
     use ffdev_utils
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_ip_db
 
     implicit none
@@ -126,7 +122,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_atomoverlap_do_bii(agti)
+                top%nb_types(i)%tb = ffdev_atomicdata_do_bii(agti)
             end do
     !---------------
         case(DAMP_TT_WO)
@@ -134,7 +130,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_atomoverlap_wo_bii(agti)
+                top%nb_types(i)%tb = ffdev_atomicdata_wo_bii(agti)
             end do
     !---------------
         case(DAMP_TT_IP)
@@ -142,15 +138,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_bfac_from_ip(agti)
-            end do
-    !---------------
-        case(DAMP_TT_IP_XDM)
-            do i=1,top%nnb_types
-                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
-                ti   = top%nb_types(i)%ti
-                agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_bfac_from_ip_xdm(agti)
+                top%nb_types(i)%tb = ffdev_atomicdata_ip_bii(agti)
             end do
     !---------------
         case default
@@ -167,11 +155,11 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 call ffdev_topology_TT_update_nb_params_TB(top)
             end if
     !---------------
-        case(DAMP_TT_DO,DAMP_TT_WO,DAMP_TT_IP,DAMP_TT_IP_XDM)
+        case(DAMP_TT_DO,DAMP_TT_WO,DAMP_TT_IP)
             if( .not. ApplyCombiningRules ) then
                 ! we need to apply combining rules for unlike atoms
                 call ffdev_utils_exit(DEV_ERR,1, &
-                     'DAMP_TT_DO, DAMP_TT_WO, DAMP_TT_IP, or DAMP_TT_IP_XDM requires ApplyCombiningRules!')
+                     'DAMP_TT_DO, DAMP_TT_WO, or DAMP_TT_IP requires ApplyCombiningRules!')
             end if
             call ffdev_topology_TT_update_nb_params_TB(top)
     !---------------

@@ -138,6 +138,8 @@ character(80) function ffdev_err_papnl_control_source_to_string(source)
     select case(source)
         case(PAPNL_SOURCE_DO)
             ffdev_err_papnl_control_source_to_string = 'DO - Density overlaps'
+        case(PAPNL_SOURCE_WO)
+            ffdev_err_papnl_control_source_to_string = 'WO - Wavefunction overlaps'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_papnl_control_source_to_string!')
     end select
@@ -160,6 +162,8 @@ integer function ffdev_err_papnl_control_source_from_string(string)
     select case(trim(string))
         case('DO')
             ffdev_err_papnl_control_source_from_string = PAPNL_SOURCE_DO
+        case('WO')
+            ffdev_err_papnl_control_source_from_string = PAPNL_SOURCE_WO
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
                                             // '" in ffdev_err_papnl_control_source_from_string!')

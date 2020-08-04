@@ -55,7 +55,7 @@ subroutine ffdev_err_papnl_error(error)
     use ffdev_errors_dat
     use ffdev_err_papnl_dat
     use ffdev_parameters_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_buried_dat
     use ffdev_ip_db
 
@@ -91,7 +91,7 @@ subroutine ffdev_err_papnl_error(error)
 
         select case(PAPNLSource)
             case(PAPNL_SOURCE_DO)
-                pa0 = ffdev_atomoverlap_do_aii(params(i)%ti) + pauli_k
+                pa0 = ffdev_atomicdata_do_aii(params(i)%ti) + pauli_k
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_papnl_error!')
         end select
@@ -116,7 +116,7 @@ subroutine ffdev_err_papnl_summary()
     use ffdev_err_papnl_dat
     use ffdev_utils
     use ffdev_parameters_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_buried_dat
     use ffdev_xdm_dat
     use ffdev_ip_db
@@ -159,7 +159,7 @@ subroutine ffdev_err_papnl_summary()
 
         select case(PAPNLSource)
             case(PAPNL_SOURCE_DO)
-                pa0 = ffdev_atomoverlap_do_aii(params(i)%ti) + pauli_k
+                pa0 = ffdev_atomicdata_do_aii(params(i)%ti) + pauli_k
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_papnl_error!')
         end select

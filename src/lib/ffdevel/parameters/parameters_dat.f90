@@ -131,11 +131,8 @@ real(DEVDP),allocatable     :: prmchrgs     ! values
 ! ------------------------------------------------------------------------------
 
 ! NBParamsMode
-integer,parameter       :: NB_PARAMS_MODE_NORMAL        = 0     ! normal setup depending on a probe mode of target sets
-                                                                ! either all nb_types or probe/probed structure
 integer,parameter       :: NB_PARAMS_MODE_LIKE_ONLY     = 1     ! only like nb_types except of probes
-integer,parameter       :: NB_PARAMS_MODE_LIKE_ALL      = 2     ! only_like nb_types including probes
-integer,parameter       :: NB_PARAMS_MODE_ALL           = 3     ! all nb types
+integer,parameter       :: NB_PARAMS_MODE_ALL           = 2     ! all nb types
 
 ! ffdev_parameters_print_parameters modes
 integer,parameter       :: PARAMS_SUMMARY_INITIAL       = 1
@@ -149,7 +146,7 @@ integer,parameter       :: PAC_SOURCE_GEO               = 2
 integer,parameter       :: PAC_SOURCE_GEO_HIRSHFELD     = 3
 
 ! === [control] ================================================================
-integer         :: NBParamsMode         = NB_PARAMS_MODE_NORMAL     ! mode for determination of NB parameters
+integer         :: NBParamsMode         = NB_PARAMS_MODE_LIKE_ONLY  ! mode for determination of NB parameters
 logical         :: PACAsPrms            = .false.                   ! partial atomic charges as parameters
 logical         :: OnlyDefinedDihItems  = .true.
 logical         :: LockDihC_PN1         = .true.

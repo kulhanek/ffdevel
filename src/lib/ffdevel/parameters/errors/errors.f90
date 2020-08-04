@@ -112,13 +112,13 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     errors_calc_grad    = .false.
     errors_calc_hess    = .false.
 
-    errors_calc_ene  = EnableEnergyError
-    errors_calc_sapt = EnableSAPTError .or. EnableProbeError
+    errors_calc_ene  = EnableEnergyError .or. EnableProbeError
+    errors_calc_sapt = EnableSAPTError
     errors_calc_grad = EnableZeroGradError
 
     if( .not. opterror ) then
-        errors_calc_ene  = errors_calc_ene  .or. PrintEnergyErrorSummary
-        errors_calc_sapt = errors_calc_sapt .or. PrintSAPTErrorSummary .or. PrintProbeErrorSummary
+        errors_calc_ene  = errors_calc_ene  .or. PrintEnergyErrorSummary .or. PrintProbeErrorSummary
+        errors_calc_sapt = errors_calc_sapt .or. PrintSAPTErrorSummary
         errors_calc_grad = errors_calc_grad .or. PrintZeroGradErrorSummary
     end if
 
@@ -325,7 +325,7 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,21,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,42,ADVANCE='NO')
+        write(DEV_OUT,41,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,42,ADVANCE='NO')

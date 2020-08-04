@@ -42,8 +42,8 @@ character(80) function ffdev_topology_BJ_dampbj_mode_to_string(nb_mode)
             ffdev_topology_BJ_dampbj_mode_to_string = 'FREEOPT - Use optimized Rc per type'
         case(DAMP_BJ_DRC)
             ffdev_topology_BJ_dampbj_mode_to_string = 'DRC - Use Rc from dispersion data'
-        case(DAMP_BJ_DO)
-            ffdev_topology_BJ_dampbj_mode_to_string = 'DO - Derived from electron density overlaps'
+        case(DAMP_BJ_RDO)
+            ffdev_topology_BJ_dampbj_mode_to_string = 'RDO - Derived from electron density overlaps'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_BJ_dampbj_mode_to_string!')
     end select
@@ -69,8 +69,8 @@ integer function ffdev_topology_BJ_dampbj_mode_from_string(string)
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_FREEOPT
         case('DRC')
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_DRC
-        case('DO')
-            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_DO
+        case('RDO')
+            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_RDO
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_BJ_dampbj_mode_from_string!')
     end select
@@ -85,7 +85,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
 
     use ffdev_utils
     use ffdev_disp_dat
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -112,12 +112,12 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 top%nb_types(i)%rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
             end do
     !---------------
-        case(DAMP_BJ_DO)
+        case(DAMP_BJ_RDO)
             do i=1,top%nnb_types
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%rc = ffdev_atomoverlap_rcii(agti,damp_fa)
+                top%nb_types(i)%rc = ffdev_atomicdata_rcii(agti,damp_fa)
             end do
     !---------------
         case default
@@ -134,7 +134,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 call ffdev_topology_BJ_update_nb_params_RC(top)
             end if
     !---------------
-        case(DAMP_BJ_DO)
+        case(DAMP_BJ_RDO)
             if( .not. ApplyCombiningRules ) then
                 ! we need to apply combining rules for unlike atoms
                 call ffdev_utils_exit(DEV_ERR,1,'DAMP_BJ_DO requires ApplyCombiningRules!')

@@ -29,8 +29,9 @@ integer,parameter   :: PBPNL_MODE_NOH      = 3
 
 ! PB source
 integer,parameter   :: PBPNL_SOURCE_DO     = 1     ! Density overlap
-integer,parameter   :: PBPNL_SOURCE_IP     = 2     ! Ionization potential
-integer,parameter   :: PBPNL_SOURCE_IP_XDM = 3     ! Ionization potential + XDM mods
+integer,parameter   :: PBPNL_SOURCE_WO     = 2     ! Wavefunction overlap
+integer,parameter   :: PBPNL_SOURCE_IP     = 3     ! Ionization potential
+
 
 ! restraint form
 integer,parameter   :: PBPNL_QUADRATIC     = 1

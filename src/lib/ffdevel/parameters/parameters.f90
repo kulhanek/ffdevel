@@ -32,7 +32,7 @@ subroutine ffdev_parameters_init()
     use ffdev_parameters_dat
     use ffdev_targetset_dat
     use ffdev_utils
-    use ffdev_atomoverlap
+    use ffdev_atomicdata
     use ffdev_nb2nb
 
     implicit none
@@ -110,7 +110,7 @@ subroutine ffdev_parameters_init()
     call ffdev_nb2nb_init_nbtypes
     call ffdev_parameters_print_types()
     call ffdev_parameters_print_charge_stat()
-    call ffdev_atomoverlap_print()
+    call ffdev_atomicdata_print()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
   5 format('Number of sets (topologies)              = ',I6)
@@ -480,11 +480,11 @@ subroutine ffdev_parameters_reinit()
                 select case(pen_pa_mode)
                     case(PEN_PA_FREEOPT)
                         use_pen_pa = .true.
-                    case(PEN_PA_CONST)
+                    case(PEN_PA_COUPLED,PEN_PA_CONST,PEN_PA_DO,PEN_PA_WO)
                         ! nothing to be here
-                    case(PEN_PA_LDO)
+                    case(PEN_PA_RDO)
                         use_pen_fc = .true.
-                    case(PEN_PA_DO)
+                    case(PEN_PA_DRC)
                         ! nothing to be here
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'PEN_PA_MODE mode not implemented in ffdev_parameters_reinit!')
@@ -509,7 +509,7 @@ subroutine ffdev_parameters_reinit()
             select case(exp_pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                 case(EXP_PB_DO,EXP_PB_WO,EXP_PB_IP,EXP_PB_IP_XDM)
+                 case(EXP_PB_DO,EXP_PB_WO,EXP_PB_IP)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -538,7 +538,7 @@ subroutine ffdev_parameters_reinit()
                 case(DAMP_BJ_DRC)
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
-                case(DAMP_BJ_DO)
+                case(DAMP_BJ_RDO)
                     use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
@@ -546,18 +546,12 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_EXP_DISPTT)
             select case(damptt_mode)
-                case(DAMP_TT_CONST)
+                case(DAMP_TT_CONST,DAMP_TT_COUPLED)
+                    use_damp_tb     = .true.
+                case(DAMP_TT_DO,DAMP_TT_WO,DAMP_TT_IP)
                     use_damp_tb     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
-                case(DAMP_TT_COUPLED)
-                    use_damp_tb     = .true.
-                case(DAMP_TT_DO)
-                    use_damp_tb     = .true.
-                case(DAMP_TT_WO)
-                    use_damp_tb     = .true.
-                case(DAMP_TT_IP,DAMP_TT_IP_XDM)
-                    use_damp_tb     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -1058,32 +1052,14 @@ logical function ffdev_parameters_is_nbtype_used(top,nbt)
     implicit none
     type(TOPOLOGY)  :: top
     integer         :: nbt
-    ! --------------------------------------------
-    integer         :: i
     ! --------------------------------------------------------------------------
 
     ffdev_parameters_is_nbtype_used = .false.
 
     select case(NBParamsMode)
-        case(NB_PARAMS_MODE_NORMAL)
-            ! keep only those that are needed for NB calculation
-            do i=1,top%nb_size
-                if( top%nb_list(i)%nbt .eq. nbt ) then
-                    ffdev_parameters_is_nbtype_used = .true.
-                    return
-                end if
-            end do
-        case(NB_PARAMS_MODE_LIKE_ALL)
+        case(NB_PARAMS_MODE_LIKE_ONLY)
             ffdev_parameters_is_nbtype_used = top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj
             return
-        case(NB_PARAMS_MODE_LIKE_ONLY)
-            if( top%nb_types(nbt)%ti .eq. top%nb_types(nbt)%tj ) then
-                if( top%atom_types(top%nb_types(nbt)%ti)%probe ) then
-                    return
-                end if
-                ffdev_parameters_is_nbtype_used = .true.
-                return
-            end if
         case(NB_PARAMS_MODE_ALL)
             ffdev_parameters_is_nbtype_used = .true.
         case default

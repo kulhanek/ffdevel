@@ -39,6 +39,8 @@ subroutine ffdev_err_probe_init
 
     ProbeErrorWeight        = 1.0
 
+    ProbeErrorPenToRep      = .false.
+
 end subroutine ffdev_err_probe_init
 
 ! ==============================================================================
@@ -79,9 +81,13 @@ subroutine ffdev_err_probe_error(error)
             err = 0.0d0
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
-                    emm = sets(i)%geo(j)%sapt_rep
+                    emm = sets(i)%geo(j)%rep_ene
+                    if( ProbeErrorPenToRep ) then
+                        emm = emm + sets(i)%geo(j)%pen_ene
+                    end if
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%sapt_total
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene &
+                        + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%dis_ene
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_error!')
             end select
@@ -150,10 +156,14 @@ subroutine ffdev_err_probe_summary
             string = ''
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
-                    emm = sets(i)%geo(j)%sapt_rep
+                    emm = sets(i)%geo(j)%rep_ene
+                    if( ProbeErrorPenToRep ) then
+                        emm = emm + sets(i)%geo(j)%pen_ene
+                    end if
                     string = 'REP'
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%sapt_total
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene &
+                        + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%dis_ene
                     string = 'TOT'
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_summary!')
@@ -168,8 +178,8 @@ subroutine ffdev_err_probe_summary
 
             write(DEV_OUT,30) i, j, trim(string), sets(i)%geo(j)%weight, &
                               sets(i)%geo(j)%trg_probe_ene, &
-                              sets(i)%geo(j)%sapt_ele, sets(i)%geo(j)%sapt_pen, &
-                              sets(i)%geo(j)%sapt_rep, sets(i)%geo(j)%sapt_dis, emm, err
+                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%pen_ene, &
+                              sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%dis_ene, emm, err
         end do
         if( printsum ) write(DEV_OUT,20)
     end do

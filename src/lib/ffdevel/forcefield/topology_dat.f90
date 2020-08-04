@@ -228,8 +228,11 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 
 integer,parameter   :: PEN_PA_FREEOPT       = 784        ! test mode
 integer,parameter   :: PEN_PA_CONST         = 785        ! test mode
-integer,parameter   :: PEN_PA_LDO           = 786        ! test mode
+integer,parameter   :: PEN_PA_DRC           = 781        ! test mode
+integer,parameter   :: PEN_PA_RDO           = 786        ! test mode
 integer,parameter   :: PEN_PA_DO            = 787        ! test mode
+integer,parameter   :: PEN_PA_WO            = 789        ! test mode
+integer,parameter   :: PEN_PA_COUPLED       = 782        ! coupled to exp PB
 
 integer,parameter   :: PEN_PB_FREEOPT       = 794        ! test mode
 integer,parameter   :: PEN_PB_CONST         = 795        ! test mode
@@ -255,7 +258,6 @@ integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
 integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
 integer,parameter   :: EXP_PB_WO            = 306       ! PB from wavefunction overlap
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
-integer,parameter   :: EXP_PB_IP_XDM        = 305       ! PB from ionization potential + XDM mod
 
 ! combining rules - applicable for Born-Mayer repulsion
 integer,parameter   :: EXP_COMB_RULE_AM     = 391       ! arithmetic means
@@ -273,7 +275,7 @@ integer,parameter   :: EXP_COMB_RULE_W2     = 398       ! test
 integer,parameter   :: DAMP_BJ_CONST        = 201       ! constant
 integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! Rc free to optimize
 integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
-integer,parameter   :: DAMP_BJ_DO           = 204       ! derived from density overlaps
+integer,parameter   :: DAMP_BJ_RDO          = 204       ! derived from density overlaps
 
 ! Tang–Toennies damping
 integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_tb * pb
@@ -282,7 +284,6 @@ integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_tb
 integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_tb * densoverlap_bii
 integer,parameter   :: DAMP_TT_WO           = 105   ! tb = damp_tb * wfoverlap_bii
 integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_tb * f(ionization potential)
-integer,parameter   :: DAMP_TT_IP_XDM       = 107   ! tb = damp_tb * f(ionization potential) * XDM mod
 
 ! ==============================================================================
 ! nb_mode
@@ -306,6 +307,8 @@ integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 ! DISP
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
+
+!
 
 ! derived setup
 logical     :: ApplyCombiningRules          = .false.           ! apply combination rules in every error evaluation

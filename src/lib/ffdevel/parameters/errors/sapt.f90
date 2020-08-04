@@ -64,6 +64,7 @@ subroutine ffdev_err_sapt_error(error)
     ! --------------------------------------------
     integer             :: i,j
     real(DEVDP)         :: err,serrele,serrrep,serrdis,trg_sapt_rep,pen_guess,totw
+    real(DEVDP)         :: sapt_ele
     ! --------------------------------------------------------------------------
 
     error%sapt_ele = 0.0d0
@@ -83,7 +84,11 @@ subroutine ffdev_err_sapt_error(error)
             if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
 
         ! electrostatics
-            err = (sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_pen) - sets(i)%geo(j)%trg_sapt_ele
+            sapt_ele = sets(i)%geo(j)%sapt_ele
+            if( .not. SAPTErrorPenToRep ) then
+                sapt_ele = sapt_ele + sets(i)%geo(j)%sapt_pen
+            end if
+            err = sapt_ele - sets(i)%geo(j)%trg_sapt_ele
             serrele = serrele + sets(i)%geo(j)%weight * err**2
 
         ! repulsion
@@ -129,7 +134,7 @@ subroutine ffdev_err_sapt_summary
     implicit none
     integer             :: i,j
     logical             :: printsum
-    real(DEVDP)         :: serrele,serrrep,serrdisp,trg_sapt_rep,totw
+    real(DEVDP)         :: serrele,serrrep,serrdisp,trg_sapt_rep,totw,sapt_ele
     real(DEVDP)         :: errele,errrep,errdisp,pen_guess,maxele,maxrep,maxdisp
     ! --------------------------------------------------------------------------
 
@@ -168,7 +173,12 @@ subroutine ffdev_err_sapt_summary
             printsum = .true.
 
         ! electrostatics
-            errele = (sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_pen) - sets(i)%geo(j)%trg_sapt_ele
+            sapt_ele = sets(i)%geo(j)%sapt_ele
+            if( .not. SAPTErrorPenToRep ) then
+                sapt_ele = sapt_ele + sets(i)%geo(j)%sapt_pen
+            end if
+            errele = sapt_ele - sets(i)%geo(j)%trg_sapt_ele
+
             serrele = serrele + sets(i)%geo(j)%weight * errele**2
             if( abs(errele) .gt. abs(maxele) ) then
                 maxele = errele

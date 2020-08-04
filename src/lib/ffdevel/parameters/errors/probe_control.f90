@@ -65,6 +65,12 @@ subroutine ffdev_err_probe_ctrl(fin)
         write(DEV_OUT,225) ProbeErrorWeight
     end if
 
+    if( prmfile_get_logical_by_key(fin,'penasrep', ProbeErrorPenToRep)) then
+        write(DEV_OUT,150) prmfile_onoff(ProbeErrorPenToRep)
+    else
+        write(DEV_OUT,155) prmfile_onoff(ProbeErrorPenToRep)
+    end if
+
  10 format('=== [probe] ====================================================================')
 
 110  format ('Probe error (enabled)                  = ',a12)
@@ -75,6 +81,8 @@ subroutine ffdev_err_probe_ctrl(fin)
 220  format ('Probe error weight (weight)            = ',f21.8)
 225  format ('Probe error weight (weight)            = ',f21.8,'         (default)')
 
+150  format ('Penetration as repulsion               = ',a12)
+155  format ('Penetration as repulsion               = ',a12,'                  (default)')
 
 end subroutine ffdev_err_probe_ctrl
 

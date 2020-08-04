@@ -34,7 +34,7 @@ program ffdev_optimize_program
     use ffdev_timers
     use ffdev_buried
     use ffdev_buried_control
-    use ffdev_atomoverlap_control
+    use ffdev_atomicdata_control
     use ffdev_nb2nb_control
     use ffdev_parallel
 
@@ -82,7 +82,7 @@ program ffdev_optimize_program
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Default setup of subsystems', ':')
     call ffdev_parameters_ctrl_nbsetup(tmpfin,.false.)
-    call ffdev_atomoverlap_ctrl(tmpfin,.false.)
+    call ffdev_atomicdata_ctrl(tmpfin,.false.)
     call ffdev_buried_ctrl(tmpfin,.false.)
     call execute_mmopt(tmpfin,.false.)
 
@@ -550,6 +550,9 @@ subroutine execute_ffmanip(grpin,pid,exec)
     ! --------------------------------------------------------------------------
 
    CurrentProgID = pid
+
+    write(DEV_OUT,*)
+    call ffdev_utils_heading(DEV_OUT,'FFMANIP', ':')
 
     if( exec ) then
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)

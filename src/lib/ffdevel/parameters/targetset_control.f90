@@ -475,8 +475,14 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
                 ! probed mode requires probe energy
                 if( sets(i)%top%probe_size .gt. 0 ) then
-                    if( sets(i)%geo(j)%trg_probe_ene_loaded .eqv. .false. ) then
+                    if( .not. sets(i)%geo(j)%trg_probe_ene_loaded ) then
                         call ffdev_utils_exit(DEV_ERR,1,'In probed mode, the point must contain PROBE-ENERGY definition!')
+                    end if
+                    if( sets(i)%geo(j)%trg_ene_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'In probed mode, the point cannot contain ENERGY definition!')
+                    end if
+                    if( sets(i)%geo(j)%trg_sapt_loaded ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'In probed mode, the point cannot contain SAPT definition!')
                     end if
                 end if
 
@@ -557,22 +563,19 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
     end do
 
-    ! build SAPT or Probe list for sets with SAPT data
+    ! build SAPT data
     do i=1,nsets
         has_sapt = .false.
         do j=1,sets(i)%ngeos
-            if( sets(i)%geo(j)%trg_sapt_loaded .or. sets(i)%geo(j)%trg_probe_ene_loaded ) then
+            if( sets(i)%top%probe_size .gt. 0 ) cycle
+            if( sets(i)%nrefs .lt. 2 ) cycle
+            if( sets(i)%geo(j)%trg_sapt_loaded ) then
                 has_sapt = .true.
                 exit
             end if
         end do
         if( has_sapt ) then
-            ! gen SAPT list
-            if( sets(i)%top%probe_size .gt. 0 ) then
-                call ffdev_topology_gen_sapt_list_for_probes(sets(i)%top)
-            else if( sets(i)%nrefs .ge. 2 ) then
-                call ffdev_topology_gen_sapt_list_for_refs(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
-            end if
+            call ffdev_topology_gen_sapt_list_for_refs(sets(i)%top,sets(i)%nrefs,sets(i)%natomsrefs)
         end if
     end do
 

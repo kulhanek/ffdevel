@@ -29,6 +29,7 @@ integer,parameter   :: PAPNL_MODE_NOH      = 3
 
 ! PA source
 integer,parameter   :: PAPNL_SOURCE_DO     = 1     ! Density overlap
+integer,parameter   :: PAPNL_SOURCE_WO     = 2     ! Wavefunction overlap
 
 ! restraint form
 integer,parameter   :: PAPNL_QUADRATIC     = 1

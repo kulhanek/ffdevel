@@ -18,6 +18,7 @@ SET(FFDEVEL_SRC
         forcefield/disp_control.f90
         forcefield/topology_dat.f90
         forcefield/topology.f90
+        forcefield/topology_utils.f90
         forcefield/geometry_dat.f90
         forcefield/geometry.f90
         forcefield/geometry_utils.f90
@@ -105,9 +106,9 @@ SET(FFDEVEL_SRC
         parameters/nb2nb.f90
         parameters/nb2nb_dat.f90
         parameters/nb2nb_control.f90
-        parameters/atomoverlap_dat.f90
-        parameters/atomoverlap.f90
-        parameters/atomoverlap_control.f90
+        parameters/atomicdata_dat.f90
+        parameters/atomicdata.f90
+        parameters/atomicdata_control.f90
 
         parameters/data/ip_db.f90
         parameters/data/atomoverlap_db.f90
