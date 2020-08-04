@@ -253,6 +253,7 @@ integer,parameter   :: EXP_WO               = 68        ! Wavefunction overlap
 ! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
 integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
+integer,parameter   :: EXP_PB_WO            = 306       ! PB from wavefunction overlap
 integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
 integer,parameter   :: EXP_PB_IP_XDM        = 305       ! PB from ionization potential + XDM mod
 

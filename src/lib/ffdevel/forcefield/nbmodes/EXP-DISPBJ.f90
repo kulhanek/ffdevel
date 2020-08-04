@@ -40,6 +40,7 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,V_pe,er,pr,upe
+    real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -69,7 +70,24 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
 
         V_pe  = 0.0d0
         if( pen_enabled ) then
-            ! FIXME
+            z1      = top%nb_list(ip)%z1
+            q1      = top%nb_list(ip)%q1
+            pepa1   = top%nb_list(ip)%pepa1
+            pepb1   = top%nb_list(ip)%pepb1
+
+            z2      = top%nb_list(ip)%z2
+            q2      = top%nb_list(ip)%q2
+            pepa2   = top%nb_list(ip)%pepa2
+            pepb2   = top%nb_list(ip)%pepb2
+
+            pfa1 = 1.0d0 - exp(-pepa1*r)
+            pfb1 = 1.0d0 - exp(-pepb1*r)
+            pfa2 = 1.0d0 - exp(-pepa2*r)
+            pfb2 = 1.0d0 - exp(-pepb2*r)
+
+            pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
+                 + (z1-q1)*(z2-q2)*pfb1*pfb2
+            V_pe = pee/r - V_ee
         end if
 
     ! repulsion
@@ -153,6 +171,7 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
     real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,V_pe,er,pr,upe
+    real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
     ! --------------------------------------------------------------------------
 
     geo%sapt_ele  = 0.0d0
@@ -178,7 +197,23 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
 
         V_pe  = 0.0d0
         if( pen_enabled ) then
-            ! FIXME
+            z1      = top%sapt_list(ip)%z1
+            q1      = top%sapt_list(ip)%q1
+            pepa1   = top%sapt_list(ip)%pepa1
+            pepb1   = top%sapt_list(ip)%pepb1
+            z2      = top%sapt_list(ip)%z2
+            q2      = top%sapt_list(ip)%q2
+            pepa2   = top%sapt_list(ip)%pepa2
+            pepb2   = top%sapt_list(ip)%pepb2
+
+            pfa1 = 1.0d0 - exp(-pepa1*r)
+            pfb1 = 1.0d0 - exp(-pepb1*r)
+            pfa2 = 1.0d0 - exp(-pepa2*r)
+            pfb2 = 1.0d0 - exp(-pepb2*r)
+
+            pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
+                 + (z1-q1)*(z2-q2)*pfb1*pfb2
+            V_pe = pee/r - V_ee
         end if
 
     ! repulsion
@@ -324,6 +359,7 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,dva,inv_scnb,inv_scee
     real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,upe,V_pe
+    real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -356,7 +392,28 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
         V_pe  = 0.0d0
         dvpe  = 0.0d0
         if( pen_enabled ) then
-            ! FIXME
+            z1      = top%nb_list(ip)%z1
+            q1      = top%nb_list(ip)%q1
+            pepa1   = top%nb_list(ip)%pepa1
+            pepb1   = top%nb_list(ip)%pepb1
+            z2      = top%nb_list(ip)%z2
+            q2      = top%nb_list(ip)%q2
+            pepa2   = top%nb_list(ip)%pepa2
+            pepb2   = top%nb_list(ip)%pepb2
+
+            pfa1 = exp(-pepa1*r)
+            pfb1 = exp(-pepb1*r)
+            pfa2 = exp(-pepa2*r)
+            pfb2 = exp(-pepb2*r)
+
+            ! full electrostatic with charge penetration
+            pee = z1*z2 - z1*(z2-q2)*(1.0d0-pfa2) - (z1-q1)*z2*(1.0d0-pfa1) &
+                 + (z1-q1)*(z2-q2)*(1.0d0-pfb1)*(1.0d0-pfb2)
+            ! subtract MM energy
+            V_pe = pee/r - V_ee
+            ! derivatives
+            dvpe = V_pe + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
+                 + (z1-q1)*(z2-q2)*(-pfb1*pepb1 - pfb2*pepb2 + pfb1*pfb2*pepb2 + pfb1*pepb1*pfb2)
         end if
 
    ! repulsion

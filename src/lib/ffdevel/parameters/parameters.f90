@@ -509,7 +509,7 @@ subroutine ffdev_parameters_reinit()
             select case(exp_pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                 case(EXP_PB_DO,EXP_PB_IP,EXP_PB_IP_XDM)
+                 case(EXP_PB_DO,EXP_PB_WO,EXP_PB_IP,EXP_PB_IP_XDM)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')

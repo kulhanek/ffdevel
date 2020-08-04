@@ -461,14 +461,19 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
             pepa2   = top%nb_list(ip)%pepa2
             pepb2   = top%nb_list(ip)%pepb2
 
-            pfa1 = 1.0d0 - exp(-pepa1*r)
-            pfb1 = 1.0d0 - exp(-pepb1*r)
-            pfa2 = 1.0d0 - exp(-pepa2*r)
-            pfb2 = 1.0d0 - exp(-pepb2*r)
+            pfa1 = exp(-pepa1*r)
+            pfb1 = exp(-pepb1*r)
+            pfa2 = exp(-pepa2*r)
+            pfb2 = exp(-pepb2*r)
 
-            pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
-                 + (z1-q1)*(z2-q2)*pfb1*pfb2
+            ! full electrostatic with charge penetration
+            pee = z1*z2 - z1*(z2-q2)*(1.0d0-pfa2) - (z1-q1)*z2*(1.0d0-pfa1) &
+                 + (z1-q1)*(z2-q2)*(1.0d0-pfb1)*(1.0d0-pfb2)
+            ! subtract MM energy
             V_pe = pee/r - V_ee
+            ! derivatives
+            dvpe = V_pe + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
+                 + (z1-q1)*(z2-q2)*(-pfb1*pepb1 - pfb2*pepb2 + pfb1*pfb2*pepb2 + pfb1*pepb1*pfb2)
         end if
 
     ! repulsion

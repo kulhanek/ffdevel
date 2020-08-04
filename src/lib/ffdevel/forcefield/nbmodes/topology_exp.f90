@@ -90,6 +90,8 @@ character(80) function ffdev_topology_EXP_pb_mode_to_string(lpb_mode)
             ffdev_topology_EXP_pb_mode_to_string = 'FREEOPT - Use optimized PB per type'
         case(EXP_PB_DO)
             ffdev_topology_EXP_pb_mode_to_string = 'DO - PB from density overlap'
+        case(EXP_PB_WO)
+            ffdev_topology_EXP_pb_mode_to_string = 'WO - PB from wavefunction overlap'
         case(EXP_PB_IP)
             ffdev_topology_EXP_pb_mode_to_string = 'IP - PB derived from ionization potentials'
         case(EXP_PB_IP_XDM)
@@ -117,6 +119,8 @@ integer function ffdev_topology_EXP_pb_mode_from_string(string)
             ffdev_topology_EXP_pb_mode_from_string = EXP_PB_FREEOPT
         case('DO')
             ffdev_topology_EXP_pb_mode_from_string = EXP_PB_DO
+        case('WO')
+            ffdev_topology_EXP_pb_mode_from_string = EXP_PB_WO
         case('IP')
             ffdev_topology_EXP_pb_mode_from_string = EXP_PB_IP
         case('IP-XDM')
@@ -228,6 +232,14 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
                 top%nb_types(i)%pb = ffdev_atomoverlap_do_bii(agti)
             end do
     !---------------
+        case(EXP_PB_WO)
+            do i=1,top%nnb_types
+                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
+                ti   = top%nb_types(i)%ti
+                agti = top%atom_types(ti)%glbtypeid
+                top%nb_types(i)%pb = ffdev_atomoverlap_wo_bii(agti)
+            end do
+    !---------------
         case(EXP_PB_IP)
             do i=1,top%nnb_types
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
@@ -255,7 +267,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
                 call ffdev_topology_EXP_update_nb_params_PB(top)
             end if
     !---------------
-        case(EXP_PB_DO,EXP_PB_IP,EXP_PB_IP_XDM)
+        case(EXP_PB_DO,EXP_PB_WO,EXP_PB_IP,EXP_PB_IP_XDM)
             if( .not. ApplyCombiningRules ) then
                 ! we need to apply combining rules for unlike atoms
                 call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_DO, EXP_PB_IP, or EXP_PB_IP_XDM requires ApplyCombiningRules!')
