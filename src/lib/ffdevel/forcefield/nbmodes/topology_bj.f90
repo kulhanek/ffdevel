@@ -40,10 +40,8 @@ character(80) function ffdev_topology_BJ_dampbj_mode_to_string(nb_mode)
             ffdev_topology_BJ_dampbj_mode_to_string = 'CONST - Constant Rc'
         case(DAMP_BJ_FREEOPT)
             ffdev_topology_BJ_dampbj_mode_to_string = 'FREEOPT - Use optimized Rc per type'
-        case(DAMP_BJ_DRC)
-            ffdev_topology_BJ_dampbj_mode_to_string = 'DRC - Use Rc from dispersion data'
-        case(DAMP_BJ_RDO)
-            ffdev_topology_BJ_dampbj_mode_to_string = 'RDO - Derived from electron density overlaps'
+        case(DAMP_BJ_ADRII)
+            ffdev_topology_BJ_dampbj_mode_to_string = 'ADRII - Atomic database Rcii'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_BJ_dampbj_mode_to_string!')
     end select
@@ -67,10 +65,8 @@ integer function ffdev_topology_BJ_dampbj_mode_from_string(string)
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_CONST
         case('FREEOPT')
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_FREEOPT
-        case('DRC')
-            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_DRC
-        case('RDO')
-            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_RDO
+        case('ADRII')
+            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_ADRII
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_BJ_dampbj_mode_from_string!')
     end select
@@ -103,21 +99,13 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
         case(DAMP_BJ_FREEOPT)
             ! nothing
     !---------------
-        case(DAMP_BJ_DRC)
+        case(DAMP_BJ_ADRII)
             do i=1,top%nnb_types
                 ti   = top%nb_types(i)%ti
                 tj   = top%nb_types(i)%tj
                 agti = top%atom_types(ti)%glbtypeid
                 agtj = top%atom_types(tj)%glbtypeid
-                top%nb_types(i)%rc = damp_fa * disp_pairs(agti,agtj)%rc + damp_fb
-            end do
-    !---------------
-        case(DAMP_BJ_RDO)
-            do i=1,top%nnb_types
-                if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
-                ti   = top%nb_types(i)%ti
-                agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%rc = ffdev_atomicdata_rcii(agti,damp_fa)
+                top%nb_types(i)%rc = ffdev_atomicdata_rcii(agti,damp_fa,damp_fb)
             end do
     !---------------
         case default
@@ -126,7 +114,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
 
     ! apply combining rules if necessary
     select case(dampbj_mode)
-        case(DAMP_BJ_CONST,DAMP_BJ_DRC)
+        case(DAMP_BJ_CONST)
             ! nothing
     !---------------
         case(DAMP_BJ_FREEOPT)
@@ -134,10 +122,10 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 call ffdev_topology_BJ_update_nb_params_RC(top)
             end if
     !---------------
-        case(DAMP_BJ_RDO)
+        case(DAMP_BJ_ADRII)
             if( .not. ApplyCombiningRules ) then
                 ! we need to apply combining rules for unlike atoms
-                call ffdev_utils_exit(DEV_ERR,1,'DAMP_BJ_DO requires ApplyCombiningRules!')
+                call ffdev_utils_exit(DEV_ERR,1,'DAMP_BJ_ADRII requires ApplyCombiningRules!')
             end if
             call ffdev_topology_BJ_update_nb_params_RC(top)
     !---------------

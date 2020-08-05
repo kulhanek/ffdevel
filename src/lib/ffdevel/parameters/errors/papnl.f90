@@ -57,7 +57,6 @@ subroutine ffdev_err_papnl_error(error)
     use ffdev_parameters_dat
     use ffdev_atomicdata
     use ffdev_buried_dat
-    use ffdev_ip_db
 
     implicit none
     type(FFERROR_TYPE)  :: error

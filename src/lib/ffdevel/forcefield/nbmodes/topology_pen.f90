@@ -40,14 +40,10 @@ character(80) function ffdev_topology_PEN_pa_mode_to_string(lpen_mode)
             ffdev_topology_PEN_pa_mode_to_string = 'FREEOPT - use optimized PA per type'
         case(PEN_PA_CONST)
             ffdev_topology_PEN_pa_mode_to_string = 'CONST - set to pen_fa'
-        case(PEN_PA_RDO)
-            ffdev_topology_PEN_pa_mode_to_string = 'RDO'
-        case(PEN_PA_DRC)
-            ffdev_topology_PEN_pa_mode_to_string = 'DRC'
-        case(PEN_PA_DO)
-            ffdev_topology_PEN_pa_mode_to_string = 'DO - density overlap (from bii)'
-        case(PEN_PA_WO)
-            ffdev_topology_PEN_pa_mode_to_string = 'WO - wavefunction overlap (from bii)'
+        case(PEN_PA_ADBII)
+            ffdev_topology_PEN_pa_mode_to_string = 'ADBII - Atomic database Bii'
+        case(PEN_PA_ADRII)
+            ffdev_topology_PEN_pa_mode_to_string = 'ADRII - Atomic database Rcii'
         case(PEN_PA_COUPLED)
             ffdev_topology_PEN_pa_mode_to_string = 'COUPLED - PA coupled by pen_fa to EXP(PB)'
         case default
@@ -73,14 +69,10 @@ integer function ffdev_topology_PEN_pa_mode_from_string(string)
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_FREEOPT
         case('CONST')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_CONST
-        case('RDO')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_RDO
-        case('DRC')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_DRC
-        case('DO')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_DO
-        case('WO')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_WO
+        case('ADBII')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_ADBII
+        case('ADRII')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_ADRII
         case('COUPLED')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_COUPLED
         case default
@@ -203,18 +195,12 @@ subroutine ffdev_topology_PEN_update_nb_params(top)
                 ! nothing to do
             case(PEN_PA_CONST)
                 top%atom_types(i)%pen_pa = pen_fa
-            case(PEN_PA_RDO)
-                r = ffdev_atomicdata_rcii(top%atom_types(i)%glbtypeid,pen_fc)
+            case(PEN_PA_ADBII)
+                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_bii(top%atom_types(i)%glbtypeid)
+            case(PEN_PA_ADRII)
+                r = ffdev_atomicdata_rcii(top%atom_types(i)%glbtypeid,damp_fa,damp_fb)
                 if( r .le. 0.0d0 ) r = 1.0d0
                 top%atom_types(i)%pen_pa = pen_fa / r
-            case(PEN_PA_DRC)
-                r = disp_pairs(top%atom_types(i)%glbtypeid,top%atom_types(i)%glbtypeid)%rc
-                if( r .le. 0.0d0 ) r = 1.0d0
-                top%atom_types(i)%pen_pa = pen_fa / r
-            case(PEN_PA_DO)
-                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_do_bii(top%atom_types(i)%glbtypeid)
-            case(PEN_PA_WO)
-                top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_wo_bii(top%atom_types(i)%glbtypeid)
             case(PEN_PA_COUPLED)
                 nbtii = ffdev_topology_find_nbtype_by_tindex(top,i,i)
                 top%atom_types(i)%pen_pa = pen_fa * top%nb_types(nbtii)%PB

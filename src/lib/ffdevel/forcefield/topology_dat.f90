@@ -226,17 +226,15 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 ! ==== vdW modes
 ! ==============================================================================
 
-integer,parameter   :: PEN_PA_FREEOPT       = 784        ! test mode
-integer,parameter   :: PEN_PA_CONST         = 785        ! test mode
-integer,parameter   :: PEN_PA_DRC           = 781        ! test mode
-integer,parameter   :: PEN_PA_RDO           = 786        ! test mode
-integer,parameter   :: PEN_PA_DO            = 787        ! test mode
-integer,parameter   :: PEN_PA_WO            = 789        ! test mode
-integer,parameter   :: PEN_PA_COUPLED       = 782        ! coupled to exp PB
+integer,parameter   :: PEN_PA_FREEOPT       = 784        ! pa = free to optimize as pen_pa
+integer,parameter   :: PEN_PA_CONST         = 785        ! pa = pen_fa
+integer,parameter   :: PEN_PA_ADBII         = 781        ! pa = pen_fa * bii (atomic database)
+integer,parameter   :: PEN_PA_ADRII         = 787        ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
+integer,parameter   :: PEN_PA_COUPLED       = 782        ! pa = pen_fa * vdw_pb
 
-integer,parameter   :: PEN_PB_FREEOPT       = 794        ! test mode
-integer,parameter   :: PEN_PB_CONST         = 795        ! test mode
-integer,parameter   :: PEN_PB_COUPLED       = 796        ! test mode
+integer,parameter   :: PEN_PB_FREEOPT       = 794        ! pb = free to optimize as pen_pb
+integer,parameter   :: PEN_PB_CONST         = 795        ! pb = pen_fb
+integer,parameter   :: PEN_PB_COUPLED       = 796        ! pb = pen_fb * pen_pa
 
 ! ####################################################################
 
@@ -254,42 +252,33 @@ integer,parameter   :: EXP_DO               = 67        ! Density overlap
 integer,parameter   :: EXP_WO               = 68        ! Wavefunction overlap
 
 ! PB source
-integer,parameter   :: EXP_PB_FREEOPT       = 301       ! PB free to optimize
-integer,parameter   :: EXP_PB_DO            = 302       ! PB from density overlap
-integer,parameter   :: EXP_PB_WO            = 306       ! PB from wavefunction overlap
-integer,parameter   :: EXP_PB_IP            = 304       ! PB from ionization potential
+integer,parameter   :: EXP_PB_FREEOPT       = 301       ! pb = free to optimize as vdw_pb
+integer,parameter   :: EXP_PB_ADBII         = 302       ! pb = damp_pb * bii (atomic database)
 
 ! combining rules - applicable for Born-Mayer repulsion
 integer,parameter   :: EXP_COMB_RULE_AM     = 391       ! arithmetic means
 integer,parameter   :: EXP_COMB_RULE_GS     = 392       ! Gilbert-Smith
 integer,parameter   :: EXP_COMB_RULE_BA     = 393       ! Bohm-Ahlrichs
 integer,parameter   :: EXP_COMB_RULE_VS     = 394       ! Vleet-Schmidt
-integer,parameter   :: EXP_COMB_RULE_D1     = 395       ! test
-integer,parameter   :: EXP_COMB_RULE_D2     = 396       ! test
-integer,parameter   :: EXP_COMB_RULE_W1     = 397       ! test
-integer,parameter   :: EXP_COMB_RULE_W2     = 398       ! test
 
 ! ####################################################################
 
 ! Becke-Johnson damping
-integer,parameter   :: DAMP_BJ_CONST        = 201       ! constant
-integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! Rc free to optimize
-integer,parameter   :: DAMP_BJ_DRC          = 203       ! radii from Cx
-integer,parameter   :: DAMP_BJ_RDO          = 204       ! derived from density overlaps
+integer,parameter   :: DAMP_BJ_CONST        = 201       ! rc = damp_fa
+integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! rc = free to optimize as vdw_rc
+integer,parameter   :: DAMP_BJ_ADRII        = 205       ! rc = rii([damp_fa]) (atomic database)
 
 ! Tang–Toennies damping
-integer,parameter   :: DAMP_TT_COUPLED      = 101   ! tb = damp_tb * pb
-integer,parameter   :: DAMP_TT_FREEOPT      = 102   ! tb free to optimize
-integer,parameter   :: DAMP_TT_CONST        = 103   ! tb = damp_tb
-integer,parameter   :: DAMP_TT_DO           = 104   ! tb = damp_tb * densoverlap_bii
-integer,parameter   :: DAMP_TT_WO           = 105   ! tb = damp_tb * wfoverlap_bii
-integer,parameter   :: DAMP_TT_IP           = 106   ! tb = damp_tb * f(ionization potential)
+integer,parameter   :: DAMP_TT_COUPLED      = 101       ! tb = damp_tb * vdw_pb
+integer,parameter   :: DAMP_TT_FREEOPT      = 102       ! tb = free to optimize as vdw_tb
+integer,parameter   :: DAMP_TT_CONST        = 103       ! tb = damp_tb
+integer,parameter   :: DAMP_TT_ADBII        = 104       ! tb = damp_pb * bii (atomic database)
 
 ! ==============================================================================
 ! nb_mode
-integer,parameter   :: NB_VDW_LJ            = 13    ! Lenard-Jones
-integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21    ! Exp-Becke-Johnson
-integer,parameter   :: NB_VDW_EXP_DISPTT    = 30    ! Exp-Tang–Toennies
+integer,parameter   :: NB_VDW_LJ            = 13        ! Lenard-Jones
+integer,parameter   :: NB_VDW_EXP_DISPBJ    = 21        ! Exp-Becke-Johnson
+integer,parameter   :: NB_VDW_EXP_DISPTT    = 30        ! Exp-Tang–Toennies
 
 ! employed method for NB interactions
 integer     :: nb_mode                      = NB_VDW_LJ

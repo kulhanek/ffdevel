@@ -110,8 +110,7 @@ SET(FFDEVEL_SRC
         parameters/atomicdata.f90
         parameters/atomicdata_control.f90
 
-        parameters/data/ip_db.f90
-        parameters/data/atomoverlap_db.f90
+        parameters/data/atomicdata_db.f90
 
         optimizers/geoopt_dat.f90
         optimizers/geoopt_control.f90

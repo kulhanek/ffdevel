@@ -35,16 +35,19 @@ subroutine ffdev_atomicdata_update_db
     implicit none
     ! --------------------------------------------------------------------------
 
-    densoverlap_b0ii(:) = 0.0d0
-    densoverlap_a0ii(:) = 0.0d0
+    atomicdata_rho_bmii(:) = 0.0d0
+    atomicdata_rho_b0ii(:) = 0.0d0
+    atomicdata_rho_bpii(:) = 0.0d0
 
-    select case(atomoverlap_source)
-        case(AO_PBE0_def2QZVPP)
-            densoverlap_b0ii(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_b0
-            densoverlap_a0ii(1:densoverlap_PBE0_def2QZVPP_maxZ) = densoverlap_PBE0_def2QZVPP_a0
+    atomicdata_rho_amii(:) = 0.0d0
+    atomicdata_rho_a0ii(:) = 0.0d0
+    atomicdata_rho_apii(:) = 0.0d0
 
-            wfoverlap_b0ii(1:densoverlap_PBE0_def2QZVPP_maxZ) = wfoverlap_PBE0_def2QZVPP_b0
-            wfoverlap_a0ii(1:densoverlap_PBE0_def2QZVPP_maxZ) = wfoverlap_PBE0_def2QZVPP_a0
+    select case(bii_source)
+        case(AD_BII_IP)
+            ! nothing to do
+        case(AD_BII_PBE0_def2QZVPP)
+            ! FIXME
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_update_db')
     end select
@@ -60,17 +63,20 @@ subroutine ffdev_atomicdata_print
     use ffdev_utils
     use smf_periodic_table_dat
     use ffdev_parameters_dat
-    use prmfile
+    use ffdev_atomicdata_db
 
     implicit none
-    integer :: i,z
+    integer     :: i,z
+    real(DEVDP) :: bmii,b0ii,bpii,amii,a0ii,apii,rvdw,ip
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'Linearized Electron Density/Wavefunction Overlaps', '=')
+    call ffdev_utils_heading(DEV_OUT,'Atomic Database', '=')
 
     write(DEV_OUT,*)
-    write(DEV_OUT,5) trim(ffdev_atomicdata_source_to_string(atomoverlap_source))
+    write(DEV_OUT,5) trim(ffdev_atomicdata_bii_source_to_string(bii_source))
+    write(DEV_OUT,6) trim(ffdev_atomicdata_bii_mods_to_string(bii_mods))
+    write(DEV_OUT,7) trim(ffdev_atomicdata_rcii_source_to_string(rcii_source))
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
@@ -78,225 +84,252 @@ subroutine ffdev_atomicdata_print
 
      do i=1,ntypes
         z = types(i)%z
+
+        bmii = 0.0
+        b0ii = 0.0
+        bpii = 0.0
+        amii = 0.0
+        a0ii = 0.0
+        apii = 0.0
+        if( (z .ge. 1) .and. (z .le. ATOMICDATA_RHO_MAX_Z ) ) then
+            bmii = atomicdata_rho_bmii(z)
+            b0ii = atomicdata_rho_b0ii(z)
+            bpii = atomicdata_rho_bpii(z)
+            amii = atomicdata_rho_amii(z)
+            a0ii = atomicdata_rho_a0ii(z)
+            apii = atomicdata_rho_apii(z)
+        end if
+
+        rvdw = 0.0
+        if( (z .ge. 1) .and. (z .le. VDW_RADII_MAXZ ) ) then
+            rvdw = vdw_radii(z)
+        end if
+
+        ip = 0.0
+        if( (z .ge. 1) .and. (z .le. IONIZATION_POTENTIAL_MAXZ ) ) then
+            ip = ionization_potential(z)
+        end if
+
         write(DEV_OUT,30) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
-                          densoverlap_b0ii(z), densoverlap_a0ii(z), wfoverlap_b0ii(z), wfoverlap_a0ii(z)
+                          bmii, b0ii, bpii, amii, a0ii, apii, rvdw, ip
+
     end do
     write(DEV_OUT,20)
 
-  5 format('# Data source : ',A)
+  5 format('# Bii data source  : ',A)
+  6 format('# Bii data mods    : ',A)
+  7 format('# Rcii data source : ',A)
 
- 10 format('# ID Type  Z  El | B0(D0) A0(D0) | B0(WF) A0(WF)')
- 20 format('# -- ---- --- -- | ------ ------ | ------ ------')
+ 10 format('# ID Type  Z  El |   B-     B0     B+   |   A-     A0     A+   | R(vdW) | IP(eV) |')
+ 20 format('# -- ---- --- -- | ------ ------ ------ | ------ ------ ------ | ------ | ------ |')
  30 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,3X,F6.3,1X,F6.3)
 
 end subroutine ffdev_atomicdata_print
 
 ! ==============================================================================
-! function ffdev_atomicdata_do_bii
+! function ffdev_atomicdata_bii
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atomicdata_do_bii(gti)
+real(DEVDP) function ffdev_atomicdata_bii(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
     use ffdev_xdm_dat
+    use ffdev_atomicdata_db
 
     implicit none
     integer     :: gti
     ! --------------------------------------------
-    integer     :: z
+    integer     :: maxz,z
+    real(DEVDP) :: q
     ! --------------------------------------------------------------------------
 
-    ffdev_atomicdata_do_bii = 1.0 ! default b
+    ffdev_atomicdata_bii = 0.0 ! 0.0 -> undefined
 
-    ! get Z
-    z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_do_bii')
-    end if
-
-    ffdev_atomicdata_do_bii = densoverlap_b0ii(z)
-
-    select case(atomoverlap_mods)
-        case(AO_MODS_PLAIN)
-            return
-        case(AO_MODS_BY_XDM)
-            ! XDM mod, DOI: 10.1021/ct1001494
-            ffdev_atomicdata_do_bii = ffdev_atomicdata_do_bii * &
-                                (xdm_atoms(gti)%v0ave / xdm_atoms(gti)%vave)**(1.0d0/3.0d0)
-            return
+    select case(bii_source)
+        case(AD_BII_IP)
+            maxz = IONIZATION_POTENTIAL_MAXZ
+        case(AD_BII_PBE0_def2QZVPP)
+            maxz = ATOMICDATA_RHO_MAX_Z
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'No implemented in ffdev_atomicdata_do_bii')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii 0')
     end select
 
-end function ffdev_atomicdata_do_bii
+    ! get Z
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. maxz) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_bii')
+    end if
+    q = types(gti)%aveq
+
+    if( bii_mods .ne. AD_BII_MOD_BY_CHRG ) then
+        ! charge unmodified bii
+        select case(bii_source)
+            case(AD_BII_IP)
+                ! in A^-1 => 1.0 / DEV_AU2A
+                ffdev_atomicdata_bii = 2.0d0 * sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
+            case(AD_BII_PBE0_def2QZVPP)
+                ffdev_atomicdata_bii = atomicdata_rho_b0ii(z)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii I')
+        end select
+
+        select case(bii_mods)
+            case(AD_BII_RAW)
+                ! nothing to be here
+            case(AD_BII_MOD_BY_XDM)
+                if( .not. xdm_data_loaded ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'no XDM data loaded for bii in ffdev_atomicdata_bii')
+                end if
+                ! XDM mod, DOI: 10.1021/ct1001494
+                ffdev_atomicdata_bii = ffdev_atomicdata_bii * &
+                                    (xdm_atoms(gti)%v0ave / xdm_atoms(gti)%vave)**(1.0d0/3.0d0)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii II')
+        end select
+        ! exit
+        return
+    end if
+
+    ! charge modified bii
+    ! FIXME
+
+end function ffdev_atomicdata_bii
 
 ! ==============================================================================
-! function ffdev_atomicdata_do_aii
+! function ffdev_atomicdata_aii
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atomicdata_do_aii(gti)
+real(DEVDP) function ffdev_atomicdata_aii(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
+    use ffdev_atomicdata_db
 
     implicit none
     integer     :: gti
     ! --------------------------------------------
-    integer     :: z
+    integer     :: maxz,z
+    real(DEVDP) :: q
     ! --------------------------------------------------------------------------
 
-    ffdev_atomicdata_do_aii = 0.0 ! default a
+    ffdev_atomicdata_aii = 0.0 ! 0.0 -> undefined
 
-    ! get Z
-    z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_do_aii')
-    end if
-
-    ffdev_atomicdata_do_aii = densoverlap_a0ii(z)
-
-end function ffdev_atomicdata_do_aii
-
-! ==============================================================================
-! function ffdev_atomicdata_wo_bii
-! ==============================================================================
-
-real(DEVDP) function ffdev_atomicdata_wo_bii(gti)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-    use ffdev_xdm_dat
-
-    implicit none
-    integer     :: gti
-    ! --------------------------------------------
-    integer     :: z
-    ! --------------------------------------------------------------------------
-
-    ffdev_atomicdata_wo_bii = 1.0 ! default b
-
-    ! get Z
-    z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_wo_bii')
-    end if
-
-    ffdev_atomicdata_wo_bii = wfoverlap_b0ii(z)
-
-    select case(atomoverlap_mods)
-        case(AO_MODS_PLAIN)
-            return
-        case(AO_MODS_BY_XDM)
-            ! XDM mod, DOI: 10.1021/ct1001494
-            ffdev_atomicdata_wo_bii = ffdev_atomicdata_wo_bii * &
-                                (xdm_atoms(gti)%v0ave / xdm_atoms(gti)%vave)**(1.0d0/3.0d0)
-            return
+    select case(bii_source)
+        case(AD_BII_IP)
+            call ffdev_utils_exit(DEV_ERR,1,'aii is not available from IP in ffdev_atomicdata_aii')
+        case(AD_BII_PBE0_def2QZVPP)
+            maxz = ATOMICDATA_RHO_MAX_Z
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'No implemented in ffdev_atomicdata_wo_bii')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii 0')
     end select
 
-end function ffdev_atomicdata_wo_bii
-
-! ==============================================================================
-! function ffdev_atomicdata_wo_aii
-! ==============================================================================
-
-real(DEVDP) function ffdev_atomicdata_wo_aii(gti)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-
-    implicit none
-    integer     :: gti
-    ! --------------------------------------------
-    integer     :: z
-    ! --------------------------------------------------------------------------
-
-    ffdev_atomicdata_wo_aii = 0.0 ! default a
-
     ! get Z
     z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. DENSOVERLAP_MAX_Z) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_wo_aii')
+    if( (z .le. 0) .and. (z .gt. maxz) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_aii')
+    end if
+    q = types(gti)%aveq
+
+    if( bii_mods .ne. AD_BII_MOD_BY_CHRG ) then
+        ! charge unmodified bii
+        select case(bii_source)
+            case(AD_BII_PBE0_def2QZVPP)
+                ffdev_atomicdata_aii = atomicdata_rho_a0ii(z)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii I')
+        end select
+
+        select case(bii_mods)
+            case(AD_BII_RAW)
+                ! nothing to be here
+            case(AD_BII_MOD_BY_XDM)
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported aii modification by XDM in ffdev_atomicdata_aii')
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii II')
+        end select
+        ! exit
+        return
     end if
 
-    ffdev_atomicdata_wo_aii = wfoverlap_a0ii(z)
+    ! charge modified aii
+    ! FIXME
 
-end function ffdev_atomicdata_wo_aii
+end function ffdev_atomicdata_aii
 
 ! ==============================================================================
 ! function ffdev_atomicdata_rcii
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atomicdata_rcii(gti,dens)
+real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
 
     use ffdev_utils
     use ffdev_parameters_dat
+    use ffdev_disp_dat
+    use ffdev_atomicdata_db
 
     implicit none
     integer     :: gti
-    real(DEVDP) :: dens
+    real(DEVDP) :: fa,fb
     ! --------------------------------------------
+    integer     :: maxz, z
     real(DEVDP) :: b, a
+    real(DEVDP) :: q
     ! --------------------------------------------------------------------------
 
-    b = ffdev_atomicdata_do_bii(gti)
-    a = ffdev_atomicdata_do_aii(gti)
+    ffdev_atomicdata_rcii = 0.0 ! 0.0 -> undefined
 
-    if( b .eq. 0.0d0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'No atodens_bii data for given gti in ffdev_atomicdata_rcii')
+    select case(rcii_source)
+        case(AD_RCII_VDW)
+            maxz = VDW_RADII_MAXZ
+    ! -------------
+        case(AD_RCII_XDM)
+            ! workaround - largest Z we have
+            maxz = ATOMICDATA_RHO_MAX_Z
+    ! -------------
+        case(AD_RCII_PBE0_def2QZVPP)
+            maxz = ATOMICDATA_RHO_MAX_Z
+    ! -------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii 0')
+    end select
+
+    ! get Z
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. maxz) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_rcii')
     end if
+    q = types(gti)%aveq
 
-    ffdev_atomicdata_rcii = (a - dens)/b
+    select case(rcii_source)
+        case(AD_RCII_VDW)
+            ffdev_atomicdata_rcii = fa * vdw_radii(z) + fb
+    ! -------------
+        case(AD_RCII_XDM)
+            if( .not. disp_data_loaded ) then
+                call ffdev_utils_exit(DEV_ERR,1,'no DISP data loaded for rcc in ffdev_atomicdata_rcii')
+            end if
+            ffdev_atomicdata_rcii = fa * disp_pairs(gti,gti)%rc + fb
+    ! -------------
+        case(AD_RCII_PBE0_def2QZVPP)
+            b = ffdev_atomicdata_bii(gti)
+            a = ffdev_atomicdata_aii(gti)
+            if( b .eq. 0.0d0 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'No ffdev_atomicdata_bii data for given gti in ffdev_atomicdata_rcii')
+            end if
+            ffdev_atomicdata_rcii = (a - fa)/b
+    ! -------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii II')
+    end select
 
 end function ffdev_atomicdata_rcii
 
 ! ==============================================================================
-! function ffdev_atomicdata_ip_bii
+! subroutine ffdev_atomicdata_bii_source_from_string
 ! ==============================================================================
 
-real(DEVDP) function ffdev_atomicdata_ip_bii(gti)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-    use ffdev_ip_db
-    use ffdev_xdm_dat
-
-    implicit none
-    integer         :: gti
-    ! --------------------------------------------
-    integer         :: z
-    ! --------------------------------------------------------------------------
-
-    z = types(gti)%z
-
-    if( (z .gt. ionization_potential_maxZ) .or. (z .le. 0) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_ip_bii!')
-    end if
-
-    ! in A^-1 => 1.0 / DEV_AU2A
-    ffdev_atomicdata_ip_bii = 2.0d0 * sqrt(2.0d0 * ionization_potential(z) * DEV_eV2AU) / DEV_AU2A
-
-    select case(atomoverlap_mods)
-        case(AO_MODS_PLAIN)
-            return
-        case(AO_MODS_BY_XDM)
-            ! XDM mod, DOI: 10.1021/ct1001494
-            ffdev_atomicdata_ip_bii = ffdev_atomicdata_ip_bii * &
-                                (xdm_atoms(gti)%v0ave / xdm_atoms(gti)%vave)**(1.0d0/3.0d0)
-            return
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'No implemented in ffdev_atomicdata_ip_bii')
-    end select
-
-end function ffdev_atomicdata_ip_bii
-
-! ==============================================================================
-! subroutine ffdev_atomicdata_source_from_string
-! ==============================================================================
-
-integer function ffdev_atomicdata_source_from_string(string)
+integer function ffdev_atomicdata_bii_source_from_string(string)
 
     use ffdev_utils
 
@@ -305,19 +338,21 @@ integer function ffdev_atomicdata_source_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
+        case('IP')
+            ffdev_atomicdata_bii_source_from_string = AD_BII_IP
         case('PBE0/def2-QZVPP')
-            ffdev_atomicdata_source_from_string = AO_PBE0_def2QZVPP
+            ffdev_atomicdata_bii_source_from_string = AD_BII_PBE0_def2QZVPP
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_source_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_bii_source_from_string!')
     end select
 
-end function ffdev_atomicdata_source_from_string
+end function ffdev_atomicdata_bii_source_from_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_source_to_string
+! subroutine ffdev_atomicdata_bii_source_to_string
 ! ==============================================================================
 
-character(80) function ffdev_atomicdata_source_to_string(mode)
+character(80) function ffdev_atomicdata_bii_source_to_string(mode)
 
     use ffdev_utils
 
@@ -326,13 +361,115 @@ character(80) function ffdev_atomicdata_source_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(AO_PBE0_def2QZVPP)
-            ffdev_atomicdata_source_to_string = 'PBE0/def2-QZVPP'
+        case(AD_BII_IP)
+            ffdev_atomicdata_bii_source_to_string = 'IP'
+        case(AD_BII_PBE0_def2QZVPP)
+            ffdev_atomicdata_bii_source_to_string = 'PBE0/def2-QZVPP'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_source_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii_source_to_string!')
     end select
 
-end function ffdev_atomicdata_source_to_string
+end function ffdev_atomicdata_bii_source_to_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_bii_mods_from_string
+! ==============================================================================
+
+integer function ffdev_atomicdata_bii_mods_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('RAW')
+            ffdev_atomicdata_bii_mods_from_string = AD_BII_RAW
+        case('XDM')
+            ffdev_atomicdata_bii_mods_from_string = AD_BII_MOD_BY_XDM
+        case('CHARGE')
+            ffdev_atomicdata_bii_mods_from_string = AD_BII_MOD_BY_CHRG
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_bii_mods_from_string!')
+    end select
+
+end function ffdev_atomicdata_bii_mods_from_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_bii_mods_to_string
+! ==============================================================================
+
+character(80) function ffdev_atomicdata_bii_mods_to_string(mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: mode
+    ! --------------------------------------------------------------------------
+
+    select case(mode)
+        case(AD_BII_RAW)
+            ffdev_atomicdata_bii_mods_to_string = 'RAW'
+        case(AD_BII_MOD_BY_XDM)
+            ffdev_atomicdata_bii_mods_to_string = 'XDM'
+        case(AD_BII_MOD_BY_CHRG)
+            ffdev_atomicdata_bii_mods_to_string = 'CHARGE'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii_mods_to_string!')
+    end select
+
+end function ffdev_atomicdata_bii_mods_to_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_rcii_source_from_string
+! ==============================================================================
+
+integer function ffdev_atomicdata_rcii_source_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('VDW')
+            ffdev_atomicdata_rcii_source_from_string = AD_RCII_VDW
+        case('XDM')
+            ffdev_atomicdata_rcii_source_from_string = AD_RCII_XDM
+        case('PBE0/def2-QZVPP')
+            ffdev_atomicdata_rcii_source_from_string = AD_RCII_PBE0_def2QZVPP
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_rcii_source_from_string!')
+    end select
+
+end function ffdev_atomicdata_rcii_source_from_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_rcii_source_to_string
+! ==============================================================================
+
+character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: mode
+    ! --------------------------------------------------------------------------
+
+    select case(mode)
+        case(AD_RCII_VDW)
+            ffdev_atomicdata_rcii_source_to_string = 'VDW'
+        case(AD_RCII_XDM)
+            ffdev_atomicdata_rcii_source_to_string = 'XDM'
+        case(AD_RCII_PBE0_def2QZVPP)
+            ffdev_atomicdata_rcii_source_to_string = 'PBE0/def2-QZVPP (bii/aii)'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii_source_to_string!')
+    end select
+
+end function ffdev_atomicdata_rcii_source_to_string
 
 ! ------------------------------------------------------------------------------
 

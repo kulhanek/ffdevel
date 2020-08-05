@@ -21,39 +21,29 @@ use ffdev_constants
 use ffdev_variables
 
 ! ------------------------------------------------------------------------------
-! density overlap - source data methods
-integer,parameter   :: AO_PBE0_def2QZVPP    = 1
+! bii source
+integer,parameter   :: AD_BII_IP                = 1
+integer,parameter   :: AD_BII_PBE0_def2QZVPP    = 2
 
-! modificators
-integer,parameter   :: AO_MODS_PLAIN        = 1
-integer,parameter   :: AO_MODS_BY_XDM       = 2
+! bii modificators
+integer,parameter   :: AD_BII_RAW               = 1     ! raw data
+integer,parameter   :: AD_BII_MOD_BY_XDM        = 2     ! modified by XDM volumes
+integer,parameter   :: AD_BII_MOD_BY_CHRG       = 3     ! modified by charge
+
+! setup bii
+integer             :: bii_source   = AD_BII_IP
+integer             :: bii_mods     = AD_BII_RAW
 
 ! ------------------------------------------------------------------------------
-! setup
-
-integer             :: atomoverlap_source   = AO_PBE0_def2QZVPP
-integer             :: atomoverlap_mods     = AO_MODS_PLAIN
-
 ! ------------------------------------------------------------------------------
-! databases
 
-! overlap of electron densities of isolated atoms ------------------------------
+! rcii source
+integer,parameter   :: AD_RCII_VDW              = 1
+integer,parameter   :: AD_RCII_XDM              = 2
+integer,parameter   :: AD_RCII_PBE0_def2QZVPP   = 3
 
-! model log(Sij) =  a0 + log(1.0+b0*R+(b0*R)**2/3.0) - b0*R
-
-integer,parameter   :: DENSOVERLAP_MAX_Z = 86
-
-real(DEVDP)     :: densoverlap_b0ii(1:DENSOVERLAP_MAX_Z)
-real(DEVDP)     :: densoverlap_a0ii(1:DENSOVERLAP_MAX_Z)
-
-! overlap of WFs of isolated atoms ---------------------------------------------
-
-! model log(Sij^2/R) = a0 + 2.0*log(1.0+b0*R/2.0+(b0*R)**2/12.0) -log(R)  - b0*R
-
-integer,parameter   :: WFOVERLAP_MAX_Z = 86
-
-real(DEVDP)     :: wfoverlap_b0ii(1:WFOVERLAP_MAX_Z)
-real(DEVDP)     :: wfoverlap_a0ii(1:WFOVERLAP_MAX_Z)
+! setup bii
+integer             :: rcii_source   = AD_RCII_XDM
 
 ! ------------------------------------------------------------------------------
 

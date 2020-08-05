@@ -1343,47 +1343,6 @@ subroutine ffdev_topology_gen_sapt_list_for_refs(top,nrefs,natomsrefs)
 
 end subroutine ffdev_topology_gen_sapt_list_for_refs
 
-!! ==============================================================================
-!! subroutine ffdev_topology_gen_sapt_list_for_probes
-!! ==============================================================================
-!
-!subroutine ffdev_topology_gen_sapt_list_for_probes(top)
-!
-!    use ffdev_utils
-!    use ffdev_topology_utils
-!
-!    implicit none
-!    type(TOPOLOGY)  :: top
-!    ! --------------------------------------------
-!    integer         :: i,j,ip,alloc_status
-!    ! --------------------------------------------------------------------------
-!
-!    if( top%probe_size .le. 0 ) return        !
-!    if( top%sapt_size .gt. 0 ) return
-!
-!    ! calculate size of SAPT list
-!    top%sapt_size = (top%natoms - top%probe_size)*top%probe_size
-!
-!    allocate(top%sapt_list(top%sapt_size), stat = alloc_status)
-!    if( alloc_status .ne. 0 ) then
-!        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for MMSAPT in ffdev_topology_gen_sapt_list_for_probes!')
-!    end if
-!
-!    ip = 1
-!    do i=1,top%natoms - top%probe_size
-!        do j=top%natoms - top%probe_size+1,top%natoms
-!            top%sapt_list(ip)%ai    = i
-!            top%sapt_list(ip)%aj    = j
-!            top%sapt_list(ip)%dt    = 0
-!            top%sapt_list(ip)%nbt   = ffdev_topology_find_nbtype_by_aindex(top,i,j)
-!            top%sapt_list(ip)%nbtii = ffdev_topology_find_nbtype_by_aindex(top,i,i)
-!            top%sapt_list(ip)%nbtjj = ffdev_topology_find_nbtype_by_aindex(top,j,j)
-!            ip = ip + 1
-!        end do
-!    end do
-!
-!end subroutine ffdev_topology_gen_sapt_list_for_probes
-
 ! ==============================================================================
 ! subroutine ffdev_topology_nb_mode_to_string
 ! ==============================================================================
@@ -1535,7 +1494,6 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_xdm_dat
     use ffdev_disp_dat
     use ffdev_atomicdata
-    use ffdev_ip_db
     use ffdev_topology_exp
     use ffdev_topology_pen
 
