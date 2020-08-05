@@ -48,7 +48,6 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintPBPnlErrorSummary)
 
         write(DEV_OUT,145) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
-        write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
         write(DEV_OUT,165) prmfile_onoff(PBPNLIncludeProbes)
 
         write(DEV_OUT,123) PBPnlErrorWeight
@@ -74,13 +73,6 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
         write(DEV_OUT,140) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
     else
         write(DEV_OUT,145) ffdev_err_pbpnl_control_mode_to_string(PBPNLMode)
-    end if
-
-    if( prmfile_get_string_by_key(fin,'source', string)) then
-        PBPNLSource = ffdev_err_pbpnl_control_source_from_string(string)
-        write(DEV_OUT,150) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
-    else
-        write(DEV_OUT,155) ffdev_err_pbpnl_control_source_to_string(PBPNLSource)
     end if
 
     if( prmfile_get_logical_by_key(fin,'probes', PBPNLIncludeProbes)) then
@@ -126,63 +118,7 @@ subroutine ffdev_err_pbpnl_ctrl(fin)
 140  format ('PB penalty mode (mode)                 = ',a)
 145  format ('PB penalty mode (mode)                 = ',a27,'   (default)')
 
-150  format ('PB source (source)                     = ',a)
-155  format ('PB source (source)                     = ',a27,'   (default)')
-
 end subroutine ffdev_err_pbpnl_ctrl
-
-! ==============================================================================
-! subroutine ffdev_err_pbpnl_control_source_to_string
-! ==============================================================================
-
-character(80) function ffdev_err_pbpnl_control_source_to_string(source)
-
-    use ffdev_utils
-    use ffdev_err_pbpnl_dat
-
-    implicit none
-    integer  :: source
-    ! --------------------------------------------------------------------------
-
-    select case(source)
-        case(PBPNL_SOURCE_DO)
-            ffdev_err_pbpnl_control_source_to_string = 'DO - Density overlaps'
-        case(PBPNL_SOURCE_IP)
-            ffdev_err_pbpnl_control_source_to_string = 'IP - Ionization potentials'
-        case(PBPNL_SOURCE_WO)
-            ffdev_err_pbpnl_control_source_to_string = 'WO - Wavefunction overlaps'
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pbpnl_control_source_to_string!')
-    end select
-
-end function ffdev_err_pbpnl_control_source_to_string
-
-! ==============================================================================
-! subroutine ffdev_err_pbpnl_control_source_from_string
-! ==============================================================================
-
-integer function ffdev_err_pbpnl_control_source_from_string(string)
-
-    use ffdev_utils
-    use ffdev_err_pbpnl_dat
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('DO')
-            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_DO
-        case('IP')
-            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_IP
-        case('WO')
-            ffdev_err_pbpnl_control_source_from_string = PBPNL_SOURCE_WO
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
-                                            // '" in ffdev_err_pbpnl_control_source_from_string!')
-    end select
-
-end function ffdev_err_pbpnl_control_source_from_string
 
 ! ==============================================================================
 ! subroutine ffdev_err_pbpnl_control_mode_to_string

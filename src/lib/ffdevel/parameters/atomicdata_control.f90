@@ -37,32 +37,42 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: exec
     character(MAX_PATH)         :: buffer
-    integer                     :: lsource
+    integer                     :: lbuff
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
     if( .not. prmfile_open_section(fin,'atomicdata') ) then
-        write(DEV_OUT,115) ffdev_atomicdata_source_to_string(atomoverlap_source)
-        write(DEV_OUT,125) ffdev_atomicdata_mods_to_string(atomoverlap_mods)
+        write(DEV_OUT,115) ffdev_atomicdata_bii_source_to_string(bii_source)
+        write(DEV_OUT,125) ffdev_atomicdata_bii_mods_to_string(bii_mods)
+        write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
         call ffdev_atomicdata_update_db
         return
     end if
 
-    if( prmfile_get_string_by_key(fin,'source', buffer)) then
-        lsource = ffdev_atomicdata_source_from_string(buffer)
-        write(DEV_OUT,110) ffdev_atomicdata_source_to_string(lsource)
-        if( exec ) atomoverlap_source = lsource
+    if( prmfile_get_string_by_key(fin,'bii_source', buffer)) then
+        lbuff = ffdev_atomicdata_bii_source_from_string(buffer)
+        write(DEV_OUT,110) ffdev_atomicdata_bii_source_to_string(lbuff)
+        if( exec ) bii_source = lbuff
     else
-        write(DEV_OUT,115) ffdev_atomicdata_source_to_string(atomoverlap_source)
+        write(DEV_OUT,115) ffdev_atomicdata_bii_source_to_string(bii_source)
     end if
 
-    if( prmfile_get_string_by_key(fin,'mods', buffer)) then
-        atomoverlap_mods = ffdev_atomicdata_mods_from_string(buffer)
-        write(DEV_OUT,120) ffdev_atomicdata_mods_to_string(atomoverlap_mods)
+    if( prmfile_get_string_by_key(fin,'bii_mods', buffer)) then
+        lbuff = ffdev_atomicdata_bii_mods_from_string(buffer)
+        write(DEV_OUT,120) ffdev_atomicdata_bii_mods_to_string(lbuff)
+        if( exec )  bii_mods = lbuff
     else
-        write(DEV_OUT,125) ffdev_atomicdata_mods_to_string(atomoverlap_mods)
+        write(DEV_OUT,125) ffdev_atomicdata_bii_mods_to_string(bii_mods)
+    end if
+
+    if( prmfile_get_string_by_key(fin,'rcii_source', buffer)) then
+        lbuff = ffdev_atomicdata_rcii_source_from_string(buffer)
+        write(DEV_OUT,130) ffdev_atomicdata_rcii_source_to_string(lbuff)
+        if( exec ) rcii_source = lbuff
+    else
+        write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
     end if
 
     call ffdev_atomicdata_update_db
@@ -70,61 +80,14 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
 
  10 format('== [atomicdata] ================================================================')
 
-110  format ('Atom overlap source (source)           = ',a29)
-115  format ('Atom overlap source (source)           = ',a29,' (default)')
-120  format ('Bii modification mode (mods)           = ',a29)
-125  format ('Bii modification mode (mods)           = ',a29,' (default)')
+110  format ('Bii source  (bii_source)               = ',a29)
+115  format ('Bii source  (bii_source)               = ',a29,' (default)')
+120  format ('Bii modification mode (bii_mods)       = ',a29)
+125  format ('Bii modification mode (bii_mods)       = ',a29,' (default)')
+130  format ('Rcii source (rcii_source)              = ',a29)
+135  format ('Rcii source (rcii_source)              = ',a29,' (default)')
 
 end subroutine ffdev_atomicdata_ctrl
-
-! ==============================================================================
-! subroutine ffdev_err_papnl_control_source_to_string
-! ==============================================================================
-
-character(80) function ffdev_atomicdata_mods_to_string(source)
-
-    use ffdev_utils
-    use ffdev_atomicdata_dat
-
-    implicit none
-    integer  :: source
-    ! --------------------------------------------------------------------------
-
-    select case(source)
-        case(AO_MODS_PLAIN)
-            ffdev_atomicdata_mods_to_string = 'PLAIN - Raw data'
-        case(AO_MODS_BY_XDM)
-            ffdev_atomicdata_mods_to_string = 'XDM - modified by XDM volumes'
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_mods_to_string!')
-    end select
-
-end function ffdev_atomicdata_mods_to_string
-
-! ==============================================================================
-! subroutine ffdev_atomicdata_mods_from_string
-! ==============================================================================
-
-integer function ffdev_atomicdata_mods_from_string(string)
-
-    use ffdev_utils
-    use ffdev_atomicdata_dat
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('PLAIN')
-            ffdev_atomicdata_mods_from_string = AO_MODS_PLAIN
-        case('XDM')
-            ffdev_atomicdata_mods_from_string = AO_MODS_BY_XDM
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) &
-                                            // '" in ffdev_atomicdata_mods_from_string!')
-    end select
-
-end function ffdev_atomicdata_mods_from_string
 
 ! ------------------------------------------------------------------------------
 

@@ -37,7 +37,6 @@ subroutine ffdev_err_pbpnl_init
     EnablePBPnlError        = .false.
     PrintPBPnlErrorSummary  = .false.
     PBPNLMode               = PBPNL_MODE_ALL
-    PBPNLSource             = PBPNL_SOURCE_DO
     PBPNLIncludeProbes      = .false.
     PBPnlErrorWeight        = 1.0
     PBPnlErrorWeight1       = 1.0
@@ -95,16 +94,7 @@ subroutine ffdev_err_pbpnl_error(error)
 
         ! write(*,*) trim(types(params(i)%ti)%name), PBPNLIncludeProbes, types(params(i)%ti)%probe
 
-        select case(PBPNLSource)
-            case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_atomicdata_do_bii(params(i)%ti)
-            case(PBPNL_SOURCE_WO)
-                pb0 = ffdev_atomicdata_wo_bii(params(i)%ti)
-            case(PBPNL_SOURCE_IP)
-                pb0 = ffdev_atomicdata_ip_bii(params(i)%ti)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
-        end select
+        pb0 = ffdev_atomicdata_bii(params(i)%ti)
 
         select case(PBPnlFce)
             case(PBPNL_QUADRATIC)
@@ -139,7 +129,6 @@ subroutine ffdev_err_pbpnl_summary()
     write(DEV_OUT,*)
     write(DEV_OUT,5)
     write(DEV_OUT,7)  trim(ffdev_err_pbpnl_control_mode_to_string(PBPNLMode))
-    write(DEV_OUT,8)  trim(ffdev_err_pbpnl_control_source_to_string(PBPNLSource))
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
@@ -170,16 +159,7 @@ subroutine ffdev_err_pbpnl_summary()
             w = PBPnlErrorWeight1
         end if
 
-        select case(PBPNLSource)
-            case(PBPNL_SOURCE_DO)
-                pb0 = ffdev_atomicdata_do_bii(params(i)%ti)
-            case(PBPNL_SOURCE_WO)
-                pb0 = ffdev_atomicdata_wo_bii(params(i)%ti)
-            case(PBPNL_SOURCE_IP)
-                pb0 = ffdev_atomicdata_ip_bii(params(i)%ti)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented source in ffdev_err_pbpnl_error!')
-        end select
+        pb0 = ffdev_atomicdata_bii(params(i)%ti)
 
         select case(PBPnlFce)
             case(PBPNL_QUADRATIC)
@@ -199,7 +179,6 @@ subroutine ffdev_err_pbpnl_summary()
 
  5 format('# Pauli Repulsion PB Penalties')
  7 format('# PBPNL Mode: ',A)
- 8 format('# PB Source:  ',A)
 10 format('# ID Type    PB(Tab)    PB(Opt)       Diff     Weight   Penalty')
 20 format('# -- ---- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,F10.4,1X,F10.4,1X,F10.5,1X,F10.5,1X,F10.5)

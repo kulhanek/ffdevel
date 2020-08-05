@@ -480,12 +480,11 @@ subroutine ffdev_parameters_reinit()
                 select case(pen_pa_mode)
                     case(PEN_PA_FREEOPT)
                         use_pen_pa = .true.
-                    case(PEN_PA_COUPLED,PEN_PA_CONST,PEN_PA_DO,PEN_PA_WO)
+                    case(PEN_PA_ADBII)
                         ! nothing to be here
-                    case(PEN_PA_RDO)
-                        use_pen_fc = .true.
-                    case(PEN_PA_DRC)
-                        ! nothing to be here
+                    case(PEN_PA_ADRII)
+                        use_damp_fa = .true.
+                        use_damp_fb = .true.
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'PEN_PA_MODE mode not implemented in ffdev_parameters_reinit!')
                 end select
@@ -509,7 +508,7 @@ subroutine ffdev_parameters_reinit()
             select case(exp_pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
-                 case(EXP_PB_DO,EXP_PB_WO,EXP_PB_IP)
+                 case(EXP_PB_ADBII)
                     ! nothing
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
@@ -531,27 +530,23 @@ subroutine ffdev_parameters_reinit()
 
         case(NB_VDW_EXP_DISPBJ)
             select case(dampbj_mode)
-                case(DAMP_BJ_CONST)
-                    use_damp_fa     = .true.
                 case(DAMP_BJ_FREEOPT)
                     use_vdw_rc      = .true.
-                case(DAMP_BJ_DRC)
+                case(DAMP_BJ_CONST)
+                    use_damp_fa     = .true.
+                case(DAMP_BJ_ADRII)
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
-                case(DAMP_BJ_RDO)
-                    use_damp_fa     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'BJ damp mode not implemented in ffdev_parameters_reinit!')
             end select
 
         case(NB_VDW_EXP_DISPTT)
             select case(damptt_mode)
-                case(DAMP_TT_CONST,DAMP_TT_COUPLED)
-                    use_damp_tb     = .true.
-                case(DAMP_TT_DO,DAMP_TT_WO,DAMP_TT_IP)
-                    use_damp_tb     = .true.
                 case(DAMP_TT_FREEOPT)
                     use_vdw_tb      = .true.
+                case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_ADBII)
+                    use_damp_tb     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select

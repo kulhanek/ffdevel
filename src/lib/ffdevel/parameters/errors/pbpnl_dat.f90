@@ -27,12 +27,6 @@ integer,parameter   :: PBPNL_MODE_ALL      = 1
 integer,parameter   :: PBPNL_MODE_BURIED   = 2
 integer,parameter   :: PBPNL_MODE_NOH      = 3
 
-! PB source
-integer,parameter   :: PBPNL_SOURCE_DO     = 1     ! Density overlap
-integer,parameter   :: PBPNL_SOURCE_WO     = 2     ! Wavefunction overlap
-integer,parameter   :: PBPNL_SOURCE_IP     = 3     ! Ionization potential
-
-
 ! restraint form
 integer,parameter   :: PBPNL_QUADRATIC     = 1
 
@@ -42,7 +36,6 @@ integer,parameter   :: PBPNL_QUADRATIC     = 1
 logical     :: EnablePBPnlError
 logical     :: PrintPBPnlErrorSummary
 integer     :: PBPNLMode
-integer     :: PBPNLSource
 logical     :: PBPNLIncludeProbes
 
 real(DEVDP) :: PBPnlErrorWeight     ! global
