@@ -25,11 +25,9 @@ use ffdev_variables
 ! ==== dispersion
 ! ==============================================================================
 
-integer,parameter   :: NB_CX_NONE       = 0
 integer,parameter   :: NB_CX_XDM        = 1
 integer,parameter   :: NB_CX_MMD3       = 2
 
-integer,parameter   :: NB_RC_NONE       = 0
 integer,parameter   :: NB_RC_XDM        = 1
 integer,parameter   :: NB_RC_XDM_POL    = 2
 integer,parameter   :: NB_RC_XDM_VOL    = 3
@@ -45,8 +43,8 @@ end type DISP_PAIR_TYPE
 
 type(DISP_PAIR_TYPE),allocatable    :: disp_pairs(:,:)      ! ntypes x ntypes - global types
 logical                             :: disp_data_loaded     = .false.
-integer                             :: cx_source            = NB_CX_NONE
-integer                             :: rc_source            = NB_RC_NONE
+integer                             :: cx_source            = NB_CX_MMD3
+integer                             :: rc_source            = NB_RC_MMD3
 
 
 end module ffdev_disp_dat

@@ -22,28 +22,32 @@ use ffdev_variables
 
 ! ------------------------------------------------------------------------------
 ! bii source
-integer,parameter   :: AD_BII_IP                = 1
-integer,parameter   :: AD_BII_PBE0_def2QZVPP    = 2
+integer,parameter   :: AD_BII_IPEA              = 1     ! ionization potentials / electron affinities
+integer,parameter   :: AD_BII_ATDENS            = 2     ! spherically symmetrized atom densities
 
 ! bii modificators
 integer,parameter   :: AD_BII_RAW               = 1     ! raw data
 integer,parameter   :: AD_BII_MOD_BY_XDM        = 2     ! modified by XDM volumes
 integer,parameter   :: AD_BII_MOD_BY_CHRG       = 3     ! modified by charge
 
+! atdens source
+integer,parameter   :: AD_ATDENS_PBE0_def2QZVPP = 1     ! PBE0/def2-QZVPP
+
 ! setup bii
-integer             :: bii_source   = AD_BII_IP
-integer             :: bii_mods     = AD_BII_RAW
+integer             :: bii_source       = AD_BII_IPEA
+integer             :: bii_mods         = AD_BII_RAW
+integer             :: atdens_source    = AD_ATDENS_PBE0_def2QZVPP
 
 ! ------------------------------------------------------------------------------
 ! ------------------------------------------------------------------------------
 
 ! rcii source
 integer,parameter   :: AD_RCII_VDW              = 1
-integer,parameter   :: AD_RCII_XDM              = 2
-integer,parameter   :: AD_RCII_PBE0_def2QZVPP   = 3
+integer,parameter   :: AD_RCII_DISP             = 2
+integer,parameter   :: AD_RCII_ATDENS           = 3
 
 ! setup bii
-integer             :: rcii_source   = AD_RCII_XDM
+integer             :: rcii_source   = AD_RCII_DISP
 
 ! ------------------------------------------------------------------------------
 

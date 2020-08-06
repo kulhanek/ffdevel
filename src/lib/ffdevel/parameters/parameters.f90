@@ -81,9 +81,9 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 6 NB: eps, r0, pa, pb, rc, tb
         maxnparams = maxnparams + 2*sets(i)%top%natom_types     ! pen_pa, pen_pb
     end do
-    maxnparams = maxnparams + 14 ! ele_qscale, glb_iscee
+    maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
                                  ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, pauli_k
-                                 ! pen_fa, pen_fb, pen_fc
+                                 ! pen_fa, pen_fb
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
 
@@ -110,7 +110,6 @@ subroutine ffdev_parameters_init()
     call ffdev_nb2nb_init_nbtypes
     call ffdev_parameters_print_types()
     call ffdev_parameters_print_charge_stat()
-    call ffdev_atomicdata_print()
     call ffdev_parameters_print_parameters(PARAMS_SUMMARY_FULL)
 
   5 format('Number of sets (topologies)              = ',I6)
@@ -138,7 +137,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc, use_vdw_tb
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_pauli_k
-    logical     :: use_pen_pa, use_pen_pb, use_pen_fa, use_pen_fb, use_pen_fc
+    logical     :: use_pen_pa, use_pen_pb, use_pen_fa, use_pen_fb
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -462,7 +461,6 @@ subroutine ffdev_parameters_reinit()
 
     use_pen_fa      = .false.
     use_pen_fb      = .false.
-    use_pen_fc      = .false.
 
 ! common setup
     select case(nb_mode)
@@ -786,21 +784,6 @@ subroutine ffdev_parameters_reinit()
         nparams = nparams + 1
         params(nparams)%value = pen_fb
         params(nparams)%realm = REALM_PEN_FB
-        params(nparams)%enabled = .false.
-        params(nparams)%identity = 0
-        params(nparams)%pn    = 0
-        params(nparams)%ids(:) = 0
-        params(nparams)%ti   = 0
-        params(nparams)%tj   = 0
-        params(nparams)%tk   = 0
-        params(nparams)%tl   = 0
-    end if
-
-    if( use_pen_fc ) then
-        ! =====================
-        nparams = nparams + 1
-        params(nparams)%value = pen_fc
-        params(nparams)%realm = REALM_PEN_FC
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
@@ -1239,7 +1222,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                 end if
            case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB, &
                 REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10, &
-                REALM_GLB_SCEE,REALM_GLB_SCNB,REALM_PAULI_K,REALM_PEN_FA,REALM_PEN_FB,REALM_PEN_FC)
+                REALM_GLB_SCEE,REALM_GLB_SCNB,REALM_PAULI_K,REALM_PEN_FA,REALM_PEN_FB)
                 find_parameter_by_ids = i
                 return
             case default
@@ -2270,8 +2253,6 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_PEN_FA
         case('pen_fb')
             ffdev_parameters_get_realmid = REALM_PEN_FB
-        case('pen_fc')
-            ffdev_parameters_get_realmid = REALM_PEN_FC
 
         case('glb_scee')
             ffdev_parameters_get_realmid = REALM_GLB_SCEE
@@ -2352,8 +2333,6 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'pen_fa'
         case(REALM_PEN_FB)
             ffdev_parameters_get_realm_name = 'pen_fb'
-        case(REALM_PEN_FC)
-            ffdev_parameters_get_realm_name = 'pen_fc'
 
         case(REALM_DAMP_FA)
             ffdev_parameters_get_realm_name = 'damp_fa'
@@ -2425,7 +2404,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_GLB_SCEE,REALM_GLB_SCNB)
             ! nothing to do
-        case(REALM_PEN_PA,REALM_PEN_PB,REALM_PEN_FA,REALM_PEN_FB,REALM_PEN_FC)
+        case(REALM_PEN_PA,REALM_PEN_PB,REALM_PEN_FA,REALM_PEN_FB)
             ! nothing to do
         case(REALM_PAULI_K)
             ! nothing to do
@@ -2863,8 +2842,6 @@ subroutine ffdev_parameters_to_tops
                 pen_fa = params(i)%value
             case(REALM_PEN_FB)
                 pen_fb = params(i)%value
-            case(REALM_PEN_FC)
-                pen_fc = params(i)%value
 
             case(REALM_ELE_SQ)
                 ele_qscale = params(i)%value
@@ -3073,8 +3050,6 @@ subroutine ffdev_params_reset_ranges
      MaxPenFA     =      8.0d0
      MinPenFB     =      0.5d0
      MaxPenFB     =      1.0d0
-     MinPenFC     =      0.0d0
-     MaxPenFC     =    -20.0d0
 
 ! Pauli repulsion K factor
      MinPauliK    =       5.0d0
@@ -3224,8 +3199,6 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinPenFA
         case(REALM_PEN_FB)
             ffdev_params_get_lower_bound = MinPenFB
-        case(REALM_PEN_FC)
-            ffdev_params_get_lower_bound = MinPenFC
 
         case(REALM_DISP_S6)
             ffdev_params_get_lower_bound = MinDispS6
@@ -3323,8 +3296,6 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
             MinPenFA = mvalue
         case(REALM_PEN_FB)
             MinPenFB = mvalue
-        case(REALM_PEN_FC)
-            MinPenFC = mvalue
 
         case(REALM_DISP_S6)
             MinDispS6 = mvalue
@@ -3449,8 +3420,6 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxPenFA
         case(REALM_PEN_FB)
             ffdev_params_get_upper_bound = MaxPenFB
-        case(REALM_PEN_FC)
-            ffdev_params_get_upper_bound = MaxPenFC
 
         case(REALM_DISP_S6)
             ffdev_params_get_upper_bound = MaxDispS6
@@ -3548,8 +3517,6 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxPenFA = mvalue
         case(REALM_PEN_FB)
             MaxPenFB = mvalue
-        case(REALM_PEN_FC)
-            MaxPenFC = mvalue
 
         case(REALM_DISP_S6)
             MaxDispS6 = mvalue

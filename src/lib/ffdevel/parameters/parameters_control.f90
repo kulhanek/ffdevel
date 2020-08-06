@@ -799,7 +799,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB)
                 read(line,*,err=100,end=100) realm, lvalue
-            case(REALM_PEN_FA,REALM_PEN_FB,REALM_PEN_FC)
+            case(REALM_PEN_FA,REALM_PEN_FB)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
                 read(line,*,err=100,end=100) realm, lvalue

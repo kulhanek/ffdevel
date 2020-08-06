@@ -37,6 +37,8 @@ program ffdev_optimize_program
     use ffdev_atomicdata_control
     use ffdev_nb2nb_control
     use ffdev_parallel
+    use ffdev_atomicdata
+    use ffdev_disp
 
     implicit none
     character(len=MAX_PATH)     :: ctrlname     ! input control file name
@@ -151,20 +153,27 @@ program ffdev_optimize_program
     end if
 
     ! generate parameters from target topologies
-    call ffdev_parameters_init()
+    call ffdev_parameters_init
 
     ! finalize topologies in sets
-    call ffdev_targetset_init_pts()
+    call ffdev_targetset_init_pts
 
     ! run mmd3
     call ffdev_mmd3_init
-    call ffdev_mmd3_run_stat()
+    call ffdev_mmd3_run_stat
 
     ! run XDM stat if data available
-    call ffdev_xdm_run_stat()
+    call ffdev_xdm_run_stat
+
+    ! init DISP
+    call ffdev_disp_update_db
+
+    ! print atomic database
+    call ffdev_atomicdata_update_db
+    call ffdev_atomicdata_print
 
     ! buried atoms
-    call ffdev_buried_run_stat()
+    call ffdev_buried_run_stat
 
 ! ==============================================================================
 ! INITIAL PART - check for syntax errors in control file

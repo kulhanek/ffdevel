@@ -71,7 +71,6 @@ integer,parameter       :: REALM_PEN_PB     = 31
 
 integer,parameter       :: REALM_PEN_FA     = 32
 integer,parameter       :: REALM_PEN_FB     = 33
-integer,parameter       :: REALM_PEN_FC     = 34
 
 ! Pauli repulsion K factor
 integer,parameter       :: REALM_PAULI_K    = 35
@@ -246,8 +245,6 @@ real(DEVDP)     :: MinPenFA
 real(DEVDP)     :: MaxPenFA
 real(DEVDP)     :: MinPenFB
 real(DEVDP)     :: MaxPenFB
-real(DEVDP)     :: MinPenFC
-real(DEVDP)     :: MaxPenFC
 
 ! Pauli repulsion K factor
 real(DEVDP)     :: MinPauliK

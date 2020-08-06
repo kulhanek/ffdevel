@@ -30,6 +30,7 @@ real(DEVDP)             :: SAPTEleErrorWeight
 real(DEVDP)             :: SAPTRepErrorWeight
 real(DEVDP)             :: SAPTDispErrorWeight
 
+logical                 :: SAPTErrorIndToEle   ! include induction to ele, mutually exclusive with SAPTErrorIndToRep
 logical                 :: SAPTErrorIndToRep   ! include induction to rep
 logical                 :: SAPTErrorPenToRep   ! include penetration energy to rep
 

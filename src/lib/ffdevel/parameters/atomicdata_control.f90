@@ -76,7 +76,9 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
     end if
 
     call ffdev_atomicdata_update_db
-    call ffdev_atomicdata_print
+    if( .not. exec ) then
+        call ffdev_atomicdata_print
+    end if
 
  10 format('== [atomicdata] ================================================================')
 
