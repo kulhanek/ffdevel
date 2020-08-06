@@ -50,6 +50,7 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,325) SAPTDispErrorWeight
 
         write(DEV_OUT,155) prmfile_onoff(SAPTErrorPenToRep)
+        write(DEV_OUT,165) prmfile_onoff(SAPTErrorIndToEle)
         write(DEV_OUT,145) prmfile_onoff(SAPTErrorIndToRep)
 
         return
@@ -94,6 +95,12 @@ subroutine ffdev_err_sapt_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(SAPTErrorIndToRep)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'indasele', SAPTErrorIndToEle)) then
+        write(DEV_OUT,160) prmfile_onoff(SAPTErrorIndToEle)
+    else
+        write(DEV_OUT,165) prmfile_onoff(SAPTErrorIndToEle)
+    end if
+
  10 format('=== [sapt] =====================================================================')
 
 110  format ('SAPT error (enabled)                   = ',a12)
@@ -108,11 +115,12 @@ subroutine ffdev_err_sapt_ctrl(fin)
 320  format ('SAPT error weight (weight_disp)        = ',f21.8)
 325  format ('SAPT error weight (weight_disp)        = ',f21.8,'         (default)')
 
-140  format ('Induction as repulsion                 = ',a12)
-145  format ('Induction as repulsion                 = ',a12,'                  (default)')
-150  format ('Penetration as repulsion               = ',a12)
-155  format ('Penetration as repulsion               = ',a12,'                  (default)')
-
+140  format ('Induction as repulsion (indasrep)      = ',a12)
+145  format ('Induction as repulsion (indasrep)      = ',a12,'                  (default)')
+160  format ('Induction as electrostatics (indasele) = ',a12)
+165  format ('Induction as electrostatics (indasele) = ',a12,'                  (default)')
+150  format ('Penetration as repulsion (penasrep)    = ',a12)
+155  format ('Penetration as repulsion (penasrep)    = ',a12,'                  (default)')
 
 end subroutine ffdev_err_sapt_ctrl
 

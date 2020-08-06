@@ -37,7 +37,7 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip,i,j,dt
-    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,pc,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,V_pe,er,pr,upe
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
@@ -93,20 +93,29 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
     ! repulsion
         pa   = top%nb_list(ip)%pa
         pb   = top%nb_list(ip)%pb
+        pc   = top%nb_list(ip)%pc
 
         select case(exp_mode)
             case(EXP_BM)
                 er   = pb*r
                 upe  = exp(-er)
                 V_aa = pa*upe
+        !------------
             case(EXP_DO)
                 er   = pb*r
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
+        !------------
             case(EXP_WO)
                 er   = pb*r
                 pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+                upe  = exp(-er)
+                V_aa = pa*pr*upe
+        !------------
+            case(EXP_SC)
+                er   = pb*r
+                pr   = r**pc
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
             case default
@@ -168,7 +177,7 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip,i,j
-    real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: pa,pb,pc,crgij,dxa1,dxa2,dxa3
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,V_pe,er,pr,upe
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
@@ -219,20 +228,29 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
     ! repulsion
         pa   = top%sapt_list(ip)%pa
         pb   = top%sapt_list(ip)%pb
+        pc   = top%sapt_list(ip)%pc
 
         select case(exp_mode)
             case(EXP_BM)
                 er   = pb*r
                 upe  = exp(-er)
                 V_aa = pa*upe
+        !------------
             case(EXP_DO)
                 er   = pb*r
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
+        !------------
             case(EXP_WO)
                 er   = pb*r
                 pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+                upe  = exp(-er)
+                V_aa = pa*pr*upe
+        !------------
+            case(EXP_SC)
+                er   = pb*r
+                pr   = r**pc
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
             case default
@@ -274,40 +292,86 @@ end subroutine ffdev_energy_sapt_EXP_DISPBJ
 ! subroutine ffdev_energy_nbpair_EXP_DISPBJ
 !===============================================================================
 
-real(DEVDP) function ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r)
+subroutine ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,include_pen,nbene)
 
     use ffdev_topology_dat
     use ffdev_utils
 
     implicit none
-    type(NB_PAIR)   :: nbpair
-    real(DEVDP)     :: r
+    type(NB_PAIR)           :: nbpair
+    real(DEVDP)             :: r
+    logical                 :: include_pen
+    type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------
-    real(DEVDP)     :: pa,pb
+    real(DEVDP)     :: pa,pb,pc
     real(DEVDP)     :: r2,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,er,pr,upe
+    real(DEVDP)     :: z1,z2,q1,q2,pepa1,pepa2,pepb1,pepb2,pee,V_pe,crgij,V_ee
+    real(DEVDP)     :: pfa1,pfb1,pfa2,pfb2
     ! --------------------------------------------------------------------------
+
+    nbene%ele_ene = 0.0
+    nbene%pen_ene = 0.0
+    nbene%rep_ene = 0.0
+    nbene%dis_ene = 0.0
+    nbene%tot_ene = 0.0
 
     ! calculate distances
     r2   = r**2
 
+! penetration energy
+    V_ee  = 0.0d0
+    V_pe  = 0.0d0
+    if( pen_enabled .and. include_pen ) then
+        crgij = nbpair%crgij
+        V_ee = crgij/r
+
+        z1      = nbpair%z1
+        q1      = nbpair%q1
+        pepa1   = nbpair%pepa1
+        pepb1   = nbpair%pepb1
+
+        z2      = nbpair%z2
+        q2      = nbpair%q2
+        pepa2   = nbpair%pepa2
+        pepb2   = nbpair%pepb2
+
+        pfa1 = 1.0d0 - exp(-pepa1*r)
+        pfb1 = 1.0d0 - exp(-pepb1*r)
+        pfa2 = 1.0d0 - exp(-pepa2*r)
+        pfb2 = 1.0d0 - exp(-pepb2*r)
+
+        pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
+             + (z1-q1)*(z2-q2)*pfb1*pfb2
+        V_pe = pee/r - V_ee
+    end if
+
 ! repulsion
     pa   = nbpair%pa
     pb   = nbpair%pb
+    pc   = nbpair%pc
 
     select case(exp_mode)
         case(EXP_BM)
             er   = pb*r
             upe  = exp(-er)
             V_aa = pa*upe
+    !------------
         case(EXP_DO)
             er   = pb*r
             pr   = 1.0d0 + er + er**2/3.0d0
             upe  = exp(-er)
             V_aa = pa*pr*upe
+    !------------
         case(EXP_WO)
             er   = pb*r
             pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+            upe  = exp(-er)
+            V_aa = pa*pr*upe
+    !------------
+        case(EXP_SC)
+            er   = pb*r
+            pr   = r**pc
             upe  = exp(-er)
             V_aa = pa*pr*upe
         case default
@@ -334,11 +398,13 @@ real(DEVDP) function ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r)
 
     V_bb = - c6*r6i - c8*r8i - c10*r10i
 
-    ! FIXME - what about penetration energy?
+    nbene%ele_ene = V_ee
+    nbene%pen_ene = V_pe
+    nbene%rep_ene = V_aa
+    nbene%dis_ene = V_bb
+    nbene%tot_ene = V_ee + V_pe + V_aa + V_bb
 
-    ffdev_energy_nbpair_EXP_DISPBJ = V_aa + V_bb
-
-end function ffdev_energy_nbpair_EXP_DISPBJ
+end subroutine ffdev_energy_nbpair_EXP_DISPBJ
 
 !===============================================================================
 ! subroutine ffdev_gradient_nb_EXP_DISPBJ
@@ -355,7 +421,7 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
     integer         :: ip,i,j,dt
-    real(DEVDP)     :: pa,pb,crgij,dxa1,dxa2,dxa3,r2a
+    real(DEVDP)     :: pa,pb,pc,crgij,dxa1,dxa2,dxa3,r2a
     real(DEVDP)     :: r2,r,r6,r8,r10,c6,c8,c10,rc6,rc8,rc10
     real(DEVDP)     :: V_aa,V_bb,r6i,r8i,r10i,V_ee,dva,inv_scnb,inv_scee
     real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,upe,V_pe
@@ -419,6 +485,7 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
    ! repulsion
         pa   = top%nb_list(ip)%pa
         pb   = top%nb_list(ip)%pb
+        pc   = top%nb_list(ip)%pc
 
         select case(exp_mode)
             case(EXP_BM)
@@ -441,6 +508,13 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
                 V_aa = pa*pr*upe
                 dvaa = V_aa*pb*r &
                      - r*pa*upe*(-r2a + 5.0d0/12.0d0*pb**2 + 2.0d0/12.0d0*pb**3*r + 3.0d0/144.0d0*pb**4 * r2)
+        !------------
+            case(EXP_SC)
+                er   = pb*r
+                pr   = r**pc
+                upe  = exp(-er)
+                V_aa = pa*pr*upe
+                dvaa = V_aa*pb*r  - pa*upe*pc*pr ! unoptimized: - pa*upe*pc*r**(pc-1.0d0)*r, extra r is because of r2a below
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
         end select

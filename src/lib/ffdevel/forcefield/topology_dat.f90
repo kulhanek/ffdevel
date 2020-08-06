@@ -117,14 +117,9 @@ type NB_PAIR
     ! acceleration data -  do not use for regular use
     ! these data are updated when nb_params_update .eqv. .true.
         real(DEVDP) ::  crgij       !
-        real(DEVDP) ::  pa
-        real(DEVDP) ::  pb
-        real(DEVDP) ::  c6
-        real(DEVDP) ::  c8
-        real(DEVDP) ::  c10
-        real(DEVDP) ::  rc6
-        real(DEVDP) ::  rc8
-        real(DEVDP) ::  rc10
+        real(DEVDP) ::  pa, pb, pc
+        real(DEVDP) ::  c6, c8, c10
+        real(DEVDP) ::  rc6, rc8, rc10
         real(DEVDP) ::  tb
     ! penetration energy
         real(DEVDP) ::  Z1,Z2
@@ -132,6 +127,16 @@ type NB_PAIR
         real(DEVDP) ::  pepa1,pepb1
         real(DEVDP) ::  pepa2,pepb2
 end type NB_PAIR
+
+! ------------------------------------------------------------------------------
+
+type NB_PAIR_ENERGY
+        real(DEVDP) :: tot_ene
+        real(DEVDP) :: ele_ene
+        real(DEVDP) :: pen_ene
+        real(DEVDP) :: rep_ene
+        real(DEVDP) :: dis_ene
+end type NB_PAIR_ENERGY
 
 ! ------------------------------------------------------------------------------
 
@@ -152,7 +157,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                ! atom types
     real(DEVDP)         :: eps, r0              ! LJ parameters
-    real(DEVDP)         :: PA, PB               ! repulsion parameters
+    real(DEVDP)         :: PA, PB, PC           ! repulsion parameters - PC is derived from PB for EXP_SC
     real(DEVDP)         :: RC                   ! BJ damping radius
     real(DEVDP)         :: TB                   ! TT damping factor
     logical             :: ffoptactive          ! this type is subject of ffopt
@@ -250,6 +255,7 @@ integer,parameter   :: LJ_COMB_RULE_FB      = 14        ! FB (Fender-Halsey-Bert
 integer,parameter   :: EXP_BM               = 64        ! Born-Mayer
 integer,parameter   :: EXP_DO               = 67        ! Density overlap
 integer,parameter   :: EXP_WO               = 68        ! Wavefunction overlap
+integer,parameter   :: EXP_SC               = 69        ! Smirnov and Chibisov, doi: 10.1021/jp2010925
 
 ! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! pb = free to optimize as vdw_pb
@@ -297,7 +303,10 @@ integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
-!
+! use pb*r (simplified) or -d/dr(ln(Erep)) (exact) in TT series
+! available for EXP_BM, EXP_SC, only experimental
+logical     :: disptt_exact                 = .false.
+
 
 ! derived setup
 logical     :: ApplyCombiningRules          = .false.           ! apply combination rules in every error evaluation

@@ -557,6 +557,7 @@ subroutine ffdev_topology_load(top,name)
 
         top%nb_types(i)%pa = 0.0d0
         top%nb_types(i)%pb = 0.0d0
+        top%nb_types(i)%pc = 0.0d0
         top%nb_types(i)%rc = 0.0d0
         top%nb_types(i)%tb = 0.0d0
 
@@ -1496,6 +1497,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     use ffdev_atomicdata
     use ffdev_topology_exp
     use ffdev_topology_pen
+    use ffdev_parameters_dat
 
     implicit none
     type(TOPOLOGY)  :: top
@@ -1539,18 +1541,26 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     ! FIXME - better value
     if( (i .ne. 0 ) .and. (j .ne. 0) ) then
         nbpair%crgij = 332.05221729d0 * top%atoms(i)%charge * top%atoms(j)%charge * ele_qscale * ele_qscale
+    else
+        nbpair%crgij = 332.05221729d0 * types(agti)%aveq * types(agtj)%aveq * ele_qscale * ele_qscale
     end if
 
-    if( pen_enabled .and. ((i .ne. 0 ) .and. (j .ne. 0)) ) then
+    if( pen_enabled ) then
         nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
         nbpair%pepa1 = top%atom_types(ti)%pen_pa
         nbpair%pepb1 = top%atom_types(ti)%pen_pb
 
         nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
         nbpair%pepa2 = top%atom_types(tj)%pen_pa
         nbpair%pepb2 = top%atom_types(tj)%pen_pb
+
+        if( (i .ne. 0 ) .and. (j .ne. 0) ) then
+            nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
+            nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
+        else
+            nbpair%q1    = types(agti)%aveq * ele_qscale * sqrt(332.05221729d0)
+            nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
+        end if
     end if
 
     select case(nb_mode)
@@ -1563,6 +1573,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             ! exp
             nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
+            nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
@@ -1578,6 +1589,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             ! exp
             nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
+            nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6

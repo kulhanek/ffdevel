@@ -703,7 +703,7 @@ real(DEVDP) function ffdev_nb2nb_qnb_eps(r0,qnb)
     ! eps
     NB2LJtmp_lb(1)  = 0.0d0
     NB2LJtmp_ub(1)  = 1.0d0
-    NB2LJprms(1)    = 0.50d0
+    NB2LJprms(1)    = 0.10d0
 
     ! box data
     call ffdev_nb2nb_nb2nb_box_prms(NB2LJprms,NB2LJtmp_xg)
@@ -797,8 +797,9 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
     implicit none
     integer                 :: gnbt
     ! --------------------------------------------
-    real(DEVDP)             :: r,enb
+    real(DEVDP)             :: r,evdw
     character(len=MAX_PATH) :: name
+    type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------------------------------------
 
     name = trim(NBPotPathPrg) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
@@ -810,21 +811,26 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
     r  = nb_types(gnbt)%SigNB
 
     do while(r .le. NB2LJCutoffR)
-        enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
+        call ffdev_nb2nb_nbpair(NB2LJNBPair,r,nbene)
+        evdw = nbene%pen_ene + nbene%rep_ene + nbene%dis_ene
         if( NB2LJCalcQNBIsoline ) then
             if( r .le. NB2LJCutoffRQNB ) then
                 qnbeps = ffdev_nb2nb_qnb_eps(r,nb_types(gnbt)%QNB)
                 if( qnbeps .gt. 0.0d0 ) then
                     ! put negative sign to compare qnbeps with NB or LJ potential
-                    write(DEV_NBPOT,10) r, enb, -qnbeps
+                    write(DEV_NBPOT,10) r, evdw, nbene%tot_ene, nbene%ele_ene, nbene%pen_ene,&
+                                        nbene%rep_ene, nbene%dis_ene, -qnbeps
                 else
-                    write(DEV_NBPOT,20) r, enb
+                    write(DEV_NBPOT,20) r, evdw, nbene%tot_ene, nbene%ele_ene, nbene%pen_ene,&
+                                        nbene%rep_ene, nbene%dis_ene
                 end if
             else
-                write(DEV_NBPOT,20) r, enb
+                write(DEV_NBPOT,20) r, evdw, nbene%tot_ene, nbene%ele_ene, nbene%pen_ene,&
+                                        nbene%rep_ene, nbene%dis_ene
             end if
         else
-            write(DEV_NBPOT,20) r, enb
+            write(DEV_NBPOT,20) r, evdw, nbene%tot_ene, nbene%ele_ene, nbene%pen_ene,&
+                                        nbene%rep_ene, nbene%dis_ene
         end if
         r = r + NB2LJdrPrint
     end do
@@ -844,8 +850,8 @@ subroutine ffdev_nb2nb_write_source_pot(gnbt)
     close(DEV_NBPOT)
 
 
-    10 format(F10.6,1X,E20.12,1X,E20.12)
-    20 format(F10.6,1X,E20.12)
+    10 format(F10.6,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12)
+    20 format(F10.6,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12)
 
 end subroutine ffdev_nb2nb_write_source_pot
 
@@ -863,8 +869,9 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     integer                 :: gnbt
     real(DEVDP)             :: r0,eps
     ! --------------------------------------------
-    real(DEVDP)             :: r,enb,sig
+    real(DEVDP)             :: r,evdw,sig
     character(len=MAX_PATH) :: name
+    type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------------------------------------
 
     name = trim(NBPotPathPrg) // '/' // trim(types(nb_types(gnbt)%gti)%name) &
@@ -878,8 +885,10 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     r  = sig
 
     do while(r .le. NB2LJCutoffR)
-        enb = ffdev_nb2nb_ljene(r0,eps,r)
-        write(DEV_NBPOT,10) r,enb
+        call ffdev_nb2nb_ljene(r0,eps,r,nbene)
+        evdw = nbene%rep_ene + nbene%dis_ene
+        write(DEV_NBPOT,10) r, evdw, nbene%tot_ene, nbene%ele_ene, nbene%pen_ene,&
+                                        nbene%rep_ene, nbene%dis_ene
         r = r + NB2LJdrPrint
     end do
 
@@ -892,12 +901,13 @@ subroutine ffdev_nb2nb_write_LJ(gnbt,r0,eps)
     ! open file
     call ffdev_utils_open(DEV_NBPOT,name,'U')
 
-    write(DEV_NBPOT,10) r0,eps
-    write(DEV_NBPOT,10) sig,0.0d0
+    write(DEV_NBPOT,20) r0,eps
+    write(DEV_NBPOT,20) sig,0.0d0
 
     close(DEV_NBPOT)
 
-    10 format(F10.6,1X,E20.12)
+    10 format(F10.6,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12,1X,E20.12)
+    20 format(F10.6,1X,E20.12)
 
 end subroutine ffdev_nb2nb_write_LJ
 
@@ -926,8 +936,8 @@ subroutine ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     do i=1,NB2LJIterGS
         r2 = r4 - (r4 - r1) / gr
         r3 = r1 + (r4 - r1) / gr
-        f2 = ffdev_nb2nb_nbpair(NB2LJNBPair,r2)
-        f3 = ffdev_nb2nb_nbpair(NB2LJNBPair,r3)
+        f2 = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r2)
+        f3 = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r3)
         if( f2 .lt. f3 ) then
             r4 = r3
         else
@@ -936,7 +946,7 @@ subroutine ffdev_nb2nb_find_min_for_nbpair(r0,eps)
     end do
 
     r0  = (r1+r4)*0.5d0
-    eps = - ffdev_nb2nb_nbpair(NB2LJNBPair,r0)
+    eps = - ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r0)
 
 end subroutine ffdev_nb2nb_find_min_for_nbpair
 
@@ -961,12 +971,12 @@ subroutine ffdev_nb2nb_find_sig_for_nbpair(sig)
     r1 = 0.5d0
     r2 = NB2LJCutoffR
 
-    f1 = ffdev_nb2nb_nbpair(NB2LJNBPair,r1)
-    f2 = ffdev_nb2nb_nbpair(NB2LJNBPair,r2)
+    f1 = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r1)
+    f2 = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r2)
 
     do i=1,NB2LJIterBS
         rm = (r1 + r2)*0.5d0
-        fm = ffdev_nb2nb_nbpair(NB2LJNBPair,rm)
+        fm = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,rm)
         if( fm .gt. 0 ) then
             f1 = fm
             r1 = rm
@@ -997,7 +1007,7 @@ real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
     q = 0.0d0
     n = 0.0d0
     do while ( r .le. (sig + NB2LJCutoffR) )
-        e = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
+        e = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r)
         if( e .lt. 0.0d0 ) then
             q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJdr
         end if
@@ -1031,7 +1041,7 @@ real(DEVDP) function ffdev_nb2nb_calc_QLJ(r0,eps)
     q = 0.0d0
     n = 0.0d0
     do while ( r .le. (sig + NB2LJCutoffR) )
-        e = ffdev_nb2nb_ljene(r0,eps,r)
+        e = ffdev_nb2nb_ljene_vdw_ene(r0,eps,r)
         if( e .lt. 0.0d0 ) then
             q = q + exp(-e/((DEV_Rgas*NB2LJTemp)))*NB2LJdr
         end if
@@ -1047,28 +1057,54 @@ real(DEVDP) function ffdev_nb2nb_calc_QLJ(r0,eps)
 end function ffdev_nb2nb_calc_QLJ
 
 ! ==============================================================================
-! function ffdev_nb2nb_ljene
+! function ffdev_nb2nb_ljene_vdw_ene
 ! ==============================================================================
 
-real(DEVDP) function ffdev_nb2nb_ljene(r0,eps,r)
+real(DEVDP) function ffdev_nb2nb_ljene_vdw_ene(r0,eps,r)
 
     implicit none
     real(DEVDP)     :: r0,eps
     real(DEVDP)     :: r
     ! --------------------------------------------------------------------------
 
-    ffdev_nb2nb_ljene = 0.0d0
+    ffdev_nb2nb_ljene_vdw_ene = 0.0d0
     if( r .gt. 0 ) then
-        ffdev_nb2nb_ljene = eps*( (r0/r)**12 - 2.0d0*(r0/r)**6 )
+        ffdev_nb2nb_ljene_vdw_ene = eps*( (r0/r)**12 - 2.0d0*(r0/r)**6 )
     end if
 
-end function ffdev_nb2nb_ljene
+end function ffdev_nb2nb_ljene_vdw_ene
+
+! ==============================================================================
+! function ffdev_nb2nb_ljene
+! ==============================================================================
+
+subroutine ffdev_nb2nb_ljene(r0,eps,r,nbene)
+
+    implicit none
+    real(DEVDP)             :: r0,eps
+    real(DEVDP)             :: r
+    type(NB_PAIR_ENERGY)    :: nbene
+    ! --------------------------------------------------------------------------
+
+    nbene%ele_ene = 0.0
+    nbene%pen_ene = 0.0
+    nbene%rep_ene = 0.0
+    nbene%dis_ene = 0.0
+    nbene%tot_ene = 0.0
+
+    if( r .gt. 0 ) then
+        nbene%rep_ene = eps* (r0/r)**12
+        nbene%dis_ene = - eps * 2.0d0 * (r0/r)**6
+        nbene%tot_ene = nbene%rep_ene + nbene%dis_ene
+    end if
+
+end subroutine ffdev_nb2nb_ljene
 
 ! ==============================================================================
 ! function ffdev_nb2nb_nbpair
 ! ==============================================================================
 
-real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
+real(DEVDP) function ffdev_nb2nb_nbpair_vdw_ene(nbpair,r)
 
     use ffdev_nb2nb_dat
     use ffdev_utils
@@ -1078,27 +1114,63 @@ real(DEVDP) function ffdev_nb2nb_nbpair(nbpair,r)
     use ffdev_nbmode_EXP_DISPTT
 
     implicit none
-    type(NB_PAIR)   :: nbpair
-    real(DEVDP)     :: r
+    type(NB_PAIR)           :: nbpair
+    real(DEVDP)             :: r
+    type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------------------------------------
-
-    ffdev_nb2nb_nbpair = 0.0d0
 
     select case(nb_mode)
         case(NB_VDW_LJ)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_LJ(nbpair,r)
+            call ffdev_energy_nbpair_LJ(nbpair,r,nbene)
 
         case(NB_VDW_EXP_DISPBJ)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r)
+            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,NB2LJIncludePen,nbene)
 
         case(NB_VDW_EXP_DISPTT)
-            ffdev_nb2nb_nbpair = ffdev_energy_nbpair_EXP_DISPTT(nbpair,r)
+            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,NB2LJIncludePen,nbene)
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_nb2nb_nbpair!')
     end select
 
-end function ffdev_nb2nb_nbpair
+    ffdev_nb2nb_nbpair_vdw_ene = nbene%pen_ene + nbene%rep_ene + nbene%dis_ene
+
+end function ffdev_nb2nb_nbpair_vdw_ene
+
+! ==============================================================================
+! function ffdev_nb2nb_nbpair
+! ==============================================================================
+
+subroutine ffdev_nb2nb_nbpair(nbpair,r,nbene)
+
+    use ffdev_nb2nb_dat
+    use ffdev_utils
+
+    use ffdev_nbmode_LJ
+    use ffdev_nbmode_EXP_DISPBJ
+    use ffdev_nbmode_EXP_DISPTT
+
+    implicit none
+    type(NB_PAIR)           :: nbpair
+    real(DEVDP)             :: r
+    type(NB_PAIR_ENERGY)    :: nbene
+    ! --------------------------------------------------------------------------
+
+    select case(nb_mode)
+        case(NB_VDW_LJ)
+            call ffdev_energy_nbpair_LJ(nbpair,r,nbene)
+
+        case(NB_VDW_EXP_DISPBJ)
+            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,NB2LJIncludePen,nbene)
+
+        case(NB_VDW_EXP_DISPTT)
+            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,NB2LJIncludePen,nbene)
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_nb2nb_nbpair!')
+    end select
+
+end subroutine ffdev_nb2nb_nbpair
 
 ! ------------------------------------------------------------------------------
 
@@ -1131,8 +1203,8 @@ subroutine opt_shark_fce2(n, x, errval)
 
     sumw = 0.0
     do while(r .le. NB2LJMaxR)
-        enb = ffdev_nb2nb_nbpair(NB2LJNBPair,r)
-        elj = ffdev_nb2nb_ljene(r0,eps,r)
+        enb = ffdev_nb2nb_nbpair_vdw_ene(NB2LJNBPair,r)
+        elj = ffdev_nb2nb_ljene_vdw_ene(r0,eps,r)
 
         if( NB2LJWeighted ) then
             ! eps is positive, but minimum is at -eps

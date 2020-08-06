@@ -73,7 +73,7 @@ integer,parameter       :: REALM_PEN_FA     = 32
 integer,parameter       :: REALM_PEN_FB     = 33
 
 ! Pauli repulsion K factor
-integer,parameter       :: REALM_PAULI_K    = 35
+integer,parameter       :: REALM_PAULI_K    = 34
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_PAULI_K

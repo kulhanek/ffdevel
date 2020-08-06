@@ -141,17 +141,24 @@ end subroutine ffdev_energy_sapt_LJ
 ! subroutine ffdev_energy_nbpair_LJ
 !===============================================================================
 
-real(DEVDP) function ffdev_energy_nbpair_LJ(nbpair,r)
+subroutine ffdev_energy_nbpair_LJ(nbpair,r,nbene)
 
     use ffdev_topology_dat
 
     implicit none
-    type(NB_PAIR)   :: nbpair
-    real(DEVDP)     :: r
+    type(NB_PAIR)           :: nbpair
+    real(DEVDP)             :: r
+    type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------
     real(DEVDP)     :: aLJa,bLJa
-    real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb
+    real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb,V_ee,V_pe
     ! --------------------------------------------------------------------------
+
+    nbene%ele_ene = 0.0
+    nbene%pen_ene = 0.0
+    nbene%rep_ene = 0.0
+    nbene%dis_ene = 0.0
+    nbene%tot_ene = 0.0
 
     aLJa  = nbpair%pa
     bLJa  = nbpair%c6
@@ -160,12 +167,18 @@ real(DEVDP) function ffdev_energy_nbpair_LJ(nbpair,r)
     r2a   = 1.0d0/r2
     r6a   = r2a*r2a*r2a
 
+    V_ee  = 0.0d0
+    V_pe  = 0.0d0
     V_aa  =   aLJa*r6a*r6a
     V_bb  = - bLJa*r6a
 
-    ffdev_energy_nbpair_LJ = V_aa + V_bb
+    nbene%ele_ene = V_ee
+    nbene%pen_ene = V_pe
+    nbene%rep_ene = V_aa
+    nbene%dis_ene = V_bb
+    nbene%tot_ene = V_ee + V_pe + V_aa + V_bb
 
-end function ffdev_energy_nbpair_LJ
+end subroutine ffdev_energy_nbpair_LJ
 
 !===============================================================================
 ! subroutine ffdev_gradient_nb_LJ

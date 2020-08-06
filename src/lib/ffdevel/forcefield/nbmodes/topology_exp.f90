@@ -42,6 +42,8 @@ character(80) function ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-DO - Density overlap'
         case(EXP_WO)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-WO - Wavefunction overlap'
+        case(EXP_SC)
+            ffdev_topology_EXP_exp_mode_to_string = 'EXP-SC - Smirnov and Chibisov exchange repulsion'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_exp_mode_to_string!')
     end select
@@ -67,6 +69,8 @@ integer function ffdev_topology_EXP_exp_mode_from_string(string)
             ffdev_topology_EXP_exp_mode_from_string = EXP_DO
         case('EXP-WO')
             ffdev_topology_EXP_exp_mode_from_string = EXP_WO
+        case('EXP-SC')
+            ffdev_topology_EXP_exp_mode_from_string = EXP_SC
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_EXP_exp_mode_from_string!')
     end select
@@ -207,23 +211,27 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
             call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
     end select
 
-    ! apply combining rules if necessary
-    select case(exp_pb_mode)
-        case(EXP_PB_FREEOPT)
-            if( ApplyCombiningRules ) then
+    if( exp_mode .eq. EXP_SC ) then
+        call ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
+    else
+        ! apply combining rules if necessary
+        select case(exp_pb_mode)
+            case(EXP_PB_FREEOPT)
+                if( ApplyCombiningRules ) then
+                    call ffdev_topology_EXP_update_nb_params_PB(top)
+                end if
+        !---------------
+            case(EXP_PB_ADBII)
+                if( .not. ApplyCombiningRules ) then
+                    ! we need to apply combining rules for unlike atoms
+                    call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_ADBII requires ApplyCombiningRules!')
+                end if
                 call ffdev_topology_EXP_update_nb_params_PB(top)
-            end if
-    !---------------
-        case(EXP_PB_ADBII)
-            if( .not. ApplyCombiningRules ) then
-                ! we need to apply combining rules for unlike atoms
-                call ffdev_utils_exit(DEV_ERR,1,'EXP_PB_ADBII requires ApplyCombiningRules!')
-            end if
-            call ffdev_topology_EXP_update_nb_params_PB(top)
-    !---------------
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params II!')
-    end select
+        !---------------
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params II!')
+        end select
+    end if
 
     ! and finally PA
     if( ApplyCombiningRules ) then
@@ -231,6 +239,41 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
     end if
 
 end subroutine ffdev_topology_EXP_update_nb_params
+
+!===============================================================================
+! subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC
+!===============================================================================
+
+subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
+
+    use ffdev_utils
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    ! --------------------------------------------
+    integer         :: i,nbii,nbjj
+    real(DEVDP)     :: pbii,pbjj,pbij,pcij
+    ! --------------------------------------------------------------------------
+
+   ! apply combining rules
+    do i=1,top%nnb_types
+
+        ! get type parameters
+        nbii = top%nb_types(i)%nbii
+        nbjj = top%nb_types(i)%nbjj
+
+        pbii = top%nb_types(nbii)%pb
+        pbjj = top%nb_types(nbjj)%pb
+
+        pbij = 0.5d0*(pbii + pbjj)
+        top%nb_types(i)%pb = pbij
+
+        pcij = 4.0d0/(pbii*damp_pb) + 4.0d0/(pbjj*damp_pb) - 2.0d0/(pbii*damp_pb+pbjj*damp_pb) - 1.0d0
+        ! FIXME - is the conversion correct?
+        top%nb_types(i)%pc = pcij * DEV_A2AU
+    end do
+
+end subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC
 
 !===============================================================================
 ! subroutine ffdev_topology_EXP_update_nb_params_PB

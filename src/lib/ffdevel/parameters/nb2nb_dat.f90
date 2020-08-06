@@ -44,7 +44,7 @@ logical                 :: NB2LJWeighted                = .false.
 real(DEVDP)             :: NB2LJCutoffR                 = 10.0          ! max range for r
 integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
-integer                 :: NB2LJIterOpt                 = 200           ! precision - overlay optimization via CMA-ES
+integer                 :: NB2LJIterOpt                 = 300           ! precision - overlay optimization via CMA-ES
 real(DEVDP)             :: NB2LJSharkInitialStep        = 0.2           ! CMA-ES optimizer setup
 real(DEVDP)             :: NB2LJTemp                    = 300.0         ! temp factor for weights
 real(DEVDP)             :: NB2LJdr                      = 0.001         ! dr in partition function calculation, overlay calculation
@@ -52,6 +52,7 @@ real(DEVDP)             :: NB2LJdrPrint                 = 0.02          ! for pr
 logical                 :: NB2LJCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
 real(DEVDP)             :: NB2LJCutoffRQNB              = 5.0           ! max r range for QNB isovalues
 character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
+logical                 :: NB2LJIncludePen              = .true.
 
 ! working data for NB and overal calcs
 integer                 :: NB2LJNParams
