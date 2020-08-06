@@ -391,8 +391,8 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
 
                 case(NB_VDW_LJ)
                     write(DEV_OUT,*)
-                    write(DEV_OUT,10) trim(NBPotPathPrg)
                     call ffdev_nb2nb_initdirs_for_prog(.true.)
+                    write(DEV_OUT,10) trim(NBPotPathPrg)
                     do nbt=1,nnb_types
                         write(DEV_OUT,20) trim(types(nb_types(nbt)%gti)%name) &
                                           // '-' // trim(types(nb_types(nbt)%gtj)%name)
@@ -456,7 +456,6 @@ subroutine ffdev_nb2nb_conv_sum
 40 format(2X,A4,1X,A4,1X,F12.6,1X,F12.6,1X,F12.6)
 
 end subroutine ffdev_nb2nb_conv_sum
-
 
 ! ==============================================================================
 ! subroutine ffdev_nb2nb_write_all_current_pots
@@ -612,7 +611,7 @@ subroutine ffdev_nb2nb_nb2lj(gnbt)
     NB2LJtmp_lb(2) = 0.0d0
 
     NB2LJtmp_ub(1) = NB2LJMaxR
-    NB2LJtmp_ub(2) = 2.0d0*eps
+    NB2LJtmp_ub(2) = 3.0d0*eps
 
     NB2LJprms(1) = r0
     NB2LJprms(2) = eps
@@ -702,7 +701,7 @@ real(DEVDP) function ffdev_nb2nb_qnb_eps(r0,qnb)
 
     ! eps
     NB2LJtmp_lb(1)  = 0.0d0
-    NB2LJtmp_ub(1)  = 1.0d0
+    NB2LJtmp_ub(1)  = 2.0d0
     NB2LJprms(1)    = 0.10d0
 
     ! box data

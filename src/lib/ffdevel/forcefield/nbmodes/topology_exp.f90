@@ -268,9 +268,10 @@ subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
         pbij = 0.5d0*(pbii + pbjj)
         top%nb_types(i)%pb = pbij
 
-        pcij = 4.0d0/(pbii*damp_pb) + 4.0d0/(pbjj*damp_pb) - 2.0d0/(pbii*damp_pb+pbjj*damp_pb) - 1.0d0
-        ! FIXME - is the conversion correct?
-        top%nb_types(i)%pc = pcij * DEV_A2AU
+        ! this part must be a.u.
+        pcij = 4.0d0/(pbii*damp_pb)*DEV_AU2A + 4.0d0/(pbjj*damp_pb)*DEV_AU2A - 2.0d0/(pbii*damp_pb+pbjj*damp_pb)*DEV_AU2A - 1.0d0
+
+        top%nb_types(i)%pc = pcij
     end do
 
 end subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC

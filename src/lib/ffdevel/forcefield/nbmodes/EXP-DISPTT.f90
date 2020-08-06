@@ -120,7 +120,7 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
                 lvaa = pb
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r
@@ -282,7 +282,7 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
                 lvaa = pb
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r
@@ -430,7 +430,7 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
             lvaa = pb
         case(EXP_SC)
             er   = pb*r
-            pr   = r**pc
+            pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
             upe  = exp(-er)
             V_aa = pa*pr*upe
             lvaa = pb - pc/r
@@ -603,7 +603,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         !------------
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r

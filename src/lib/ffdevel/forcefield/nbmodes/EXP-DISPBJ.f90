@@ -115,7 +115,7 @@ subroutine ffdev_energy_nb_EXP_DISPBJ(top,geo)
         !------------
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
             case default
@@ -250,7 +250,7 @@ subroutine ffdev_energy_sapt_EXP_DISPBJ(top,geo)
         !------------
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
             case default
@@ -371,7 +371,7 @@ subroutine ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,include_pen,nbene)
     !------------
         case(EXP_SC)
             er   = pb*r
-            pr   = r**pc
+            pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
             upe  = exp(-er)
             V_aa = pa*pr*upe
         case default
@@ -511,7 +511,7 @@ subroutine ffdev_gradient_nb_EXP_DISPBJ(top,geo)
         !------------
             case(EXP_SC)
                 er   = pb*r
-                pr   = r**pc
+                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 dvaa = V_aa*pb*r  - pa*upe*pc*pr ! unoptimized: - pa*upe*pc*r**(pc-1.0d0)*r, extra r is because of r2a below
