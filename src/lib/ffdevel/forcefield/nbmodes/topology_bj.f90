@@ -105,7 +105,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 tj   = top%nb_types(i)%tj
                 agti = top%atom_types(ti)%glbtypeid
                 agtj = top%atom_types(tj)%glbtypeid
-                top%nb_types(i)%rc = ffdev_atomicdata_rcii(agti,damp_fa,damp_fb)
+                top%nb_types(i)%rc = ffdev_atomicdata_rcii(agti,damp_fa,damp_fb) + ffdev_atomicdata_rcii(agtj,damp_fa,damp_fb)
             end do
     !---------------
         case default
