@@ -36,13 +36,13 @@ character(80) function ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
     ! --------------------------------------------------------------------------
 
     select case(lexp_mode)
-        case(EXP_BM)
+        case(EXP_MODE_BM)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-BM - Born-Mayer model'
-        case(EXP_DO)
+        case(EXP_MODE_DO)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-DO - Density overlap'
-        case(EXP_WO)
+        case(EXP_MODE_WO)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-WO - Wavefunction overlap'
-        case(EXP_SC)
+        case(EXP_MODE_SC)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-SC - Smirnov and Chibisov exchange repulsion'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_exp_mode_to_string!')
@@ -64,13 +64,13 @@ integer function ffdev_topology_EXP_exp_mode_from_string(string)
 
     select case(trim(string))
         case('EXP-BM')
-            ffdev_topology_EXP_exp_mode_from_string = EXP_BM
+            ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_BM
         case('EXP-DO')
-            ffdev_topology_EXP_exp_mode_from_string = EXP_DO
+            ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_DO
         case('EXP-WO')
-            ffdev_topology_EXP_exp_mode_from_string = EXP_WO
+            ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_WO
         case('EXP-SC')
-            ffdev_topology_EXP_exp_mode_from_string = EXP_SC
+            ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_SC
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_EXP_exp_mode_from_string!')
     end select
@@ -211,7 +211,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
             call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
     end select
 
-    if( exp_mode .eq. EXP_SC ) then
+    if( exp_mode .eq. EXP_MODE_SC ) then
         call ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
     else
         ! apply combining rules if necessary

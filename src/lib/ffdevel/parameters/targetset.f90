@@ -297,8 +297,6 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%RC
                 case(REALM_PEN_PA)
                     params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%pen_pa
-                case(REALM_PEN_PB)
-                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%pen_pb
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
             end select

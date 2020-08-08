@@ -1546,13 +1546,26 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     end if
 
     if( pen_enabled ) then
-        nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%pepa1 = top%atom_types(ti)%pen_pa
-        nbpair%pepb1 = top%atom_types(ti)%pen_pb
+        select case(pen_mode)
+            case(PEN_MODE_AMOEBA)
+                nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%pepa1 = top%atom_types(ti)%pen_pa
+                nbpair%pepb1 = top%atom_types(ti)%pen_pb
 
-        nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%pepa2 = top%atom_types(tj)%pen_pa
-        nbpair%pepb2 = top%atom_types(tj)%pen_pb
+                nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%pepa2 = top%atom_types(tj)%pen_pa
+                nbpair%pepb2 = top%atom_types(tj)%pen_pb
+            case(PEN_MODE_EFP_M1,PEN_MODE_EFP_M2)
+                nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%pepa1 = top%atom_types(ti)%pen_pa
+
+                nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%pepa2 = top%atom_types(tj)%pen_pa
+
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported pen_mode in ffdev_topology_update_nbpair_prms!')
+        end select
+
 
         if( (i .ne. 0 ) .and. (j .ne. 0) ) then
             nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)

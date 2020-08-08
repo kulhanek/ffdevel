@@ -79,7 +79,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 6 NB: eps, r0, pa, pb, rc, tb
-        maxnparams = maxnparams + 2*sets(i)%top%natom_types     ! pen_pa, pen_pb
+        maxnparams = maxnparams +   sets(i)%top%natom_types     ! pen_pa
     end do
     maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
                                  ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, pauli_k
@@ -137,7 +137,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc, use_vdw_tb
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_pauli_k
-    logical     :: use_pen_pa, use_pen_pb, use_pen_fa, use_pen_fb
+    logical     :: use_pen_pa, use_pen_fa, use_pen_fb
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -457,7 +457,6 @@ subroutine ffdev_parameters_reinit()
     use_pauli_k     = .false.
 
     use_pen_pa      = .false.
-    use_pen_pb      = .false.
 
     use_pen_fa      = .false.
     use_pen_fb      = .false.
@@ -478,6 +477,7 @@ subroutine ffdev_parameters_reinit()
                 select case(pen_pa_mode)
                     case(PEN_PA_FREEOPT)
                         use_pen_pa = .true.
+                        use_pen_fa = .false.
                     case(PEN_PA_ADBII,PEN_PA_COUPLED)
                         ! nothing to be here
                     case(PEN_PA_ADRCII)
@@ -488,8 +488,6 @@ subroutine ffdev_parameters_reinit()
                 end select
             ! --------
                 select case(pen_pb_mode)
-                    case(PEN_PB_FREEOPT)
-                        use_pen_pb = .true.
                     case(PEN_PB_CONST)
                         ! nothing to be here
                     case(PEN_PB_COUPLED)
@@ -545,6 +543,8 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_tb      = .true.
                 case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_ADBII)
                     use_damp_tb     = .true.
+                case(DAMP_TT_EXACT)
+                    ! nothing to be here
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -722,32 +722,6 @@ subroutine ffdev_parameters_reinit()
                     nparams = nparams + 1
                     params(nparams)%value = sets(i)%top%atom_types(j)%pen_pa
                     params(nparams)%realm = REALM_PEN_PA
-                    params(nparams)%enabled = .false.
-                    params(nparams)%identity = 0
-                    params(nparams)%pn    = 0
-                    params(nparams)%ids(:) = 0
-                    params(nparams)%ids(i) = j
-                    params(nparams)%ti   = get_common_type_id(sets(i)%top,j)
-                    params(nparams)%tj   = 0
-                    params(nparams)%tk   = 0
-                    params(nparams)%tl   = 0
-                else
-                    params(parmid)%ids(i) = j ! parameter already exists, update link
-                end if
-            end do
-        end do
-    end if
-
-    if( use_pen_pb ) then
-        ! =====================
-        do i=1,nsets
-            do j=1,sets(i)%top%natom_types
-                parmid = find_parameter(sets(i)%top,j,0,REALM_PEN_PB)
-                if( parmid .eq. 0 ) then    ! new parameter
-                    ! add new parameter
-                    nparams = nparams + 1
-                    params(nparams)%value = sets(i)%top%atom_types(j)%pen_pb
-                    params(nparams)%realm = REALM_PEN_PB
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -1094,7 +1068,7 @@ integer function find_parameter(top,id,pn,realm)
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
-        case(REALM_PEN_PA,REALM_PEN_PB)
+        case(REALM_PEN_PA)
             ti = get_common_type_id(top,id)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter I!')
@@ -1140,7 +1114,7 @@ integer function find_parameter(top,id,pn,realm)
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_PEN_PA,REALM_PEN_PB)
+            case(REALM_PEN_PA)
                 if( params(i)%ti .eq. ti ) then
                     find_parameter = i
                 end if
@@ -1215,7 +1189,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-            case(REALM_PEN_PA,REALM_PEN_PB)
+            case(REALM_PEN_PA)
                 if( params(i)%ti .eq. ti ) then
                     find_parameter_by_ids = i
                     return
@@ -2247,8 +2221,6 @@ integer function ffdev_parameters_get_realmid(realm)
 
         case('pen_pa')
             ffdev_parameters_get_realmid = REALM_PEN_PA
-        case('pen_pb')
-            ffdev_parameters_get_realmid = REALM_PEN_PB
         case('pen_fa')
             ffdev_parameters_get_realmid = REALM_PEN_FA
         case('pen_fb')
@@ -2327,8 +2299,6 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
 
         case(REALM_PEN_PA)
             ffdev_parameters_get_realm_name = 'pen_pa'
-        case(REALM_PEN_PB)
-            ffdev_parameters_get_realm_name = 'pen_pb'
         case(REALM_PEN_FA)
             ffdev_parameters_get_realm_name = 'pen_fa'
         case(REALM_PEN_FB)
@@ -2404,7 +2374,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_GLB_SCEE,REALM_GLB_SCNB)
             ! nothing to do
-        case(REALM_PEN_PA,REALM_PEN_PB,REALM_PEN_FA,REALM_PEN_FB)
+        case(REALM_PEN_PA,REALM_PEN_FA,REALM_PEN_FB)
             ! nothing to do
         case(REALM_PAULI_K)
             ! nothing to do
@@ -2829,13 +2799,6 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
-            case(REALM_PEN_PB)
-                do j=1,nsets
-                    if( params(i)%ids(j) .ne. 0 ) then
-                        sets(j)%top%atom_types(params(i)%ids(j))%pen_pb = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
-                    end if
-                end do
 
         ! single parameters
             case(REALM_PEN_FA)
@@ -3000,7 +2963,7 @@ subroutine ffdev_params_reset_ranges
      MaxVdwPA     =     20.0d0
 
      MinVdwPB     =      1.0d0
-     MaxVdwPB     =      7.0d0
+     MaxVdwPB     =      6.0d0
 
      MinVdwRC     =      0.0d0
      MaxVdwRC     =      5.0d0
@@ -3043,11 +3006,9 @@ subroutine ffdev_params_reset_ranges
 ! penetration energy
      MinPenPA     =      0.0d0
      MaxPenPA     =      6.0d0
-     MinPenPB     =      0.0d0
-     MaxPenPB     =      6.0d0
 
      MinPenFA     =      0.0d0
-     MaxPenFA     =      8.0d0
+     MaxPenFA     =      2.0d0
      MinPenFB     =      0.5d0
      MaxPenFB     =      1.0d0
 
@@ -3192,8 +3153,6 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
 
         case(REALM_PEN_PA)
             ffdev_params_get_lower_bound = MinPenPA
-        case(REALM_PEN_PB)
-            ffdev_params_get_lower_bound = MinPenPB
 
         case(REALM_PEN_FA)
             ffdev_params_get_lower_bound = MinPenFA
@@ -3290,8 +3249,6 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
 
         case(REALM_PEN_PA)
             MinPenPA = mvalue
-        case(REALM_PEN_PB)
-            MinPenPB = mvalue
         case(REALM_PEN_FA)
             MinPenFA = mvalue
         case(REALM_PEN_FB)
@@ -3413,8 +3370,6 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
 
         case(REALM_PEN_PA)
             ffdev_params_get_upper_bound = MaxPenPA
-        case(REALM_PEN_PB)
-            ffdev_params_get_upper_bound = MaxPenPB
 
         case(REALM_PEN_FA)
             ffdev_params_get_upper_bound = MaxPenFA
@@ -3511,8 +3466,6 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
 
         case(REALM_PEN_PA)
             MaxPenPA = mvalue
-        case(REALM_PEN_PB)
-            MaxPenPB = mvalue
         case(REALM_PEN_FA)
             MaxPenFA = mvalue
         case(REALM_PEN_FB)

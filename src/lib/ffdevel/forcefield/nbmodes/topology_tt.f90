@@ -44,6 +44,8 @@ character(80) function ffdev_topology_TT_damptt_mode_to_string(nb_mode)
             ffdev_topology_TT_damptt_mode_to_string = 'COUPLED - TB coupled by damp_tb to PB'
         case(DAMP_TT_ADBII)
             ffdev_topology_TT_damptt_mode_to_string = 'ADBII - Atomic database Bii'
+        case(DAMP_TT_EXACT)
+            ffdev_topology_TT_damptt_mode_to_string = 'EXACT - Bij=-d/dr(ln(Eex))'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_TT_damptt_mode_to_string!')
     end select
@@ -72,6 +74,8 @@ integer function ffdev_topology_TT_damptt_mode_from_string(string)
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_COUPLED
         case('ADBII')
             ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_ADBII
+        case('EXACT')
+            ffdev_topology_TT_damptt_mode_from_string = DAMP_TT_EXACT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_TT_damptt_mode_from_string!')
     end select
@@ -93,6 +97,11 @@ subroutine ffdev_topology_TT_update_nb_params(top)
     integer         :: i,ti,agti
     ! --------------------------------------------------------------------------
 
+    disptt_exact = .false.
+    if( damptt_mode .eq. DAMP_TT_EXACT ) then
+        disptt_exact = .true.
+    end if
+
     ! first update TB from external sources
     select case(damptt_mode)
         case(DAMP_TT_CONST)
@@ -102,6 +111,11 @@ subroutine ffdev_topology_TT_update_nb_params(top)
     !---------------
         case(DAMP_TT_FREEOPT)
             ! nothing
+    !---------------
+        case(DAMP_TT_EXACT)
+            do i=1,top%nnb_types
+                top%nb_types(i)%tb = 0.0d0
+            end do
     !---------------
         case(DAMP_TT_COUPLED)
             do i=1,top%nnb_types
@@ -122,7 +136,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
 
     ! apply combining rules if necessary
     select case(damptt_mode)
-        case(DAMP_TT_CONST,DAMP_TT_COUPLED)
+        case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_EXACT)
             ! nothing
     !---------------
         case(DAMP_TT_FREEOPT)

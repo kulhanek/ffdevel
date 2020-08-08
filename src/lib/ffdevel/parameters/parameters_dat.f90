@@ -67,13 +67,11 @@ integer,parameter       :: REALM_GLB_SCNB   = 29
 
 ! penetration energy
 integer,parameter       :: REALM_PEN_PA     = 30
-integer,parameter       :: REALM_PEN_PB     = 31
-
-integer,parameter       :: REALM_PEN_FA     = 32
-integer,parameter       :: REALM_PEN_FB     = 33
+integer,parameter       :: REALM_PEN_FA     = 31
+integer,parameter       :: REALM_PEN_FB     = 32
 
 ! Pauli repulsion K factor
-integer,parameter       :: REALM_PAULI_K    = 34
+integer,parameter       :: REALM_PAULI_K    = 33
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_PAULI_K
@@ -238,8 +236,6 @@ real(DEVDP)     :: MaxGlbSCNB
 ! penetration energy parameters
 real(DEVDP)     :: MinPenPA
 real(DEVDP)     :: MaxPenPA
-real(DEVDP)     :: MinPenPB
-real(DEVDP)     :: MaxPenPB
 
 real(DEVDP)     :: MinPenFA
 real(DEVDP)     :: MaxPenFA

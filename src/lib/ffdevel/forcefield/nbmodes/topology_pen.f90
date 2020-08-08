@@ -24,6 +24,56 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
+! subroutine ffdev_topology_PEN_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_PEN_mode_to_string(lpen_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: lpen_mode
+    ! --------------------------------------------------------------------------
+
+    select case(lpen_mode)
+        case(PEN_MODE_AMOEBA)
+            ffdev_topology_PEN_mode_to_string = 'AMOEBA'
+        case(PEN_MODE_EFP_M1)
+            ffdev_topology_PEN_mode_to_string = 'EFP_M1'
+        case(PEN_MODE_EFP_M2)
+            ffdev_topology_PEN_mode_to_string = 'EFP_M2'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_PEN_mode_to_string!')
+    end select
+
+end function ffdev_topology_PEN_mode_to_string
+
+! ==============================================================================
+! subroutine ffdev_topology_PEN_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_PEN_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('AMOEBA')
+            ffdev_topology_PEN_mode_from_string = PEN_MODE_AMOEBA
+        case('EFP_M1')
+            ffdev_topology_PEN_mode_from_string = PEN_MODE_EFP_M1
+        case('EFP_M2')
+            ffdev_topology_PEN_mode_from_string = PEN_MODE_EFP_M2
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_PEN_mode_from_string!')
+    end select
+
+end function ffdev_topology_PEN_mode_from_string
+
+! ==============================================================================
 ! subroutine ffdev_topology_PEN_pa_mode_to_string
 ! ==============================================================================
 
@@ -94,8 +144,6 @@ character(80) function ffdev_topology_PEN_pb_mode_to_string(lpen_mode)
     ! --------------------------------------------------------------------------
 
     select case(lpen_mode)
-        case(PEN_PB_FREEOPT)
-            ffdev_topology_PEN_pb_mode_to_string = 'FREEOPT - use optimized PB per type'
         case(PEN_PB_CONST)
             ffdev_topology_PEN_pb_mode_to_string = 'CONST - set to pen_fb'
         case(PEN_PB_COUPLED)
@@ -119,8 +167,6 @@ integer function ffdev_topology_PEN_pb_mode_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
-        case('FREEOPT')
-            ffdev_topology_PEN_pb_mode_from_string = PEN_PB_FREEOPT
         case('CONST')
             ffdev_topology_PEN_pb_mode_from_string = PEN_PB_CONST
         case('COUPLED')
@@ -146,8 +192,13 @@ integer function ffdev_topology_PEN_get_valZ(gti)
 
     ffdev_topology_PEN_get_valZ = 1 ! default to H
 
-    ! get Z
     z = types(gti)%z
+
+    if( .not. pen_valence_only ) then
+        ffdev_topology_PEN_get_valZ = z
+    end if
+
+    ! determine number of valence electrons
     if( z .le. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_topology_PEN_get_valZ')
     end if
@@ -209,8 +260,6 @@ subroutine ffdev_topology_PEN_update_nb_params(top)
         end select
     ! --------
         select case(pen_pb_mode)
-            case(PEN_PB_FREEOPT)
-                ! nothing to do
             case(PEN_PB_CONST)
                 top%atom_types(i)%pen_pb = pen_fb
             case(PEN_PB_COUPLED)

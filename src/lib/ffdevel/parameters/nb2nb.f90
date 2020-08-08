@@ -1123,16 +1123,20 @@ real(DEVDP) function ffdev_nb2nb_nbpair_vdw_ene(nbpair,r)
             call ffdev_energy_nbpair_LJ(nbpair,r,nbene)
 
         case(NB_VDW_EXP_DISPBJ)
-            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,NB2LJIncludePen,nbene)
+            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,nbene)
 
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,NB2LJIncludePen,nbene)
+            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_nb2nb_nbpair!')
     end select
 
-    ffdev_nb2nb_nbpair_vdw_ene = nbene%pen_ene + nbene%rep_ene + nbene%dis_ene
+    if( NB2LJIncludePen ) then
+        ffdev_nb2nb_nbpair_vdw_ene = nbene%pen_ene + nbene%rep_ene + nbene%dis_ene
+    else
+        ffdev_nb2nb_nbpair_vdw_ene = nbene%rep_ene + nbene%dis_ene
+    end if
 
 end function ffdev_nb2nb_nbpair_vdw_ene
 
@@ -1160,10 +1164,10 @@ subroutine ffdev_nb2nb_nbpair(nbpair,r,nbene)
             call ffdev_energy_nbpair_LJ(nbpair,r,nbene)
 
         case(NB_VDW_EXP_DISPBJ)
-            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,NB2LJIncludePen,nbene)
+            call ffdev_energy_nbpair_EXP_DISPBJ(nbpair,r,nbene)
 
         case(NB_VDW_EXP_DISPTT)
-            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,NB2LJIncludePen,nbene)
+            call ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_nb2nb_nbpair!')

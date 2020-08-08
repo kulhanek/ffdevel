@@ -39,8 +39,9 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,pc,crgij,dxa1,dxa2,dxa3,upe,tb
     real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
-    real(DEVDP)     :: V_aa,V_bb,V_ee,V_pe,er,pr,lvaa
+    real(DEVDP)     :: V_aa,V_bb,V_ee,V_pe,er,pr,lvaa,pepk,pfbb
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
+    real(DEVDP)     :: a2,b2,inva2b2
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -70,28 +71,6 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
         crgij = top%nb_list(ip)%crgij
         V_ee  = crgij/r
 
-        V_pe  = 0.0d0
-        if( pen_enabled ) then
-            z1      = top%nb_list(ip)%z1
-            q1      = top%nb_list(ip)%q1
-            pepa1   = top%nb_list(ip)%pepa1
-            pepb1   = top%nb_list(ip)%pepb1
-
-            z2      = top%nb_list(ip)%z2
-            q2      = top%nb_list(ip)%q2
-            pepa2   = top%nb_list(ip)%pepa2
-            pepb2   = top%nb_list(ip)%pepb2
-
-            pfa1 = 1.0d0 - exp(-pepa1*r)
-            pfb1 = 1.0d0 - exp(-pepb1*r)
-            pfa2 = 1.0d0 - exp(-pepa2*r)
-            pfb2 = 1.0d0 - exp(-pepb2*r)
-
-            pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
-                 + (z1-q1)*(z2-q2)*pfb1*pfb2
-            V_pe = pee/r - V_ee
-        end if
-
     ! repulsion
         pa   = top%nb_list(ip)%pa
         pb   = top%nb_list(ip)%pb
@@ -99,34 +78,119 @@ subroutine ffdev_energy_nb_EXP_DISPTT(top,geo)
 
         lvaa = 0.0
         select case(exp_mode)
-            case(EXP_BM)
+            case(EXP_MODE_BM)
                 er   = pb*r
                 upe  = exp(-er)
                 V_aa = pa*upe
                 lvaa = pb
-            case(EXP_DO)
+            case(EXP_MODE_DO)
                 er   = pb*r
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 ! FIXME - not implemented
                 lvaa = pb
-            case(EXP_WO)
+            case(EXP_MODE_WO)
                 er   = pb*r
                 pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 ! FIXME - not implemented
                 lvaa = pb
-            case(EXP_SC)
+            case(EXP_MODE_SC)
                 er   = pb*r
-                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
+                pr   = (r*DEV_A2AU)**pc ! this part must be in a.u., see pc
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
         end select
+
+    ! penetration energy
+        V_pe  = 0.0d0
+        if( pen_enabled ) then
+            select case(pen_mode)
+                case(PEN_MODE_AMOEBA)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+                    pepb1   = top%nb_list(ip)%pepb1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+                    pepb2   = top%nb_list(ip)%pepb2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfb1 = exp(-pepb1*r)
+                    pfa2 = exp(-pepa2*r)
+                    pfb2 = exp(-pepb2*r)
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*(pfb1 + pfb2 - pfb1*pfb2)
+                    V_pe = pee/r
+            ! --------------------------
+                case(PEN_MODE_EFP_M1)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+
+                    pfa1 = exp(-pepa1*r)*(1.0 + 0.5d0*pepa1*r)
+                    pfa2 = exp(-pepa2*r)*(1.0 + 0.5d0*pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        ! order in inva2b2 is somewhere opposite, which changes the sign
+                        pfbb =  + exp(-pepa1*r) * (b2*inva2b2)**2 *                 &
+                                     (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r)     &
+                                + exp(-pepa2*r) * (a2*inva2b2)**2 *                 &
+                                     (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfbb =       + exp(-pepk*r) *               &
+                             ( 1.0d0 + 11.0d0/16.0d0*pepk*r         &
+                                     + 3.0d0/16.0d0*(pepk*r)**2     &
+                                     + 1.0d0/48.0d0*(pepk*r)**3 )
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+            ! --------------------------
+                case(PEN_MODE_EFP_M2)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfa2 = exp(-pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        pfbb = pfa1*b2*inva2b2 - pfa2*a2*inva2b2
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfbb = exp(-pepk*r)*(1.0 + 0.5d0*pepk*r)
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+            end select
+        end if
 
     ! dispersion
         ! dispersion coefficients
@@ -207,8 +271,9 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
     real(DEVDP)     :: pa,pb,pc,crgij,dxa1,dxa2,dxa3,tb
     real(DEVDP)     :: r2,r2a,r,r6a,r8a,r10a,c6,c8,c10
     real(DEVDP)     :: V_aa,V_bb,pe,V_ee,arg,upe,sump,suma
-    real(DEVDP)     :: fd6,fd8,fd10,er,pr,V_pe,lvaa
+    real(DEVDP)     :: fd6,fd8,fd10,er,pr,V_pe,lvaa,pepk,pfbb
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
+    real(DEVDP)     :: a2,b2,inva2b2
     ! --------------------------------------------------------------------------
 
     geo%sapt_ele = 0.0d0
@@ -233,27 +298,6 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
         crgij = top%sapt_list(ip)%crgij
         V_ee = crgij/r
 
-        V_pe  = 0.0d0
-        if( pen_enabled ) then
-            z1      = top%sapt_list(ip)%z1
-            q1      = top%sapt_list(ip)%q1
-            pepa1   = top%sapt_list(ip)%pepa1
-            pepb1   = top%sapt_list(ip)%pepb1
-            z2      = top%sapt_list(ip)%z2
-            q2      = top%sapt_list(ip)%q2
-            pepa2   = top%sapt_list(ip)%pepa2
-            pepb2   = top%sapt_list(ip)%pepb2
-
-            pfa1 = 1.0d0 - exp(-pepa1*r)
-            pfb1 = 1.0d0 - exp(-pepb1*r)
-            pfa2 = 1.0d0 - exp(-pepa2*r)
-            pfb2 = 1.0d0 - exp(-pepb2*r)
-
-            pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
-                 + (z1-q1)*(z2-q2)*pfb1*pfb2
-            V_pe = pee/r - V_ee
-        end if
-
     ! repulsion
         pa   = top%sapt_list(ip)%pa
         pb   = top%sapt_list(ip)%pb
@@ -261,34 +305,119 @@ subroutine ffdev_energy_sapt_EXP_DISPTT(top,geo)
 
         lvaa  = 0.0d0
         select case(exp_mode)
-            case(EXP_BM)
+            case(EXP_MODE_BM)
                 er   = pb*r
                 upe  = exp(-er)
                 V_aa = pa*upe
                 lvaa = pb
-            case(EXP_DO)
+            case(EXP_MODE_DO)
                 er   = pb*r
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 ! FIXME - not implemented
                 lvaa = pb
-            case(EXP_WO)
+            case(EXP_MODE_WO)
                 er   = pb*r
                 pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 ! FIXME - not implemented
                 lvaa = pb
-            case(EXP_SC)
+            case(EXP_MODE_SC)
                 er   = pb*r
-                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
+                pr   = (r*DEV_A2AU)**pc ! this part must be in a.u., see pc
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
         end select
+
+    ! penetration energy
+        V_pe  = 0.0d0
+        if( pen_enabled ) then
+            select case(pen_mode)
+                case(PEN_MODE_AMOEBA)
+                    z1      = top%sapt_list(ip)%z1
+                    q1      = top%sapt_list(ip)%q1
+                    pepa1   = top%sapt_list(ip)%pepa1
+                    pepb1   = top%sapt_list(ip)%pepb1
+
+                    z2      = top%sapt_list(ip)%z2
+                    q2      = top%sapt_list(ip)%q2
+                    pepa2   = top%sapt_list(ip)%pepa2
+                    pepb2   = top%sapt_list(ip)%pepb2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfb1 = exp(-pepb1*r)
+                    pfa2 = exp(-pepa2*r)
+                    pfb2 = exp(-pepb2*r)
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*(pfb1 + pfb2 - pfb1*pfb2)
+                    V_pe = pee/r
+            ! --------------------------
+                case(PEN_MODE_EFP_M1)
+                    z1      = top%sapt_list(ip)%z1
+                    q1      = top%sapt_list(ip)%q1
+                    pepa1   = top%sapt_list(ip)%pepa1
+
+                    z2      = top%sapt_list(ip)%z2
+                    q2      = top%sapt_list(ip)%q2
+                    pepa2   = top%sapt_list(ip)%pepa2
+
+                    pfa1 = exp(-pepa1*r)*(1.0 + 0.5d0*pepa1*r)
+                    pfa2 = exp(-pepa2*r)*(1.0 + 0.5d0*pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        ! order in inva2b2 is somewhere opposite, which changes the sign
+                        pfbb =  + exp(-pepa1*r) * (b2*inva2b2)**2 *                 &
+                                     (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r)     &
+                                + exp(-pepa2*r) * (a2*inva2b2)**2 *                 &
+                                     (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfbb =       + exp(-pepk*r) *               &
+                             ( 1.0d0 + 11.0d0/16.0d0*pepk*r         &
+                                     + 3.0d0/16.0d0*(pepk*r)**2     &
+                                     + 1.0d0/48.0d0*(pepk*r)**3 )
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+            ! --------------------------
+                case(PEN_MODE_EFP_M2)
+                    z1      = top%sapt_list(ip)%z1
+                    q1      = top%sapt_list(ip)%q1
+                    pepa1   = top%sapt_list(ip)%pepa1
+
+                    z2      = top%sapt_list(ip)%z2
+                    q2      = top%sapt_list(ip)%q2
+                    pepa2   = top%sapt_list(ip)%pepa2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfa2 = exp(-pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        pfbb = pfa1*b2*inva2b2 - pfa2*a2*inva2b2
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfbb = exp(-pepk*r)*(1.0 + 0.5d0*pepk*r)
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+            end select
+        end if
 
     ! dispersion
         ! dispersion coefficients
@@ -347,7 +476,7 @@ end subroutine ffdev_energy_sapt_EXP_DISPTT
 ! subroutine ffdev_energy_nbpair_EXP_DISPTT
 !===============================================================================
 
-subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
+subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
 
     use ffdev_topology_dat
     use ffdev_utils
@@ -355,7 +484,6 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
     implicit none
     type(NB_PAIR)           :: nbpair
     real(DEVDP)             :: r
-    logical                 :: include_pen
     type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------
     integer         :: k
@@ -363,7 +491,8 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
     real(DEVDP)     :: r2,r2a,suma,sump,upe,c6,c8,c10,pe
     real(DEVDP)     :: V_aa,V_bb,r6a,r8a,r10a,arg,fd10,fd8,fd6
     real(DEVDP)     :: z1,z2,q1,q2,pepa1,pepa2,pepb1,pepb2,pee,V_pe,crgij,V_ee
-    real(DEVDP)     :: pfa1,pfb1,pfa2,pfb2
+    real(DEVDP)     :: pfa1,pfb1,pfa2,pfb2,pepk,pfbb
+    real(DEVDP)     :: a2,b2,inva2b2
     ! --------------------------------------------------------------------------
 
     nbene%ele_ene = 0.0
@@ -375,32 +504,9 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
     r2   = r**2
     r2a  = 1.0d0/r2
 
-! penetration energy
-    V_ee  = 0.0d0
-    V_pe  = 0.0d0
-    if( pen_enabled .and. include_pen ) then
-        crgij = nbpair%crgij
-        V_ee = crgij/r
-
-        z1      = nbpair%z1
-        q1      = nbpair%q1
-        pepa1   = nbpair%pepa1
-        pepb1   = nbpair%pepb1
-
-        z2      = nbpair%z2
-        q2      = nbpair%q2
-        pepa2   = nbpair%pepa2
-        pepb2   = nbpair%pepb2
-
-        pfa1 = 1.0d0 - exp(-pepa1*r)
-        pfb1 = 1.0d0 - exp(-pepb1*r)
-        pfa2 = 1.0d0 - exp(-pepa2*r)
-        pfb2 = 1.0d0 - exp(-pepb2*r)
-
-        pee = z1*z2 - z1*(z2-q2)*pfa2 - (z1-q1)*z2*pfa1 &
-             + (z1-q1)*(z2-q2)*pfb1*pfb2
-        V_pe = pee/r - V_ee
-    end if
+! electrostatics
+    crgij = nbpair%crgij
+    V_ee = crgij/r
 
 ! repulsion
     pa   = nbpair%pa
@@ -409,34 +515,119 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,include_pen,nbene)
 
     lvaa  = 0.0d0
     select case(exp_mode)
-        case(EXP_BM)
+        case(EXP_MODE_BM)
             er   = pb*r
             upe  = exp(-er)
             V_aa = pa*upe
             lvaa = pb
-        case(EXP_DO)
+        case(EXP_MODE_DO)
             er   = pb*r
             pr   = 1.0d0 + er + er**2/3.0d0
             upe  = exp(-er)
             V_aa = pa*pr*upe
             ! FIXME - not implemented
             lvaa = pb
-        case(EXP_WO)
+        case(EXP_MODE_WO)
             er   = pb*r
             pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
             upe  = exp(-er)
             V_aa = pa*pr*upe
             ! FIXME - not implemented
             lvaa = pb
-        case(EXP_SC)
+        case(EXP_MODE_SC)
             er   = pb*r
-            pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
+            pr   = (r*DEV_A2AU)**pc ! this part must be in a.u., see pc
             upe  = exp(-er)
             V_aa = pa*pr*upe
             lvaa = pb - pc/r
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
     end select
+
+! penetration energy
+    V_pe  = 0.0d0
+    if( pen_enabled ) then
+        select case(pen_mode)
+            case(PEN_MODE_AMOEBA)
+                z1      = nbpair%z1
+                q1      = nbpair%q1
+                pepa1   = nbpair%pepa1
+                pepb1   = nbpair%pepb1
+
+                z2      = nbpair%z2
+                q2      = nbpair%q2
+                pepa2   = nbpair%pepa2
+                pepb2   = nbpair%pepb2
+
+                pfa1 = exp(-pepa1*r)
+                pfb1 = exp(-pepb1*r)
+                pfa2 = exp(-pepa2*r)
+                pfb2 = exp(-pepb2*r)
+
+                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                      - (z1-q1)*(z2-q2)*(pfb1 + pfb2 - pfb1*pfb2)
+                V_pe = pee/r
+        ! --------------------------
+            case(PEN_MODE_EFP_M1)
+                z1      = nbpair%z1
+                q1      = nbpair%q1
+                pepa1   = nbpair%pepa1
+
+                z2      = nbpair%z2
+                q2      = nbpair%q2
+                pepa2   = nbpair%pepa2
+
+                pfa1 = exp(-pepa1*r)*(1.0 + 0.5d0*pepa1*r)
+                pfa2 = exp(-pepa2*r)*(1.0 + 0.5d0*pepa2*r)
+
+                if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                    a2 = pepa1 ** 2
+                    b2 = pepa2 ** 2
+                    inva2b2 = 1.0d0/(b2 - a2)
+                    ! order in inva2b2 is somewhere opposite, which changes the sign
+                    pfbb =  + exp(-pepa1*r) * (b2*inva2b2)**2 *                 &
+                                 (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r)     &
+                            + exp(-pepa2*r) * (a2*inva2b2)**2 *                 &
+                                 (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
+                else
+                    pepk = 0.5d0*(pepa1 + pepa2)
+                    pfbb =       + exp(-pepk*r) *               &
+                         ( 1.0d0 + 11.0d0/16.0d0*pepk*r         &
+                                 + 3.0d0/16.0d0*(pepk*r)**2     &
+                                 + 1.0d0/48.0d0*(pepk*r)**3 )
+                end if
+
+                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                      - (z1-q1)*(z2-q2)*pfbb
+                V_pe = pee/r
+        ! --------------------------
+            case(PEN_MODE_EFP_M2)
+                z1      = nbpair%z1
+                q1      = nbpair%q1
+                pepa1   = nbpair%pepa1
+
+                z2      = nbpair%z2
+                q2      = nbpair%q2
+                pepa2   = nbpair%pepa2
+
+                pfa1 = exp(-pepa1*r)
+                pfa2 = exp(-pepa2*r)
+
+                if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                    a2 = pepa1 ** 2
+                    b2 = pepa2 ** 2
+                    inva2b2 = 1.0d0/(b2 - a2)
+                    pfbb = pfa1*b2*inva2b2 - pfa2*a2*inva2b2
+                else
+                    pepk = 0.5d0*(pepa1 + pepa2)
+                    pfbb = exp(-pepk*r)*(1.0 + 0.5d0*pepk*r)
+                end if
+
+                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                      - (z1-q1)*(z2-q2)*pfbb
+                V_pe = pee/r
+        end select
+    end if
 
 ! dispersion
     ! dispersion coefficients
@@ -508,8 +699,9 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     real(DEVDP)     :: inv_scee,inv_scnb,pa,pb,pc,crgij,dxa1,dxa2,dxa3,upe,tb
     real(DEVDP)     :: r2,r,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
     real(DEVDP)     :: V_aa,V_b6,V_b8,V_b10,V_ee,dva,r2a,dfd6,dfd8,dfd10,sumd,suma
-    real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,V_pe,lvaa,tvaa
+    real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,V_pe,lvaa,tvaa,pepk,pfbb
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
+    real(DEVDP)     :: a2,b2,inva2b2,pfe1,pfe2,pfeb
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -539,34 +731,6 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         V_ee  = crgij/r
         dvee  = V_ee
 
-        V_pe  = 0.0d0
-        dvpe  = 0.0d0
-        lvaa  = 0.0d0
-        if( pen_enabled ) then
-            z1      = top%nb_list(ip)%z1
-            q1      = top%nb_list(ip)%q1
-            pepa1   = top%nb_list(ip)%pepa1
-            pepb1   = top%nb_list(ip)%pepb1
-            z2      = top%nb_list(ip)%z2
-            q2      = top%nb_list(ip)%q2
-            pepa2   = top%nb_list(ip)%pepa2
-            pepb2   = top%nb_list(ip)%pepb2
-
-            pfa1 = exp(-pepa1*r)
-            pfb1 = exp(-pepb1*r)
-            pfa2 = exp(-pepa2*r)
-            pfb2 = exp(-pepb2*r)
-
-            ! full electrostatic with charge penetration
-            pee = z1*z2 - z1*(z2-q2)*(1.0d0-pfa2) - (z1-q1)*z2*(1.0d0-pfa1) &
-                 + (z1-q1)*(z2-q2)*(1.0d0-pfb1)*(1.0d0-pfb2)
-            ! subtract MM energy
-            V_pe = pee/r - V_ee
-            ! derivatives
-            dvpe = V_pe + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
-                 + (z1-q1)*(z2-q2)*(-pfb1*pepb1 - pfb2*pepb2 + pfb1*pfb2*pepb2 + pfb1*pepb1*pfb2)
-        end if
-
     ! repulsion
         pa   = top%nb_list(ip)%pa
         pb   = top%nb_list(ip)%pb
@@ -575,14 +739,14 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         lvaa = 0.0d0
         tvaa = 0.0d0
         select case(exp_mode)
-            case(EXP_BM)
+            case(EXP_MODE_BM)
                 er   = pb*r
                 upe  = exp(-er)
                 V_aa = pa*upe
                 lvaa = pb
                 dvaa = V_aa*pb*r
          !------------
-            case(EXP_DO)
+            case(EXP_MODE_DO)
                 er   = pb*r
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
@@ -591,7 +755,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                 lvaa = pb
                 dvaa = V_aa*pb*r - r*pa*upe*(pb + 2.0d0*pb*pb*r/3.0d0)
         !------------
-            case(EXP_WO)
+            case(EXP_MODE_WO)
                 er   = pb*r
                 pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
                 upe  = exp(-er)
@@ -601,9 +765,9 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                 dvaa = V_aa*pb*r &
                      - r*pa*upe*(-r2a + 5.0d0/12.0d0*pb**2 + 2.0d0/12.0d0*pb**3*r + 3.0d0/144.0d0*pb**4 * r2)
         !------------
-            case(EXP_SC)
+            case(EXP_MODE_SC)
                 er   = pb*r
-                pr   = (r*DEV_A2AU)**pc ! this part must be a.u.
+                pr   = (r*DEV_A2AU)**pc ! this part must be in a.u., see pc
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb - pc/r
@@ -612,6 +776,128 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
         end select
+
+    ! penetration energy
+        V_pe  = 0.0d0
+        dvpe  = 0.0d0
+        if( pen_enabled ) then
+            select case(pen_mode)
+                case(PEN_MODE_AMOEBA)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+                    pepb1   = top%nb_list(ip)%pepb1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+                    pepb2   = top%nb_list(ip)%pepb2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfb1 = exp(-pepb1*r)
+                    pfa2 = exp(-pepa2*r)
+                    pfb2 = exp(-pepb2*r)
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*(pfb1 + pfb2 - pfb1*pfb2)
+                    V_pe = pee/r
+
+                    ! derivatives
+                    dvpe = V_pe + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
+                         - (z1-q1)*(z2-q2)*(pfb1*pepb1 + pfb2*pepb2 - pfb1*pfb2*pepb2 - pfb1*pepb1*pfb2)
+            ! --------------------------
+                case(PEN_MODE_EFP_M1)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+
+                    pfe1 = exp(-pepa1*r)
+                    pfa1 = pfe1*(1.0 + 0.5d0*pepa1*r)
+
+                    pfe2 = exp(-pepa2*r)
+                    pfa2 = pfe2*(1.0 + 0.5d0*pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        ! order in inva2b2 is somewhere opposite, which changes the sign
+                        pfbb =  + pfe1 * (b2*inva2b2)**2 * (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r) &
+                                + pfe2 * (a2*inva2b2)**2 * (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
+
+                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
+                        dvpe = + z1*(z2-q2)*(pfa2*pepa2 - 0.5d0*pepa2*pfe2)     &
+                               + (z1-q1)*z2*(pfa1*pepa1 - 0.5d0*pepa1*pfe1)     &
+                               - (z1-q1)*(z2-q2)*(                              &
+                               + pfe1 * (b2*inva2b2)**2 * (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r) * pepa1 &
+                               - 0.5d0*pepa1*pfe1 * (b2*inva2b2)**2  &
+                               + pfe2 * (a2*inva2b2)**2 * (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r) * pepa2 &
+                               - 0.5d0*pepa2*pfe2 * (a2*inva2b2)**2 )
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfeb = exp(-pepk*r)
+                        pfbb = + pfeb * ( 1.0d0                 &
+                               + 11.0d0/16.0d0*pepk*r           &
+                               + 3.0d0/16.0d0*(pepk*r)**2       &
+                               + 1.0d0/48.0d0*(pepk*r)**3 )
+
+                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
+                        dvpe = + z1*(z2-q2)*(pfa2*pepa2 - 0.5d0*pepa2*pfe2)     &
+                               + (z1-q1)*z2*(pfa1*pepa1 - 0.5d0*pepa1*pfe1)     &
+                               - (z1-q1)*(z2-q2)*(pfbb*pepk &
+                               - pfeb*(11.0d0/16.0d0*pepk + 2.0d0*3.0d0/16.0d0*r*(pepk)**2 + 3.0d0/48.0d0*r**2*(pepk)**3 ) )
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+
+                    ! derivatives
+                    dvpe = dvpe + V_pe
+            ! --------------------------
+                case(PEN_MODE_EFP_M2)
+                    z1      = top%nb_list(ip)%z1
+                    q1      = top%nb_list(ip)%q1
+                    pepa1   = top%nb_list(ip)%pepa1
+
+                    z2      = top%nb_list(ip)%z2
+                    q2      = top%nb_list(ip)%q2
+                    pepa2   = top%nb_list(ip)%pepa2
+
+                    pfa1 = exp(-pepa1*r)
+                    pfa2 = exp(-pepa2*r)
+
+                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
+                        a2 = pepa1 ** 2
+                        b2 = pepa2 ** 2
+                        inva2b2 = 1.0d0/(b2 - a2)
+                        pfbb = pfa1*b2*inva2b2 - pfa2*a2*inva2b2
+
+                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
+                        dvpe = + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
+                               - (z1-q1)*(z2-q2)*(pfa1*b2*inva2b2*pepa1 - pfa2*a2*inva2b2*pepa2)
+                    else
+                        pepk = 0.5d0*(pepa1 + pepa2)
+                        pfeb = exp(-pepk*r)
+                        pfbb = pfeb*(1.0 + 0.5d0*pepk*r)
+
+                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
+                        dvpe = + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
+                               - (z1-q1)*(z2-q2)*(pfbb*pepk - 0.5d0*pfeb*pepk)
+                    end if
+
+                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
+                          - (z1-q1)*(z2-q2)*pfbb
+                    V_pe = pee/r
+
+                    ! derivatives
+                    dvpe = dvpe + V_pe
+            end select
+        end if
 
     ! dispersion
         ! dispersion coefficients

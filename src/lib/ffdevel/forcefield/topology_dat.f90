@@ -157,7 +157,7 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                ! atom types
     real(DEVDP)         :: eps, r0              ! LJ parameters
-    real(DEVDP)         :: PA, PB, PC           ! repulsion parameters - PC is derived from PB for EXP_SC
+    real(DEVDP)         :: PA, PB, PC           ! repulsion parameters - PC is derived from PB for EXP_MODE_SC
     real(DEVDP)         :: RC                   ! BJ damping radius
     real(DEVDP)         :: TB                   ! TT damping factor
     logical             :: ffoptactive          ! this type is subject of ffopt
@@ -231,15 +231,18 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 ! ==== vdW modes
 ! ==============================================================================
 
-integer,parameter   :: PEN_PA_FREEOPT       = 784        ! pa = free to optimize as pen_pa
-integer,parameter   :: PEN_PA_CONST         = 785        ! pa = pen_fa
-integer,parameter   :: PEN_PA_ADBII         = 781        ! pa = pen_fa * bii (atomic database)
-integer,parameter   :: PEN_PA_ADRCII        = 787        ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
-integer,parameter   :: PEN_PA_COUPLED       = 782        ! pa = pen_fa * vdw_pb
+integer,parameter   :: PEN_MODE_AMOEBA      = 1         ! DOI: 10.1039/c6cp06017j
+integer,parameter   :: PEN_MODE_EFP_M1      = 2         ! DOI: 10.1002/jcc.20520 -> Model 1
+integer,parameter   :: PEN_MODE_EFP_M2      = 3         ! DOI: 10.1002/jcc.20520 -> Model 2
 
-integer,parameter   :: PEN_PB_FREEOPT       = 794        ! pb = free to optimize as pen_pb
-integer,parameter   :: PEN_PB_CONST         = 795        ! pb = pen_fb
-integer,parameter   :: PEN_PB_COUPLED       = 796        ! pb = pen_fb * pen_pa
+integer,parameter   :: PEN_PA_FREEOPT       = 784       ! pa = free to optimize as pen_pa
+integer,parameter   :: PEN_PA_CONST         = 785       ! pa = pen_fa
+integer,parameter   :: PEN_PA_ADBII         = 781       ! pa = pen_fa * bii (atomic database)
+integer,parameter   :: PEN_PA_ADRCII        = 787       ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
+integer,parameter   :: PEN_PA_COUPLED       = 782       ! pa = pen_fa * vdw_pb
+
+integer,parameter   :: PEN_PB_CONST         = 795       ! pb = pen_fb
+integer,parameter   :: PEN_PB_COUPLED       = 796       ! pb = pen_fb * pen_pa
 
 ! ####################################################################
 
@@ -252,10 +255,10 @@ integer,parameter   :: LJ_COMB_RULE_FB      = 14        ! FB (Fender-Halsey-Bert
 ! ####################################################################
 
 ! exp_mode
-integer,parameter   :: EXP_BM               = 64        ! Born-Mayer
-integer,parameter   :: EXP_DO               = 67        ! Density overlap
-integer,parameter   :: EXP_WO               = 68        ! Wavefunction overlap
-integer,parameter   :: EXP_SC               = 69        ! Smirnov and Chibisov, doi: 10.1021/jp2010925
+integer,parameter   :: EXP_MODE_BM          = 64        ! Born-Mayer
+integer,parameter   :: EXP_MODE_DO          = 67        ! Density overlap
+integer,parameter   :: EXP_MODE_WO          = 68        ! Wavefunction overlap
+integer,parameter   :: EXP_MODE_SC          = 69        ! Smirnov and Chibisov, doi: 10.1021/jp2010925
 
 ! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! pb = free to optimize as vdw_pb
@@ -279,6 +282,7 @@ integer,parameter   :: DAMP_TT_COUPLED      = 101       ! tb = damp_tb * vdw_pb
 integer,parameter   :: DAMP_TT_FREEOPT      = 102       ! tb = free to optimize as vdw_tb
 integer,parameter   :: DAMP_TT_CONST        = 103       ! tb = damp_tb
 integer,parameter   :: DAMP_TT_ADBII        = 104       ! tb = damp_pb * bii (atomic database)
+integer,parameter   :: DAMP_TT_EXACT        = 105       ! tb = damp_pb * bii (atomic database)
 
 ! ==============================================================================
 ! nb_mode
@@ -290,13 +294,15 @@ integer,parameter   :: NB_VDW_EXP_DISPTT    = 30        ! Exp-Tang–Toennies
 integer     :: nb_mode                      = NB_VDW_LJ
 ! PEN
 logical     :: pen_enabled                  = .false.           ! penetration energy
+integer     :: pen_mode                     = PEN_MODE_EFP_M1
 integer     :: pen_pa_mode                  = PEN_PA_FREEOPT
 integer     :: pen_pb_mode                  = PEN_PB_COUPLED
+logical     :: pen_valence_only             = .true.            ! consider only valence electrons
 
 ! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
 ! EXP
-integer     :: exp_mode                     = EXP_BM
+integer     :: exp_mode                     = EXP_MODE_BM
 integer     :: exp_pb_mode                  = EXP_PB_FREEOPT
 integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 ! DISP
@@ -304,7 +310,7 @@ integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
 ! use pb*r (simplified) or -d/dr(ln(Erep)) (exact) in TT series
-! available for EXP_BM, EXP_SC, only experimental
+! available for EXP_MODE_BM, EXP_MODE_SC, only experimental
 logical     :: disptt_exact                 = .true.
 
 

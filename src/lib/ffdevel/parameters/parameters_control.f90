@@ -507,9 +507,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
     integer                     :: ldampbj_mode,ldamptt_mode,lexp_pb_mode
-    integer                     :: from_nb_mode,to_nb_mode
+    integer                     :: from_nb_mode,to_nb_mode,lpen_mode
     integer                     :: lcomb_rules,lexp_mode,lpen_pa_mode,lpen_pb_mode
-    logical                     :: lpen_enabled
+    logical                     :: lpen_enabled,lpen_valq_only
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -518,8 +518,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     if( .not. prmfile_open_section(fin,'nbsetup') ) then
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
         write(DEV_OUT,95)  prmfile_onoff(pen_enabled)
+        write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
         write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
         write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
+        write(DEV_OUT,135) prmfile_onoff(pen_valence_only)
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
             write(DEV_OUT,45) ffdev_topology_BJ_dampbj_mode_to_string(dampbj_mode)
         end if
@@ -568,6 +570,17 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             write(DEV_OUT,95) prmfile_onoff(pen_enabled)
         end if
     !----------
+        if( prmfile_get_string_by_key(fin,'pen_mode', string)) then
+            lpen_mode = ffdev_topology_PEN_mode_from_string(string)
+            write(DEV_OUT,120) ffdev_topology_PEN_mode_to_string(lpen_mode)
+            if( exec ) then
+                pen_mode = lpen_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
+        end if
+    !----------
         if( prmfile_get_string_by_key(fin,'pen_pa_mode', string)) then
             lpen_pa_mode = ffdev_topology_PEN_pa_mode_from_string(string)
             write(DEV_OUT,100) ffdev_topology_PEN_pa_mode_to_string(lpen_pa_mode)
@@ -589,6 +602,17 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         else
             write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
         end if
+    !----------
+        if( prmfile_get_logical_by_key(fin,'pen_valq_only', lpen_valq_only)) then
+            write(DEV_OUT,130) prmfile_onoff(lpen_valq_only)
+            if( exec ) then
+                pen_valence_only = lpen_valq_only
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,135) prmfile_onoff(pen_valence_only)
+        end if
+
 
     if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
     ! EXP
@@ -724,11 +748,17 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
  90 format('Penetration energy (pen_enabled)     = ',A)
  95 format('Penetration energy (pen_enabled)     = ',A31,' (current)')
 
+120 format('Pen energy mode (pen_mode)           = ',A)
+125 format('Pen energy mode (pen_mode)           = ',A31,' (current)')
+
 100 format('Pen energy PA mode (pen_pa_mode)     = ',A)
 105 format('Pen energy PA mode (pen_pa_mode)     = ',A31,' (current)')
 
 110 format('Pen energy PB mode (pen_pb_mode)     = ',A)
 115 format('Pen energy PB mode (pen_pb_mode)     = ',A31,' (current)')
+
+130 format('Use only val electrs (pen_valq_only) = ',A)
+135 format('Use only val electrs (pen_valq_only) = ',A31,' (current)')
 
  15 format('=== SET ',I2.2)
 
