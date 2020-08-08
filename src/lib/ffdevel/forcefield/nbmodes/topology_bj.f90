@@ -40,8 +40,8 @@ character(80) function ffdev_topology_BJ_dampbj_mode_to_string(nb_mode)
             ffdev_topology_BJ_dampbj_mode_to_string = 'CONST - Constant Rc'
         case(DAMP_BJ_FREEOPT)
             ffdev_topology_BJ_dampbj_mode_to_string = 'FREEOPT - Use optimized Rc per type'
-        case(DAMP_BJ_ADRII)
-            ffdev_topology_BJ_dampbj_mode_to_string = 'ADRII - Atomic database Rcii'
+        case(DAMP_BJ_ADRCII)
+            ffdev_topology_BJ_dampbj_mode_to_string = 'ADRCII - Atomic database Rcii'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_BJ_dampbj_mode_to_string!')
     end select
@@ -65,8 +65,8 @@ integer function ffdev_topology_BJ_dampbj_mode_from_string(string)
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_CONST
         case('FREEOPT')
             ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_FREEOPT
-        case('ADRII')
-            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_ADRII
+        case('ADRCII')
+            ffdev_topology_BJ_dampbj_mode_from_string = DAMP_BJ_ADRCII
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_BJ_dampbj_mode_from_string!')
     end select
@@ -99,7 +99,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
         case(DAMP_BJ_FREEOPT)
             ! nothing
     !---------------
-        case(DAMP_BJ_ADRII)
+        case(DAMP_BJ_ADRCII)
             do i=1,top%nnb_types
                 ti   = top%nb_types(i)%ti
                 tj   = top%nb_types(i)%tj
@@ -122,7 +122,7 @@ subroutine ffdev_topology_BJ_update_nb_params(top)
                 call ffdev_topology_BJ_update_nb_params_RC(top)
             end if
     !---------------
-        case(DAMP_BJ_ADRII)
+        case(DAMP_BJ_ADRCII)
             if( .not. ApplyCombiningRules ) then
                 ! we need to apply combining rules for unlike atoms
                 call ffdev_utils_exit(DEV_ERR,1,'DAMP_BJ_ADRII requires ApplyCombiningRules!')

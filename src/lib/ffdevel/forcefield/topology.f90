@@ -1571,7 +1571,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     ! ------------------------
         case(NB_VDW_EXP_DISPBJ)
             ! exp
-            nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
+            nbpair%pb  = top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
             nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
 
@@ -1587,7 +1587,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
             ! exp
-            nbpair%pb  = damp_pb * top%nb_types(nbt)%pb
+            nbpair%pb  = top%nb_types(nbt)%pb
             nbpair%pa  = exp(top%nb_types(nbt)%pa)
             nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
 
@@ -1597,7 +1597,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
             ! TT damping
-            nbpair%tb = damp_tb * top%nb_types(nbt)%tb
+            nbpair%tb = top%nb_types(nbt)%tb
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')

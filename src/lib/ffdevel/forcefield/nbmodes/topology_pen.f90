@@ -42,8 +42,8 @@ character(80) function ffdev_topology_PEN_pa_mode_to_string(lpen_mode)
             ffdev_topology_PEN_pa_mode_to_string = 'CONST - set to pen_fa'
         case(PEN_PA_ADBII)
             ffdev_topology_PEN_pa_mode_to_string = 'ADBII - Atomic database Bii'
-        case(PEN_PA_ADRII)
-            ffdev_topology_PEN_pa_mode_to_string = 'ADRII - Atomic database Rcii'
+        case(PEN_PA_ADRCII)
+            ffdev_topology_PEN_pa_mode_to_string = 'ADRCII - Atomic database Rcii'
         case(PEN_PA_COUPLED)
             ffdev_topology_PEN_pa_mode_to_string = 'COUPLED - PA coupled by pen_fa to EXP(PB)'
         case default
@@ -71,8 +71,8 @@ integer function ffdev_topology_PEN_pa_mode_from_string(string)
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_CONST
         case('ADBII')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_ADBII
-        case('ADRII')
-            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_ADRII
+        case('ADRCII')
+            ffdev_topology_PEN_pa_mode_from_string = PEN_PA_ADRCII
         case('COUPLED')
             ffdev_topology_PEN_pa_mode_from_string = PEN_PA_COUPLED
         case default
@@ -197,7 +197,7 @@ subroutine ffdev_topology_PEN_update_nb_params(top)
                 top%atom_types(i)%pen_pa = pen_fa
             case(PEN_PA_ADBII)
                 top%atom_types(i)%pen_pa = pen_fa * ffdev_atomicdata_bii(top%atom_types(i)%glbtypeid)
-            case(PEN_PA_ADRII)
+            case(PEN_PA_ADRCII)
                 r = ffdev_atomicdata_rcii(top%atom_types(i)%glbtypeid,damp_fa,damp_fb)
                 if( r .le. 0.0d0 ) r = 1.0d0
                 top%atom_types(i)%pen_pa = pen_fa / r

@@ -478,9 +478,9 @@ subroutine ffdev_parameters_reinit()
                 select case(pen_pa_mode)
                     case(PEN_PA_FREEOPT)
                         use_pen_pa = .true.
-                    case(PEN_PA_ADBII)
+                    case(PEN_PA_ADBII,PEN_PA_COUPLED)
                         ! nothing to be here
-                    case(PEN_PA_ADRII)
+                    case(PEN_PA_ADRCII)
                         use_damp_fa = .true.
                         use_damp_fb = .true.
                     case default
@@ -532,7 +532,7 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_rc      = .true.
                 case(DAMP_BJ_CONST)
                     use_damp_fa     = .true.
-                case(DAMP_BJ_ADRII)
+                case(DAMP_BJ_ADRCII)
                     use_damp_fa     = .true.
                     use_damp_fb     = .true.
                 case default

@@ -204,7 +204,7 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%pb = ffdev_atomicdata_bii(agti)
+                top%nb_types(i)%pb = damp_pb * ffdev_atomicdata_bii(agti)
             end do
     !---------------
         case default
@@ -269,7 +269,7 @@ subroutine ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
         top%nb_types(i)%pb = pbij
 
         ! this part must be a.u.
-        pcij = 4.0d0/(pbii*damp_pb)*DEV_AU2A + 4.0d0/(pbjj*damp_pb)*DEV_AU2A - 2.0d0/(pbii*damp_pb+pbjj*damp_pb)*DEV_AU2A - 1.0d0
+        pcij = DEV_AU2A*4.0d0/pbii + DEV_AU2A*4.0d0/pbjj - DEV_AU2A*2.0d0/(pbii+pbjj) - 1.0d0
 
         top%nb_types(i)%pc = pcij
     end do

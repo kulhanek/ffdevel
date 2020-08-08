@@ -234,7 +234,7 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 integer,parameter   :: PEN_PA_FREEOPT       = 784        ! pa = free to optimize as pen_pa
 integer,parameter   :: PEN_PA_CONST         = 785        ! pa = pen_fa
 integer,parameter   :: PEN_PA_ADBII         = 781        ! pa = pen_fa * bii (atomic database)
-integer,parameter   :: PEN_PA_ADRII         = 787        ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
+integer,parameter   :: PEN_PA_ADRCII        = 787        ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
 integer,parameter   :: PEN_PA_COUPLED       = 782        ! pa = pen_fa * vdw_pb
 
 integer,parameter   :: PEN_PB_FREEOPT       = 794        ! pb = free to optimize as pen_pb
@@ -272,7 +272,7 @@ integer,parameter   :: EXP_COMB_RULE_VS     = 394       ! Vleet-Schmidt
 ! Becke-Johnson damping
 integer,parameter   :: DAMP_BJ_CONST        = 201       ! rc = damp_fa
 integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! rc = free to optimize as vdw_rc
-integer,parameter   :: DAMP_BJ_ADRII        = 205       ! rc = rii([damp_fa]) (atomic database)
+integer,parameter   :: DAMP_BJ_ADRCII       = 205       ! rc = rcii(typeA,typeB,[damp_fa,damp_fb]) (atomic database)
 
 ! Tang–Toennies damping
 integer,parameter   :: DAMP_TT_COUPLED      = 101       ! tb = damp_tb * vdw_pb
@@ -305,7 +305,7 @@ integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
 ! use pb*r (simplified) or -d/dr(ln(Erep)) (exact) in TT series
 ! available for EXP_BM, EXP_SC, only experimental
-logical     :: disptt_exact                 = .false.
+logical     :: disptt_exact                 = .true.
 
 
 ! derived setup

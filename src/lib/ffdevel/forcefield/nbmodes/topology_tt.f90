@@ -97,7 +97,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
     select case(damptt_mode)
         case(DAMP_TT_CONST)
             do i=1,top%nnb_types
-                top%nb_types(i)%tb = 1.0d0
+                top%nb_types(i)%tb = damp_tb
             end do
     !---------------
         case(DAMP_TT_FREEOPT)
@@ -105,7 +105,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
     !---------------
         case(DAMP_TT_COUPLED)
             do i=1,top%nnb_types
-                top%nb_types(i)%tb = top%nb_types(i)%pb
+                top%nb_types(i)%tb = damp_tb * top%nb_types(i)%pb
             end do
     !---------------
         case(DAMP_TT_ADBII)
@@ -113,7 +113,7 @@ subroutine ffdev_topology_TT_update_nb_params(top)
                 if( top%nb_types(i)%ti .ne. top%nb_types(i)%tj ) cycle
                 ti   = top%nb_types(i)%ti
                 agti = top%atom_types(ti)%glbtypeid
-                top%nb_types(i)%tb = ffdev_atomicdata_bii(agti)
+                top%nb_types(i)%tb = damp_tb * ffdev_atomicdata_bii(agti)
             end do
     !---------------
         case default
