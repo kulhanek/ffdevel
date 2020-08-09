@@ -44,6 +44,8 @@ character(80) function ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-WO - Wavefunction overlap'
         case(EXP_MODE_SC)
             ffdev_topology_EXP_exp_mode_to_string = 'EXP-SC - Smirnov and Chibisov exchange repulsion'
+        case(EXP_MODE_MEDFF)
+            ffdev_topology_EXP_exp_mode_to_string = 'EXP-MEDFF  - Full density overlap'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_EXP_exp_mode_to_string!')
     end select
@@ -71,6 +73,8 @@ integer function ffdev_topology_EXP_exp_mode_from_string(string)
             ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_WO
         case('EXP-SC')
             ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_SC
+        case('EXP-MEDFF')
+            ffdev_topology_EXP_exp_mode_from_string = EXP_MODE_MEDFF
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_EXP_exp_mode_from_string!')
     end select

@@ -199,19 +199,21 @@ subroutine ffdev_err_energy_summary
             end if
 
             write(DEV_OUT,30,ADVANCE='NO') i, j, sets(i)%geo(j)%weight, &
-                              sets(i)%geo(j)%trg_energy, sets(i)%geo(j)%total_ene, aerr, rerr*100.0d0, lerr
+                              sets(i)%geo(j)%total_ene, sets(i)%geo(j)%trg_energy, aerr, rerr*100.0d0, lerr
 
             write(DEV_OUT,70) sets(i)%geo(j)%bond_ene, sets(i)%geo(j)%angle_ene, sets(i)%geo(j)%dih_ene, &
                               sets(i)%geo(j)%impropr_ene, sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
                               sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%pen_ene, sets(i)%geo(j)%ele14_ene, &
                               sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ele14_ene, &
+                              sets(i)%geo(j)%ind_ene, &
                               sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%rep14_ene, sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene, &
                               sets(i)%geo(j)%dis_ene, sets(i)%geo(j)%dis14_ene, sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene, &
-                              sets(i)%geo(j)%bond_ene + sets(i)%geo(j)%angle_ene + &
-                              sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
-                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ele14_ene + &
-                              sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene + &
-                              sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene
+                              sets(i)%geo(j)%bond_ene + sets(i)%geo(j)%angle_ene      &
+                               + sets(i)%geo(j)%dih_ene + sets(i)%geo(j)%impropr_ene, &
+                              sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ele14_ene  &
+                               + sets(i)%geo(j)%ind_ene &
+                               + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%rep14_ene  &
+                               + sets(i)%geo(j)%dis_ene + sets(i)%geo(j)%dis14_ene
 
             if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
                 call ffdev_geometry_info_ene(sets(i)%geo(j))
@@ -240,20 +242,20 @@ subroutine ffdev_err_energy_summary
     write(DEV_OUT,45)  EnergyErrorWeight*aserr, EnergyErrorWeight*rserr*100.0d0, EnergyErrorWeight*lserr
 
  5 format('# Energy errors')
-10 format('# SET GeoID Weight     E(TGR)      E(MM)     Err(E) relErr%(E)  logErr(E)  ')
-20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ----------  ')
-30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,2X)
+10 format('# SET GeoID Weight      E(MM)     E(TGR)     Err(E) relErr%(E)  logErr(E) | ')
+20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ---------- | ')
+30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,3X)
 
 35 format('# Maximum signed error (MSE)          =  ',F10.3)
 40 format('# Root mean square error (RMSE)       =  ',F10.3,1X,F10.3,1X,F10.3)
 45 format('# Final RMSE (all weights)            =  ',F10.3,1X,F10.3,1X,F10.3)
 
 50 format('     Ebonds    Eangles      Etors      Eimps  Edih(t+i)        Eel       Epen      E14el    Etotele' &
-          '       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')
+          '       Eind       Erep     E14rep    Etotrep      Edisp    E14disp   Etotdisp        Ebn        Enb')
 60 format(' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
-          ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+          ' ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
 70 format(1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3, &
-          1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+          1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 
 end subroutine ffdev_err_energy_summary
 

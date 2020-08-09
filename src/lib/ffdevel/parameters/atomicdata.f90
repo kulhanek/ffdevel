@@ -433,6 +433,57 @@ real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
 
 end function ffdev_atomicdata_rcii
 
+! ------------------------------------------------------------------------------
+
+integer function ffdev_atomicdata_get_effZ(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    ffdev_atomicdata_get_effZ = 1 ! default to H
+
+    z = types(gti)%z
+
+    select case(atom_core)
+        case(AD_ATOM_CORE_NONE)
+            ffdev_atomicdata_get_effZ = z
+            return
+    ! --------------------
+        case(AD_ATOM_CORE_MAX)
+            ! determine number of valence electrons
+            if( z .le. 0 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_effZ')
+            end if
+            if( z .le. 2 ) then
+                ! H-He
+                ffdev_atomicdata_get_effZ = z
+                return
+            end if
+            if( z .le. 10 ) then
+                ! Li-Ne
+                ffdev_atomicdata_get_effZ = z - 2
+                return
+            end if
+            if( z .le. 18 ) then
+                ! Na-Ar
+                ffdev_atomicdata_get_effZ = z - 10
+                return
+            end if
+            ! FIXME
+            call ffdev_utils_exit(DEV_ERR,1,'Not defined in ffdev_atomicdata_get_effZ')
+    ! --------------------
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_get_effZ')
+    end select
+
+end function ffdev_atomicdata_get_effZ
+
 ! ==============================================================================
 ! subroutine ffdev_atomicdata_bii_source_from_string
 ! ==============================================================================
@@ -621,6 +672,52 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
     end select
 
 end function ffdev_atomicdata_rcii_source_to_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_atom_core_from_string
+! ==============================================================================
+
+integer function ffdev_atomicdata_atom_core_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('NONE')
+            ffdev_atomicdata_atom_core_from_string = AD_ATOM_CORE_NONE
+        case('MAX')
+            ffdev_atomicdata_atom_core_from_string = AD_ATOM_CORE_MAX
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_atom_core_from_string!')
+    end select
+
+end function ffdev_atomicdata_atom_core_from_string
+
+! ==============================================================================
+! subroutine ffdev_atomicdata_atom_core_to_string
+! ==============================================================================
+
+character(80) function ffdev_atomicdata_atom_core_to_string(mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: mode
+    ! --------------------------------------------------------------------------
+
+    select case(mode)
+        case(AD_ATOM_CORE_NONE)
+            ffdev_atomicdata_atom_core_to_string = 'NONE'
+        case(AD_ATOM_CORE_MAX)
+            ffdev_atomicdata_atom_core_to_string = 'MAX'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_atom_core_to_string!')
+    end select
+
+end function ffdev_atomicdata_atom_core_to_string
 
 ! ------------------------------------------------------------------------------
 

@@ -47,6 +47,7 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,115) ffdev_atomicdata_bii_source_to_string(bii_source)
         write(DEV_OUT,125) ffdev_atomicdata_bii_mods_to_string(bii_mods)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
+        write(DEV_OUT,145) ffdev_atomicdata_atom_core_to_string(atom_core)
         call ffdev_atomicdata_update_db
         return
     end if
@@ -75,6 +76,14 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
     end if
 
+    if( prmfile_get_string_by_key(fin,'atom_core', buffer)) then
+        lbuff = ffdev_atomicdata_atom_core_from_string(buffer)
+        write(DEV_OUT,140) ffdev_atomicdata_atom_core_to_string(lbuff)
+        if( exec ) atom_core = lbuff
+    else
+        write(DEV_OUT,145) ffdev_atomicdata_atom_core_to_string(atom_core)
+    end if
+
     call ffdev_atomicdata_update_db
     if( .not. exec ) then
         call ffdev_atomicdata_print
@@ -88,6 +97,8 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
 125  format ('Bii modification mode (bii_mods)       = ',a29,' (default)')
 130  format ('Rcii source (rcii_source)              = ',a29)
 135  format ('Rcii source (rcii_source)              = ',a29,' (default)')
+140  format ('Atom core (atom_core)                  = ',a29)
+145  format ('Atom core (atom_core)                  = ',a29,' (default)')
 
 end subroutine ffdev_atomicdata_ctrl
 

@@ -49,6 +49,7 @@ subroutine ffdev_geometry_init(geo)
 
     geo%ele_ene = 0
     geo%pen_ene = 0
+    geo%ind_ene = 0
     geo%rep_ene = 0
     geo%dis_ene = 0
 
@@ -59,6 +60,8 @@ subroutine ffdev_geometry_init(geo)
     geo%weight = 1.0
 
     geo%sapt_ele = 0.0
+    geo%sapt_pen = 0.0
+    geo%sapt_ind = 0.0
     geo%sapt_rep = 0.0
     geo%sapt_dis = 0.0
     geo%sapt_total = 0.0
@@ -1296,12 +1299,14 @@ subroutine ffdev_geometry_info_ene(geo)
     write(DEV_OUT,10)
     write(DEV_OUT,172) geo%ele_ene + geo%ele14_ene
     write(DEV_OUT,220) geo%pen_ene
+    write(DEV_OUT,250) geo%ind_ene
     write(DEV_OUT,174) geo%rep_ene + geo%rep14_ene
     write(DEV_OUT,176) geo%dis_ene + geo%dis14_ene
     write(DEV_OUT,10)
     write(DEV_OUT,177) geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene
     write(DEV_OUT,178) geo%ele_ene + geo%ele14_ene + &
-                       geo%rep_ene + geo%rep14_ene + geo%dis_ene + geo%dis14_ene + geo%pen_ene
+                       geo%rep_ene + geo%rep14_ene + geo%dis_ene + geo%dis14_ene + &
+                       geo%pen_ene + geo%ind_ene
     write(DEV_OUT,20)
     write(DEV_OUT,180) geo%total_ene
 
@@ -1322,6 +1327,7 @@ subroutine ffdev_geometry_info_ene(geo)
 
 172 format('Etot-ele   = ',F20.7)
 220 format('Etot-pen   = ',F20.7)
+250 format('Etot-ind   = ',F20.7)
 174 format('Etot-rep   = ',F20.7)
 176 format('Etot-dis   = ',F20.7)
 

@@ -81,9 +81,9 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 6*sets(i)%top%nnb_types       ! 6 NB: eps, r0, pa, pb, rc, tb
         maxnparams = maxnparams +   sets(i)%top%natom_types     ! pen_pa
     end do
-    maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
-                                 ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, pauli_k
-                                 ! pen_fa, pen_fb
+    maxnparams = maxnparams + 14 ! ele_qscale, glb_iscee
+                                 ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb
+                                 ! pen_fa, pen_fb, k_exc, k_ind
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
 
@@ -136,7 +136,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_eps, use_vdw_r0
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc, use_vdw_tb
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb
-    logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_pauli_k
+    logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind
     logical     :: use_pen_pa, use_pen_fa, use_pen_fb
     ! --------------------------------------------------------------------------
 
@@ -454,7 +454,8 @@ subroutine ffdev_parameters_reinit()
     use_disp_s8     = .false.
     use_disp_s10    = .false.
 
-    use_pauli_k     = .false.
+    use_k_exc       = .false.
+    use_k_ind       = .false.
 
     use_pen_pa      = .false.
 
@@ -469,6 +470,11 @@ subroutine ffdev_parameters_reinit()
             use_vdw_r0      = .true.
 
         case(NB_VDW_EXP_DISPBJ,NB_VDW_EXP_DISPTT)
+
+            ! induction energy
+            if( ind_enabled ) then
+                use_k_ind  = .true.
+            end if
 
             ! penetration energy
             if( pen_enabled ) then
@@ -497,17 +503,27 @@ subroutine ffdev_parameters_reinit()
                 end select
             end if
 
-            use_vdw_pa      = .true.
             use_damp_pb     = .true.
-            use_pauli_k     = .true.
+
+            select case(exp_mode)
+                case(EXP_MODE_BM,EXP_MODE_DO,EXP_MODE_WO,EXP_MODE_SC)
+                    use_vdw_pa      = .true.
+                 case(EXP_MODE_MEDFF)
+                    use_vdw_pb      = .true.
+                    use_k_exc       = .true.
+                    use_damp_pb     = .false.
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'exp_mode not implemented in ffdev_parameters_reinit!')
+            end select
 
             select case(exp_pb_mode)
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
+                    use_damp_pb     = .false.
                  case(EXP_PB_ADBII)
                     ! nothing
                 case default
-                    call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_parameters_reinit!')
+                    call ffdev_utils_exit(DEV_ERR,1,'exp_pb_mode not implemented in ffdev_parameters_reinit!')
             end select
 
             use_disp_s6     = .true.
@@ -888,11 +904,26 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%tl   = 0
     end if
 
-    if( use_pauli_k ) then
+    if( use_k_exc ) then
         ! =====================
         nparams = nparams + 1
-        params(nparams)%value = pauli_k
-        params(nparams)%realm = REALM_PAULI_K
+        params(nparams)%value = k_exc
+        params(nparams)%realm = REALM_K_EXC
+        params(nparams)%enabled = .false.
+        params(nparams)%identity = 0
+        params(nparams)%pn    = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ti   = 0
+        params(nparams)%tj   = 0
+        params(nparams)%tk   = 0
+        params(nparams)%tl   = 0
+    end if
+
+    if( use_k_ind ) then
+        ! =====================
+        nparams = nparams + 1
+        params(nparams)%value = k_ind
+        params(nparams)%realm = REALM_K_IND
         params(nparams)%enabled = .false.
         params(nparams)%identity = 0
         params(nparams)%pn    = 0
@@ -1195,8 +1226,8 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                     return
                 end if
            case(REALM_ELE_SQ,REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB, &
-                REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10, &
-                REALM_GLB_SCEE,REALM_GLB_SCNB,REALM_PAULI_K,REALM_PEN_FA,REALM_PEN_FB)
+                REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10,REALM_K_EXC,REALM_K_IND, &
+                REALM_GLB_SCEE,REALM_GLB_SCNB,REALM_PEN_FA,REALM_PEN_FB)
                 find_parameter_by_ids = i
                 return
             case default
@@ -2232,8 +2263,11 @@ integer function ffdev_parameters_get_realmid(realm)
         case('glb_scnb')
             ffdev_parameters_get_realmid = REALM_GLB_SCNB
 
-        case('pauli_k')
-            ffdev_parameters_get_realmid = REALM_PAULI_K
+        case('k_exc')
+            ffdev_parameters_get_realmid = REALM_K_EXC
+
+        case('k_ind')
+            ffdev_parameters_get_realmid = REALM_K_IND
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
@@ -2325,8 +2359,11 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_GLB_SCNB)
             ffdev_parameters_get_realm_name = 'glb_scnb'
 
-        case(REALM_PAULI_K)
-            ffdev_parameters_get_realm_name = 'pauli_k'
+        case(REALM_K_EXC)
+            ffdev_parameters_get_realm_name = 'k_exc'
+
+        case(REALM_K_IND)
+            ffdev_parameters_get_realm_name = 'k_ind'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
@@ -2376,9 +2413,10 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_PEN_PA,REALM_PEN_FA,REALM_PEN_FB)
             ! nothing to do
-        case(REALM_PAULI_K)
+        case(REALM_K_EXC,REALM_K_IND)
             ! nothing to do
         case default
+            write(DEV_ERR,*) 'realmid = ', realmid
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
     end select
 
@@ -2838,8 +2876,11 @@ subroutine ffdev_parameters_to_tops
                     glb_iscnb = 0.0d0
                 end if
 
-            case(REALM_PAULI_K)
-                pauli_k = params(i)%value
+            case(REALM_K_EXC)
+                k_exc = params(i)%value
+
+            case(REALM_K_IND)
+                k_ind = params(i)%value
 
         ! PAC - partial atomic charges
             case(REALM_PAC)
@@ -3012,9 +3053,11 @@ subroutine ffdev_params_reset_ranges
      MinPenFB     =      0.5d0
      MaxPenFB     =      1.0d0
 
-! Pauli repulsion K factor
-     MinPauliK    =       5.0d0
-     MaxPauliK    =      15.0d0
+! exchange and induction factors
+     MinKExc      =     -15.0d0
+     MaxKExc      =      15.0d0
+     MinKInd      =     -15.0d0
+     MaxKInd      =      15.0d0
 
 end subroutine ffdev_params_reset_ranges
 
@@ -3174,8 +3217,11 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_PAC)
             ffdev_params_get_lower_bound = MinPAC
 
-        case(REALM_PAULI_K)
-            ffdev_params_get_lower_bound = MinPauliK
+        case(REALM_K_EXC)
+            ffdev_params_get_lower_bound = MinKExc
+
+        case(REALM_K_IND)
+            ffdev_params_get_lower_bound = MinKInd
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
@@ -3269,8 +3315,11 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
         case(REALM_PAC)
             MinPAC = mvalue
 
-        case(REALM_PAULI_K)
-            MinPauliK = mvalue
+        case(REALM_K_EXC)
+            MinKExc = mvalue
+
+        case(REALM_K_IND)
+            MinKInd = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_lower_bound')
@@ -3391,8 +3440,10 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
         case(REALM_PAC)
             ffdev_params_get_upper_bound = MaxPAC
 
-        case(REALM_PAULI_K)
-            ffdev_params_get_upper_bound = MaxPauliK
+        case(REALM_K_EXC)
+            ffdev_params_get_upper_bound = MaxKExc
+        case(REALM_K_IND)
+            ffdev_params_get_upper_bound = MaxKInd
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')
@@ -3486,8 +3537,10 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
         case(REALM_PAC)
             MaxPAC = mvalue
 
-        case(REALM_PAULI_K)
-            MaxPauliK = mvalue
+        case(REALM_K_EXC)
+            MaxKExc = mvalue
+        case(REALM_K_IND)
+            MaxKInd = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_upper_bound')

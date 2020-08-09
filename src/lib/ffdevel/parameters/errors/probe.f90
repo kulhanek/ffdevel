@@ -39,8 +39,6 @@ subroutine ffdev_err_probe_init
 
     ProbeErrorWeight        = 1.0
 
-    ProbeErrorPenToRep      = .false.
-
 end subroutine ffdev_err_probe_init
 
 ! ==============================================================================
@@ -81,12 +79,9 @@ subroutine ffdev_err_probe_error(error)
             err = 0.0d0
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
-                    emm = sets(i)%geo(j)%rep_ene
-                    if( ProbeErrorPenToRep ) then
-                        emm = emm + sets(i)%geo(j)%pen_ene
-                    end if
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene + sets(i)%geo(j)%rep_ene
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene &
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene &
                         + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%dis_ene
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported probe_mode in ffdev_err_probe_error!')
@@ -156,13 +151,10 @@ subroutine ffdev_err_probe_summary
             string = ''
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
                 case(GEO_PROBE_ENE_REP)
-                    emm = sets(i)%geo(j)%rep_ene
-                    if( ProbeErrorPenToRep ) then
-                        emm = emm + sets(i)%geo(j)%pen_ene
-                    end if
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene + sets(i)%geo(j)%rep_ene
                     string = 'REP'
                 case(GEO_PROBE_ENE_TOT)
-                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene &
+                    emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene &
                         + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%dis_ene
                     string = 'TOT'
                 case default
@@ -177,9 +169,9 @@ subroutine ffdev_err_probe_summary
             sumw = sumw + sets(i)%geo(j)%weight
 
             write(DEV_OUT,30) i, j, trim(string), sets(i)%geo(j)%weight, &
-                              sets(i)%geo(j)%trg_probe_ene, &
-                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%pen_ene, &
-                              sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%dis_ene, emm, err
+                              emm, sets(i)%geo(j)%trg_probe_ene, err, &
+                              sets(i)%geo(j)%ele_ene, sets(i)%geo(j)%pen_ene, sets(i)%geo(j)%ind_ene, &
+                              sets(i)%geo(j)%rep_ene, sets(i)%geo(j)%dis_ene
         end do
         if( printsum ) write(DEV_OUT,20)
     end do
@@ -194,13 +186,13 @@ subroutine ffdev_err_probe_summary
     write(DEV_OUT,45)  ProbeErrorWeight*errtot
 
  5 format('# Probe errors')
-10 format('# SET GeoID Mode Weight EProb(TGR)   Eele(MM)   Epen(MM)   Erep(MM)   Edis(MM)  EProb(MM)     Err(E)')
-20 format('# --- ----- ---- ------ ---------- ---------- ---------- ---------- ---------- ---------- ----------')
-30 format(I5,1X,I5,1X,A4,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+10 format('# SET GeoID Mode Weight |  PROBE(MM) PROBE(TGR)     Err(E) |    ELE(MM)    PEN(MM)    IND(MM)    REP(MM)    DIS(MM)')
+20 format('# --- ----- ---- ------ | ---------- ---------- ---------- | ---------- ---------- ---------- ---------- ----------')
+30 format(I5,1X,I5,1X,A4,1X,F6.3,3X,F10.3,1X,F10.3,1X,F10.3,3X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
 
-35 format('# Maximum signed error (MSE)                =',1X,F10.3)
-40 format('# Root mean square error (RMSE)             =',1X,F10.3)
-45 format('# Final RMSE (all weights)                  =',1X,F10.3)
+35 format('# Maximum signed error (MSE)                  =',1X,F10.3)
+40 format('# Root mean square error (RMSE)               =',1X,F10.3)
+45 format('# Final RMSE (all weights)                    =',1X,F10.3)
 
 end subroutine ffdev_err_probe_summary
 

@@ -246,6 +246,7 @@ subroutine ffdev_targetset_calc_all
 
                     sets(i)%geo(j)%ele_ene      = sets(i)%geo(j)%ele_ene - sets( sets(i)%refs(k) )%geo(1)%ele_ene
                     sets(i)%geo(j)%pen_ene      = sets(i)%geo(j)%pen_ene - sets( sets(i)%refs(k) )%geo(1)%pen_ene
+                    sets(i)%geo(j)%ind_ene      = sets(i)%geo(j)%ind_ene - sets( sets(i)%refs(k) )%geo(1)%ind_ene
                     sets(i)%geo(j)%rep_ene      = sets(i)%geo(j)%rep_ene - sets( sets(i)%refs(k) )%geo(1)%rep_ene
                     sets(i)%geo(j)%dis_ene      = sets(i)%geo(j)%dis_ene - sets( sets(i)%refs(k) )%geo(1)%dis_ene
 

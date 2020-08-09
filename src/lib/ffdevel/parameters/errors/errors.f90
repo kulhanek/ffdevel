@@ -193,6 +193,7 @@ subroutine ffdev_errors_error_only(error)
     error%ihess_dihedrals = 0.0d0
     error%ihess_impropers = 0.0d0
     error%sapt_ele = 0.0d0
+    error%sapt_ind = 0.0d0
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
     error%probe_ene = 0.0d0
@@ -211,8 +212,9 @@ subroutine ffdev_errors_error_only(error)
     if( EnableSAPTError ) then
         call ffdev_err_sapt_error(error)
         error%total = error%total + error%sapt_ele * SAPTEleErrorWeight &
+                                  + error%sapt_ind * SAPTIndErrorWeight &
                                   + error%sapt_rep * SAPTRepErrorWeight &
-                                  + error%sapt_dis * SAPTDispErrorWeight
+                                  + error%sapt_dis * SAPTDisErrorWeight
     end if
 
     if( EnableProbeError ) then
@@ -312,6 +314,9 @@ subroutine ffdev_errors_ffopt_header_I()
         write(DEV_OUT,21,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
+        write(DEV_OUT,22,ADVANCE='NO')
+    end if
+    if( EnableSAPTError ) then
         write(DEV_OUT,41,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
@@ -362,8 +367,9 @@ subroutine ffdev_errors_ffopt_header_I()
  38 format('    Impropers')
  39 format('         RMSD')
  21 format('    SAPT(Ele)')
+ 22 format('    SAPT(Ind)')
  41 format('    SAPT(Rep)')
- 42 format('   SAPT(Disp)')
+ 42 format('    SAPT(Dis)')
  43 format('  ChrgPenalty')
  44 format(' ZeroGradient')
  50 format('     ProbeEne')
@@ -398,6 +404,9 @@ subroutine ffdev_errors_ffopt_header_II()
     ! --------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableSAPTError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableSAPTError ) then
@@ -480,6 +489,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
+    end if
+    if( EnableSAPTError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ind
     end if
     if( EnableSAPTError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep

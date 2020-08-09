@@ -38,12 +38,12 @@ subroutine ffdev_err_sapt_init
     PrintSAPTErrorSummary  = .false.
 
     SAPTEleErrorWeight     = 1.0
+    SAPTIndErrorWeight     = 1.0
     SAPTRepErrorWeight     = 1.0
-    SAPTDispErrorWeight    = 1.0
+    SAPTDisErrorWeight    = 1.0
 
-    SAPTErrorIndToEle      = .false.
     SAPTErrorIndToRep      = .true.
-    SAPTErrorPenToRep      = .false.
+    SAPTErrorPenToRep      = .true.
 
 end subroutine ffdev_err_sapt_init
 
@@ -64,15 +64,17 @@ subroutine ffdev_err_sapt_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j
-    real(DEVDP)         :: err,serrele,serrrep,serrdis,trg_sapt_rep,pen_guess,totw
-    real(DEVDP)         :: sapt_ele,trg_sapt_ele
+    real(DEVDP)         :: err,serrele,serrrep,serrdis,pen_guess,totw
+    real(DEVDP)         :: sapt_ele,trg_sapt_exc,serrind
     ! --------------------------------------------------------------------------
 
     error%sapt_ele = 0.0d0
+    error%sapt_ind = 0.0d0
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
 
     serrele = 0.0
+    serrind = 0.0
     serrrep = 0.0
     serrdis = 0.0
     totw = 0.0
@@ -85,28 +87,29 @@ subroutine ffdev_err_sapt_error(error)
             if( .not. sets(i)%geo(j)%trg_sapt_loaded ) cycle
 
         ! electrostatics
-            if( (.not. SAPTErrorPenToRep) .and. pen_enabled ) then
+            if( pen_enabled ) then
                 sapt_ele = sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_pen
-                trg_sapt_ele = sets(i)%geo(j)%trg_sapt_ele
-                if( SAPTErrorIndToEle ) then
-                    trg_sapt_ele = trg_sapt_ele + sets(i)%geo(j)%trg_sapt_ind
-                end if
-                err = sapt_ele - trg_sapt_ele
+                err = sapt_ele - sets(i)%geo(j)%trg_sapt_ele
                 serrele = serrele + sets(i)%geo(j)%weight * err**2
             end if
 
-        ! repulsion
-            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exc
-            if( SAPTErrorIndToRep ) then
-                trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
+        ! induction
+            if( ind_enabled ) then
+                err = sets(i)%geo(j)%sapt_ind - sets(i)%geo(j)%trg_sapt_ind
+                serrind = serrind + sets(i)%geo(j)%weight * err**2
             end if
-            if( SAPTErrorPenToRep ) then
+
+        ! repulsion
+            trg_sapt_exc = sets(i)%geo(j)%trg_sapt_exc
+            if( SAPTErrorIndToRep .and. (.not. ind_enabled)  ) then
+                trg_sapt_exc = trg_sapt_exc + sets(i)%geo(j)%trg_sapt_ind
+            end if
+            if( SAPTErrorPenToRep .and. (.not. pen_enabled)  ) then
                 ! pen_guess is penetration energy guess
                 pen_guess = sets(i)%geo(j)%trg_sapt_ele - sets(i)%geo(j)%sapt_ele
-
-                trg_sapt_rep = trg_sapt_rep + pen_guess
+                trg_sapt_exc = trg_sapt_exc + pen_guess
             end if
-            err = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
+            err = sets(i)%geo(j)%sapt_rep - trg_sapt_exc
             serrrep = serrrep + sets(i)%geo(j)%weight * err**2
 
         ! dispersion
@@ -119,6 +122,7 @@ subroutine ffdev_err_sapt_error(error)
 
     if( totw .gt. 0 ) then
         error%sapt_ele = sqrt(serrele/totw)
+        error%sapt_ind = sqrt(serrind/totw)
         error%sapt_rep = sqrt(serrrep/totw)
         error%sapt_dis = sqrt(serrdis/totw)
     end if
@@ -134,13 +138,14 @@ subroutine ffdev_err_sapt_summary
     use ffdev_targetset_dat
     use ffdev_geometry
     use ffdev_err_sapt_dat
+    use prmfile
 
     implicit none
     integer             :: i,j
     logical             :: printsum
-    real(DEVDP)         :: serrele,serrrep,serrdisp,trg_sapt_rep,totw,sapt_ele
-    real(DEVDP)         :: errele,errrep,errdisp,pen_guess,maxele,maxrep,maxdisp
-    real(DEVDP)         :: trg_sapt_ele
+    real(DEVDP)         :: serrele,serrind,serrrep,serrdis,totw
+    real(DEVDP)         :: errele,errind,errrep,errdis,pen_guess
+    real(DEVDP)         :: maxele,maxind,maxrep,maxdis,sapt_ele,trg_sapt_exc
     ! --------------------------------------------------------------------------
 
     printsum = .false.
@@ -154,17 +159,29 @@ subroutine ffdev_err_sapt_summary
     if( .not. printsum ) return
 
     write(DEV_OUT,*)
-    write(DEV_OUT,5)
-    write(DEV_OUT,10)
-    write(DEV_OUT,20)
+    write(DEV_OUT,5) trim(prmfile_onoff(SAPTErrorPenToRep .and. (.not. pen_enabled))), &
+                     trim(prmfile_onoff(SAPTErrorIndToRep .and. (.not. ind_enabled)))
+    write(DEV_OUT, 10,ADVANCE='NO')
+    write(DEV_OUT,110,ADVANCE='NO')
+    write(DEV_OUT,210,ADVANCE='NO')
+    write(DEV_OUT,310,ADVANCE='NO')
+    write(DEV_OUT,410)
+
+    write(DEV_OUT, 20,ADVANCE='NO')
+    write(DEV_OUT,120,ADVANCE='NO')
+    write(DEV_OUT,220,ADVANCE='NO')
+    write(DEV_OUT,320,ADVANCE='NO')
+    write(DEV_OUT,420)
 
     serrele = 0.0
+    serrind = 0.0
     serrrep = 0.0
-    serrdisp = 0.0
+    serrdis = 0.0
 
     maxele = 0.0d0
+    maxind = 0.0d0
     maxrep = 0.0d0
-    maxdisp = 0.0d0
+    maxdis = 0.0d0
 
     totw = 0.0d0
 
@@ -178,79 +195,112 @@ subroutine ffdev_err_sapt_summary
             printsum = .true.
 
         ! electrostatics
-            if( (.not. SAPTErrorPenToRep) .and. pen_enabled ) then
+            errele = 0.0d0
+            sapt_ele = 0.0d0
+            if( pen_enabled ) then
                 sapt_ele = sets(i)%geo(j)%sapt_ele + sets(i)%geo(j)%sapt_pen
-                trg_sapt_ele = sets(i)%geo(j)%trg_sapt_ele
-                if( SAPTErrorIndToEle ) then
-                    trg_sapt_ele = trg_sapt_ele + sets(i)%geo(j)%trg_sapt_ind
-                end if
-                errele = sapt_ele - trg_sapt_ele
+                errele = sapt_ele - sets(i)%geo(j)%trg_sapt_ele
                 serrele = serrele + sets(i)%geo(j)%weight * errele**2
                 if( abs(errele) .gt. abs(maxele) ) then
                     maxele = errele
                 end if
             end if
 
-            pen_guess = 0.0d0
+        ! induction
+            errind = 0.0d0
+            if( ind_enabled ) then
+                errind = sets(i)%geo(j)%sapt_ind - sets(i)%geo(j)%trg_sapt_ind
+                serrind = serrind + sets(i)%geo(j)%weight * errind**2
+                if( abs(errind) .gt. abs(maxind) ) then
+                    maxind = errind
+                end if
+            end if
 
         ! repulsion
-            trg_sapt_rep = sets(i)%geo(j)%trg_sapt_exc
-            if( SAPTErrorIndToRep ) then
-                trg_sapt_rep = trg_sapt_rep + sets(i)%geo(j)%trg_sapt_ind
+            pen_guess = 0.0d0
+            trg_sapt_exc = sets(i)%geo(j)%trg_sapt_exc
+            if( SAPTErrorIndToRep .and. (.not. ind_enabled) ) then
+                trg_sapt_exc = trg_sapt_exc + sets(i)%geo(j)%trg_sapt_ind
             end if
-            if( SAPTErrorPenToRep ) then
+            if( SAPTErrorPenToRep .and. (.not. pen_enabled) ) then
                 ! pen_guess is penetration energy guess
                 pen_guess = sets(i)%geo(j)%trg_sapt_ele - sets(i)%geo(j)%sapt_ele
-                trg_sapt_rep = trg_sapt_rep + pen_guess
+                trg_sapt_exc = trg_sapt_exc + pen_guess
             end if
-            errrep = sets(i)%geo(j)%sapt_rep - trg_sapt_rep
+            errrep = sets(i)%geo(j)%sapt_rep - trg_sapt_exc
             if( abs(errrep) .gt. abs(maxrep) ) then
                 maxrep = errrep
             end if
             serrrep = serrrep + sets(i)%geo(j)%weight * errrep**2
 
         ! dispersion
-            errdisp = sets(i)%geo(j)%sapt_dis - sets(i)%geo(j)%trg_sapt_dis
-            if( abs(errdisp) .gt. abs(maxdisp) ) then
-                maxdisp = errdisp
+            errdis = sets(i)%geo(j)%sapt_dis - sets(i)%geo(j)%trg_sapt_dis
+            if( abs(errdis) .gt. abs(maxdis) ) then
+                maxdis = errdis
             end if
-            serrdisp = serrdisp + sets(i)%geo(j)%weight * errdisp**2
+            serrdis = serrdis + sets(i)%geo(j)%weight * errdis**2
 
             totw = totw + sets(i)%geo(j)%weight
 
-            write(DEV_OUT,30) i, j, sets(i)%geo(j)%weight, &
-                    sets(i)%geo(j)%trg_sapt_ele, sets(i)%geo(j)%sapt_ele, sets(i)%geo(j)%sapt_pen, errele,  &
-                    pen_guess, sets(i)%geo(j)%trg_sapt_ind, sets(i)%geo(j)%trg_sapt_exc, &
-                    trg_sapt_rep, sets(i)%geo(j)%sapt_rep, errrep, &
-                    sets(i)%geo(j)%trg_sapt_dis, sets(i)%geo(j)%sapt_dis, errdisp
+            write(DEV_OUT, 30,ADVANCE='NO') i, j, sets(i)%geo(j)%weight
+            write(DEV_OUT,130,ADVANCE='NO') sets(i)%geo(j)%sapt_ele, sets(i)%geo(j)%sapt_pen, &
+                                            sapt_ele, sets(i)%geo(j)%trg_sapt_ele, errele
+            write(DEV_OUT,230,ADVANCE='NO') sets(i)%geo(j)%sapt_ind, sets(i)%geo(j)%trg_sapt_ind, errind
+            write(DEV_OUT,330,ADVANCE='NO') pen_guess, sets(i)%geo(j)%sapt_rep, &
+                                            sets(i)%geo(j)%trg_sapt_exc, trg_sapt_exc, errrep
+            write(DEV_OUT,430)              sets(i)%geo(j)%sapt_dis, sets(i)%geo(j)%trg_sapt_dis, errdis
         end do
-        if( printsum ) write(DEV_OUT,20)
+        if( printsum ) then
+            write(DEV_OUT, 20,ADVANCE='NO')
+            write(DEV_OUT,120,ADVANCE='NO')
+            write(DEV_OUT,220,ADVANCE='NO')
+            write(DEV_OUT,320,ADVANCE='NO')
+            write(DEV_OUT,420)
+        end if
     end do
 
-    errele  = 0.0
-    errrep  = 0.0
-    errdisp = 0.0
+    errele = 0.0
+    errind = 0.0
+    errrep = 0.0
+    errdis = 0.0
     if( totw .gt. 0 ) then
-        errele  = sqrt(serrele/totw)
-        errrep  = sqrt(serrrep/totw)
-        errdisp = sqrt(serrdisp/totw)
+        errele = sqrt(serrele/totw)
+        errind = sqrt(serrind/totw)
+        errrep = sqrt(serrrep/totw)
+        errdis = sqrt(serrdis/totw)
     end if
 
-    write(DEV_OUT,35)  maxele, maxrep, maxdisp
-    write(DEV_OUT,40)  errele, errrep, errdisp
-    write(DEV_OUT,45)  SAPTEleErrorWeight*errele, SAPTRepErrorWeight*errrep, SAPTDispErrorWeight*errdisp
+    write(DEV_OUT,35)  maxele, maxind, maxrep, maxdis
+    write(DEV_OUT,40)  errele, errind, errrep, errdis
+    write(DEV_OUT,45)  SAPTEleErrorWeight*errele, SAPTIndErrorWeight*errind,  &
+                       SAPTRepErrorWeight*errrep, SAPTDisErrorWeight*errdis
 
- 5 format('# SAPT errors')
-10 format('# SET GeoID Weight   ELE(TGR)    ELE(MM)    PEN(MM)   Err(ELE) PEN(GUESS)   IND(TGR)   EXC(TGR)   REP(TRG)' &
-          '    REP(MM)   Err(REP)  DISP(TGR)   DISP(MM)  Err(DISP)')
-20 format('# --- ----- ------ ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------' &
-          ' ---------- ---------- ---------- ---------- ----------')
-30 format(I5,1X,I5,1X,F6.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3, &
-         1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3)
+  5 format('# SAPT errors with effective setup: penasrep = ',A,'; indasrep = ',A)
+ 10 format('# SET GeoID Weight | ')
+ 20 format('# --- ----- ------ | ')
+ 30 format(I5,1X,I5,1X,F6.3,3X)
 
-35 format('# Maximum signed error (MSE)           = ',11X,F10.3,56X,F10.3,23X,F10.3)
-40 format('# Root mean square error (RMSE)        = ',11X,F10.3,56X,F10.3,23X,F10.3)
-45 format('# Final RMSE (all weights)             = ',11X,F10.3,56X,F10.3,23X,F10.3)
+110 format('   ELE(MM)    PEN(MM) TOTELE(MM)   ELE(TRG)   Err(ELE) | ')
+120 format('---------- ---------- ---------- ---------- ---------- | ')
+130 format(F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,3X)
+
+210 format('   IND(MM)   IND(TRG)   Err(IND) | ')
+220 format('---------- ---------- ---------- | ')
+230 format(F10.3,1X,F10.3,1X,F10.3,3X)
+
+310 format('PEN(GUESS)    REP(MM)   EXC(TRG)   REP(TRG)   Err(REP) | ')
+320 format('---------- ---------- ---------- ---------- ---------- | ')
+330 format(F10.3,1X,F10.3,1X,F10.3,1X,F10.3,1X,F10.3,3X)
+
+410 format('   DIS(MM)   DIS(TRG)   Err(DIS)')
+420 format('---------- ---------- ----------')
+430 format(F10.3,1X,F10.3,1X,F10.3)
+
+!          '# SET GeoID Weight |    ELE(MM)    PEN(MM) TOTELE(MM)   ELE(TRG)   Err(ELE) | '
+!          '                     ---------- ---------- ---------- ---------- ---------- | '
+ 35 format('# Maximum signed error (MSE)             = ',22X,F10.3,25X,F10.3,47X,F10.3,25X,F10.3)
+ 40 format('# Root mean square error (RMSE)          = ',22X,F10.3,25X,F10.3,47X,F10.3,25X,F10.3)
+ 45 format('# Final RMSE (all weights)               = ',22X,F10.3,25X,F10.3,47X,F10.3,25X,F10.3)
 
 end subroutine ffdev_err_sapt_summary
 

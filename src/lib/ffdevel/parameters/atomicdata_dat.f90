@@ -41,6 +41,16 @@ integer             :: atdens_source    = AD_ATDENS_PBE0_def2QZVPP
 ! ------------------------------------------------------------------------------
 ! ------------------------------------------------------------------------------
 
+! nuclear core
+
+integer,parameter   :: AD_ATOM_CORE_NONE        = 1     ! no core
+integer,parameter   :: AD_ATOM_CORE_MAX         = 2     ! only valence electrons
+
+integer             :: atom_core                = AD_ATOM_CORE_MAX
+
+! ------------------------------------------------------------------------------
+! ------------------------------------------------------------------------------
+
 ! rcii source
 integer,parameter   :: AD_RCII_VDW              = 1
 integer,parameter   :: AD_RCII_DISP             = 2

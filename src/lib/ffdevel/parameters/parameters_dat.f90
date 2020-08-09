@@ -71,10 +71,11 @@ integer,parameter       :: REALM_PEN_FA     = 31
 integer,parameter       :: REALM_PEN_FB     = 32
 
 ! Pauli repulsion K factor
-integer,parameter       :: REALM_PAULI_K    = 33
+integer,parameter       :: REALM_K_EXC      = 33
+integer,parameter       :: REALM_K_IND      = 34
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_PAULI_K
+integer,parameter       :: REALM_LAST    = REALM_K_IND
 
 ! ------------------------------------------------------------------------------
 
@@ -242,9 +243,11 @@ real(DEVDP)     :: MaxPenFA
 real(DEVDP)     :: MinPenFB
 real(DEVDP)     :: MaxPenFB
 
-! Pauli repulsion K factor
-real(DEVDP)     :: MinPauliK
-real(DEVDP)     :: MaxPauliK
+! exchange and induction factors
+real(DEVDP)     :: MinKExc
+real(DEVDP)     :: MaxKExc
+real(DEVDP)     :: MinKInd
+real(DEVDP)     :: MaxKInd
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

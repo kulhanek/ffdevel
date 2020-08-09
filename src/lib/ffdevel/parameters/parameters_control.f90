@@ -494,6 +494,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     use ffdev_topology_lj
     use ffdev_topology_exp
     use ffdev_topology_pen
+    use ffdev_topology_ind
     use ffdev_topology_dat
     use ffdev_targetset
     use ffdev_targetset_dat
@@ -507,9 +508,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
     integer                     :: ldampbj_mode,ldamptt_mode,lexp_pb_mode
-    integer                     :: from_nb_mode,to_nb_mode,lpen_mode
+    integer                     :: from_nb_mode,to_nb_mode,lpen_mode,lind_mode
     integer                     :: lcomb_rules,lexp_mode,lpen_pa_mode,lpen_pb_mode
-    logical                     :: lpen_enabled,lpen_valq_only
+    logical                     :: lpen_enabled,lind_enabled
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -517,21 +518,25 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
     if( .not. prmfile_open_section(fin,'nbsetup') ) then
         write(DEV_OUT,25) ffdev_topology_nb_mode_to_string(nb_mode)
-        write(DEV_OUT,95)  prmfile_onoff(pen_enabled)
-        write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
-        write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
-        write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
-        write(DEV_OUT,135) prmfile_onoff(pen_valence_only)
+
+        if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
+            write(DEV_OUT,85)  ffdev_topology_EXP_exp_mode_to_string(exp_mode)
+            write(DEV_OUT,75)  ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
+            write(DEV_OUT,95)  prmfile_onoff(pen_enabled)
+            write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
+            write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
+            write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
+            write(DEV_OUT,215) prmfile_onoff(ind_enabled)
+            write(DEV_OUT,225) ffdev_topology_IND_mode_to_string(ind_mode)
+        end if
+
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
             write(DEV_OUT,45) ffdev_topology_BJ_dampbj_mode_to_string(dampbj_mode)
         end if
         if( nb_mode .eq. NB_VDW_EXP_DISPTT ) then
             write(DEV_OUT,55) ffdev_topology_TT_damptt_mode_to_string(damptt_mode)
         end if
-        if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
-            write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
-            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
-        end if
+
         if( ApplyCombiningRules ) then
         if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
                 write(DEV_OUT,37) ffdev_topology_EXP_comb_rules_to_string(exp_comb_rules)
@@ -559,6 +564,30 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     end if
 
 ! ---------------------------
+    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
+
+    ! EXP
+        if( prmfile_get_string_by_key(fin,'exp_mode', string)) then
+            lexp_mode = ffdev_topology_EXP_exp_mode_from_string(string)
+            write(DEV_OUT,80) ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
+            if( exec ) then
+                exp_mode = lexp_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
+        end if
+        if( prmfile_get_string_by_key(fin,'exp_pb_mode', string)) then
+            lexp_pb_mode = ffdev_topology_EXP_pb_mode_from_string(string)
+            write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lexp_pb_mode)
+            if( exec ) then
+                exp_pb_mode = lexp_pb_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
+        end if
+
     ! PEN
         if( prmfile_get_logical_by_key(fin,'pen_enabled', lpen_enabled)) then
             write(DEV_OUT,90) prmfile_onoff(lpen_enabled)
@@ -602,40 +631,29 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         else
             write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
         end if
+
+   ! IND
+        if( prmfile_get_logical_by_key(fin,'ind_enabled', lind_enabled)) then
+            write(DEV_OUT,210) prmfile_onoff(lind_enabled)
+            if( exec ) then
+                ind_enabled = lind_enabled
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,215) prmfile_onoff(ind_enabled)
+        end if
     !----------
-        if( prmfile_get_logical_by_key(fin,'pen_valq_only', lpen_valq_only)) then
-            write(DEV_OUT,130) prmfile_onoff(lpen_valq_only)
+        if( prmfile_get_string_by_key(fin,'ind_mode', string)) then
+            lind_mode = ffdev_topology_IND_mode_from_string(string)
+            write(DEV_OUT,220) ffdev_topology_IND_mode_to_string(lind_mode)
             if( exec ) then
-                pen_valence_only = lpen_valq_only
+                ind_mode = lind_mode
                 changed = .true.
             end if
         else
-            write(DEV_OUT,135) prmfile_onoff(pen_valence_only)
+            write(DEV_OUT,225) ffdev_topology_IND_mode_to_string(ind_mode)
         end if
 
-
-    if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
-    ! EXP
-        if( prmfile_get_string_by_key(fin,'exp_mode', string)) then
-            lexp_mode = ffdev_topology_EXP_exp_mode_from_string(string)
-            write(DEV_OUT,80) ffdev_topology_EXP_exp_mode_to_string(lexp_mode)
-            if( exec ) then
-                exp_mode = lexp_mode
-                changed = .true.
-            end if
-        else
-            write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
-        end if
-        if( prmfile_get_string_by_key(fin,'exp_pb_mode', string)) then
-            lexp_pb_mode = ffdev_topology_EXP_pb_mode_from_string(string)
-            write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lexp_pb_mode)
-            if( exec ) then
-                exp_pb_mode = lexp_pb_mode
-                changed = .true.
-            end if
-        else
-            write(DEV_OUT,75) ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
-        end if
     end if
 
 ! ---------------------------
@@ -757,8 +775,11 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 110 format('Pen energy PB mode (pen_pb_mode)     = ',A)
 115 format('Pen energy PB mode (pen_pb_mode)     = ',A31,' (current)')
 
-130 format('Use only val electrs (pen_valq_only) = ',A)
-135 format('Use only val electrs (pen_valq_only) = ',A31,' (current)')
+210 format('Induction energy (ind_enabled)       = ',A)
+215 format('Induction energy (ind_enabled)       = ',A31,' (current)')
+
+220 format('Induction energy mode (ind_mode)     = ',A)
+225 format('Induction energy mode (ind_mode)     = ',A31,' (current)')
 
  15 format('=== SET ',I2.2)
 
@@ -834,8 +855,10 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_GLB_SCEE,REALM_GLB_SCNB)
                 read(line,*,err=100,end=100) realm, lvalue
+            case(REALM_K_EXC,REALM_K_IND)
+                read(line,*,err=100,end=100) realm, lvalue
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_scaling!')
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_setprms!')
         end select
 
         if( exec ) then

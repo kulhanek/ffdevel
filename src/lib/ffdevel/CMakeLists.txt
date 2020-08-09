@@ -37,6 +37,7 @@ SET(FFDEVEL_SRC
         forcefield/nbmodes/topology_tt.f90
         forcefield/nbmodes/topology_exp.f90
         forcefield/nbmodes/topology_pen.f90
+        forcefield/nbmodes/topology_ind.f90
 
         parameters/errors/errors.f90
         parameters/errors/errors_dat.f90

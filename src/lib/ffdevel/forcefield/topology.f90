@@ -1527,6 +1527,11 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     nbpair%pepa2 = 0.0d0
     nbpair%pepb2 = 0.0d0
 
+    nbpair%pb1   = 0.0d0
+    nbpair%pb2   = 0.0d0
+
+    calc_sij = .false.
+
     i       = nbpair%ai     ! not need to be defined
     j       = nbpair%aj     ! not need to be defined
     nbt     = nbpair%nbt
@@ -1548,24 +1553,23 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     if( pen_enabled ) then
         select case(pen_mode)
             case(PEN_MODE_AMOEBA)
-                nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
                 nbpair%pepa1 = top%atom_types(ti)%pen_pa
                 nbpair%pepb1 = top%atom_types(ti)%pen_pb
 
-                nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
                 nbpair%pepa2 = top%atom_types(tj)%pen_pa
                 nbpair%pepb2 = top%atom_types(tj)%pen_pb
             case(PEN_MODE_EFP_M1,PEN_MODE_EFP_M2)
-                nbpair%Z1    = ffdev_topology_PEN_get_valZ(agti) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
                 nbpair%pepa1 = top%atom_types(ti)%pen_pa
 
-                nbpair%Z2    = ffdev_topology_PEN_get_valZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+                nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
                 nbpair%pepa2 = top%atom_types(tj)%pen_pa
 
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported pen_mode in ffdev_topology_update_nbpair_prms!')
         end select
-
 
         if( (i .ne. 0 ) .and. (j .ne. 0) ) then
             nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
@@ -1575,6 +1579,40 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
         end if
     end if
+
+    if( ind_enabled ) then
+        nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
+        nbpair%pb1   = top%nb_types(nbtii)%pb
+
+        nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
+        nbpair%pb2   = top%nb_types(nbtjj)%pb
+
+        if( (i .ne. 0 ) .and. (j .ne. 0) ) then
+            nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
+            nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
+        else
+            nbpair%q1    = types(agti)%aveq * ele_qscale * sqrt(332.05221729d0)
+            nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
+        end if
+
+        select case(ind_mode)
+            case(IND_MODE_MEDFF)
+                calc_sij = .true.
+            case(IND_MODE_K2EXC)
+                ! nothing to be here
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented ind_mode in ffdev_topology_update_nbpair_prms!')
+        end select
+    end if
+
+    select case(exp_mode)
+        case(EXP_MODE_BM,EXP_MODE_DO,EXP_MODE_WO,EXP_MODE_SC)
+                ! nothing to be here
+        case(EXP_MODE_MEDFF)
+            calc_sij = .true.
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_topology_update_nbpair_prms!')
+    end select
 
     select case(nb_mode)
         case(NB_VDW_LJ)

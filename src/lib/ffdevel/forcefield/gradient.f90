@@ -63,6 +63,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
     geo%ele_ene = 0.0d0
     geo%pen_ene = 0.0d0
+    geo%ind_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
 
@@ -103,7 +104,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
 
     geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene + geo%impropr_ene &
                   + geo%ele14_ene + geo%rep14_ene + geo%dis14_ene  &
-                  + geo%ele_ene + geo%pen_ene + geo%rep_ene + geo%dis_ene
+                  + geo%ele_ene + geo%pen_ene + geo%ind_ene + geo%rep_ene + geo%dis_ene
 
 end subroutine ffdev_gradient_all
 

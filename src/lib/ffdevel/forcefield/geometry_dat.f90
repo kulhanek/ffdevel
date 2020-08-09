@@ -54,13 +54,15 @@ type GEOMETRY
     real(DEVDP)             :: rep14_ene        ! 1-4 vdW - repulsion
     real(DEVDP)             :: dis14_ene        ! 1-4 vdW - dispersion
     real(DEVDP)             :: ele_ene          ! electrostatics
-    real(DEVDP)             :: pen_ene          ! penetration electrostatics
+    real(DEVDP)             :: pen_ene          ! penetration energy (electrostatics)
+    real(DEVDP)             :: ind_ene          ! induction
     real(DEVDP)             :: rep_ene          ! vdW - repulsion
     real(DEVDP)             :: dis_ene          ! vdW - dispersion
     real(DEVDP)             :: total_ene        ! total energy from MM
 ! sapt energies
     real(DEVDP)             :: sapt_ele         ! electrostatics
     real(DEVDP)             :: sapt_pen         ! penetration energy
+    real(DEVDP)             :: sapt_ind         ! induction
     real(DEVDP)             :: sapt_rep         ! NB repulsion
     real(DEVDP)             :: sapt_dis         ! NB dispersion
     real(DEVDP)             :: sapt_total

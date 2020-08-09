@@ -177,51 +177,6 @@ integer function ffdev_topology_PEN_pb_mode_from_string(string)
 
 end function ffdev_topology_PEN_pb_mode_from_string
 
-! ------------------------------------------------------------------------------
-
-integer function ffdev_topology_PEN_get_valZ(gti)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-
-    implicit none
-    integer     :: gti
-    ! --------------------------------------------
-    integer     :: z
-    ! --------------------------------------------------------------------------
-
-    ffdev_topology_PEN_get_valZ = 1 ! default to H
-
-    z = types(gti)%z
-
-    if( .not. pen_valence_only ) then
-        ffdev_topology_PEN_get_valZ = z
-    end if
-
-    ! determine number of valence electrons
-    if( z .le. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_topology_PEN_get_valZ')
-    end if
-    if( z .le. 2 ) then
-        ! H-He
-        ffdev_topology_PEN_get_valZ = z
-        return
-    end if
-    if( z .le. 10 ) then
-        ! Li-Ne
-        ffdev_topology_PEN_get_valZ = z - 2
-        return
-    end if
-    if( z .le. 18 ) then
-        ! Na-Ar
-        ffdev_topology_PEN_get_valZ = z - 10
-        return
-    end if
-
-    call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_PEN_get_valZ')
-
-end function ffdev_topology_PEN_get_valZ
-
 ! ==============================================================================
 ! subroutine ffdev_topology_PEN_update_nb_params
 ! ==============================================================================

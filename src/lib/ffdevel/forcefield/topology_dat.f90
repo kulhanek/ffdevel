@@ -126,6 +126,8 @@ type NB_PAIR
         real(DEVDP) ::  q1,q2
         real(DEVDP) ::  pepa1,pepb1
         real(DEVDP) ::  pepa2,pepb2
+    ! induction, repulsion
+        real(DEVDP) ::  pb1,pb2
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -134,6 +136,7 @@ type NB_PAIR_ENERGY
         real(DEVDP) :: tot_ene
         real(DEVDP) :: ele_ene
         real(DEVDP) :: pen_ene
+        real(DEVDP) :: ind_ene
         real(DEVDP) :: rep_ene
         real(DEVDP) :: dis_ene
 end type NB_PAIR_ENERGY
@@ -246,6 +249,11 @@ integer,parameter   :: PEN_PB_COUPLED       = 796       ! pb = pen_fb * pen_pa
 
 ! ####################################################################
 
+integer,parameter   :: IND_MODE_MEDFF       = 801       ! DOI: 10.1021/acs.jctc.6b00969
+integer,parameter   :: IND_MODE_K2EXC       = 802       ! proportional to exchange energy
+
+! ####################################################################
+
 ! combining rules - applicable for NB_MODE_LJ
 integer,parameter   :: LJ_COMB_RULE_LB      = 11        ! LB (Lorentz-Berthelot)
 integer,parameter   :: LJ_COMB_RULE_WH      = 12        ! WH (Waldman-Hagler)
@@ -259,6 +267,7 @@ integer,parameter   :: EXP_MODE_BM          = 64        ! Born-Mayer
 integer,parameter   :: EXP_MODE_DO          = 67        ! Density overlap
 integer,parameter   :: EXP_MODE_WO          = 68        ! Wavefunction overlap
 integer,parameter   :: EXP_MODE_SC          = 69        ! Smirnov and Chibisov, doi: 10.1021/jp2010925
+integer,parameter   :: EXP_MODE_MEDFF       = 61        ! DOI: 10.1021/acs.jctc.6b00969
 
 ! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! pb = free to optimize as vdw_pb
@@ -297,7 +306,10 @@ logical     :: pen_enabled                  = .false.           ! penetration en
 integer     :: pen_mode                     = PEN_MODE_EFP_M1
 integer     :: pen_pa_mode                  = PEN_PA_FREEOPT
 integer     :: pen_pb_mode                  = PEN_PB_COUPLED
-logical     :: pen_valence_only             = .true.            ! consider only valence electrons
+
+! IND
+logical     :: ind_enabled                  = .false.           ! induction energy
+integer     :: ind_mode                     = IND_MODE_MEDFF
 
 ! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
@@ -309,9 +321,11 @@ integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
 integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
+! RUNTIME setup
 ! use pb*r (simplified) or -d/dr(ln(Erep)) (exact) in TT series
 ! available for EXP_MODE_BM, EXP_MODE_SC, only experimental
 logical     :: disptt_exact                 = .true.
+logical     :: calc_sij                     = .false.
 
 
 ! derived setup
@@ -331,8 +345,8 @@ real(DEVDP) :: damp_fb  =  0.0d0
 real(DEVDP) :: damp_pb  =  1.0d0
 real(DEVDP) :: damp_tb  =  1.0d0
 
-! Pauli repulsion K factor for PAPNL
-real(DEVDP) :: pauli_k  =  1.0d0
+real(DEVDP) :: k_exc    =  1.0d0
+real(DEVDP) :: k_ind    =  1.0d0
 
 ! penetration energy
 real(DEVDP) :: pen_fa   =  1.0d0
