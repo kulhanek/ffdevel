@@ -152,7 +152,7 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     real(DEVDP)     :: V_aa,V_bb,r6a,r8a,r10a,arg,fd10,fd8,fd6
     real(DEVDP)     :: z1,z2,q1,q2,pepa1,pepa2,pepb1,pepb2,pee,V_pe,crgij,V_ee
     real(DEVDP)     :: pfa1,pfb1,pfa2,pfb2,pepk,pfbb
-    real(DEVDP)     :: a2,b2,inva2b2,V_in,pb1,pb2,Sij
+    real(DEVDP)     :: a1,a2,b2,inva2b2,V_in,pb1,pb2,Sij,t1,pbe1,pbe2,slvaa
     ! --------------------------------------------------------------------------
 
     nbene%ele_ene = 0.0
@@ -171,6 +171,7 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
 
 ! induction - part I
     Sij = 0.0d0
+    slvaa = 0.0d0 ! part for TT damping in EXP_MODE_MEDFF
     if( calc_sij ) then
         z1  = nbpair%z1
         q1  = nbpair%q1
@@ -182,17 +183,25 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
         ! calculate overlap integral
         if( abs(pb1 - pb2) .gt. 0.1d0 ) then
             inva2b2 = 1.0d0/(pb1**2 - pb2**2)
-            Sij = 1.0d0/(8.0d0*DEV_PI*r) * ( &
-                  ( 4.0d0*pb1**4*pb2**4*inva2b2**3 + pb1**3*pb2**4*inva2b2**2*r )*exp(-pb1*r) &
-                + (-4.0d0*pb2**4*pb1**4*inva2b2**3 + pb2**3*pb1**4*inva2b2**2*r )*exp(-pb2*r) )
+            a1 =  4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r
+            a2 = -4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r
+            pbe1 = exp(-pb1*r)
+            pbe2 = exp(-pb2*r)
+            t1 = a1*pbe1 + a2*pbe2
+            Sij = 1.0d0/(8.0d0*DEV_PI*r) * t1
+
+            slvaa = 1.0d0/r - (1.0d0/t1)*( &
+                     - a1*pbe1*pb1 + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
+                     - a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) )
         else
             pb = 0.5d0*(pb1 + pb2)
             Sij = pb**3 / (192.0d0 * DEV_PI) * &
                   (3.0d0 + 3.0d0*pb*r + (pb*r)**2) * exp(-pb*r)
+            slvaa = pb - (3.0d0*pb + 2.0d0*pb**2*r)/(3.0d0 + 3.0d0*pb*r + (pb*r)**2)
         end if
 
         ! complete overlap
-        Sij = Sij * (z1-q1) * (z2-q2)
+        Sij     = Sij * (z1-q1) * (z2-q2)
     end if
 
 ! repulsion
@@ -213,16 +222,15 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
             pr   = 1.0d0 + er + er**2/3.0d0
             upe  = exp(-er)
             V_aa = pa*pr*upe
-            ! DOI: 10.1021/acs.jctc.6b00209, eq (18), no r
-            lvaa = pb - 2.0d0*pb**2*r + 3.0d0*pb/((pb*r)**2 + 3.0d0*pb*r+3.0d0)
+            lvaa = pb - (pb + 2.0d0*pb**2*r/3.0d0)/pr
     ! --------------------------
         case(EXP_MODE_WO)
             er   = pb*r
-            pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+            a1   = 1.0d0 + er/2.0d0 + er**2/12.0d0
+            pr   = a1**2/r
             upe  = exp(-er)
             V_aa = pa*pr*upe
-            ! FIXME - not implemented
-            lvaa = pb
+            lvaa = pb + 1.0d0/r - 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/a1
     ! --------------------------
         case(EXP_MODE_SC)
             er   = pb*r
@@ -233,6 +241,7 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     ! --------------------------
         case(EXP_MODE_MEDFF)
             V_aa = Sij * exp(k_exc)
+            lvaa = slvaa
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_energy_nbpair_EXP_DISPTT!')
     end select
@@ -413,7 +422,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,V_pe,lvaa,tvaa,pepk,pfbb
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
     real(DEVDP)     :: a2,b2,inva2b2,pfe1,pfe2,pfeb,V_in,pb1,pb2,Sij,dvin,dvs
-    real(DEVDP)     :: pbe,pbe1,pbe2
+    real(DEVDP)     :: pbe,pbe1,pbe2,a1,slvaa,t1
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -447,6 +456,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     ! induction
         Sij = 0.0d0
         dvs = 0.0d0
+        slvaa = 0.0d0
         if( calc_sij ) then
             z1  = top%nb_list(ip)%z1
             q1  = top%nb_list(ip)%q1
@@ -457,29 +467,33 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
 
             ! calculate overlap integral
             if( abs(pb1 - pb2) .gt. 0.1d0 ) then
+                inva2b2 = 1.0d0/(pb1**2 - pb2**2)
+                a1 =  4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r
+                a2 = -4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r
                 pbe1 = exp(-pb1*r)
                 pbe2 = exp(-pb2*r)
-                inva2b2 = 1.0d0/(pb1**2 - pb2**2)
-                Sij = 1.0d0/(8.0d0*DEV_PI*r) * ( &
-                      ( 4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r )*pbe1 &
-                    + (-4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r )*pbe2 )
+                t1 = a1*pbe1 + a2*pbe2
+                Sij = 1.0d0/(8.0d0*DEV_PI*r) * t1
+
                 dvs = 1.0d0/(8.0d0*DEV_PI*r) * &
-                   ( -( 4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r )*pbe1*pb1 &
-                     + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
-                     -(-4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r )*pbe2*pb2 &
-                     + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) ) + &
-                     - 1.0d0/(8.0d0*DEV_PI*r**2) * ( &
-                      ( 4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r )*pbe1 &
-                    + (-4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r )*pbe2 )
+                   ( -a1*pbe1*pb1 + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
+                     -a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) ) + &
+                    - 1.0d0/(8.0d0*DEV_PI*r**2) * t1
+
+                slvaa = 1.0d0/r - (1.0d0/t1)*( &
+                         - a1*pbe1*pb1 + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
+                         - a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) )
             else
                 pb  = 0.5d0*(pb1 + pb2)
                 pbe = exp(-pb*r)
-                Sij = pb**3 / (192.0d0 * DEV_PI) * &
-                      (3.0d0 + 3.0d0*pb*r + (pb*r)**2)*pbe
-                dvs = pb**3 / (192.0d0 * DEV_PI) * &
-                      ( -(3.0d0 + 3.0d0*pb*r + (pb*r)**2)*pbe*pb +  pbe*(3.0d0*pb + 2.0d0*(pb**2)*r) )
+                a1  = 3.0d0 + 3.0d0*pb*r + (pb*r)**2
+                Sij = pb**3 / (192.0d0 * DEV_PI) * a1 * pbe
+                dvs = pb**3 / (192.0d0 * DEV_PI) * (-a1*pbe*pb +  pbe*(3.0d0*pb + 2.0d0*(pb**2)*r))
+                slvaa = pb - (3.0d0*pb + 2.0d0*(pb**2)*r)/a1
             end if
-            dvs = - dvs * r ! correct for r2a
+
+            ! correct for r2a
+            dvs = - dvs * r
 
             ! complete overlap
             Sij = Sij * (z1-q1) * (z2-q2)
@@ -508,17 +522,21 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                 pr   = 1.0d0 + er + er**2/3.0d0
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
-                ! DOI: 10.1021/acs.jctc.6b00209, eq (18), no r
-                lvaa = pb - 2.0d0*pb**2*r + 3.0d0*pb/((pb*r)**2 + 3.0d0*pb*r+3.0d0)
-                dvaa = V_aa*pb*r - r*pa*upe*(pb + 2.0d0*pb*pb*r/3.0d0)
+                lvaa = pb - (pb + 2.0d0*(pb**2)*r/3.0d0)/pr
+                tvaa = - 2.0d0*(pb**2)/(3.0d0*pr) + (pb + 2.0d0*(pb**2)*r/3.0d0)*(pb + 2.0d0*(pb**2)*r/3.0d0)/(pr**2)
+                tvaa = tvaa * r2
+                dvaa = V_aa*pb*r - r*pa*upe*(pb + 2.0d0*(pb**2)*r/3.0d0)
         !------------
             case(EXP_MODE_WO)
                 er   = pb*r
-                pr   = (1.0d0 + er/2.0d0 + er**2/12.0d0)**2/r
+                a1   = 1.0d0 + er/2.0d0 + er**2/12.0d0
+                pr   = a1**2/r
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
-                ! FIXME - not implemented
-                lvaa = pb
+                lvaa = pb + 1.0d0/r - 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/a1
+                tvaa = - 1.0d0/r**2 - (pb**2)/(3.0d0*a1) &
+                       + 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/(a1**2)
+                tvaa = tvaa * r2
                 dvaa = V_aa*pb*r &
                      - r*pa*upe*(-r2a + 5.0d0/12.0d0*pb**2 + 2.0d0/12.0d0*pb**3*r + 3.0d0/144.0d0*pb**4 * r2)
         !------------
@@ -533,6 +551,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         !------------
             case(EXP_MODE_MEDFF)
                 V_aa = Sij * exp(k_exc)
+                lvaa = slvaa
                 dvaa = dvs * exp(k_exc)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')

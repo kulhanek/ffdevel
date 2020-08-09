@@ -560,7 +560,7 @@ subroutine ffdev_parameters_reinit()
                 case(DAMP_TT_CONST,DAMP_TT_COUPLED,DAMP_TT_ADBII)
                     use_damp_tb     = .true.
                 case(DAMP_TT_EXACT)
-                    ! nothing to be here
+                    use_damp_tb     = .true.
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'TT damp mode not implemented in ffdev_parameters_reinit!')
             end select

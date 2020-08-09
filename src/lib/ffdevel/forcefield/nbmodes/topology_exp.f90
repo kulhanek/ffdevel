@@ -215,6 +215,8 @@ subroutine ffdev_topology_EXP_update_nb_params(top)
             call ffdev_utils_exit(DEV_ERR,1,'EXPPB mode not implemented in ffdev_topology_EXP_update_nb_params I!')
     end select
 
+    ! NOTE: EXP_MODE_MEDFF does not require combining rules, but the combined values of PB can be necessary for TT
+
     if( exp_mode .eq. EXP_MODE_SC ) then
         call ffdev_topology_EXP_update_nb_params_PBPC_for_SC(top)
     else
