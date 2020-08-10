@@ -422,7 +422,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     real(DEVDP)     :: dvee,dvpe,dvaa,dvbb,er,pr,V_pe,lvaa,tvaa,pepk,pfbb
     real(DEVDP)     :: z1,z2,q1,q2,pfa1,pfa2,pfb1,pfb2,pepa1,pepa2,pepb1,pepb2,pee
     real(DEVDP)     :: a2,b2,inva2b2,pfe1,pfe2,pfeb,V_in,pb1,pb2,Sij,dvin,dvs
-    real(DEVDP)     :: pbe,pbe1,pbe2,a1,slvaa,t1
+    real(DEVDP)     :: pbe,pbe1,pbe2,a1,slvaa,t1,stvaa
     ! --------------------------------------------------------------------------
 
     geo%ele14_ene = 0.0d0
@@ -480,9 +480,11 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                      -a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) ) + &
                     - 1.0d0/(8.0d0*DEV_PI*r**2) * t1
 
-                slvaa = 1.0d0/r - (1.0d0/t1)*( &
+                slvaa =  1.0d0/r - (1.0d0/t1)*( &
                          - a1*pbe1*pb1 + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
                          - a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) )
+
+                stvaa = -1.0d0/r  ! FIXME
             else
                 pb  = 0.5d0*(pb1 + pb2)
                 pbe = exp(-pb*r)
@@ -490,6 +492,8 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                 Sij = pb**3 / (192.0d0 * DEV_PI) * a1 * pbe
                 dvs = pb**3 / (192.0d0 * DEV_PI) * (-a1*pbe*pb +  pbe*(3.0d0*pb + 2.0d0*(pb**2)*r))
                 slvaa = pb - (3.0d0*pb + 2.0d0*(pb**2)*r)/a1
+
+                stvaa = - 2.0d0*(pb**2)/a1 + ((3.0d0*pb + 2.0d0*(pb**2)*r)/a1)**2
             end if
 
             ! correct for r2a
@@ -534,9 +538,12 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
                 upe  = exp(-er)
                 V_aa = pa*pr*upe
                 lvaa = pb + 1.0d0/r - 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/a1
-                tvaa = - 1.0d0/r**2 - (pb**2)/(3.0d0*a1) &
-                       + 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/(a1**2)
-                tvaa = tvaa * r2
+!                tvaa = - 1.0d0/r**2 - (pb**2)/(3.0d0*a1) &
+!                       + 2.0d0*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)*(pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/(a1**2)
+!                tvaa = tvaa * r2
+                ! optimized
+                tvaa = - 1.0d0 - (er**2)/(3.0d0*a1) &
+                       + 2.0d0*r2*((pb/2.0d0 + 2.0d0*(pb**2)*r/12.0d0)/a1)**2
                 dvaa = V_aa*pb*r &
                      - r*pa*upe*(-r2a + 5.0d0/12.0d0*pb**2 + 2.0d0/12.0d0*pb**3*r + 3.0d0/144.0d0*pb**4 * r2)
         !------------
@@ -552,6 +559,7 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
             case(EXP_MODE_MEDFF)
                 V_aa = Sij * exp(k_exc)
                 lvaa = slvaa
+                tvaa = stvaa * r2
                 dvaa = dvs * exp(k_exc)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not defined EXP mode in ffdev_energy_nb_EXP_DISPTT!')
