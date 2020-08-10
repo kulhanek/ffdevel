@@ -53,8 +53,8 @@ subroutine ffdev_energy_nb_LJ(top,geo)
         j     = top%nb_list(ip)%aj
         dt    = top%nb_list(ip)%dt
 
-        crgij = top%nb_list(ip)%crgij
-        aLJa  = top%nb_list(ip)%pa
+        crgij = top%nb_list(ip)%q1 * top%nb_list(ip)%q2
+        aLJa  = top%nb_list(ip)%pa1
         bLJa  = top%nb_list(ip)%c6
 
         dxa1  = geo%crd(1,i) - geo%crd(1,j)
@@ -113,8 +113,8 @@ subroutine ffdev_energy_sapt_LJ(top,geo)
         i     = top%sapt_list(ip)%ai
         j     = top%sapt_list(ip)%aj
 
-        crgij = top%sapt_list(ip)%crgij
-        aLJa  = top%sapt_list(ip)%pa
+        crgij = top%sapt_list(ip)%q1 * top%sapt_list(ip)%q2
+        aLJa  = top%sapt_list(ip)%pa1
         bLJa  = top%sapt_list(ip)%c6
 
         dxa1  = geo%crd(1,i) - geo%crd(1,j)
@@ -160,7 +160,7 @@ subroutine ffdev_energy_nbpair_LJ(nbpair,r,nbene)
     nbene%dis_ene = 0.0
     nbene%tot_ene = 0.0
 
-    aLJa  = nbpair%pa
+    aLJa  = nbpair%pa1
     bLJa  = nbpair%c6
 
     r2    = r**2
@@ -211,8 +211,8 @@ subroutine ffdev_gradient_nb_LJ(top,geo)
         j     = top%nb_list(ip)%aj
         dt    = top%nb_list(ip)%dt
 
-        crgij = top%nb_list(ip)%crgij
-        aLJa  = top%nb_list(ip)%pa
+        crgij = top%nb_list(ip)%q1 * top%nb_list(ip)%q2
+        aLJa  = top%nb_list(ip)%pa1
         bLJa  = top%nb_list(ip)%c6
 
         dxa1  = geo%crd(1,i) - geo%crd(1,j)

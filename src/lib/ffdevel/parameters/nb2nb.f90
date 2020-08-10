@@ -199,10 +199,6 @@ subroutine ffdev_nb2nb_init_nbtypes
             nb_types(idx)%gtj   = j
             nb_types(idx)%eps   = 0
             nb_types(idx)%r0    = 0
-            nb_types(idx)%PA    = 0
-            nb_types(idx)%PB    = 0
-            nb_types(idx)%RC    = 0
-            nb_types(idx)%TB    = 0
             nb_types(idx)%SigNB = 0
             nb_types(idx)%R0NB  = 0
             nb_types(idx)%EpsNB = 0
@@ -280,19 +276,23 @@ subroutine ffdev_nb2nb_gather_nbtypes
 
             do k=1,nnb_types
                 if( nb_types(k)%setid .ne. 0 ) cycle
-                if( ( (nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj) ) .or. &
-                    ( (nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti) ) ) then
+                if( ((nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj)) .or. &
+                    ((nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti)) ) then
                     nb_types(k)%setid = i
                     nb_types(k)%nbt   = j
                     nb_types(k)%r0  = sets(i)%top%nb_types(j)%r0
                     nb_types(k)%eps = sets(i)%top%nb_types(j)%eps
-                    nb_types(k)%PA  = sets(i)%top%nb_types(j)%PA
-                    nb_types(k)%PB  = sets(i)%top%nb_types(j)%PB
-                    nb_types(k)%TB  = sets(i)%top%nb_types(j)%TB
-                    nb_types(k)%RC  = sets(i)%top%nb_types(j)%RC
                     exit
                 end if
             end do
+        end do
+    end do
+
+    do i=1,nsets
+        do j=1,sets(i)%top%natom_types
+            types(sets(i)%top%atom_types(j)%glbtypeid)%PA = sets(i)%top%atom_types(j)%PA
+            types(sets(i)%top%atom_types(j)%glbtypeid)%PB = sets(i)%top%atom_types(j)%PB
+            types(sets(i)%top%atom_types(j)%glbtypeid)%RC = sets(i)%top%atom_types(j)%RC
         end do
     end do
 
@@ -321,18 +321,22 @@ subroutine ffdev_nb2nb_scatter_nbtypes
             gtj = sets(i)%top%atom_types(sets(i)%top%nb_types(j)%tj)%glbtypeid
 
             do k=1,nnb_types
-                if( ( (nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj) ) .or. &
-                    ( (nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti) ) ) then
+                if( ((nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj)) .or. &
+                    ((nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti)) ) then
                     sets(i)%top%nb_types(j)%r0  = nb_types(k)%r0
                     sets(i)%top%nb_types(j)%eps = nb_types(k)%eps
-                    sets(i)%top%nb_types(j)%PA  = nb_types(k)%PA
-                    sets(i)%top%nb_types(j)%PB  = nb_types(k)%PB
-                    sets(i)%top%nb_types(j)%TB  = nb_types(k)%TB
-                    sets(i)%top%nb_types(j)%RC  = nb_types(k)%RC
                     exit
                 end if
             end do
             sets(i)%top%nb_params_update = .true.
+        end do
+    end do
+
+    do i=1,nsets
+        do j=1,sets(i)%top%natom_types
+            sets(i)%top%atom_types(j)%PA = types(sets(i)%top%atom_types(j)%glbtypeid)%PA
+            sets(i)%top%atom_types(j)%PB = types(sets(i)%top%atom_types(j)%glbtypeid)%PB
+            sets(i)%top%atom_types(j)%RC = types(sets(i)%top%atom_types(j)%glbtypeid)%RC
         end do
     end do
 
@@ -347,6 +351,7 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
     use ffdev_topology_dat
     use ffdev_utils
     use ffdev_parameters_dat
+    use ffdev_atomicdata
 
     implicit none
     integer         :: from_nb_mode,to_nb_mode
@@ -367,21 +372,13 @@ subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
                     ! nothing to do
 
                 case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
-                    do nbt=1,nnb_types
-                        pa = 6.0d0 * nb_types(nbt)%eps * exp(lj2exp6_alpha)/(lj2exp6_alpha - 6.0d0)
-                        if( pa .gt. 0 ) then
-                            pa = log(pa)
-                        else
-                            pa = 1.0d0
-                        end if
-                        nb_types(nbt)%pa = pa
-                        if( nb_types(nbt)%r0 .ne. 0 ) then
-                            nb_types(nbt)%pb = lj2exp6_alpha / nb_types(nbt)%r0
-                        else
-                            nb_types(nbt)%pb = ljdefpb
-                        end if
-                        nb_types(nbt)%rc = ljdefrc
+
+                     do nbt=1,ntypes
+                        types(nbt)%pa = 2.0
+                        types(nbt)%pb = ffdev_atomicdata_bii(nb_types(nbt)%gti)
+                        types(nbt)%rc = ffdev_atomicdata_rcii(nb_types(nbt)%gti,damp_fa,damp_fb)
                     end do
+
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_nb2nb_switch_nbmode!')
             end select

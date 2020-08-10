@@ -77,9 +77,6 @@ type GLBNB_TYPE
     integer             :: setid                ! topology from set
     integer             :: nbt                  ! nb type from topology
     real(DEVDP)         :: eps, r0              ! LJ parameters
-    real(DEVDP)         :: PA, PB               ! repulsion parameters
-    real(DEVDP)         :: RC                   ! BJ damping radius
-    real(DEVDP)         :: TB                   ! TT damping factor
 ! NB parameters
     real(DEVDP)         :: SigNB                ! sigma for NB
     real(DEVDP)         :: R0NB                 ! r0 for NB

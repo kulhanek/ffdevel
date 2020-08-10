@@ -172,8 +172,8 @@ subroutine ffdev_topology_load(top,name)
         end if
         top%atom_types(i)%probe  = .false.
         top%atom_types(i)%ffoptactive  = .false.
-        top%atom_types(i)%pen_pa = 4.0d0
-        top%atom_types(i)%pen_pb = 4.0d0
+        top%atom_types(i)%PA    = 0.0d0
+        top%atom_types(i)%PB    = 0.0d0
     end do
 
     ! read bonds -------------------------------------
@@ -527,17 +527,6 @@ subroutine ffdev_topology_load(top,name)
         if( (top%nb_list(i)%dt .lt. 0) .or. (top%nb_list(i)%dt .gt. top%ndihedral_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Dihedral type out-of-legal range in [nb_list] section!')
         end if
-
-       top%nb_list(i)%crgij = 0.0d0
-       top%nb_list(i)%pa    = 0.0d0
-       top%nb_list(i)%pb    = 0.0d0
-       top%nb_list(i)%c6    = 0.0d0
-       top%nb_list(i)%c8    = 0.0d0
-       top%nb_list(i)%c10   = 0.0d0
-       top%nb_list(i)%rc6   = 0.0d0
-       top%nb_list(i)%rc8   = 0.0d0
-       top%nb_list(i)%rc10  = 0.0d0
-       top%nb_list(i)%tb    = 0.0d0
     end do
 
     ! read NB types ------------------------------------
@@ -554,12 +543,6 @@ subroutine ffdev_topology_load(top,name)
         if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [nb_types] section!')
         end if
-
-        top%nb_types(i)%pa = 0.0d0
-        top%nb_types(i)%pb = 0.0d0
-        top%nb_types(i)%pc = 0.0d0
-        top%nb_types(i)%rc = 0.0d0
-        top%nb_types(i)%tb = 0.0d0
 
         if( (top%nb_types(i)%ti .le. 0) .or. (top%nb_types(i)%ti .gt. top%natom_types) ) then
             call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
@@ -1418,12 +1401,9 @@ subroutine ffdev_topology_update_nb_params(top)
         case(NB_VDW_EXP_DISPBJ)
             call ffdev_topology_EXP_update_nb_params(top)
             call ffdev_topology_BJ_update_nb_params(top)
-            call ffdev_topology_PEN_update_nb_params(top)
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
             call ffdev_topology_EXP_update_nb_params(top)
-            call ffdev_topology_TT_update_nb_params(top)
-            call ffdev_topology_PEN_update_nb_params(top)
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'nb_mode not implemented in ffdev_topology_update_nb_params!')
@@ -1507,30 +1487,21 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     real(DEVDP)     :: rc
     ! --------------------------------------------------------------------------
 
-    nbpair%crgij = 0.0d0
-    nbpair%pa    = 0.0d0
-    nbpair%pb    = 0.0d0
     nbpair%c6    = 0.0d0
     nbpair%c8    = 0.0d0
     nbpair%c10   = 0.0d0
     nbpair%rc6   = 0.0d0
     nbpair%rc8   = 0.0d0
     nbpair%rc10  = 0.0d0
-    nbpair%tb    = 0.0d0
 
     nbpair%Z1    = 0.0d0
     nbpair%Z2    = 0.0d0
     nbpair%q1    = 0.0d0
     nbpair%q2    = 0.0d0
-    nbpair%pepa1 = 0.0d0
-    nbpair%pepb1 = 0.0d0
-    nbpair%pepa2 = 0.0d0
-    nbpair%pepb2 = 0.0d0
-
+    nbpair%pa1   = 0.0d0
+    nbpair%pa2   = 0.0d0
     nbpair%pb1   = 0.0d0
     nbpair%pb2   = 0.0d0
-
-    calc_sij = .false.
 
     i       = nbpair%ai     ! not need to be defined
     j       = nbpair%aj     ! not need to be defined
@@ -1545,110 +1516,51 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
     ! electrostatics
     ! FIXME - better value
     if( (i .ne. 0 ) .and. (j .ne. 0) ) then
-        nbpair%crgij = 332.05221729d0 * top%atoms(i)%charge * top%atoms(j)%charge * ele_qscale * ele_qscale
+        nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
+        nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
     else
-        nbpair%crgij = 332.05221729d0 * types(agti)%aveq * types(agtj)%aveq * ele_qscale * ele_qscale
+        nbpair%q1    = types(agti)%aveq * ele_qscale * sqrt(332.05221729d0)
+        nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
     end if
 
-    if( pen_enabled ) then
-        select case(pen_mode)
-            case(PEN_MODE_AMOEBA)
-                nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
-                nbpair%pepa1 = top%atom_types(ti)%pen_pa
-                nbpair%pepb1 = top%atom_types(ti)%pen_pb
-
-                nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
-                nbpair%pepa2 = top%atom_types(tj)%pen_pa
-                nbpair%pepb2 = top%atom_types(tj)%pen_pb
-            case(PEN_MODE_EFP_M1,PEN_MODE_EFP_M2)
-                nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
-                nbpair%pepa1 = top%atom_types(ti)%pen_pa
-
-                nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
-                nbpair%pepa2 = top%atom_types(tj)%pen_pa
-
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported pen_mode in ffdev_topology_update_nbpair_prms!')
-        end select
-
-        if( (i .ne. 0 ) .and. (j .ne. 0) ) then
-            nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
-            nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
-        else
-            nbpair%q1    = types(agti)%aveq * ele_qscale * sqrt(332.05221729d0)
-            nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
-        end if
-    end if
-
-    if( ind_enabled ) then
-        nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%pb1   = top%nb_types(nbtii)%pb
-
-        nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
-        nbpair%pb2   = top%nb_types(nbtjj)%pb
-
-        if( (i .ne. 0 ) .and. (j .ne. 0) ) then
-            nbpair%q1    = top%atoms(i)%charge * ele_qscale * sqrt(332.05221729d0)
-            nbpair%q2    = top%atoms(j)%charge * ele_qscale * sqrt(332.05221729d0)
-        else
-            nbpair%q1    = types(agti)%aveq * ele_qscale * sqrt(332.05221729d0)
-            nbpair%q2    = types(agtj)%aveq * ele_qscale * sqrt(332.05221729d0)
-        end if
-
-        select case(ind_mode)
-            case(IND_MODE_MEDFF)
-                calc_sij = .true.
-            case(IND_MODE_K2EXC)
-                ! nothing to be here
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented ind_mode in ffdev_topology_update_nbpair_prms!')
-        end select
-    end if
-
-    select case(exp_mode)
-        case(EXP_MODE_BM,EXP_MODE_DO,EXP_MODE_WO,EXP_MODE_SC)
-                ! nothing to be here
-        case(EXP_MODE_MEDFF)
-            calc_sij = .true.
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_topology_update_nbpair_prms!')
-    end select
+    nbpair%Z1    = ffdev_atomicdata_get_effZ(agti) * ele_qscale * sqrt(332.05221729d0)
+    nbpair%Z2    = ffdev_atomicdata_get_effZ(agtj) * ele_qscale * sqrt(332.05221729d0)
 
     select case(nb_mode)
         case(NB_VDW_LJ)
             ! LJ parameters
-            nbpair%pa =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
-            nbpair%c6 = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+            nbpair%pa1 =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
+            nbpair%c6  = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
     ! ------------------------
         case(NB_VDW_EXP_DISPBJ)
             ! exp
-            nbpair%pb  = top%nb_types(nbt)%pb
-            nbpair%pa  = exp(top%nb_types(nbt)%pa)
-            nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
+            nbpair%pb1  = top%atom_types(ti)%pb
+            nbpair%pa1  = exp(top%atom_types(ti)%pa)
+            nbpair%pb2  = top%atom_types(tj)%pb
+            nbpair%pa2  = exp(top%atom_types(tj)%pa)
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
             nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
-            rc = top%nb_types(nbt)%rc
+            rc = top%atom_types(ti)%rc + top%atom_types(tj)%rc
             nbpair%rc6  = rc**6
             nbpair%rc8  = rc**8
             nbpair%rc10 = rc**10
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
             ! exp
-            nbpair%pb  = top%nb_types(nbt)%pb
-            nbpair%pa  = exp(top%nb_types(nbt)%pa)
-            nbpair%pc  = top%nb_types(nbt)%pc ! damping is in ffdev_topology_EXP_update_nb_params_PBPC_for_SC
+            nbpair%pb1  = top%atom_types(ti)%pb
+            nbpair%pa1  = exp(top%atom_types(ti)%pa)
+            nbpair%pb2  = top%atom_types(tj)%pb
+            nbpair%pa2  = exp(top%atom_types(tj)%pa)
 
             ! dispersion coefficients
             nbpair%c6  = disp_s6  * disp_pairs(agti,agtj)%c6
             nbpair%c8  = disp_s8  * disp_pairs(agti,agtj)%c8
             nbpair%c10 = disp_s10 * disp_pairs(agti,agtj)%c10
 
-            ! TT damping
-            nbpair%tb = top%nb_types(nbt)%tb
     ! ------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_topology_update_nbpair_prms!')

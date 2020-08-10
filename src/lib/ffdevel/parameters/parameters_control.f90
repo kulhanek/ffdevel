@@ -507,9 +507,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     logical                     :: changed
     character(PRMFILE_MAX_PATH) :: string
     integer                     :: i
-    integer                     :: ldampbj_mode,ldamptt_mode,lexp_pb_mode
+    integer                     :: ldampbj_mode,lexp_pb_mode
     integer                     :: from_nb_mode,to_nb_mode,lpen_mode,lind_mode
-    integer                     :: lcomb_rules,lexp_mode,lpen_pa_mode,lpen_pb_mode
+    integer                     :: lcomb_rules,lexp_mode
+    integer                     :: lexp_pa_mode
     logical                     :: lpen_enabled,lind_enabled
     ! --------------------------------------------------------------------------
 
@@ -521,11 +522,10 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ .or. nb_mode .eq. NB_VDW_EXP_DISPTT ) then
             write(DEV_OUT,85)  ffdev_topology_EXP_exp_mode_to_string(exp_mode)
+            write(DEV_OUT,65)  ffdev_topology_EXP_pa_mode_to_string(exp_pa_mode)
             write(DEV_OUT,75)  ffdev_topology_EXP_pb_mode_to_string(exp_pb_mode)
             write(DEV_OUT,95)  prmfile_onoff(pen_enabled)
             write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
-            write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
-            write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
             write(DEV_OUT,215) prmfile_onoff(ind_enabled)
             write(DEV_OUT,225) ffdev_topology_IND_mode_to_string(ind_mode)
         end if
@@ -533,14 +533,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         if( nb_mode .eq. NB_VDW_EXP_DISPBJ ) then
             write(DEV_OUT,45) ffdev_topology_BJ_dampbj_mode_to_string(dampbj_mode)
         end if
-        if( nb_mode .eq. NB_VDW_EXP_DISPTT ) then
-            write(DEV_OUT,55) ffdev_topology_TT_damptt_mode_to_string(damptt_mode)
-        end if
 
         if( ApplyCombiningRules ) then
-        if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
-                write(DEV_OUT,37) ffdev_topology_EXP_comb_rules_to_string(exp_comb_rules)
-            end if
             if( nb_mode .eq. NB_VDW_LJ ) then
                 write(DEV_OUT,35) ffdev_topology_LJ_comb_rules_to_string(lj_comb_rules)
             end if
@@ -577,6 +571,16 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         else
             write(DEV_OUT,85) ffdev_topology_EXP_exp_mode_to_string(exp_mode)
         end if
+        if( prmfile_get_string_by_key(fin,'exp_pa_mode', string)) then
+            lexp_pa_mode = ffdev_topology_EXP_pa_mode_from_string(string)
+            write(DEV_OUT,60) ffdev_topology_EXP_pa_mode_to_string(lexp_pa_mode)
+            if( exec ) then
+                exp_pa_mode = lexp_pa_mode
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,65) ffdev_topology_EXP_pa_mode_to_string(exp_pa_mode)
+        end if
         if( prmfile_get_string_by_key(fin,'exp_pb_mode', string)) then
             lexp_pb_mode = ffdev_topology_EXP_pb_mode_from_string(string)
             write(DEV_OUT,70) ffdev_topology_EXP_pb_mode_to_string(lexp_pb_mode)
@@ -608,28 +612,6 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             end if
         else
             write(DEV_OUT,125) ffdev_topology_PEN_mode_to_string(pen_mode)
-        end if
-    !----------
-        if( prmfile_get_string_by_key(fin,'pen_pa_mode', string)) then
-            lpen_pa_mode = ffdev_topology_PEN_pa_mode_from_string(string)
-            write(DEV_OUT,100) ffdev_topology_PEN_pa_mode_to_string(lpen_pa_mode)
-            if( exec ) then
-                pen_pa_mode = lpen_pa_mode
-                changed = .true.
-            end if
-        else
-            write(DEV_OUT,105) ffdev_topology_PEN_pa_mode_to_string(pen_pa_mode)
-        end if
-    !----------
-        if( prmfile_get_string_by_key(fin,'pen_pb_mode', string)) then
-            lpen_pb_mode = ffdev_topology_PEN_pb_mode_from_string(string)
-            write(DEV_OUT,110) ffdev_topology_PEN_pb_mode_to_string(lpen_pb_mode)
-            if( exec ) then
-                pen_pb_mode = lpen_pb_mode
-                changed = .true.
-            end if
-        else
-            write(DEV_OUT,115) ffdev_topology_PEN_pb_mode_to_string(pen_pb_mode)
         end if
 
    ! IND
@@ -670,34 +652,9 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         end if
     end if
 
-! ---------------------------
-    if( to_nb_mode .eq. NB_VDW_EXP_DISPTT ) then
-        if( prmfile_get_string_by_key(fin,'damptt_mode', string)) then
-            ldamptt_mode = ffdev_topology_TT_damptt_mode_from_string(string)
-            write(DEV_OUT,50) ffdev_topology_TT_damptt_mode_to_string(ldamptt_mode)
-            if( exec ) then
-                damptt_mode = ldamptt_mode
-                changed = .true.
-            end if
-        else
-            write(DEV_OUT,55) ffdev_topology_TT_damptt_mode_to_string(damptt_mode)
-        end if
-    end if
 
 ! ---------------------------
     if( ApplyCombiningRules ) then
-        if( (to_nb_mode .eq. NB_VDW_EXP_DISPTT) .or. (to_nb_mode .eq. NB_VDW_EXP_DISPBJ) ) then
-            if( prmfile_get_string_by_key(fin,'exp_comb_rules', string)) then
-                lcomb_rules = ffdev_topology_EXP_comb_rules_from_string(string)
-                write(DEV_OUT,32) ffdev_topology_EXP_comb_rules_to_string(lcomb_rules)
-                if( exec ) then
-                    exp_comb_rules = lcomb_rules
-                    changed = .true.
-                end if
-            else
-                write(DEV_OUT,35) ffdev_topology_EXP_comb_rules_to_string(exp_comb_rules)
-            end if
-        end if
         if( to_nb_mode .eq. NB_VDW_LJ ) then
             if( prmfile_get_string_by_key(fin,'lj_comb_rules', string)) then
                 lcomb_rules = ffdev_topology_LJ_comb_rules_from_string(string)
@@ -748,17 +705,14 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
  30 format('LJ comb. rules (lj_comb_rules)       = ',A)
  35 format('LJ combining rules (lj_comb_rules)   = ',A31,' (current)')
 
- 32 format('EXP comb. rules (exp_comb_rules)     = ',A)
- 37 format('EXP combining rules (exp_comb_rules) = ',A31,' (current)')
-
  40 format('BJ damping mode (dampbj_mode)        = ',A)
  45 format('BJ damping mode (dampbj_mode)        = ',A31,' (current)')
 
- 50 format('TT damping mode (damptt_mode)        = ',A)
- 55 format('TT damping mode (damptt_mode)        = ',A31,' (current)')
-
  80 format('EXP mode (exp_mode)                  = ',A)
  85 format('EXP mode (exp_mode)                  = ',A31,' (current)')
+
+ 60 format('EXP PA mode (exp_pa_mode)            = ',A)
+ 65 format('EXP PA mode (exp_pa_mode)            = ',A31,' (current)')
 
  70 format('EXP PB mode (exp_pb_mode)            = ',A)
  75 format('EXP PB mode (exp_pb_mode)            = ',A31,' (current)')
@@ -768,12 +722,6 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 120 format('Pen energy mode (pen_mode)           = ',A)
 125 format('Pen energy mode (pen_mode)           = ',A31,' (current)')
-
-100 format('Pen energy PA mode (pen_pa_mode)     = ',A)
-105 format('Pen energy PA mode (pen_pa_mode)     = ',A31,' (current)')
-
-110 format('Pen energy PB mode (pen_pb_mode)     = ',A)
-115 format('Pen energy PB mode (pen_pb_mode)     = ',A31,' (current)')
 
 210 format('Induction energy (ind_enabled)       = ',A)
 215 format('Induction energy (ind_enabled)       = ',A31,' (current)')
@@ -843,13 +791,11 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
                 read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
             case(REALM_VDW_EPS,REALM_VDW_R0)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
-            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_VDW_TB)
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
             case(REALM_ELE_SQ)
                 read(line,*,err=100,end=100) realm, lvalue
-            case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB)
-                read(line,*,err=100,end=100) realm, lvalue
-            case(REALM_PEN_FA,REALM_PEN_FB)
+            case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB,REALM_DAMP_PE)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
                 read(line,*,err=100,end=100) realm, lvalue

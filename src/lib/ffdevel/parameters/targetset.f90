@@ -289,15 +289,11 @@ subroutine ffdev_targetset_reinit_nbparams()
                 case(REALM_VDW_R0)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
                 case(REALM_VDW_PA)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PA
+                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%PA
                 case(REALM_VDW_PB)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%PB
-                case(REALM_VDW_TB)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%TB
+                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%PB
                 case(REALM_VDW_RC)
-                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%RC
-                case(REALM_PEN_PA)
-                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%pen_pa
+                    params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%RC
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_targetset_reinit_nbparams!')
             end select

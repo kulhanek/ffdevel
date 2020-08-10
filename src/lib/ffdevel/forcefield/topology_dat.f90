@@ -115,19 +115,13 @@ type NB_PAIR
     integer     ::  nbtii,nbtjj ! NB types of corresponding like atoms
     integer     ::  dt          ! dihedral type for scaling factors
     ! acceleration data -  do not use for regular use
-    ! these data are updated when nb_params_update .eqv. .true.
-        real(DEVDP) ::  crgij       !
-        real(DEVDP) ::  pa, pb, pc
-        real(DEVDP) ::  c6, c8, c10
-        real(DEVDP) ::  rc6, rc8, rc10
-        real(DEVDP) ::  tb
-    ! penetration energy
+    ! these data are updated when nb_params_update .eqv. .true.      !
+        real(DEVDP) ::  pa1,pa2
+        real(DEVDP) ::  pb1,pb2
+        real(DEVDP) ::  c6,c8,c10
+        real(DEVDP) ::  rc6,rc8,rc10
         real(DEVDP) ::  Z1,Z2
         real(DEVDP) ::  q1,q2
-        real(DEVDP) ::  pepa1,pepb1
-        real(DEVDP) ::  pepa2,pepb2
-    ! induction, repulsion
-        real(DEVDP) ::  pb1,pb2
 end type NB_PAIR
 
 ! ------------------------------------------------------------------------------
@@ -150,9 +144,10 @@ type ATOM_TYPE
     logical                 :: probe            ! probe
     integer                 :: glbtypeid        ! global type id
     logical                 :: ffoptactive      ! this type is subject of ffopt
-    ! penetration energy
-    real(DEVDP)             :: pen_pa
-    real(DEVDP)             :: pen_pb
+    ! NB parameters
+    real(DEVDP)             :: PA
+    real(DEVDP)             :: PB
+    real(DEVDP)             :: RC               ! BJ damping radius
 end type ATOM_TYPE
 
 ! ------------------------------------------------------------------------------
@@ -160,9 +155,6 @@ end type ATOM_TYPE
 type NB_TYPE
     integer             :: ti,tj                ! atom types
     real(DEVDP)         :: eps, r0              ! LJ parameters
-    real(DEVDP)         :: PA, PB, PC           ! repulsion parameters - PC is derived from PB for EXP_MODE_SC
-    real(DEVDP)         :: RC                   ! BJ damping radius
-    real(DEVDP)         :: TB                   ! TT damping factor
     logical             :: ffoptactive          ! this type is subject of ffopt
     integer             :: nbii, nbjj           ! links to like nb_types
 end type NB_TYPE
@@ -234,22 +226,12 @@ real(DEVDP) :: glb_iscee                    = 1.0d0     ! global scaling for 1-4
 ! ==== vdW modes
 ! ==============================================================================
 
-integer,parameter   :: PEN_MODE_AMOEBA      = 1         ! DOI: 10.1039/c6cp06017j
-integer,parameter   :: PEN_MODE_EFP_M1      = 2         ! DOI: 10.1002/jcc.20520 -> Model 1
-integer,parameter   :: PEN_MODE_EFP_M2      = 3         ! DOI: 10.1002/jcc.20520 -> Model 2
-
-integer,parameter   :: PEN_PA_FREEOPT       = 784       ! pa = free to optimize as pen_pa
-integer,parameter   :: PEN_PA_CONST         = 785       ! pa = pen_fa
-integer,parameter   :: PEN_PA_ADBII         = 781       ! pa = pen_fa * bii (atomic database)
-integer,parameter   :: PEN_PA_ADRCII        = 787       ! pa = pen_fa / rii(damp_fa,damp_fb) (atomic database)
-integer,parameter   :: PEN_PA_COUPLED       = 782       ! pa = pen_fa * vdw_pb
-
-integer,parameter   :: PEN_PB_CONST         = 795       ! pb = pen_fb
-integer,parameter   :: PEN_PB_COUPLED       = 796       ! pb = pen_fb * pen_pa
+! penetration energy
+integer,parameter   :: PEN_MODE_SCI         = 2         ! Smear charge interaction
 
 ! ####################################################################
 
-integer,parameter   :: IND_MODE_MEDFF       = 801       ! DOI: 10.1021/acs.jctc.6b00969
+! induction energy
 integer,parameter   :: IND_MODE_K2EXC       = 802       ! proportional to exchange energy
 
 ! ####################################################################
@@ -263,21 +245,16 @@ integer,parameter   :: LJ_COMB_RULE_FB      = 14        ! FB (Fender-Halsey-Bert
 ! ####################################################################
 
 ! exp_mode
-integer,parameter   :: EXP_MODE_BM          = 64        ! Born-Mayer
 integer,parameter   :: EXP_MODE_DO          = 67        ! Density overlap
 integer,parameter   :: EXP_MODE_WO          = 68        ! Wavefunction overlap
-integer,parameter   :: EXP_MODE_SC          = 69        ! Smirnov and Chibisov, doi: 10.1021/jp2010925
-integer,parameter   :: EXP_MODE_MEDFF       = 61        ! DOI: 10.1021/acs.jctc.6b00969
+
+! PA source
+integer,parameter   :: EXP_PA_FREEOPT       = 301       ! pa = free to optimize as vdw_pa
+integer,parameter   :: EXP_PA_CHARGES       = 302       ! from charges with k_exc prefactor
 
 ! PB source
 integer,parameter   :: EXP_PB_FREEOPT       = 301       ! pb = free to optimize as vdw_pb
 integer,parameter   :: EXP_PB_ADBII         = 302       ! pb = damp_pb * bii (atomic database)
-
-! combining rules - applicable for Born-Mayer repulsion
-integer,parameter   :: EXP_COMB_RULE_AM     = 391       ! arithmetic means
-integer,parameter   :: EXP_COMB_RULE_GS     = 392       ! Gilbert-Smith
-integer,parameter   :: EXP_COMB_RULE_BA     = 393       ! Bohm-Ahlrichs
-integer,parameter   :: EXP_COMB_RULE_VS     = 394       ! Vleet-Schmidt
 
 ! ####################################################################
 
@@ -285,13 +262,6 @@ integer,parameter   :: EXP_COMB_RULE_VS     = 394       ! Vleet-Schmidt
 integer,parameter   :: DAMP_BJ_CONST        = 201       ! rc = damp_fa
 integer,parameter   :: DAMP_BJ_FREEOPT      = 202       ! rc = free to optimize as vdw_rc
 integer,parameter   :: DAMP_BJ_ADRCII       = 205       ! rc = rcii(typeA,typeB,[damp_fa,damp_fb]) (atomic database)
-
-! Tang–Toennies damping
-integer,parameter   :: DAMP_TT_COUPLED      = 101       ! tb = damp_tb * vdw_pb
-integer,parameter   :: DAMP_TT_FREEOPT      = 102       ! tb = free to optimize as vdw_tb
-integer,parameter   :: DAMP_TT_CONST        = 103       ! tb = damp_tb
-integer,parameter   :: DAMP_TT_ADBII        = 104       ! tb = damp_pb * bii (atomic database)
-integer,parameter   :: DAMP_TT_EXACT        = 105       ! tb = damp_pb * bii (atomic database)
 
 ! ==============================================================================
 ! nb_mode
@@ -303,33 +273,24 @@ integer,parameter   :: NB_VDW_EXP_DISPTT    = 30        ! Exp-Tang–Toennies
 integer     :: nb_mode                      = NB_VDW_LJ
 ! PEN
 logical     :: pen_enabled                  = .false.           ! penetration energy
-integer     :: pen_mode                     = PEN_MODE_EFP_M1
-integer     :: pen_pa_mode                  = PEN_PA_FREEOPT
-integer     :: pen_pb_mode                  = PEN_PB_COUPLED
+integer     :: pen_mode                     = PEN_MODE_SCI
 
 ! IND
 logical     :: ind_enabled                  = .false.           ! induction energy
-integer     :: ind_mode                     = IND_MODE_MEDFF
+integer     :: ind_mode                     = IND_MODE_K2EXC
 
 ! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
 ! EXP
-integer     :: exp_mode                     = EXP_MODE_BM
+integer     :: exp_mode                     = EXP_MODE_WO
+integer     :: exp_pa_mode                  = EXP_PA_FREEOPT
 integer     :: exp_pb_mode                  = EXP_PB_FREEOPT
-integer     :: exp_comb_rules               = EXP_COMB_RULE_VS
+
 ! DISP
 integer     :: dampbj_mode                  = DAMP_BJ_FREEOPT
-integer     :: damptt_mode                  = DAMP_TT_FREEOPT
 
 ! RUNTIME setup
-! use pb*r (simplified) or -d/dr(ln(Erep)) (exact) in TT series
-! available for EXP_MODE_BM, EXP_MODE_SC, only experimental
-logical     :: disptt_exact                 = .true.
-logical     :: calc_sij                     = .false.
-
-
-! derived setup
-logical     :: ApplyCombiningRules          = .false.           ! apply combination rules in every error evaluation
+logical     :: ApplyCombiningRules          = .false.       ! apply combination rules in every error evaluation
 ! ------------------------------------------------------------------------------
 
 real(DEVDP) :: glb_iscnb                    = 1.0d0         ! global scaling for 1-4 NB interactions
@@ -340,18 +301,14 @@ real(DEVDP) :: disp_s8  =  1.0d0
 real(DEVDP) :: disp_s10 =  1.0d0
 
 ! damping
-real(DEVDP) :: damp_fa  =  1.0d0
-real(DEVDP) :: damp_fb  =  0.0d0
-real(DEVDP) :: damp_pb  =  1.0d0
-real(DEVDP) :: damp_tb  =  1.0d0
+real(DEVDP) :: damp_fa  =  1.0d0    ! BJ
+real(DEVDP) :: damp_fb  =  0.0d0    ! BJ
+real(DEVDP) :: damp_pb  =  1.0d0    ! exchange
+real(DEVDP) :: damp_tb  =  1.0d0    ! TT
+real(DEVDP) :: damp_pe  =  1.0d0    ! PEN
 
 real(DEVDP) :: k_exc    =  1.0d0
 real(DEVDP) :: k_ind    =  1.0d0
-
-! penetration energy
-real(DEVDP) :: pen_fa   =  1.0d0
-real(DEVDP) :: pen_fb   =  1.0d0
-real(DEVDP) :: pen_fc   = -5.0d0
 
 ! ------------------------------------------------------------------------------
 

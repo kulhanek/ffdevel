@@ -29,6 +29,7 @@ SET(FFDEVEL_SRC
         forcefield/hessian_utils.f90
         forcefield/jacobian.f90
 
+        forcefield/nbmodes/INTEGRAL.f90
         forcefield/nbmodes/LJ.f90
         forcefield/nbmodes/EXP-DISPBJ.f90
         forcefield/nbmodes/EXP-DISPTT.f90

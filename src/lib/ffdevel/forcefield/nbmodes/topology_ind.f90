@@ -36,8 +36,6 @@ character(80) function ffdev_topology_IND_mode_to_string(lind_mode)
     ! --------------------------------------------------------------------------
 
     select case(lind_mode)
-        case(IND_MODE_MEDFF)
-            ffdev_topology_IND_mode_to_string = 'MEDFF'
         case(IND_MODE_K2EXC)
             ffdev_topology_IND_mode_to_string = 'K2EXC'
         case default
@@ -59,8 +57,6 @@ integer function ffdev_topology_IND_mode_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
-        case('MEDFF')
-            ffdev_topology_IND_mode_from_string = IND_MODE_MEDFF
         case('K2EXC')
             ffdev_topology_IND_mode_from_string = IND_MODE_K2EXC
         case default
