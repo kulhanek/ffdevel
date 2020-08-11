@@ -3015,6 +3015,27 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
 end subroutine ffdev_params_get_lower_bounds
 
 ! ==============================================================================
+! function ffdev_params_get_lower_bound_for_prms
+! ==============================================================================
+
+real(DEVDP) function ffdev_params_get_lower_bound_for_prms(idx)
+
+    use ffdev_parameters_dat
+    use ffdev_atomicdata
+
+    implicit none
+    integer         :: idx
+    ! --------------------------------------------------------------------------
+
+    if( params(idx)%realm .ne. REALM_ZEFF ) then
+        ffdev_params_get_lower_bound_for_prms = ffdev_params_get_lower_bound(params(idx)%realm)
+    else
+        ffdev_params_get_lower_bound_for_prms = ffdev_atomicdata_get_min_Zeff(params(idx)%ti)
+    end if
+
+end function ffdev_params_get_lower_bound_for_prms
+
+! ==============================================================================
 ! subroutine ffdev_params_get_lower_bound
 ! ==============================================================================
 
@@ -3231,6 +3252,27 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
     if( id .ne. nactparms ) stop ! safety fuse
 
 end subroutine ffdev_params_get_upper_bounds
+
+! ==============================================================================
+! function ffdev_params_get_upper_bound_for_prms
+! ==============================================================================
+
+real(DEVDP) function ffdev_params_get_upper_bound_for_prms(idx)
+
+    use ffdev_parameters_dat
+    use ffdev_atomicdata
+
+    implicit none
+    integer         :: idx
+    ! --------------------------------------------------------------------------
+
+    if( params(idx)%realm .ne. REALM_ZEFF ) then
+        ffdev_params_get_upper_bound_for_prms = ffdev_params_get_upper_bound(params(idx)%realm)
+    else
+        ffdev_params_get_upper_bound_for_prms =  types(params(idx)%ti)%z
+    end if
+
+end function ffdev_params_get_upper_bound_for_prms
 
 ! ==============================================================================
 ! subroutine ffdev_params_get_upper_bound

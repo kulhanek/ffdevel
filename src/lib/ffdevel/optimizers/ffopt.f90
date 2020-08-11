@@ -871,14 +871,14 @@ subroutine opt_shark_nruns
                 do i=1,nparams
                     if( .not. params(i)%enabled ) cycle
                     call random_number(rnd)
-                    minv = ffdev_params_get_lower_bound(params(i)%realm)
-                    maxv = ffdev_params_get_upper_bound(params(i)%realm)
+                    minv = ffdev_params_get_lower_bound_for_prms(i)
+                    maxv = ffdev_params_get_upper_bound_for_prms(params(i)%realm)
                     FFParams(k) = minv + (maxv - minv)*rnd
                     k = k + 1
                 end do
             case(SHARK_GUESS_MIX)
                 if( istep .eq. 1 ) then
-                    ! use input parameteres
+                    ! use input parameters
                     FFParams(:) = tmp_InitialParams(:)
                 else if ( istep .eq. 2 ) then
                     ! damp with input
