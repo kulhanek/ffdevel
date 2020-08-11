@@ -9,7 +9,7 @@ r, pb1, pb2 = symbols('r pb1 pb2')
 pb   = (pb1 + pb2)/2
 pr   = pb*r/2.0
 pfe  = exp(-pr)
-s    = sqrt(pb**3)*(1.0 + pr + pr**2/3.0)*pfe
+s    = (1.0 + pr + pr**2/3.0)*pfe
 
 ds   =   diff(s,r)
 tt   = - diff(log(s),r) * r

@@ -234,32 +234,29 @@ subroutine ffdev_nbmode_INTEGRAL_wo_1s1s(r,pb1,pb2,s,ds,tt,dtt)
         dtt = -4.0*x14*x27 - x24*x29*(-x18 - x19 + x20 + x21)/x9**2 &
             - x26*x29*(-1.0*x12*x17*x22 + x23*(-1.0*pb1*x19 - 1.0*pb2*x18 + 0.25*x0*x8 + 0.25*x1*x6) + 1.0*x13/r**(5.0/2.0))
     else
-        x0  = pb1/2.0 + pb2/2.0
+        x0  = pb1/2 + pb2/2
         x1  = 0.5*r*x0
-        x2  = x0**2
-        x3  = 0.0833333333333333*r**2*x2 + x1 + 1.0
-        x4  = sqrt(x0**3)
-        x5  = exp(-x1)
-        x6  = x4*x5
-        x7  = x3*x6
-        x8  = 0.166666666666667*x2
-        x9  = r*x8
-        x10 = 0.25*pb1
-        x11 = 0.25*pb2
-        x12 = x10 + x11
-        x13 = x6*(x12 + x9)
-        x14 = -x10 - x11
-        x15 = x13 + x14*x7
-        x16 = 1.0/x4
-        x17 = exp(x1)
-        x18 = x16*x17/x3
-        x19 = x15*x18
-        x20 = r*x19
+        x2  = exp(-x1)
+        x3  = x0**2
+        x4  = 0.0833333333333333*r**2*x3 + x1 + 1.0
+        x5  = x2*x4
+        x6  = 0.166666666666667*x3
+        x7  = r*x6
+        x8  = 0.25*pb1
+        x9  = 0.25*pb2
+        x10 = x8 + x9
+        x11 = x2*(x10 + x7)
+        x12 = -x8 - x9
+        x13 = x11 + x12*x5
+        x14 = exp(x1)
+        x15 = x14/x4
+        x16 = x13*x15
+        x17 = r*x16
 
-        s   = x7
-        ds  = x15
-        tt  = -x20
-        dtt = -r*x15*x16*x17*(x14 - x9)/x3**2 - r*x18*(2*x13*x14 + 0.0625*x3*x4*x5*(-pb1 - pb2)**2 + x6*x8) - x12*x20 - x19
+        s   = x5
+        ds  = x13
+        tt  = -x17
+        dtt = -r*x13*x14*(x12 - x7)/x4**2 - r*x15*(2*x11*x12 + 0.0625*x2*x4*(-pb1 - pb2)**2 + x2*x6) - x10*x17 - x16
     end if
 
 end subroutine ffdev_nbmode_INTEGRAL_wo_1s1s
