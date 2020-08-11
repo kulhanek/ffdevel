@@ -47,7 +47,7 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,115) ffdev_atomicdata_bii_source_to_string(bii_source)
         write(DEV_OUT,125) ffdev_atomicdata_bii_mods_to_string(bii_mods)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
-        write(DEV_OUT,145) ffdev_atomicdata_eff_core_to_string(eff_core)
+        write(DEV_OUT,145) ffdev_atomicdata_effz_mode_to_string(effz_mode)
         call ffdev_atomicdata_update_db
         return
     end if
@@ -76,12 +76,12 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
     end if
 
-    if( prmfile_get_string_by_key(fin,'eff_core', buffer)) then
-        lbuff = ffdev_atomicdata_eff_core_from_string(buffer)
-        write(DEV_OUT,140) ffdev_atomicdata_eff_core_to_string(lbuff)
-        if( exec ) eff_core = lbuff
+    if( prmfile_get_string_by_key(fin,'effz_mode', buffer)) then
+        lbuff = ffdev_atomicdata_effz_mode_from_string(buffer)
+        write(DEV_OUT,140) ffdev_atomicdata_effz_mode_to_string(lbuff)
+        if( exec ) effz_mode = lbuff
     else
-        write(DEV_OUT,145) ffdev_atomicdata_eff_core_to_string(eff_core)
+        write(DEV_OUT,145) ffdev_atomicdata_effz_mode_to_string(effZ_mode)
     end if
 
     call ffdev_atomicdata_update_db
@@ -97,8 +97,8 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
 125  format ('Bii modification mode (bii_mods)       = ',a29,' (default)')
 130  format ('Rcii source (rcii_source)              = ',a29)
 135  format ('Rcii source (rcii_source)              = ',a29,' (default)')
-140  format ('Atom core (atom_core)                  = ',a29)
-145  format ('Atom core (atom_core)                  = ',a29,' (default)')
+140  format ('Effective charge of nuclei (effz_mode) = ',a29)
+145  format ('Effective charge of nuclei (effz_mode) = ',a29,' (default)')
 
 end subroutine ffdev_atomicdata_ctrl
 

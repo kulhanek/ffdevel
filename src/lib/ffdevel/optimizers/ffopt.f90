@@ -477,8 +477,11 @@ subroutine opt_steepest_descent()
         end if
 
         !===============================================================================
-        if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
-            call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+
+        if( IntSamples .gt. 0 ) then
+            if( mod(istep,IntSamples) .eq. 0 ) then
+                call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+            end if
         end if
 
         ! print [intermediate] results (master node only)
@@ -605,8 +608,10 @@ subroutine opt_lbfgs
         end if
 
         !===============================================================================
-        if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
-            call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+        if( IntSamples .gt. 0 ) then
+            if( mod(istep,IntSamples) .eq. 0 ) then
+                call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+            end if
         end if
 
         ! print [intermediate] results (master node only)
@@ -803,8 +808,10 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
     rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
     call write_results(istep,FFError,rmsg,maxgrad,.false.)
 
-    if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
-        call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+    if( IntSamples .gt. 0 ) then
+        if( mod(istep,IntSamples) .eq. 0 ) then
+            call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+        end if
     end if
 
     if( istep .eq. NOptSteps ) then
@@ -1023,9 +1030,11 @@ subroutine opt_shark
             FFParams(:) = tmp_xg(:)
         end if
 
-        if( (IntSamples .gt. 0) .and. (mod(istep,IntSamples) .eq. 0) ) then
-            call ffdev_parameters_error_only(FFParams,FFError,.false.)
-            call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+        if( IntSamples .gt. 0 ) then
+            if( mod(istep,IntSamples) .eq. 0 ) then
+                call ffdev_parameters_error_only(FFParams,FFError,.false.)
+                call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
+            end if
         end if
 
         if( istep .ne. 1 .and. abs(error - lasterror) .le. MinErrorChange ) then
@@ -1154,10 +1163,17 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
     real(DEVDP)         :: rmsg
     real(DEVDP)         :: maxgrad
     logical             :: done
+    logical             :: ldone
     ! -----------------------------------------------------------------------------
 
+    ldone = done
+    if( OutSamples .gt. 0 ) then
+        ldone = ldone .or. (mod(istep,OutSamples) .eq. 0)
+    end if
+    ldone = ldone .or. (istep .eq. 1)
+
     ! write energies
-    if( done .or. ((OutSamples .gt. 0) .and. (mod(istep,OutSamples) .eq. 0)) .or. (istep .eq. 1) ) then
+    if( ldone) then
         write(DEV_OUT,10,ADVANCE='NO') istep, error%total
 
         call ffdev_errors_ffopt_results(error)

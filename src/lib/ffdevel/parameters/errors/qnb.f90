@@ -63,11 +63,11 @@ subroutine ffdev_err_qnb_error(error)
     error%qnb = 0.0d0
 
     do i=1,nnb_types
-        gnb = NB2LJTemp*DEV_Rgas*log(nb_types(i)%QNB)
+        gnb = NB2NBTemp*DEV_Rgas*log(nb_types(i)%QNB)
         ! take LJ parameters from topology
         r0 = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
         eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
-        glj = NB2LJTemp*DEV_Rgas*log(ffdev_nb2nb_calc_QLJ(r0,eps))
+        glj = NB2NBTemp*DEV_Rgas*log(ffdev_nb2nb_calc_QLJ(r0,eps))
 
         error%qnb = error%qnb + nb_types(i)%num*(glj-gnb)**2
     end do
@@ -101,12 +101,12 @@ subroutine ffdev_err_qnb_summary()
 
     do i=1,nnb_types
         qnb = nb_types(i)%QNB
-        gnb = NB2LJTemp*DEV_Rgas*log(qnb)
+        gnb = NB2NBTemp*DEV_Rgas*log(qnb)
         ! take LJ parameters from topology
         r0 = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
         eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
         qlj = ffdev_nb2nb_calc_QLJ(r0,eps)
-        glj = NB2LJTemp*DEV_Rgas*log(qlj)
+        glj = NB2NBTemp*DEV_Rgas*log(qlj)
         diff = glj-gnb
         pnl = nb_types(i)%num*diff**2
         totqnb = totqnb + pnl

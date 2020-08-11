@@ -324,21 +324,10 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     geo%dis14_ene = 0.0d0
 
     geo%ele_ene = 0.0d0
+    geo%pen_ene = 0.0d0
     geo%ind_ene = 0.0d0
     geo%rep_ene = 0.0d0
     geo%dis_ene = 0.0d0
-
-    V_ee = 0.0d0
-    V_pe = 0.0d0
-    V_aa = 0.0d0
-    V_in = 0.0d0
-    V_bb = 0.0d0
-
-    dvee  = 0.0d0
-    dvpe  = 0.0d0
-    dvin  = 0.0d0
-    dvaa  = 0.0d0
-    dvbb  = 0.0d0
 
     do ip=1,top%nb_size
         i    = top%nb_list(ip)%ai

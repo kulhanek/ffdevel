@@ -196,6 +196,8 @@ subroutine ffdev_nbmode_INTEGRAL_wo_1s1s(r,pb1,pb2,s,ds,tt,dtt)
     real(DEVDP)             :: x29
     ! --------------------------------------------------------------------------
 
+    ! write(*,*) pb1,pb2,r
+
     if( abs(pb1 - pb2) .gt. 0.1d0 ) then
         x0  = pb1**2
         x1  = pb2**2

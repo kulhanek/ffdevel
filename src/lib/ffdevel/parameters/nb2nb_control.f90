@@ -23,10 +23,10 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
-! subroutine ffdev_nb2lj_ctrl
+! subroutine ffdev_nb2nb_ctrl
 ! ==============================================================================
 
-subroutine ffdev_nb2lj_ctrl(fin)
+subroutine ffdev_nb2nb_ctrl(fin)
 
     use ffdev_nb2nb_dat
     use ffdev_nb2nb
@@ -42,18 +42,17 @@ subroutine ffdev_nb2lj_ctrl(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'nb2lj') ) then
-        write(DEV_OUT,115) ffdev_nb2nb_nb2lj_mode_to_string(NB2LJMode)
-        write(DEV_OUT,125) NB2LJCutoffR
-        write(DEV_OUT,185) NB2LJTemp
-        write(DEV_OUT,195) prmfile_onoff(NB2LJWeighted)
-        write(DEV_OUT,135) NB2LJIterGS
-        write(DEV_OUT,145) NB2LJIterBS
-        write(DEV_OUT,155) NB2LJIterOpt
-        write(DEV_OUT,165) NB2LJdr
-        write(DEV_OUT,205) NB2LJdrPrint
-        write(DEV_OUT,215) prmfile_onoff(NB2LJCalcQNBIsoline)
-        write(DEV_OUT,225) NB2LJCutoffRQNB
+    if( .not. prmfile_open_section(fin,'nb2nb') ) then
+        write(DEV_OUT,115) ffdev_nb2nb_nb2nb_mode_to_string(NB2NBMode)
+        write(DEV_OUT,125) NB2NBCutoffR
+        write(DEV_OUT,185) NB2NBTemp
+        write(DEV_OUT,195) prmfile_onoff(NB2NBWeighted)
+        write(DEV_OUT,135) NB2NBIterGS
+        write(DEV_OUT,145) NB2NBIterBS
+        write(DEV_OUT,155) NB2NBIterOpt
+        write(DEV_OUT,165) NB2NBdr
+        write(DEV_OUT,205) NB2NBdrPrint
+        write(DEV_OUT,215) prmfile_onoff(NB2NBCalcQNBIsoline)
         write(DEV_OUT,175) NBPotPathCore
 
         call ffdev_nb2nb_initdirs
@@ -61,71 +60,65 @@ subroutine ffdev_nb2lj_ctrl(fin)
     end if
 
     if( prmfile_get_string_by_key(fin,'mode', buffer)) then
-        imode = ffdev_nb2nb_nb2lj_mode_from_string(buffer)
-        write(DEV_OUT,110) ffdev_nb2nb_nb2lj_mode_to_string(imode)
-        NB2LJMode = imode
+        imode = ffdev_nb2nb_nb2nb_mode_from_string(buffer)
+        write(DEV_OUT,110) ffdev_nb2nb_nb2nb_mode_to_string(imode)
+        NB2NBMode = imode
     else
-        write(DEV_OUT,115) ffdev_nb2nb_nb2lj_mode_to_string(NB2LJMode)
+        write(DEV_OUT,115) ffdev_nb2nb_nb2nb_mode_to_string(NB2NBMode)
     end if
 
-    if( prmfile_get_real8_by_key(fin,'cutoff', NB2LJCutoffR)) then
-        write(DEV_OUT,120) NB2LJCutoffR
+    if( prmfile_get_real8_by_key(fin,'cutoff', NB2NBCutoffR)) then
+        write(DEV_OUT,120) NB2NBCutoffR
     else
-        write(DEV_OUT,125) NB2LJCutoffR
+        write(DEV_OUT,125) NB2NBCutoffR
     end if
 
-    if( prmfile_get_logical_by_key(fin,'weighted', NB2LJWeighted)) then
-        write(DEV_OUT,190) prmfile_onoff(NB2LJWeighted)
+    if( prmfile_get_logical_by_key(fin,'weighted', NB2NBWeighted)) then
+        write(DEV_OUT,190) prmfile_onoff(NB2NBWeighted)
     else
-        write(DEV_OUT,195) prmfile_onoff(NB2LJWeighted)
+        write(DEV_OUT,195) prmfile_onoff(NB2NBWeighted)
     end if
 
-    if( prmfile_get_real8_by_key(fin,'temp', NB2LJTemp)) then
-        write(DEV_OUT,180) NB2LJTemp
+    if( prmfile_get_real8_by_key(fin,'temp', NB2NBTemp)) then
+        write(DEV_OUT,180) NB2NBTemp
     else
-        write(DEV_OUT,185) NB2LJTemp
+        write(DEV_OUT,185) NB2NBTemp
     end if
 
-    if( prmfile_get_integer_by_key(fin,'itergs', NB2LJIterGS)) then
-        write(DEV_OUT,130) NB2LJIterGS
+    if( prmfile_get_integer_by_key(fin,'itergs', NB2NBIterGS)) then
+        write(DEV_OUT,130) NB2NBIterGS
     else
-        write(DEV_OUT,135) NB2LJIterGS
+        write(DEV_OUT,135) NB2NBIterGS
     end if
 
-    if( prmfile_get_integer_by_key(fin,'iterbs', NB2LJIterBS)) then
-        write(DEV_OUT,140) NB2LJIterBS
+    if( prmfile_get_integer_by_key(fin,'iterbs', NB2NBIterBS)) then
+        write(DEV_OUT,140) NB2NBIterBS
     else
-        write(DEV_OUT,145) NB2LJIterBS
+        write(DEV_OUT,145) NB2NBIterBS
     end if
 
-    if( prmfile_get_integer_by_key(fin,'iteropt', NB2LJIterOpt)) then
-        write(DEV_OUT,150) NB2LJIterOpt
+    if( prmfile_get_integer_by_key(fin,'iteropt', NB2NBIterOpt)) then
+        write(DEV_OUT,150) NB2NBIterOpt
     else
-        write(DEV_OUT,155) NB2LJIterOpt
+        write(DEV_OUT,155) NB2NBIterOpt
     end if
 
-    if( prmfile_get_real8_by_key(fin,'dr', NB2LJdr)) then
-        write(DEV_OUT,160) NB2LJdr
+    if( prmfile_get_real8_by_key(fin,'dr', NB2NBdr)) then
+        write(DEV_OUT,160) NB2NBdr
     else
-        write(DEV_OUT,165) NB2LJdr
+        write(DEV_OUT,165) NB2NBdr
     end if
 
-    if( prmfile_get_real8_by_key(fin,'dr_print', NB2LJdrPrint)) then
-        write(DEV_OUT,200) NB2LJdrPrint
+    if( prmfile_get_real8_by_key(fin,'dr_print', NB2NBdrPrint)) then
+        write(DEV_OUT,200) NB2NBdrPrint
     else
-        write(DEV_OUT,205) NB2LJdrPrint
+        write(DEV_OUT,205) NB2NBdrPrint
     end if
 
-    if( prmfile_get_logical_by_key(fin,'qnb', NB2LJCalcQNBIsoline)) then
-        write(DEV_OUT,210) prmfile_onoff(NB2LJCalcQNBIsoline)
+    if( prmfile_get_logical_by_key(fin,'qnb', NB2NBCalcQNBIsoline)) then
+        write(DEV_OUT,210) prmfile_onoff(NB2NBCalcQNBIsoline)
     else
-        write(DEV_OUT,215) prmfile_onoff(NB2LJCalcQNBIsoline)
-    end if
-
-    if( prmfile_get_real8_by_key(fin,'qnbcutoff', NB2LJCutoffRQNB)) then
-        write(DEV_OUT,220) NB2LJCutoffRQNB
-    else
-        write(DEV_OUT,225) NB2LJCutoffRQNB
+        write(DEV_OUT,215) prmfile_onoff(NB2NBCalcQNBIsoline)
     end if
 
     if( prmfile_get_string_by_key(fin,'nbpotpath', NBPotPathCore)) then
@@ -135,11 +128,12 @@ subroutine ffdev_nb2lj_ctrl(fin)
     end if
 
     call ffdev_nb2nb_initdirs
+    call ffdev_nb2nb_setup_gaussian_quadrature
 
- 10 format('=== [nb2lj] ====================================================================')
+ 10 format('=== [nb2nb] ====================================================================')
 
-110  format ('NB2LJ mode (mode)                      = ',a12)
-115  format ('NB2LJ mode (mode)                      = ',a12,'                  (default)')
+110  format ('NB2NB mode (mode)                      = ',a12)
+115  format ('NB2NB mode (mode)                      = ',a12,'                  (default)')
 
 120  format ('Cut-off distance (cutoff)              = ',f21.8)
 125  format ('Cut-off distance (cutoff)              = ',f21.8,'         (default)')
@@ -162,9 +156,6 @@ subroutine ffdev_nb2lj_ctrl(fin)
 210  format ('Put QNB isoline into NB sum. (qnb)     = ',a12)
 215  format ('Put QNB isoline into NB sum. (qnb)     = ',a12,'                  (default)')
 
-220  format ('QNB isoline r-cutoff (qnbcutoff)       = ',f21.8)
-225  format ('QNB isoline r-cutoff (qnbcutoff)       = ',f21.8,'         (default)')
-
 170  format ('NB potential summary path (nbpotpath)  = ',a12)
 175  format ('NB potential summary path (nbpotpath)  = ',a12,'                  (default)')
 
@@ -174,7 +165,7 @@ subroutine ffdev_nb2lj_ctrl(fin)
 190  format ('Boltzmann weighting (weighted)         = ',a12)
 195  format ('Boltzmann weighting (weighted)         = ',a12,'                  (default)')
 
-end subroutine ffdev_nb2lj_ctrl
+end subroutine ffdev_nb2nb_ctrl
 
 ! ------------------------------------------------------------------------------
 

@@ -442,48 +442,101 @@ real(DEVDP) function ffdev_atomicdata_get_effZ(gti)
 
     implicit none
     integer     :: gti
-    ! --------------------------------------------
-    integer     :: z
     ! --------------------------------------------------------------------------
 
-    select case(eff_core)
-        case(AD_EFF_CORE_NONE)
+    select case(effz_mode)
+        case(AD_EFFZ_MAX)
             ffdev_atomicdata_get_effZ = types(gti)%z
             return
     ! --------------------
-        case(AD_EFF_CORE_OPT)
-            ffdev_atomicdata_get_effZ = types(gti)%Zeff
+        case(AD_EFFZ_VALENCE)
+            ffdev_atomicdata_get_effZ = ffdev_atomicdata_get_valence_effZ(gti)
             return
     ! --------------------
-        case(AD_EFF_CORE_MAX)
-            z = types(gti)%z
-            ! determine number of valence electrons
-            if( z .le. 0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_effZ')
-            end if
-            if( z .le. 2 ) then
-                ! H-He
-                ffdev_atomicdata_get_effZ = z
-                return
-            end if
-            if( z .le. 10 ) then
-                ! Li-Ne
-                ffdev_atomicdata_get_effZ = z - 2
-                return
-            end if
-            if( z .le. 18 ) then
-                ! Na-Ar
-                ffdev_atomicdata_get_effZ = z - 10
-                return
-            end if
-            ! FIXME
-            call ffdev_utils_exit(DEV_ERR,1,'Not defined in ffdev_atomicdata_get_effZ')
+        case(AD_EFFZ_OPT)
+            ffdev_atomicdata_get_effZ = types(gti)%Zeff
+            return
     ! --------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_get_effZ')
     end select
 
 end function ffdev_atomicdata_get_effZ
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function ffdev_atomicdata_get_min_effZ(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+    use ffdev_atomicdata_db
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    z = types(gti)%z
+    if( (z .le. 0) .and. (z .gt. EFFZ_CLEMENTI_MAXZ) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_min_effZ')
+    end if
+
+    ffdev_atomicdata_get_min_effZ = effz_clementi(z)
+
+end function ffdev_atomicdata_get_min_effZ
+
+! ------------------------------------------------------------------------------
+
+real(DEVDP) function ffdev_atomicdata_get_valence_effZ(gti)
+
+    use ffdev_utils
+    use ffdev_parameters_dat
+
+    implicit none
+    integer     :: gti
+    ! --------------------------------------------
+    integer     :: z
+    ! --------------------------------------------------------------------------
+
+    z = types(gti)%z
+    ! determine number of valence electrons
+    if( z .le. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_valence_effZ')
+    end if
+    if( z .le. 2 ) then
+        ! H-He
+        ffdev_atomicdata_get_valence_effZ = z
+        return
+    end if
+    if( z .le. 10 ) then
+        ! Li-Ne
+        ffdev_atomicdata_get_valence_effZ = z - 2
+        return
+    end if
+    if( z .le. 18 ) then
+        ! Na-Ar
+        ffdev_atomicdata_get_valence_effZ = z - 10
+        return
+    end if
+    if( z .le. 36 ) then
+        ! K-Kr
+        ffdev_atomicdata_get_valence_effZ = z - 18
+        return
+    end if
+   if( z .le. 54 ) then
+        ! Rb-Xe
+        ffdev_atomicdata_get_valence_effZ = z - 36
+        return
+   end if
+   if( z .le. 86 ) then
+        ! Cs-Rn
+        ffdev_atomicdata_get_valence_effZ = z - 54
+        return
+    end if
+    call ffdev_utils_exit(DEV_ERR,1,'Not defined in ffdev_atomicdata_get_valence_effZ')
+
+end function ffdev_atomicdata_get_valence_effZ
 
 ! ==============================================================================
 ! subroutine ffdev_atomicdata_bii_source_from_string
@@ -675,10 +728,10 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
 end function ffdev_atomicdata_rcii_source_to_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_eff_core_from_string
+! subroutine ffdev_atomicdata_effz_mode_from_string
 ! ==============================================================================
 
-integer function ffdev_atomicdata_eff_core_from_string(string)
+integer function ffdev_atomicdata_effz_mode_from_string(string)
 
     use ffdev_utils
 
@@ -687,23 +740,23 @@ integer function ffdev_atomicdata_eff_core_from_string(string)
     ! --------------------------------------------------------------------------
 
     select case(trim(string))
-        case('NONE')
-            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_NONE
         case('MAX')
-            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_MAX
+            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_MAX
+        case('VALENCE')
+            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_VALENCE
         case('OPT')
-            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_OPT
+            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_OPT
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_eff_core_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_effz_mode_from_string!')
     end select
 
-end function ffdev_atomicdata_eff_core_from_string
+end function ffdev_atomicdata_effz_mode_from_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_eff_core_to_string
+! subroutine ffdev_atomicdata_effz_mode_to_string
 ! ==============================================================================
 
-character(80) function ffdev_atomicdata_eff_core_to_string(mode)
+character(80) function ffdev_atomicdata_effz_mode_to_string(mode)
 
     use ffdev_utils
 
@@ -712,17 +765,17 @@ character(80) function ffdev_atomicdata_eff_core_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(AD_EFF_CORE_NONE)
-            ffdev_atomicdata_eff_core_to_string = 'NONE'
-        case(AD_EFF_CORE_MAX)
-            ffdev_atomicdata_eff_core_to_string = 'MAX'
-        case(AD_EFF_CORE_OPT)
-            ffdev_atomicdata_eff_core_to_string = 'OPT'
+        case(AD_EFFZ_MAX)
+            ffdev_atomicdata_effz_mode_to_string = 'MAX'
+        case(AD_EFFZ_VALENCE)
+            ffdev_atomicdata_effz_mode_to_string = 'VALENCE'
+        case(AD_EFFZ_OPT)
+            ffdev_atomicdata_effz_mode_to_string = 'OPT'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_eff_core_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_effz_mode_to_string!')
     end select
 
-end function ffdev_atomicdata_eff_core_to_string
+end function ffdev_atomicdata_effz_mode_to_string
 
 ! ------------------------------------------------------------------------------
 

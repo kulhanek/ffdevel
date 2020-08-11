@@ -33,35 +33,42 @@ real(DEVDP) :: ljdefpb          = 3.0d0     ! default PB for r0=0
 real(DEVDP) :: ljdefrc          = 2.6d0     ! default Rc
 
 
-! === [nb2lj] ==================================================================
-integer,parameter       :: NB2LJ_MODE_MINIMUM           = 1
-integer,parameter       :: NB2LJ_MODE_OVERLAY           = 2
-integer,parameter       :: NB2LJ_MODE_OVERLAY_REP       = 3
-integer,parameter       :: NB2LJ_MODE_OVERLAY_DISP      = 4
+! === [NB2NB] ==================================================================
+integer,parameter       :: NB2NB_MODE_MINIMUM           = 1
+integer,parameter       :: NB2NB_MODE_OVERLAY           = 2
+integer,parameter       :: NB2NB_MODE_OVERLAY_REP       = 3
+integer,parameter       :: NB2NB_MODE_OVERLAY_DISP      = 4
 
-integer                 :: NB2LJMode                    = NB2LJ_MODE_OVERLAY
-logical                 :: NB2LJWeighted                = .false.
-real(DEVDP)             :: NB2LJCutoffR                 = 10.0          ! max range for r
-integer                 :: NB2LJIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
-integer                 :: NB2LJIterBS                  = 1000          ! precision - bisection for sigma
-integer                 :: NB2LJIterOpt                 = 300           ! precision - overlay optimization via CMA-ES
-real(DEVDP)             :: NB2LJSharkInitialStep        = 0.2           ! CMA-ES optimizer setup
-real(DEVDP)             :: NB2LJTemp                    = 300.0         ! temp factor for weights
-real(DEVDP)             :: NB2LJdr                      = 0.001         ! dr in partition function calculation, overlay calculation
-real(DEVDP)             :: NB2LJdrPrint                 = 0.02          ! for printing
-logical                 :: NB2LJCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
-real(DEVDP)             :: NB2LJCutoffRQNB              = 5.0           ! max r range for QNB isovalues
+integer                 :: NB2NBMode                    = NB2NB_MODE_OVERLAY
+logical                 :: NB2NBWeighted                = .false.
+real(DEVDP)             :: NB2NBCutoffR                 = 10.0          ! max range for r
+integer                 :: NB2NBIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
+integer                 :: NB2NBIterBS                  = 1000          ! precision - bisection for sigma
+integer                 :: NB2NBIterOpt                 = 300           ! precision - overlay optimization via CMA-ES
+real(DEVDP)             :: NB2NBSharkInitialStep        = 0.2           ! CMA-ES optimizer setup
+real(DEVDP)             :: NB2NBTemp                    = 300.0         ! temp factor for weights
+real(DEVDP)             :: NB2NBdr                      = 0.001         ! overlay calculation
+real(DEVDP)             :: NB2NBdrPrint                 = 0.02          ! for printing
+logical                 :: NB2NBCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
 character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
-logical                 :: NB2LJIncludePen              = .true.
+logical                 :: NB2NBIncludePen              = .true.
+logical                 :: NB2NBIncludeInd              = .true.
+
+! Gaussian quadrature
+logical                 :: NB2NBUseGaussQuad            = .true.
+integer                 :: NB2NBGaussQuadOrder          = 60
+real(DEVDP),allocatable :: NB2NBGaussQuadA(:)
+real(DEVDP),allocatable :: NB2NBGaussQuadW(:)
 
 ! working data for NB and overal calcs
-integer                 :: NB2LJNParams
-real(DEVDP)             :: NB2LJSigma
-real(DEVDP)             :: NB2LJMinR
-real(DEVDP)             :: NB2LJMaxR
-type(NB_PAIR)           :: NB2LJNBPair
-integer                 :: NB2LJErrFceEval
-real(DEVDP),allocatable :: NB2LJprms(:),NB2LJtmp_xg(:),NB2LJtmp_ub(:),NB2LJtmp_lb(:)
+integer                 :: NB2NBNParams
+real(DEVDP)             :: NB2NBSigma
+real(DEVDP)             :: NB2NBMinR
+real(DEVDP)             :: NB2NBMaxR
+type(NB_PAIR)           :: NB2NBNBPair
+integer                 :: NB2NBErrFceEval
+real(DEVDP),allocatable :: NB2NBprms(:),NB2NBtmp_xg(:),NB2NBtmp_ub(:),NB2NBtmp_lb(:)
+
 ! working data - QNB isoline
 logical                 :: QNBModeEps = .true.
 real(DEVDP)             :: QNBR0

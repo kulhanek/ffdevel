@@ -43,11 +43,11 @@ integer             :: atdens_source    = AD_ATDENS_PBE0_def2QZVPP
 
 ! nuclear core
 
-integer,parameter   :: AD_EFF_CORE_NONE         = 1     ! no core
-integer,parameter   :: AD_EFF_CORE_MAX          = 2     ! only valence electrons
-integer,parameter   :: AD_EFF_CORE_OPT          = 3     ! optimized
+integer,parameter   :: AD_EFFZ_MAX              = 1     ! all electrons
+integer,parameter   :: AD_EFFZ_VALENCE          = 2     ! valence electrons
+integer,parameter   :: AD_EFFZ_OPT              = 3     ! optimized
 
-integer             :: eff_core                 = AD_EFF_CORE_MAX
+integer             :: effZ_mode                = AD_EFFZ_VALENCE
 
 ! ------------------------------------------------------------------------------
 ! ------------------------------------------------------------------------------

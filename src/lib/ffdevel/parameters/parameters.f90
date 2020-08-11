@@ -80,7 +80,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 2*sets(i)%top%nnb_types       ! eps, r0
         maxnparams = maxnparams + 3*sets(i)%top%natom_types     ! pa, pb, rc
-        maxnparams = maxnparams + 1*ntypes                      ! core_zeff
+        maxnparams = maxnparams + 1*ntypes                      ! zeff
     end do
     maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
                                  ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, damp_pe
@@ -138,7 +138,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_eps, use_vdw_r0
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb, use_damp_pe
-    logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_core_zeff
+    logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_zeff
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -458,7 +458,7 @@ subroutine ffdev_parameters_reinit()
     use_k_exc       = .false.
     use_k_ind       = .false.
 
-    use_core_zeff   = .false.
+    use_zeff        = .false.
 
 ! common setup
     select case(nb_mode)
@@ -486,8 +486,8 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_pa      = .true.
                  case(EXP_PA_CHARGES)
                     use_k_exc       = .true.
-                    if( eff_core .eq. AD_EFF_CORE_OPT ) then
-                        use_core_zeff = .true.
+                    if( effZ_mode .eq. AD_EFFZ_OPT ) then
+                        use_zeff    = .true.
                     end if
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'exp_pb_mode not implemented in ffdev_parameters_reinit!')
@@ -665,13 +665,13 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_core_zeff ) then
+    if( use_zeff ) then
         ! =====================
         do j=1,ntypes
             ! add new parameter
             nparams = nparams + 1
             params(nparams)%value = types(j)%Zeff
-            params(nparams)%realm = REALM_CORE_ZEFF
+            params(nparams)%realm = REALM_ZEFF
             params(nparams)%enabled = .false.
             params(nparams)%identity = 0
             params(nparams)%pn    = 0
@@ -1120,7 +1120,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_CORE_ZEFF)
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC,REALM_ZEFF)
                 if( params(i)%ti .eq. ti ) then
                     find_parameter_by_ids = i
                     return
@@ -2155,8 +2155,8 @@ integer function ffdev_parameters_get_realmid(realm)
         case('pac')
             ffdev_parameters_get_realmid = REALM_PAC
 
-        case('core_zeff')
-            ffdev_parameters_get_realmid = REALM_CORE_ZEFF
+        case('zeff')
+            ffdev_parameters_get_realmid = REALM_ZEFF
 
         case('glb_scee')
             ffdev_parameters_get_realmid = REALM_GLB_SCEE
@@ -2229,8 +2229,8 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'ele_sq'
         case(REALM_PAC)
             ffdev_parameters_get_realm_name = 'pac'
-        case(REALM_CORE_ZEFF)
-            ffdev_parameters_get_realm_name = 'core_zeff'
+        case(REALM_ZEFF)
+            ffdev_parameters_get_realm_name = 'zeff'
 
         case(REALM_DAMP_FA)
             ffdev_parameters_get_realm_name = 'damp_fa'
@@ -2299,7 +2299,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
             ! nothing to do
-        case(REALM_ELE_SQ,REALM_PAC,REALM_CORE_ZEFF)
+        case(REALM_ELE_SQ,REALM_PAC,REALM_ZEFF)
             ! nothing to do
         case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB,REALM_DAMP_PE)
             ! nothing to do
@@ -2759,7 +2759,7 @@ subroutine ffdev_parameters_to_tops
             case(REALM_K_IND)
                 k_ind = params(i)%value
 
-            case(REALM_CORE_ZEFF)
+            case(REALM_ZEFF)
                 do j=1,ntypes
                     if( j .eq. params(i)%ti ) then
                         types(j)%Zeff = params(i)%value
@@ -2901,7 +2901,7 @@ subroutine ffdev_params_reset_ranges
      MinPAC       =     -2.0d0
      MaxPAC       =      2.0d0
 
- ! core_zeff has special margins
+ ! zeff has special margins
      MinZeff       =     1.0d0
      MaxZeff       =    89.0d0
 
@@ -2992,6 +2992,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
     use ffdev_targetset_dat
     use ffdev_topology
     use ffdev_utils
+    use ffdev_atomicdata
 
     implicit none
     real(DEVDP)     :: tmpx(:)
@@ -3003,10 +3004,10 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        if( params(i)%realm .ne. REALM_CORE_ZEFF ) then
+        if( params(i)%realm .ne. REALM_ZEFF ) then
             tmpx(id) = ffdev_params_get_lower_bound(params(i)%realm)
         else
-            tmpx(id) = 0.5d0*types(params(i)%ti)%z
+            tmpx(id) = ffdev_atomicdata_get_min_effZ(params(i)%ti)
         end if
     end do
     if( id .ne. nactparms ) stop ! safety fuse
@@ -3091,7 +3092,7 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_PAC)
             ffdev_params_get_lower_bound = MinPAC
 
-        case(REALM_CORE_ZEFF)
+        case(REALM_ZEFF)
             ffdev_params_get_lower_bound = MinZeff
 
         case(REALM_K_EXC)
@@ -3184,7 +3185,7 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
 
         case(REALM_PAC)
             MinPAC = mvalue
-        case(REALM_CORE_ZEFF)
+        case(REALM_ZEFF)
             MinZeff = mvalue
 
         case(REALM_K_EXC)
@@ -3220,9 +3221,10 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        if( params(i)%realm .ne. REALM_CORE_ZEFF ) then
+        if( params(i)%realm .ne. REALM_ZEFF ) then
             tmpx(id) = ffdev_params_get_upper_bound(params(i)%realm)
         else
+            ! upper limit for effective nuclear charge is the number of protons
             tmpx(id) = types(params(i)%ti)%z
         end if
     end do
@@ -3307,7 +3309,7 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
 
         case(REALM_PAC)
             ffdev_params_get_upper_bound = MaxPAC
-        case(REALM_CORE_ZEFF)
+        case(REALM_ZEFF)
             ffdev_params_get_upper_bound = MaxZeff
 
         case(REALM_K_EXC)
@@ -3399,7 +3401,7 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
 
         case(REALM_PAC)
             MaxPAC = mvalue
-        case(REALM_CORE_ZEFF)
+        case(REALM_ZEFF)
             MaxZeff = mvalue
 
         case(REALM_K_EXC)

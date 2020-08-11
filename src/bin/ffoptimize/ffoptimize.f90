@@ -106,7 +106,7 @@ program ffdev_optimize_program
         call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
         call ffdev_parameters_ctrl_grbf2cos(fin)
-        call ffdev_nb2lj_ctrl(fin)
+        call ffdev_nb2nb_ctrl(fin)
     end if
 
     ! process target set file --------------------------------------------------

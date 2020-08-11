@@ -61,7 +61,7 @@ integer,parameter       :: REALM_DAMP_PE    = 24
 integer,parameter       :: REALM_PAC        = 25
 integer,parameter       :: REALM_ELE_SQ     = 26
 
-integer,parameter       :: REALM_CORE_ZEFF  = 27
+integer,parameter       :: REALM_ZEFF       = 27
 
 ! non-bonded - electrostatics
 integer,parameter       :: REALM_GLB_SCEE   = 28
