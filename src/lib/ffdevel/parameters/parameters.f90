@@ -131,6 +131,7 @@ subroutine ffdev_parameters_reinit()
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_disp_dat
+    use ffdev_atomicdata_dat
 
     implicit none
     integer     :: i, j, k, parmid, ai, refid
@@ -485,6 +486,9 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_pa      = .true.
                  case(EXP_PA_CHARGES)
                     use_k_exc       = .true.
+                    if( eff_core .eq. AD_EFF_CORE_OPT ) then
+                        use_core_zeff = .true.
+                    end if
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'exp_pb_mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -2757,8 +2761,8 @@ subroutine ffdev_parameters_to_tops
 
             case(REALM_CORE_ZEFF)
                 do j=1,ntypes
-                    if( params(i)%ti .eq. j ) then
-                        types(i)%Zeff = params(i)%value
+                    if( j .eq. params(i)%ti ) then
+                        types(j)%Zeff = params(i)%value
                     end if
                 end do
 
@@ -2999,7 +3003,11 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        tmpx(id) = ffdev_params_get_lower_bound(params(i)%realm)
+        if( params(i)%realm .ne. REALM_CORE_ZEFF ) then
+            tmpx(id) = ffdev_params_get_lower_bound(params(i)%realm)
+        else
+            tmpx(id) = 0.5d0*types(params(i)%ti)%z
+        end if
     end do
     if( id .ne. nactparms ) stop ! safety fuse
 
@@ -3212,7 +3220,11 @@ subroutine ffdev_params_get_upper_bounds(tmpx)
     do i=1,nparams
         if( .not. params(i)%enabled ) cycle
         id = id + 1
-        tmpx(id) = ffdev_params_get_upper_bound(params(i)%realm)
+        if( params(i)%realm .ne. REALM_CORE_ZEFF ) then
+            tmpx(id) = ffdev_params_get_upper_bound(params(i)%realm)
+        else
+            tmpx(id) = types(params(i)%ti)%z
+        end if
     end do
     if( id .ne. nactparms ) stop ! safety fuse
 

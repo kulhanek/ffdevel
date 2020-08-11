@@ -47,7 +47,7 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,115) ffdev_atomicdata_bii_source_to_string(bii_source)
         write(DEV_OUT,125) ffdev_atomicdata_bii_mods_to_string(bii_mods)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
-        write(DEV_OUT,145) ffdev_atomicdata_atom_core_to_string(atom_core)
+        write(DEV_OUT,145) ffdev_atomicdata_eff_core_to_string(eff_core)
         call ffdev_atomicdata_update_db
         return
     end if
@@ -76,12 +76,12 @@ subroutine ffdev_atomicdata_ctrl(fin,exec)
         write(DEV_OUT,135) ffdev_atomicdata_rcii_source_to_string(rcii_source)
     end if
 
-    if( prmfile_get_string_by_key(fin,'atom_core', buffer)) then
-        lbuff = ffdev_atomicdata_atom_core_from_string(buffer)
-        write(DEV_OUT,140) ffdev_atomicdata_atom_core_to_string(lbuff)
-        if( exec ) atom_core = lbuff
+    if( prmfile_get_string_by_key(fin,'eff_core', buffer)) then
+        lbuff = ffdev_atomicdata_eff_core_from_string(buffer)
+        write(DEV_OUT,140) ffdev_atomicdata_eff_core_to_string(lbuff)
+        if( exec ) eff_core = lbuff
     else
-        write(DEV_OUT,145) ffdev_atomicdata_atom_core_to_string(atom_core)
+        write(DEV_OUT,145) ffdev_atomicdata_eff_core_to_string(eff_core)
     end if
 
     call ffdev_atomicdata_update_db

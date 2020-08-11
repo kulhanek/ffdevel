@@ -69,7 +69,6 @@ subroutine ffdev_err_pbpnl_error(error)
 
     do i=1,nparams
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
-        if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
 
         ! weight
         select case(PBPNLMode)
@@ -136,7 +135,6 @@ subroutine ffdev_err_pbpnl_summary()
 
     do i=1,nparams
         if( params(i)%realm .ne. REALM_VDW_PB ) cycle   ! only PB params
-        if( params(i)%ti .ne. params(i)%tj ) cycle  ! only like params
 
         ! weight
         select case(PBPNLMode)

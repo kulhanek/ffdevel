@@ -435,7 +435,7 @@ end function ffdev_atomicdata_rcii
 
 ! ------------------------------------------------------------------------------
 
-integer function ffdev_atomicdata_get_effZ(gti)
+real(DEVDP) function ffdev_atomicdata_get_effZ(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -446,16 +446,17 @@ integer function ffdev_atomicdata_get_effZ(gti)
     integer     :: z
     ! --------------------------------------------------------------------------
 
-    ffdev_atomicdata_get_effZ = 1 ! default to H
-
-    z = types(gti)%z
-
-    select case(atom_core)
-        case(AD_ATOM_CORE_NONE)
-            ffdev_atomicdata_get_effZ = z
+    select case(eff_core)
+        case(AD_EFF_CORE_NONE)
+            ffdev_atomicdata_get_effZ = types(gti)%z
             return
     ! --------------------
-        case(AD_ATOM_CORE_MAX)
+        case(AD_EFF_CORE_OPT)
+            ffdev_atomicdata_get_effZ = types(gti)%Zeff
+            return
+    ! --------------------
+        case(AD_EFF_CORE_MAX)
+            z = types(gti)%z
             ! determine number of valence electrons
             if( z .le. 0 ) then
                 call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_effZ')
@@ -674,10 +675,10 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
 end function ffdev_atomicdata_rcii_source_to_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_atom_core_from_string
+! subroutine ffdev_atomicdata_eff_core_from_string
 ! ==============================================================================
 
-integer function ffdev_atomicdata_atom_core_from_string(string)
+integer function ffdev_atomicdata_eff_core_from_string(string)
 
     use ffdev_utils
 
@@ -687,20 +688,22 @@ integer function ffdev_atomicdata_atom_core_from_string(string)
 
     select case(trim(string))
         case('NONE')
-            ffdev_atomicdata_atom_core_from_string = AD_ATOM_CORE_NONE
+            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_NONE
         case('MAX')
-            ffdev_atomicdata_atom_core_from_string = AD_ATOM_CORE_MAX
+            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_MAX
+        case('OPT')
+            ffdev_atomicdata_eff_core_from_string = AD_EFF_CORE_OPT
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_atom_core_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_eff_core_from_string!')
     end select
 
-end function ffdev_atomicdata_atom_core_from_string
+end function ffdev_atomicdata_eff_core_from_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_atom_core_to_string
+! subroutine ffdev_atomicdata_eff_core_to_string
 ! ==============================================================================
 
-character(80) function ffdev_atomicdata_atom_core_to_string(mode)
+character(80) function ffdev_atomicdata_eff_core_to_string(mode)
 
     use ffdev_utils
 
@@ -709,15 +712,17 @@ character(80) function ffdev_atomicdata_atom_core_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(AD_ATOM_CORE_NONE)
-            ffdev_atomicdata_atom_core_to_string = 'NONE'
-        case(AD_ATOM_CORE_MAX)
-            ffdev_atomicdata_atom_core_to_string = 'MAX'
+        case(AD_EFF_CORE_NONE)
+            ffdev_atomicdata_eff_core_to_string = 'NONE'
+        case(AD_EFF_CORE_MAX)
+            ffdev_atomicdata_eff_core_to_string = 'MAX'
+        case(AD_EFF_CORE_OPT)
+            ffdev_atomicdata_eff_core_to_string = 'OPT'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_atom_core_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_eff_core_to_string!')
     end select
 
-end function ffdev_atomicdata_atom_core_to_string
+end function ffdev_atomicdata_eff_core_to_string
 
 ! ------------------------------------------------------------------------------
 

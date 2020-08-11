@@ -148,11 +148,11 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------
     integer         :: k
-    real(DEVDP)     :: r2,r2a
-    real(DEVDP)     :: suma,sump,pe,c6,c8,c10,r6a,r8a,r10a,arg,fd10,fd8,fd6
+    real(DEVDP)     :: r2,r2a,ra
+    real(DEVDP)     :: suma,sump,pe,c6,c8,c10,r6a,r8a,r10a,fd10,fd8,fd6
     real(DEVDP)     :: z1,z2,q1,q2,pa1,pb1,pa2,pb2
     real(DEVDP)     :: V_ee,V_pe,V_in,V_aa,V_bb
-    real(DEVDP)     :: exc_ij,pre_ij,Sdo,Swo,sdv,tt
+    real(DEVDP)     :: exc_ij,pre_ij,Sdo,Swo,sdv,tt,dtt
     real(DEVDP)     :: pfa1,pfa2,dpfa1,dpfa2,pee,pfa,dpfa
     ! --------------------------------------------------------------------------
 
@@ -169,8 +169,9 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     V_in = 0.0d0
     V_bb = 0.0d0
 
+    ra   = 1.0d0/r
     r2   = r**2
-    r2a  = 1.0d0/r2
+    r2a  = ra**2
 
     z1  = nbpair%z1
     q1  = nbpair%q1
@@ -183,25 +184,22 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     pb2 = nbpair%pb2
 
 ! electrostatics
-    V_ee = q1*q2/r
+    V_ee = q1*q2*ra
 
 ! exchange repulsion
     select case(exp_mode)
         case(EXP_MODE_DO)
-            call ffdev_nbmode_INTEGRAL_do(r,pb1,pb2,Sdo,sdv)
+            call ffdev_nbmode_INTEGRAL_do(r,pb1,pb2,Sdo,sdv,tt,dtt)
             exc_ij = Sdo
     ! --------------------------
         case(EXP_MODE_WO)
-            call ffdev_nbmode_INTEGRAL_wo(r,pb1,pb2,Swo,sdv)
-            exc_ij = Swo**2 / r
-            sdv    = - (Swo**2)*r2a + 2.0d0*Swo*sdv
+            call ffdev_nbmode_INTEGRAL_wo(r,pb1,pb2,Swo,sdv,tt,dtt)
+            exc_ij =   (Swo**2) * ra
+            tt     = 2.0d0*tt + 1.0d0
     ! --------------------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_energy_nbpair_EXP_DISPTT!')
     end select
-
-    ! complete tt - we do not need prefactor
-    tt = - sdv/exc_ij
 
     ! prefactor
     select case(exp_pa_mode)
@@ -234,12 +232,11 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     if( pen_enabled ) then
         select case(pen_mode)
             case(PEN_MODE_SCI)
-                call ffdev_nbmode_INTEGRAL_sci_ez(r,pb1,pfa1,dpfa1)
-                call ffdev_nbmode_INTEGRAL_sci_ez(r,pb2,pfa2,dpfa2)
-                call ffdev_nbmode_INTEGRAL_sci_ee(r,pb1,pb2,pfa,dpfa)
-                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
-                      - (z1-q1)*(z2-q2)*pfa
-                V_pe = pee/r
+                call ffdev_nbmode_INTEGRAL_ci_ez_damp(r,pb1*damp_pe,pfa1,dpfa1)
+                call ffdev_nbmode_INTEGRAL_ci_ez_damp(r,pb2*damp_pe,pfa2,dpfa2)
+                call ffdev_nbmode_INTEGRAL_ci_ee_damp(r,pb1*damp_pe,pb2*damp_pe,pfa,dpfa)
+                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 - (z1-q1)*(z2-q2)*pfa
+                V_pe = pee * ra
         ! --------------------------
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_energy_nbpair_EXP_DISPTT!')
@@ -252,33 +249,37 @@ subroutine ffdev_energy_nbpair_EXP_DISPTT(nbpair,r,nbene)
     c8   = nbpair%c8
     c10  = nbpair%c10
 
-    arg  = tt*r
-    pe   = exp(-arg)
+    tt   = damp_tb * tt
+    pe   = exp(-tt)
 
 ! 6
     r6a  = r2a*r2a*r2a
     sump = 1.0d0
     suma = 1.0d0
     do k=1,6
-        sump = sump * arg / real(k,DEVDP)
+        sump = sump * tt / real(k,DEVDP)
         suma = suma + sump
     end do
     fd6  = 1.0d0 - pe*suma
 
 ! 8
     r8a  = r6a*r2a
-    sump = sump * arg / real(7,DEVDP)
+    sump = sump * tt / real(7,DEVDP)
     suma = suma + sump
-    sump = sump * arg / real(8,DEVDP)
+
+    sump = sump * tt / real(8,DEVDP)
     suma = suma + sump
+
     fd8  = 1.0d0 - pe*suma
 
 ! 10
     r10a = r8a*r2a
-    sump = sump * arg / real(9,DEVDP)
+    sump = sump * tt / real(9,DEVDP)
     suma = suma + sump
-    sump = sump * arg / real(10,DEVDP)
+
+    sump = sump * tt / real(10,DEVDP)
     suma = suma + sump
+
     fd10 = 1.0d0 - pe*suma
 
     V_bb = - fd6*c6*r6a - fd8*c8*r8a - fd10*c10*r10a
@@ -309,12 +310,12 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
     ! --------------------------------------------
     integer         :: ip,i,j,k,dt
     real(DEVDP)     :: inv_scee,inv_scnb,dxa1,dxa2,dxa3
-    real(DEVDP)     :: r2,r,ra,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,arg,sump
-    real(DEVDP)     :: V_b6,V_b8,V_b10,r2a,dfd6,dfd8,dfd10,sumd,suma,tvaa
+    real(DEVDP)     :: r2,r,ra,r6a,r8a,r10a,c6,c8,c10,fd6,fd8,fd10,pe,sump
+    real(DEVDP)     :: V_b6,V_b8,V_b10,r2a,dfd6,dfd8,dfd10,sumd,suma
     real(DEVDP)     :: dvee,dvpe,dvin,dvaa,dvbb,dva
     real(DEVDP)     :: z1,z2,q1,q2,pa1,pb1,pa2,pb2
     real(DEVDP)     :: V_ee,V_pe,V_in,V_aa,V_bb
-    real(DEVDP)     :: exc_ij,pre_ij,Sdo,Swo,sdv,tt
+    real(DEVDP)     :: exc_ij,pre_ij,Sdo,Swo,sdv,tt,dtt
     real(DEVDP)     :: pfa1,pfa2,dpfa1,dpfa2,pee,pfa,dpfa
     ! --------------------------------------------------------------------------
 
@@ -350,9 +351,9 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         dxa3 = geo%crd(3,i) - geo%crd(3,j)
 
         r2   = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
-        r2a  = 1.0d0 / r2
         r    = sqrt(r2)
         ra   = 1.0d0 / r
+        r2a  = 1.0d0 / r2
 
         z1  = top%nb_list(ip)%z1
         q1  = top%nb_list(ip)%q1
@@ -365,26 +366,25 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         pb2 = top%nb_list(ip)%pb2
 
     ! electrostatics
-        V_ee  =   q1*q2/r
-        dvee  = - q1*q2*r2a
+        V_ee  =   q1*q2 * ra
+        dvee  = - q1*q2 * r2a
 
     ! exchange repulsion
         select case(exp_mode)
             case(EXP_MODE_DO)
-                call ffdev_nbmode_INTEGRAL_do(r,pb1,pb2,Sdo,sdv)
+                call ffdev_nbmode_INTEGRAL_do(r,pb1,pb2,Sdo,sdv,tt,dtt)
                 exc_ij = Sdo
         ! --------------------------
             case(EXP_MODE_WO)
-                call ffdev_nbmode_INTEGRAL_wo(r,pb1,pb2,Swo,sdv)
-                exc_ij = Swo**2 / r
-                sdv    = - (Swo**2)*r2a + 2.0d0*Swo*sdv / r
+                call ffdev_nbmode_INTEGRAL_wo(r,pb1,pb2,Swo,sdv,tt,dtt)
+                exc_ij =   (Swo**2) * ra
+                sdv    = - (Swo**2) * r2a + 2.0d0*Swo*sdv * ra
+                tt     = 2.0d0*tt + 1.0d0
+                dtt    = 2.0d0*dtt
         ! --------------------------
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_energy_nbpair_EXP_DISPTT!')
         end select
-
-        ! complete tt - we do not need prefactor
-        tt = - sdv/exc_ij
 
         ! prefactor
         select case(exp_pa_mode)
@@ -422,15 +422,12 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         if( pen_enabled ) then
             select case(pen_mode)
                 case(PEN_MODE_SCI)
-                    call ffdev_nbmode_INTEGRAL_sci_ez(r,pb1,pfa1,dpfa1)
-                    call ffdev_nbmode_INTEGRAL_sci_ez(r,pb2,pfa2,dpfa2)
-                    call ffdev_nbmode_INTEGRAL_sci_ee(r,pb1,pb2,pfa,dpfa)
-                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
-                          - (z1-q1)*(z2-q2)*pfa
-                    V_pe = pee/r
-
-!                    dvpe = V_pe + z1*(z2-q2)*pfa2*pepa2 + (z1-q1)*z2*pfa1*pepa1 &
-!                         - (z1-q1)*(z2-q2)*(pfb1*pepb1 + pfb2*pepb2 - pfb1*pfb2*pepb2 - pfb1*pepb1*pfb2)
+                    call ffdev_nbmode_INTEGRAL_ci_ez_damp(r,pb1*damp_pe,pfa1,dpfa1)
+                    call ffdev_nbmode_INTEGRAL_ci_ez_damp(r,pb2*damp_pe,pfa2,dpfa2)
+                    call ffdev_nbmode_INTEGRAL_ci_ee_damp(r,pb1*damp_pe,pb2*damp_pe,pfa,dpfa)
+                    pee  = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 - (z1-q1)*(z2-q2)*pfa
+                    V_pe = pee * ra
+                    dvpe = (- V_pe + z1*(z2-q2)*dpfa2 + (z1-q1)*z2*dpfa1 - (z1-q1)*(z2-q2)*dpfa) * ra
             ! --------------------------
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'Not implemented exp_mode in ffdev_energy_nbpair_EXP_DISPTT!')
@@ -443,10 +440,10 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         c8   = top%nb_list(ip)%c8
         c10  = top%nb_list(ip)%c10
 
-        arg  = tt*r
-        pe   = exp(-arg)
+        tt   = damp_tb * tt
+        dtt  = damp_tb * dtt
 
-        tvaa = 0.0d0 ! FIXME
+        pe   = exp(-tt)
 
     ! 6
         r6a  = r2a*r2a*r2a
@@ -457,43 +454,46 @@ subroutine ffdev_gradient_nb_EXP_DISPTT(top,geo)
         sumd = 0.0d0
         do k=1,6
             sumd = sumd + sump ! sump is one item delayed in derivatives
-            sump = sump * arg / real(k,DEVDP)
+            sump = sump * tt / real(k,DEVDP)
             suma = suma + sump
-            dfd6 = dfd6 + real(k,DEVDP)*sump
         end do
         fd6   = 1.0d0 - pe*suma
-        dfd6  = (pe*suma - pe*sumd)*(arg + tvaa)  ! extra r in arg is due to r2a factor in dva
+        dfd6  = (pe*suma - pe*sumd)
 
     ! 8
         r8a   = r6a*r2a
         sumd  = sumd  + sump ! sump is one item delayed in derivatives
-        sump  = sump  * arg / real(7,DEVDP)
+        sump  = sump  * tt / real(7,DEVDP)
         suma  = suma  + sump
+
         sumd  = sumd  + sump ! sump is one item delayed in derivatives
-        sump  = sump  * arg / real(8,DEVDP)
+        sump  = sump  * tt / real(8,DEVDP)
         suma  = suma  + sump
+
         fd8   = 1.0d0 - pe*suma
-        dfd8  = (pe*suma - pe*sumd)*(arg + tvaa) ! extra r in arg is due to r2a factor in dva
+        dfd8  = (pe*suma - pe*sumd)
 
     ! 10
         r10a  = r8a*r2a
         sumd  = sumd  + sump ! sump is one item delayed in derivatives
-        sump  = sump  * arg / real(9,DEVDP)
+        sump  = sump  * tt / real(9,DEVDP)
         suma  = suma  + sump
+
         sumd  = sumd  + sump ! sump is one item delayed in derivatives
-        sump  = sump  * arg / real(10,DEVDP)
+        sump  = sump  * tt / real(10,DEVDP)
         suma  = suma  + sump
+
         fd10  = 1.0d0 - pe*suma
-        dfd10 = (pe*suma - pe*sumd)*(arg + tvaa) ! extra r in arg is due to r2a factor in dva
+        dfd10 = (pe*suma - pe*sumd)
 
         V_b6  = - fd6*c6*r6a
         V_b8  = - fd8*c8*r8a
         V_b10 = - fd10*c10*r10a
         V_bb  = V_b6 + V_b8 + V_b10
 
-        dvbb  = 6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10  &
-              + c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10
-!
+        dvbb  = - (6.0d0*V_b6 + 8.0d0*V_b8 + 10.0d0*V_b10)*ra  &
+                - (c6*r6a*dfd6 + c8*r8a*dfd8 + c10*r10a*dfd10)*dtt
+
         if( dt .eq. 0 ) then
             geo%ele_ene = geo%ele_ene + V_ee
             geo%pen_ene = geo%pen_ene + V_pe

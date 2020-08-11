@@ -26,14 +26,14 @@ contains
 ! subroutine ffdev_nbmode_INTEGRAL_do
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_do(r,b1,b2,s,ds)
+subroutine ffdev_nbmode_INTEGRAL_do(r,b1,b2,s,ds,tt,dtt)
 
     implicit none
     real(DEVDP)             :: r,b1,b2
-    real(DEVDP)             :: s,ds
+    real(DEVDP)             :: s,ds,tt,dtt
     ! --------------------------------------------------------------------------
 
-    call ffdev_nbmode_INTEGRAL_1s1s_do(r,b1,b2,s,ds)
+    call ffdev_nbmode_INTEGRAL_do_1s1s(r,b1,b2,s,ds,tt,dtt)
 
 end subroutine ffdev_nbmode_INTEGRAL_do
 
@@ -41,51 +41,52 @@ end subroutine ffdev_nbmode_INTEGRAL_do
 ! subroutine ffdev_nbmode_INTEGRAL_wo
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_wo(r,b1,b2,s,ds)
+subroutine ffdev_nbmode_INTEGRAL_wo(r,b1,b2,s,ds,tt,dtt)
 
     implicit none
     real(DEVDP)             :: r,b1,b2
-    real(DEVDP)             :: s,ds
+    real(DEVDP)             :: s,ds,tt,dtt
     ! --------------------------------------------------------------------------
 
-    call ffdev_nbmode_INTEGRAL_1s1s_wo(r,b1,b2,s,ds)
+    call ffdev_nbmode_INTEGRAL_wo_1s1s(r,b1,b2,s,ds,tt,dtt)
 
 end subroutine ffdev_nbmode_INTEGRAL_wo
 
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_sci_ez
+! subroutine ffdev_nbmode_INTEGRAL_ci_ez_damp
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_sci_ez(r,b1,sci,dsci)
+subroutine ffdev_nbmode_INTEGRAL_ci_ez_damp(r,b1,ci,dci)
 
     implicit none
     real(DEVDP)             :: r,b1
-    real(DEVDP)             :: sci,dsci
+    real(DEVDP)             :: ci,dci
     ! --------------------------------------------------------------------------
 
-    call ffdev_nbmode_INTEGRAL_1s1s_sci_ez(r,b1,sci,dsci)
+    call ffdev_nbmode_INTEGRAL_ci_1s1s_ez_damp(r,b1,ci,dci)
 
-end subroutine ffdev_nbmode_INTEGRAL_sci_ez
+end subroutine ffdev_nbmode_INTEGRAL_ci_ez_damp
+
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_sci_ee
+! subroutine ffdev_nbmode_INTEGRAL_ci_ee
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_sci_ee(r,b1,b2,sci,dsci)
+subroutine ffdev_nbmode_INTEGRAL_ci_ee_damp(r,b1,b2,ci,dci)
 
     implicit none
     real(DEVDP)             :: r,b1,b2
-    real(DEVDP)             :: sci,dsci
+    real(DEVDP)             :: ci,dci
     ! --------------------------------------------------------------------------
 
-    call ffdev_nbmode_INTEGRAL_1s1s_sci_ee(r,b1,b2,sci,dsci)
+    call ffdev_nbmode_INTEGRAL_ci_1s1s_ee_damp(r,b1,b2,ci,dci)
 
-end subroutine ffdev_nbmode_INTEGRAL_sci_ee
+end subroutine ffdev_nbmode_INTEGRAL_ci_ee_damp
 
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_1s1s_do
+! subroutine ffdev_nbmode_INTEGRAL_do_1s1s
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_1s1s_do(r,pb1,pb2,s,ds)
+subroutine ffdev_nbmode_INTEGRAL_do_1s1s(r,pb1,pb2,s,ds,tt,dtt)
 
     use ffdev_topology_dat
     use ffdev_geometry_dat
@@ -93,62 +94,181 @@ subroutine ffdev_nbmode_INTEGRAL_1s1s_do(r,pb1,pb2,s,ds)
 
     implicit none
     real(DEVDP)             :: r,pb1,pb2
-    real(DEVDP)             :: s,ds
+    real(DEVDP)             :: s,ds,tt,dtt
     ! --------------------------------------------
-    real(DEVDP)             :: inva2b2,a1,a2,pb,pbe,pbe1,pbe2,t1,pre
+    real(DEVDP)             :: x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15
+    real(DEVDP)             :: x16,x17,x18,x19,x20,x21,x22,x23,x24,x25,x26,x27,x28
+    real(DEVDP)             :: x29,x30,x31,x32
     ! --------------------------------------------------------------------------
 
     ! calculate density overlap integral
     if( abs(pb1 - pb2) .gt. 0.1d0 ) then
-        inva2b2 = 1.0d0/(pb1**2 - pb2**2)
-        a1      =  4.0d0*(pb1**4)*(pb2**4)*(inva2b2**3) + (pb1**3)*(pb2**4)*(inva2b2**2)*r
-        a2      = -4.0d0*(pb2**4)*(pb1**4)*(inva2b2**3) + (pb2**3)*(pb1**4)*(inva2b2**2)*r
-        pbe1    = exp(-pb1*r)
-        pbe2    = exp(-pb2*r)
-        t1      = a1*pbe1 + a2*pbe2
-        pre     = 1.0d0/(8.0d0*DEV_PI*r)
-        s       = pre * t1
-        ds      = pre * ( &
-                         -a1*pbe1*pb1 + pbe1*(pb1**3)*(pb2**4)*(inva2b2**2) &
-                         -a2*pbe2*pb2 + pbe2*(pb2**3)*(pb1**4)*(inva2b2**2) &
-                        ) &
-                - t1 * pre / r
+        x0  = exp(-pb1*r)
+        x1  = pb1**2
+        x2  = 1/x1
+        x3  = 1.0*x2
+        x4  = pb2**2
+        x5  = 1/x4
+        x6  = 1.0*x5
+        x7  = x3 - x6
+        x8  = x7**(-2)
+        x9  = 1/pb1
+        x10 = 1.0*r
+        x11 = 4.0*x2*x5
+        x12 = x0*(x10*x8*x9 - x11/x7**3)
+        x13 = exp(-pb2*r)
+        x14 = -x3 + x6
+        x15 = x14**(-2)
+        x16 = 1/pb2
+        x17 = x13*(x10*x15*x16 - x11/x14**3)
+        x18 = x12 + x17
+        x19 = 0.0397887357729738/r
+        x20 = r**2
+        x21 = 1/x20
+        x22 = x0*x8
+        x23 = 1.0*x22*x9
+        x24 = x13*x15
+        x25 = 1.0*x16*x24
+        x26 = pb1*x12
+        x27 = pb2*x17
+        x28 = x23 + x25 - x26 - x27
+        x29 = -0.0397887357729738*x18*x21 + x19*x28
+        x30 = 1/x18
+        x31 = x29*x30
+        x32 = 25.1327412287183*x20
+
+        s   = x18*x19
+        ds  = x29
+        tt  = -x31*x32
+        dtt = -50.2654824574367*r*x31 - x30*x32*(x19*(x1*x12 + x17*x4 - 2.0*x22 - 2.0*x24) &
+            - 0.0795774715459477*x21*x28 + 0.0795774715459477*x18/r**3) - x29*x32*(-x23 - x25 + x26 + x27)/x18**2
     else
-        pb  = 0.5d0*(pb1 + pb2)
-        pbe = exp(-pb*r)
-        a1  = 3.0d0 + 3.0d0*pb*r + (pb*r)**2
-        pre = pb**3 / (192.0d0 * DEV_PI)
-        s   = pre * a1 * pbe
-        ds  = pre * (-a1*pbe*pb +  pbe*(3.0d0*pb + 2.0d0*(pb**2)*r))
+        x0  = pb1/2
+        x1  = pb2/2
+        x2  = x0 + x1
+        x3  = r*x2
+        x4  = x2**2
+        x5  = r**2*x4
+        x6  = 3.0*x3 + x5 + 3.0
+        x7  = exp(-x3)
+        x8  = x2**3
+        x9  = 0.00165786399054058*x7*x8
+        x10 = x6*x9
+        x11 = 1.5*pb1
+        x12 = 1.5*pb2
+        x13 = 2*r*x4
+        x14 = x11 + x12 + x13
+        x15 = -x0 - x1
+        x16 = x10*x15 + x14*x9
+        x17 = 1/x8
+        x18 = exp(x3)
+        x19 = x16*x17*x18
+        x20 = 603.18578948924/x6
+        x21 = x19*x20
+        x22 = r*x18*x20
+        x23 = 0.00331572798108115*x7
+
+        s   = x10
+        ds  = x16
+        tt  = -r*x21
+        dtt = -67.0206432765822*r*x19*(-x11 - x12 - x13)/(x3 + 0.333333333333333*x5 + 1)**2 &
+            - x16*x22/x4 - x17*x22*(x10*x15**2 + x14*x15*x23*x8 + x2**5*x23) - x21
     end if
 
-end subroutine ffdev_nbmode_INTEGRAL_1s1s_do
+end subroutine ffdev_nbmode_INTEGRAL_do_1s1s
 
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_1s1s_wo
+! subroutine ffdev_nbmode_INTEGRAL_wo_1s1s
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_1s1s_wo(r,b1,b2,s,ds)
+subroutine ffdev_nbmode_INTEGRAL_wo_1s1s(r,pb1,pb2,s,ds,tt,dtt)
 
     use ffdev_topology_dat
     use ffdev_geometry_dat
     use ffdev_utils
 
     implicit none
-    real(DEVDP)             :: r,b1,b2
-    real(DEVDP)             :: s,ds
+    real(DEVDP)             :: r,pb1,pb2
+    real(DEVDP)             :: s,ds,tt,dtt
     ! --------------------------------------------
-
+    real(DEVDP)             :: x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15
+    real(DEVDP)             :: x16,x17,x18,x19,x20,x21,x22,x23,x24,x25,x26,x27,x28
+    real(DEVDP)             :: x29
     ! --------------------------------------------------------------------------
 
+    if( abs(pb1 - pb2) .gt. 0.1d0 ) then
+        x0  = pb1**2
+        x1  = pb2**2
+        x2  = x0/4.0 - x1/4.0
+        x3  = r*x2
+        x4  = 0.5*r
+        x5  = pb1*exp(-pb2*x4)
+        x6  = x5*(-2*pb2 + x3)
+        x7  = pb2*exp(-pb1*x4)
+        x8  = x7*(2*pb1 + x3)
+        x9  = x6 + x8
+        x10 = sqrt(pb1**3*pb2**3/r)
+        x11 = x2**3
+        x12 = x10/x11
+        x13 = x12*x9
+        x14 = sqrt(r)
+        x15 = 0.5/x14
+        x16 = r**(3.0/2.0)
+        x17 = 1/x16
+        x18 = x2*x5
+        x19 = x2*x7
+        x20 = 0.5*pb1*x8
+        x21 = 0.5*pb2*x6
+        x22 = x18 + x19 - x20 - x21
+        x23 = x12*x15
+        x24 = -0.5*x13*x17 + x22*x23
+        x25 = 1.0/x10
+        x26 = 1.0/x9
+        x27 = x11*x24*x25*x26
+        x28 = 2.0*x16
+        x29 = x11*x25*x28
 
-end subroutine ffdev_nbmode_INTEGRAL_1s1s_wo
+        s   = x13*x15
+        ds  = x24
+        tt  = -x27*x28
+        dtt = -4.0*x14*x27 - x24*x29*(-x18 - x19 + x20 + x21)/x9**2 &
+            - x26*x29*(-1.0*x12*x17*x22 + x23*(-1.0*pb1*x19 - 1.0*pb2*x18 + 0.25*x0*x8 + 0.25*x1*x6) + 1.0*x13/r**(5.0/2.0))
+    else
+        x0  = pb1/2.0 + pb2/2.0
+        x1  = 0.5*r*x0
+        x2  = x0**2
+        x3  = 0.0833333333333333*r**2*x2 + x1 + 1.0
+        x4  = sqrt(x0**3)
+        x5  = exp(-x1)
+        x6  = x4*x5
+        x7  = x3*x6
+        x8  = 0.166666666666667*x2
+        x9  = r*x8
+        x10 = 0.25*pb1
+        x11 = 0.25*pb2
+        x12 = x10 + x11
+        x13 = x6*(x12 + x9)
+        x14 = -x10 - x11
+        x15 = x13 + x14*x7
+        x16 = 1.0/x4
+        x17 = exp(x1)
+        x18 = x16*x17/x3
+        x19 = x15*x18
+        x20 = r*x19
+
+        s   = x7
+        ds  = x15
+        tt  = -x20
+        dtt = -r*x15*x16*x17*(x14 - x9)/x3**2 - r*x18*(2*x13*x14 + 0.0625*x3*x4*x5*(-pb1 - pb2)**2 + x6*x8) - x12*x20 - x19
+    end if
+
+end subroutine ffdev_nbmode_INTEGRAL_wo_1s1s
 
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ez
+! subroutine ffdev_nbmode_INTEGRAL_1s1s_ci_ez_damp
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ez(r,pb1,sci,dsci)
+subroutine ffdev_nbmode_INTEGRAL_ci_1s1s_ez_damp(r,pb1,ci,dci)
 
     use ffdev_topology_dat
     use ffdev_geometry_dat
@@ -156,23 +276,29 @@ subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ez(r,pb1,sci,dsci)
 
     implicit none
     real(DEVDP)             :: r,pb1
-    real(DEVDP)             :: sci,dsci
+    real(DEVDP)             :: ci,dci
     ! --------------------------------------------
-    real(DEVDP)             :: pbe1,a1
+    real(DEVDP)             :: x0,x1,x2
     ! --------------------------------------------------------------------------
 
-    pbe1 = exp(-pb1*r)
-    a1   = 1.0 + 0.5d0*pb1*r
-    sci  = pbe1*a1
-    dsci = - a1*pbe1*pb1 + 0.5d0*pb1*pbe1
+    ! DOI: 10.1002/jcc.20520, Model 1
+    ! charge - nucleus (eq. 20a)
+    ! autogenerated: share/ffdevel/forcefield/nbmodes/ci_1s1s_ez_damp.py
 
-end subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ez
+    x0  = pb1*r
+    x1  = exp(-x0)
+    x2  = x1*(x0*0.5d0 + 1.0d0)
+
+    ci  = x2
+    dci = pb1*x1*0.5d0 - pb1*x2
+
+end subroutine ffdev_nbmode_INTEGRAL_ci_1s1s_ez_damp
 
 !===============================================================================
-! subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ee
+! subroutine ffdev_nbmode_INTEGRAL_ci_1s1s_ee_damp
 !===============================================================================
 
-subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ee(r,pb1,pb2,s,ds)
+subroutine ffdev_nbmode_INTEGRAL_ci_1s1s_ee_damp(r,pb1,pb2,ci,dci)
 
     use ffdev_topology_dat
     use ffdev_geometry_dat
@@ -180,93 +306,49 @@ subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ee(r,pb1,pb2,s,ds)
 
     implicit none
     real(DEVDP)             :: r,pb1,pb2
-    real(DEVDP)             :: s,ds
+    real(DEVDP)             :: ci,dci
     ! --------------------------------------------
-    real(DEVDP)             :: inva2b2,a1,a2,pb,pbe,pbe1,pbe2,t1,pre
+    real(DEVDP)             :: x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12
     ! --------------------------------------------------------------------------
 
+    ! DOI: 10.1002/jcc.20520, Model 1
+    ! charge - charge (eq 19a, eq 20a)
 
+    if( abs(pb1 - pb2) .gt. 0.1d0 ) then
+        ! autogenerated: share/ffdevel/forcefield/nbmodes/ci_1s1s_ee_ij_damp.py
+        x0  = pb2*r
+        x1  = pb2**2
+        x2  = pb1**2
+        x3  = x1 - x2
+        x4  = 2.0d0/x3
+        x5  = x3**(-2)
+        x6  = x5
+        x7  = (pb1**4)*exp(-x0)
+        x8  = x6*x7*(0.5d0*x0 + x1*x4 + 1.0d0)
+        x9  = pb1*r
+        x10 = (pb2**4)*exp(-x9)
+        x11 = x10*x6*(-x2*x4 + 0.5d0*x9 + 1.0d0)
+        x12 = 0.5d0*x5
 
-end subroutine ffdev_nbmode_INTEGRAL_1s1s_sci_ee
+        ci  = x11 + x8
+        dci = pb1*x10*x12 - pb1*x11 + pb2*x12*x7 - pb2*x8
+    else
+        ! autogenerated: share/ffdevel/forcefield/nbmodes/ci_1s1s_ee_ii_damp.py
+        x0  = pb1*0.5d0
+        x1  = pb2*0.5d0
+        x2  = x0 + x1
+        x3  = r*x2
+        x4  = exp(-x3)
+        x5  = r**2
+        x6  = x2**2
+        x7  = x2**3
+        x8  = x4*(0.0208333333333333d0*r**3*x7 + 0.6875d0*x3 + 0.1875d0*x5*x6 + 1)
 
+        ci  = x8
+        dci = x4*(0.34375d0*pb1 + 0.34375d0*pb2 + 0.375d0*r*x6 + 0.0625d0*x5*x7) + x8*(-x0 - x1)
+    end if
 
-
-!                    pfe1 = exp(-pepa1*r)
-!                    pfa1 = pfe1*(1.0 + 0.5d0*pepa1*r)
-!
-!                    pfe2 = exp(-pepa2*r)
-!                    pfa2 = pfe2*(1.0 + 0.5d0*pepa2*r)
-!
-!                    if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
-!                        a2 = pepa1 ** 2
-!                        b2 = pepa2 ** 2
-!                        inva2b2 = 1.0d0/(b2 - a2)
-!                        ! order in inva2b2 is somewhere opposite, which changes the sign
-!                        pfbb =  + pfe1 * (b2*inva2b2)**2 * (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r) &
-!                                + pfe2 * (a2*inva2b2)**2 * (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
-!
-!                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
-!                        dvpe = + z1*(z2-q2)*(pfa2*pepa2 - 0.5d0*pepa2*pfe2)     &
-!                               + (z1-q1)*z2*(pfa1*pepa1 - 0.5d0*pepa1*pfe1)     &
-!                               - (z1-q1)*(z2-q2)*(                              &
-!                               + pfe1 * (b2*inva2b2)**2 * (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r) * pepa1 &
-!                               - 0.5d0*pepa1*pfe1 * (b2*inva2b2)**2  &
-!                               + pfe2 * (a2*inva2b2)**2 * (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r) * pepa2 &
-!                               - 0.5d0*pepa2*pfe2 * (a2*inva2b2)**2 )
-!                    else
-!                        pepk = 0.5d0*(pepa1 + pepa2)
-!                        pfeb = exp(-pepk*r)
-!                        pfbb = + pfeb * ( 1.0d0                 &
-!                               + 11.0d0/16.0d0*pepk*r           &
-!                               + 3.0d0/16.0d0*(pepk*r)**2       &
-!                               + 1.0d0/48.0d0*(pepk*r)**3 )
-!
-!                        ! derivatives - 1/r prefactor is below in r2a including the reverse sign
-!                        dvpe = + z1*(z2-q2)*(pfa2*pepa2 - 0.5d0*pepa2*pfe2)     &
-!                               + (z1-q1)*z2*(pfa1*pepa1 - 0.5d0*pepa1*pfe1)     &
-!                               - (z1-q1)*(z2-q2)*(pfbb*pepk &
-!                               - pfeb*(11.0d0/16.0d0*pepk + 2.0d0*3.0d0/16.0d0*r*(pepk)**2 + 3.0d0/48.0d0*r**2*(pepk)**3 ) )
-!                    end if
-!
-!                    pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
-!                          - (z1-q1)*(z2-q2)*pfbb
-!                    V_pe = pee/r
-!
-!                    ! derivatives
-!                    dvpe = dvpe + V_pe
-
-
-!                z1      = nbpair%z1
-!                q1      = nbpair%q1
-!                pepa1   = nbpair%pepa1
-!
-!                z2      = nbpair%z2
-!                q2      = nbpair%q2
-!                pepa2   = nbpair%pepa2
-!
-!                pfa1 = exp(-pepa1*r)*(1.0 + 0.5d0*pepa1*r)
-!                pfa2 = exp(-pepa2*r)*(1.0 + 0.5d0*pepa2*r)
-!
-!                if( abs(pepa1 - pepa2) .gt. 0.1d0 ) then
-!                    a2 = pepa1 ** 2
-!                    b2 = pepa2 ** 2
-!                    inva2b2 = 1.0d0/(b2 - a2)
-!                    ! order in inva2b2 is somewhere opposite, which changes the sign
-!                    pfbb =  + exp(-pepa1*r) * (b2*inva2b2)**2 *                 &
-!                                 (1.0d0 - 2.0d0*a2*inva2b2 + 0.5d0*pepa1*r)     &
-!                            + exp(-pepa2*r) * (a2*inva2b2)**2 *                 &
-!                                 (1.0d0 + 2.0d0*b2*inva2b2 + 0.5d0*pepa2*r)
-!                else
-!                    pepk = 0.5d0*(pepa1 + pepa2)
-!                    pfbb =       + exp(-pepk*r) *               &
-!                         ( 1.0d0 + 11.0d0/16.0d0*pepk*r         &
-!                                 + 3.0d0/16.0d0*(pepk*r)**2     &
-!                                 + 1.0d0/48.0d0*(pepk*r)**3 )
-!                end if
-!
-!                pee = + z1*(z2-q2)*pfa2 + (z1-q1)*z2*pfa1 &
-!                      - (z1-q1)*(z2-q2)*pfbb
-!                V_pe = pee/r
+end subroutine ffdev_nbmode_INTEGRAL_ci_1s1s_ee_damp
 
 ! ------------------------------------------------------------------------------
 
