@@ -444,16 +444,16 @@ real(DEVDP) function ffdev_atomicdata_get_effZ(gti)
     integer     :: gti
     ! --------------------------------------------------------------------------
 
-    select case(effz_mode)
-        case(AD_EFFZ_MAX)
+    select case(Zeff_mode)
+        case(AD_ZEFF_MAX)
             ffdev_atomicdata_get_effZ = types(gti)%z
             return
     ! --------------------
-        case(AD_EFFZ_VALENCE)
+        case(AD_ZEFF_VALENCE)
             ffdev_atomicdata_get_effZ = ffdev_atomicdata_get_valence_effZ(gti)
             return
     ! --------------------
-        case(AD_EFFZ_OPT)
+        case(AD_ZEFF_OPT)
             ffdev_atomicdata_get_effZ = types(gti)%Zeff
             return
     ! --------------------
@@ -465,7 +465,7 @@ end function ffdev_atomicdata_get_effZ
 
 ! ------------------------------------------------------------------------------
 
-real(DEVDP) function ffdev_atomicdata_get_min_effZ(gti)
+real(DEVDP) function ffdev_atomicdata_get_min_Zeff(gti)
 
     use ffdev_utils
     use ffdev_parameters_dat
@@ -478,13 +478,13 @@ real(DEVDP) function ffdev_atomicdata_get_min_effZ(gti)
     ! --------------------------------------------------------------------------
 
     z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. EFFZ_CLEMENTI_MAXZ) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_min_effZ')
+    if( (z .le. 0) .and. (z .gt. ZEFF_CLEMENTI_MAXZ) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_get_min_Zeff')
     end if
 
-    ffdev_atomicdata_get_min_effZ = effz_clementi(z)
+    ffdev_atomicdata_get_min_Zeff = zeff_clementi(z)
 
-end function ffdev_atomicdata_get_min_effZ
+end function ffdev_atomicdata_get_min_Zeff
 
 ! ------------------------------------------------------------------------------
 
@@ -728,10 +728,10 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
 end function ffdev_atomicdata_rcii_source_to_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_effz_mode_from_string
+! subroutine ffdev_atomicdata_zeff_mode_from_string
 ! ==============================================================================
 
-integer function ffdev_atomicdata_effz_mode_from_string(string)
+integer function ffdev_atomicdata_zeff_mode_from_string(string)
 
     use ffdev_utils
 
@@ -741,22 +741,22 @@ integer function ffdev_atomicdata_effz_mode_from_string(string)
 
     select case(trim(string))
         case('MAX')
-            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_MAX
+            ffdev_atomicdata_zeff_mode_from_string = AD_ZEFF_MAX
         case('VALENCE')
-            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_VALENCE
+            ffdev_atomicdata_zeff_mode_from_string = AD_ZEFF_VALENCE
         case('OPT')
-            ffdev_atomicdata_effz_mode_from_string = AD_EFFZ_OPT
+            ffdev_atomicdata_zeff_mode_from_string = AD_ZEFF_OPT
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_effz_mode_from_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_zeff_mode_from_string!')
     end select
 
-end function ffdev_atomicdata_effz_mode_from_string
+end function ffdev_atomicdata_zeff_mode_from_string
 
 ! ==============================================================================
-! subroutine ffdev_atomicdata_effz_mode_to_string
+! subroutine ffdev_atomicdata_zeff_mode_to_string
 ! ==============================================================================
 
-character(80) function ffdev_atomicdata_effz_mode_to_string(mode)
+character(80) function ffdev_atomicdata_zeff_mode_to_string(mode)
 
     use ffdev_utils
 
@@ -765,17 +765,17 @@ character(80) function ffdev_atomicdata_effz_mode_to_string(mode)
     ! --------------------------------------------------------------------------
 
     select case(mode)
-        case(AD_EFFZ_MAX)
-            ffdev_atomicdata_effz_mode_to_string = 'MAX'
-        case(AD_EFFZ_VALENCE)
-            ffdev_atomicdata_effz_mode_to_string = 'VALENCE'
-        case(AD_EFFZ_OPT)
-            ffdev_atomicdata_effz_mode_to_string = 'OPT'
+        case(AD_ZEFF_MAX)
+            ffdev_atomicdata_zeff_mode_to_string = 'MAX'
+        case(AD_ZEFF_VALENCE)
+            ffdev_atomicdata_zeff_mode_to_string = 'VALENCE'
+        case(AD_ZEFF_OPT)
+            ffdev_atomicdata_zeff_mode_to_string = 'OPT'
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_effz_mode_to_string!')
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_zeff_mode_to_string!')
     end select
 
-end function ffdev_atomicdata_effz_mode_to_string
+end function ffdev_atomicdata_zeff_mode_to_string
 
 ! ------------------------------------------------------------------------------
 

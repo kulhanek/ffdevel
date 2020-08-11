@@ -486,7 +486,7 @@ subroutine ffdev_parameters_reinit()
                     use_vdw_pa      = .true.
                  case(EXP_PA_CHARGES)
                     use_k_exc       = .true.
-                    if( effZ_mode .eq. AD_EFFZ_OPT ) then
+                    if( Zeff_mode .eq. AD_ZEFF_OPT ) then
                         use_zeff    = .true.
                     end if
                 case default
@@ -3007,7 +3007,7 @@ subroutine ffdev_params_get_lower_bounds(tmpx)
         if( params(i)%realm .ne. REALM_ZEFF ) then
             tmpx(id) = ffdev_params_get_lower_bound(params(i)%realm)
         else
-            tmpx(id) = ffdev_atomicdata_get_min_effZ(params(i)%ti)
+            tmpx(id) = ffdev_atomicdata_get_min_Zeff(params(i)%ti)
         end if
     end do
     if( id .ne. nactparms ) stop ! safety fuse

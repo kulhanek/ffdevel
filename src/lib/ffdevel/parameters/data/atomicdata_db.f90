@@ -36,9 +36,9 @@ real(DEVDP)     :: vdw_radii(1:VDW_RADII_MAXZ) = (/ &
 ! source: https://en.wikipedia.org/wiki/Effective_nuclear_charge
 ! hydrogen - decreased from 1.000 -> 0.9000
 
-integer,parameter   :: EFFZ_CLEMENTI_MAXZ = 18
+integer,parameter   :: ZEFF_CLEMENTI_MAXZ = 18
 
-real(DEVDP)     :: effz_clementi(1:EFFZ_CLEMENTI_MAXZ) = (/ &
+real(DEVDP)     :: zeff_clementi(1:ZEFF_CLEMENTI_MAXZ) = (/ &
  0.900, 1.688, &
  1.279, 1.912, 2.421, 3.136, 3.834, 4.453, 5.100, 5.758, &
  2.507, 3.308, 4.066, 4.285, 4.886, 5.482, 6.116, 6.764  &
