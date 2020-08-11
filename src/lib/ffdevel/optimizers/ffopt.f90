@@ -872,7 +872,7 @@ subroutine opt_shark_nruns
                     if( .not. params(i)%enabled ) cycle
                     call random_number(rnd)
                     minv = ffdev_params_get_lower_bound_for_prms(i)
-                    maxv = ffdev_params_get_upper_bound_for_prms(params(i)%realm)
+                    maxv = ffdev_params_get_upper_bound_for_prms(i)
                     FFParams(k) = minv + (maxv - minv)*rnd
                     k = k + 1
                 end do
