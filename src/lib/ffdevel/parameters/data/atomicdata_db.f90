@@ -47,17 +47,9 @@ real(DEVDP)     :: zeff_clementi(1:ZEFF_CLEMENTI_MAXZ) = (/ &
 ! ==============================================================================
 ! ionization potential of elements, all in eV
 ! source: https://en.wikipedia.org/wiki/Ionization_energies_of_the_elements_(data_page)
-! source: https://en.wikipedia.org/wiki/Electron_affinity_(data_page)
 ! ref: CRC
 
 integer,parameter   :: IPEA_MAXZ = 18
-
-! electron affinities - ! FIXME - what to do with negative EA
-real(DEVDP)     :: atomicdata_ipm(1:IPEA_MAXZ) = (/ &
- 0.75420, -0.50000, &
- 0.61805, -0.50000, 0.27972, 1.26212, -0.07000, 1.46111, 3.40119, -1.20000, &
- 0.54793, -0.40000, 0.43283, 1.38952,  0.74661, 2.07710, 3.61273, -1.00000 &
-/)
 
 ! ionization potenatial
 real(DEVDP)     :: atomicdata_ip0(1:IPEA_MAXZ) = (/ &
@@ -80,47 +72,32 @@ real(DEVDP)     :: atomicdata_ipp(1:IPEA_MAXZ) = (/ &
 integer,parameter   :: ATDENS_MAX_Z_ALL = 86
 integer             :: ATDENS_MAX_Z
 
-real(DEVDP)     :: atomicdata_rho_bm(1:ATDENS_MAX_Z_ALL)
-real(DEVDP)     :: atomicdata_rho_b0(1:ATDENS_MAX_Z_ALL)
-real(DEVDP)     :: atomicdata_rho_bp(1:ATDENS_MAX_Z_ALL)
-
-real(DEVDP)     :: atomicdata_rho_am(1:ATDENS_MAX_Z_ALL)
-real(DEVDP)     :: atomicdata_rho_a0(1:ATDENS_MAX_Z_ALL)
-real(DEVDP)     :: atomicdata_rho_ap(1:ATDENS_MAX_Z_ALL)
+real(DEVDP)     :: atomicdata_rho_b012(1:ATDENS_MAX_Z_ALL,3)
 
 ! like-only atoms --------------------------------------------------------------
 ! calculated by Horton
 
-integer         :: atomicdata_rho_PBE0_def2QZVPP_maxZ = 18
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_bm(1:18) = (/ &
-  2.5576,   2.6798, &
-  0.9387,   1.7710,   2.3017,   2.8901,   3.3317,   3.7041,   4.1621,   2.9105, &
-  1.0315,   1.5615,   1.9226,   2.3014,   2.6817,   3.0216,   3.3783,   2.4285  &
-/)
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_am(1:18) = (/ &
- -1.6272,  -1.4519, &
- -4.3363,  -2.2427,  -1.2817,  -0.3971,   0.1482,   0.4974,   0.9154,  -0.6041, &
- -4.1687,  -2.5828,  -1.6265,  -0.8177,  -0.1558,   0.3373,   0.7945,  -0.7770  &
-/)
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_b0(1:18) = (/ &
-  3.7006,   5.3661, &
-  1.3884,   2.3446,   3.2275,   3.7990,   4.3814,   4.6959,   5.0948,   5.4267, &
-  1.5449,   2.0016,   2.4213,   2.9353,   3.3520,   3.6896,   4.0451,   4.3765  &
-/)
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_a0(1:18) = (/ &
- -1.2153,   0.3398, &
- -3.8653,  -1.6793,  -0.2552,   0.4146,   0.9908,   1.2061,   1.4900,   1.6313, &
- -3.4829,  -2.0237,  -1.0388,  -0.0482,   0.5722,   1.0230,   1.4331,   1.7463  &
-/)
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_bp(1:18) = (/ &
-  0.0000,   7.1655, &
-  8.0572,   3.0068,   4.4144,   4.8648,   5.4188,   5.9755,   6.2974,   6.6751, &
-  7.3439,   2.5969,   3.2707,   3.6823,   4.0010,   4.4799,   4.8010,   5.1757  &
-/)
-real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_ap(1:18) = (/ &
-  0.0000,   0.6189, &
-  0.5422,  -1.4942,   0.8243,   1.2137,   1.6719,   2.0694,   2.2212,   2.3825, &
-  3.1808,  -1.7262,  -0.2019,   0.7068,   1.1421,   1.7653,   2.1040,   2.4752  &
+integer,parameter   :: atomicdata_rho_PBE0_def2QZVPP_maxZ = 18
+
+real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_b012(1:atomicdata_rho_PBE0_def2QZVPP_maxZ * 3) = (/ &
+    3.700590,     1.142950,     0.000000, &
+    5.366070,     1.799430,     0.000000, &
+    1.388400,     0.449738,     0.000000, &
+    2.344620,     0.617900,     0.044300, &
+    3.270980,     0.940463,     0.058098, &
+    3.795113,     1.014338,     0.084911, &
+    4.339434,     0.994576,     0.063807, &
+    4.732243,     1.048393,     0.083294, &
+    5.104189,     1.064493,     0.119258, &
+    5.426750,     1.142565,     0.105795, &
+    1.544900,     0.513380,     0.000000, &
+    2.001590,     0.517720,     0.077590, &
+    2.483738,     0.584371,     0.071295, &
+    2.943062,     0.693044,     0.043570, &
+    3.326283,     0.643320,     0.032266, &
+    3.706425,     0.684930,     0.033126, &
+    4.046629,     0.710852,     0.042020, &
+    4.376460,     0.746810,     0.052440  &
 /)
 
 ! ==============================================================================

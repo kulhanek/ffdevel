@@ -35,32 +35,15 @@ subroutine ffdev_atomicdata_update_db
     implicit none
     ! --------------------------------------------------------------------------
 
-    atomicdata_rho_bm(:) = 0.0d0
-    atomicdata_rho_b0(:) = 0.0d0
-    atomicdata_rho_bp(:) = 0.0d0
-
-    atomicdata_rho_am(:) = 0.0d0
-    atomicdata_rho_a0(:) = 0.0d0
-    atomicdata_rho_ap(:) = 0.0d0
+    atomicdata_rho_b012(:,:) = 0.0d0
 
     ATDENS_MAX_Z = 0
 
     select case(atdens_source)
         case(AD_ATDENS_PBE0_def2QZVPP)
             ATDENS_MAX_Z = atomicdata_rho_PBE0_def2QZVPP_maxZ
-            atomicdata_rho_bm(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_bm(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
-            atomicdata_rho_b0(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_b0(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
-            atomicdata_rho_bp(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_bp(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
-
-            atomicdata_rho_am(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_am(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
-            atomicdata_rho_a0(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_a0(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
-            atomicdata_rho_ap(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = &
-                       atomicdata_rho_PBE0_def2QZVPP_ap(1:atomicdata_rho_PBE0_def2QZVPP_maxZ)
+            atomicdata_rho_b012(1:atomicdata_rho_PBE0_def2QZVPP_maxZ,1:3) = &
+                transpose(reshape(atomicdata_rho_PBE0_def2QZVPP_b012,(/3,atomicdata_rho_PBE0_def2QZVPP_maxZ/)))
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_update_db')
     end select
@@ -80,8 +63,8 @@ subroutine ffdev_atomicdata_print
 
     implicit none
     integer     :: i,z
-    real(DEVDP) :: bm,b0,bp,am,a0,ap,rvdw,aii,bii,rcii
-    real(DEVDP) :: ipm,ip0,ipp
+    real(DEVDP) :: b0,b1,b2,rvdw,bii,rcii
+    real(DEVDP) :: ip0,ipp
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -96,23 +79,17 @@ subroutine ffdev_atomicdata_print
     do i=1,ntypes
         z = types(i)%z
 
-        bm = 0.0
         b0 = 0.0
-        bp = 0.0
-        am = 0.0
-        a0 = 0.0
-        ap = 0.0
+        b1 = 0.0
+        b2 = 0.0
         if( (z .ge. 1) .and. (z .le. ATDENS_MAX_Z ) ) then
-            bm = atomicdata_rho_bm(z)
-            b0 = atomicdata_rho_b0(z)
-            bp = atomicdata_rho_bp(z)
-            am = atomicdata_rho_am(z)
-            a0 = atomicdata_rho_a0(z)
-            ap = atomicdata_rho_ap(z)
+            b0 = atomicdata_rho_b012(z,1)
+            b1 = atomicdata_rho_b012(z,2)
+            b2 = atomicdata_rho_b012(z,3)
         end if
 
         write(DEV_OUT,130) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
-                          am, a0, ap, bm, b0, bp
+                          b0, b1, b2
 
     end do
     write(DEV_OUT,120)
@@ -126,24 +103,20 @@ subroutine ffdev_atomicdata_print
     do i=1,ntypes
         z = types(i)%z
 
-        ipm = 0.0
         ip0 = 0.0
         ipp = 0.0
 
         if( (z .ge. 1) .and. (z .le. IPEA_MAXZ ) ) then
-            ! FIXME - what to do with negative EA
-            ipm = abs(atomicdata_ipm(z))
             ip0 = atomicdata_ip0(z)
             ipp = atomicdata_ipp(z)
         end if
 
         ! FIXME - what to do with negative EA
-        bm = 2.0d0 * sqrt(2.0d0 * ipm * DEV_eV2AU) / DEV_AU2A
         b0 = 2.0d0 * sqrt(2.0d0 * ip0 * DEV_eV2AU) / DEV_AU2A
-        bp = 2.0d0 * sqrt(2.0d0 * ipp * DEV_eV2AU) / DEV_AU2A
+        b1 = 2.0d0 * sqrt(2.0d0 * ipp * DEV_eV2AU) / DEV_AU2A - b0
 
         write(DEV_OUT,230) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
-                          ipm, ip0, ipp, bm, b0, bp
+                          ip0, ipp, b0, b1
     end do
     write(DEV_OUT,220)
 
@@ -183,28 +156,24 @@ subroutine ffdev_atomicdata_print
     do i=1,ntypes
         z = types(i)%z
 
-        aii = 0.0
-        if( bii_source .eq. AD_BII_ATDENS ) then
-            aii = ffdev_atomicdata_aii(i)
-        end if
         bii = ffdev_atomicdata_bii(i)
         rcii = ffdev_atomicdata_rcii(i,damp_fa,damp_fb)
 
         write(DEV_OUT,530) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
-                          types(i)%aveq, aii, bii, rcii
+                          types(i)%aveq, bii, rcii
 
     end do
     write(DEV_OUT,520)
 
 100 format('# Bii/Aii from atomic densities: ',A)
-110 format('# ID Type  Z  El |   A-     A0     A+   |   B-     B0     B+   |')
-120 format('# -- ---- --- -- | ------ ------ ------ | ------ ------ ------ |')
-130 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,1X,F6.3,3X,F6.3,1X,F6.3,1X,F6.3)
+110 format('# ID Type  Z  El |   B0    B1*q  B2*q^2 |')
+120 format('# -- ---- --- -- | ------ ------ ------ |')
+130 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,1X,F6.3)
 
 200 format('# Bii/Aii from ionization potentials and electron affinities')
-210 format('# ID Type  Z  El |   EA    IP0    IP+  -->  B-     B0     B+   |')
-220 format('# -- ---- --- -- | ------ ------ ------ | ------ ------ ------ |')
-230 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,1X,F6.3,3X,F6.3,1X,F6.3,1X,F6.3)
+210 format('# ID Type  Z  El |  IP0    IP+  -->  B0    B1*q  |')
+220 format('# -- ---- --- -- | ------ ------ | ------ ------ |')
+230 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,3X,F6.3,1X,F6.3)
 
 300 format('# van der Waals radii')
 310 format('# ID Type  Z  El |  Rvdw  |')
@@ -216,9 +185,9 @@ subroutine ffdev_atomicdata_print
 430 format('# Rcii data source : ',A)
 
 500 format('# Current data: damp_fa = ',F6.3,'; damp_fb= ',F6.3)
-510 format('# ID Type  Z  El  Qeff  |   Aii    Bii   Rcii  |')
-520 format('# -- ---- --- -- ------ | ------ ------ ------ |')
-530 format(I4,1X,A4,1X,I3,1X,A2,1X,F6.3,3X,F6.3,1X,F6.3,1X,F6.3)
+510 format('# ID Type  Z  El  Qeff  |   Bii   Rcii  |')
+520 format('# -- ---- --- -- ------ | ------ ------ |')
+530 format(I4,1X,A4,1X,I3,1X,A2,1X,F6.3,3X,F6.3,1X,F6.3)
 
 end subroutine ffdev_atomicdata_print
 
@@ -237,7 +206,7 @@ real(DEVDP) function ffdev_atomicdata_bii(gti)
     integer     :: gti
     ! --------------------------------------------
     integer     :: maxz,z
-    real(DEVDP) :: q, bm, b0, bp
+    real(DEVDP) :: q, b0, b1, b2
     ! --------------------------------------------------------------------------
 
     ffdev_atomicdata_bii = 0.0 ! 0.0 -> undefined
@@ -261,15 +230,14 @@ real(DEVDP) function ffdev_atomicdata_bii(gti)
     select case(bii_source)
         case(AD_BII_IPEA)
             ! in A^-1 => 1.0 / DEV_AU2A
-            ! FIXME - what to do with negative EA
-            bm = 2.0d0 * sqrt(2.0d0 * abs(atomicdata_ipm(z)) * DEV_eV2AU) / DEV_AU2A
             b0 = 2.0d0 * sqrt(2.0d0 * atomicdata_ip0(z) * DEV_eV2AU) / DEV_AU2A
-            bp = 2.0d0 * sqrt(2.0d0 * atomicdata_ipp(z) * DEV_eV2AU) / DEV_AU2A
+            b1 = 2.0d0 * sqrt(2.0d0 * atomicdata_ipp(z) * DEV_eV2AU) / DEV_AU2A - b0
+            b2 = 0.0d0
     ! ------------
         case(AD_BII_ATDENS)
-            bm = atomicdata_rho_bm(z)
-            b0 = atomicdata_rho_b0(z)
-            bp = atomicdata_rho_bp(z)
+            b0 = atomicdata_rho_b012(z,1)
+            b1 = atomicdata_rho_b012(z,2)
+            b2 = atomicdata_rho_b012(z,3)
     ! ------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii I')
@@ -290,80 +258,13 @@ real(DEVDP) function ffdev_atomicdata_bii(gti)
             return
     ! ------------
         case(AD_BII_MOD_BY_CHRG)
-            ! FIXME
-            stop
+            ffdev_atomicdata_bii = b0 + b1*q + b2*q**2
     ! ------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii II')
     end select
 
 end function ffdev_atomicdata_bii
-
-! ==============================================================================
-! function ffdev_atomicdata_aii
-! ==============================================================================
-
-real(DEVDP) function ffdev_atomicdata_aii(gti)
-
-    use ffdev_utils
-    use ffdev_parameters_dat
-    use ffdev_atomicdata_db
-
-    implicit none
-    integer     :: gti
-    ! --------------------------------------------
-    integer     :: maxz,z
-    real(DEVDP) :: q, am, a0, ap
-    ! --------------------------------------------------------------------------
-
-    ffdev_atomicdata_aii = 0.0 ! 0.0 -> undefined
-
-    select case(bii_source)
-        case(AD_BII_IPEA)
-            call ffdev_utils_exit(DEV_ERR,1,'aii is not available from IP/EA in ffdev_atomicdata_aii')
-        case(AD_BII_ATDENS)
-            maxz = ATDENS_MAX_Z
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii 0')
-    end select
-
-    ! get Z
-    z = types(gti)%z
-    if( (z .le. 0) .and. (z .gt. maxz) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Z is out-of-range in ffdev_atomicdata_aii')
-    end if
-    q = types(gti)%aveq
-
-    select case(bii_source)
-        case(AD_BII_IPEA)
-            call ffdev_utils_exit(DEV_ERR,1,'aii is not available from IP/EA in ffdev_atomicdata_aii')
-    ! ------------
-        case(AD_BII_ATDENS)
-            am = atomicdata_rho_am(z)
-            a0 = atomicdata_rho_a0(z)
-            ap = atomicdata_rho_ap(z)
-    ! ------------
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii I')
-    end select
-
-    select case(bii_mods)
-        case(AD_BII_RAW)
-            ffdev_atomicdata_aii = a0
-            return
-        case(AD_BII_MOD_BY_XDM)
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported aii modification by XDM in ffdev_atomicdata_aii')
-    ! ------------
-        case(AD_BII_MOD_BY_CHRG)
-            ! FIXME
-            stop
-    ! ------------
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_aii II')
-    end select
-
-
-end function ffdev_atomicdata_aii
 
 ! ==============================================================================
 ! function ffdev_atomicdata_rcii
@@ -381,7 +282,6 @@ real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
     real(DEVDP) :: fa,fb
     ! --------------------------------------------
     integer     :: maxz, z
-    real(DEVDP) :: b, a
     real(DEVDP) :: q
     ! --------------------------------------------------------------------------
 
@@ -394,9 +294,6 @@ real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
         case(AD_RCII_DISP)
             ! workaround - largest Z we have
             maxz = ATDENS_MAX_Z_ALL
-    ! -------------
-        case(AD_RCII_ATDENS)
-            maxz = ATDENS_MAX_Z
     ! -------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii 0')
@@ -418,14 +315,6 @@ real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
                 call ffdev_utils_exit(DEV_ERR,1,'no DISP data loaded for rcc in ffdev_atomicdata_rcii')
             end if
             ffdev_atomicdata_rcii = fa * disp_pairs(gti,gti)%rc + fb
-    ! -------------
-        case(AD_RCII_ATDENS)
-            b = ffdev_atomicdata_bii(gti)
-            a = ffdev_atomicdata_aii(gti)
-            if( b .eq. 0.0d0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'No ffdev_atomicdata_bii data for given gti in ffdev_atomicdata_rcii')
-            end if
-            ffdev_atomicdata_rcii = (a - fa)/b
     ! -------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii II')
@@ -694,8 +583,6 @@ integer function ffdev_atomicdata_rcii_source_from_string(string)
             ffdev_atomicdata_rcii_source_from_string = AD_RCII_VDW
         case('DISP')
             ffdev_atomicdata_rcii_source_from_string = AD_RCII_DISP
-        case('ATDENS')
-            ffdev_atomicdata_rcii_source_from_string = AD_RCII_ATDENS
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_rcii_source_from_string!')
     end select
@@ -719,8 +606,6 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
             ffdev_atomicdata_rcii_source_to_string = 'VDW'
         case(AD_RCII_DISP)
             ffdev_atomicdata_rcii_source_to_string = 'DISP'
-        case(AD_RCII_ATDENS)
-            ffdev_atomicdata_rcii_source_to_string = 'ATDENS'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii_source_to_string!')
     end select

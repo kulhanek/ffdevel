@@ -55,7 +55,6 @@ integer             :: Zeff_mode                = AD_ZEFF_VALENCE
 ! rcii source
 integer,parameter   :: AD_RCII_VDW              = 1
 integer,parameter   :: AD_RCII_DISP             = 2
-integer,parameter   :: AD_RCII_ATDENS           = 3
 
 ! setup bii
 integer             :: rcii_source   = AD_RCII_DISP
