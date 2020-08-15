@@ -45,7 +45,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_rmsd_control
     use ffdev_err_ihess_control
     use ffdev_err_sapt_control
-    use ffdev_err_chrgpnl_control
+    use ffdev_err_pacpnl_control
     use ffdev_err_zerograd_control
     use ffdev_err_probe_control
     use ffdev_err_pbpnl_control
@@ -85,7 +85,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_nbdists_ctrl(fin)
     call ffdev_err_ihess_ctrl(fin)
     call ffdev_err_rmsd_ctrl(fin)
-    call ffdev_err_chrgpnl_ctrl(fin)
+    call ffdev_err_pacpnl_ctrl(fin)
     call ffdev_err_zerograd_ctrl(fin)
     call ffdev_err_pbpnl_ctrl(fin)
     call ffdev_err_qnb_ctrl(fin)

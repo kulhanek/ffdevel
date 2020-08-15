@@ -46,7 +46,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: sapt_ind
     real(DEVDP)         :: sapt_rep
     real(DEVDP)         :: sapt_dis
-    real(DEVDP)         :: chrgpnl
+    real(DEVDP)         :: pacpnl
     real(DEVDP)         :: zerograd
     real(DEVDP)         :: probe_ene
     real(DEVDP)         :: pbpnl

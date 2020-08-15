@@ -72,9 +72,9 @@ SET(FFDEVEL_SRC
         parameters/errors/sapt_dat.f90
         parameters/errors/sapt.f90
         parameters/errors/sapt_control.f90
-        parameters/errors/chrgpnl_dat.f90
-        parameters/errors/chrgpnl.f90
-        parameters/errors/chrgpnl_control.f90
+        parameters/errors/pacpnl_dat.f90
+        parameters/errors/pacpnl.f90
+        parameters/errors/pacpnl_control.f90
         parameters/errors/zerograd_dat.f90
         parameters/errors/zerograd.f90
         parameters/errors/zerograd_control.f90

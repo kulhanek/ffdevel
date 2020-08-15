@@ -41,7 +41,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_rmsd
     use ffdev_err_ihess
     use ffdev_err_sapt
-    use ffdev_err_chrgpnl
+    use ffdev_err_pacpnl
     use ffdev_err_zerograd
     use ffdev_err_probe
     use ffdev_err_pbpnl
@@ -68,7 +68,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_impropers_init()
     call ffdev_err_nbdists_init()
     call ffdev_err_rmsd_init()
-    call ffdev_err_chrgpnl_init()
+    call ffdev_err_pacpnl_init()
     call ffdev_err_zerograd_init()
 
     call ffdev_err_pbpnl_init()
@@ -93,7 +93,7 @@ subroutine ffdev_errors_error_setup_domains(opterror)
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
-    use ffdev_err_chrgpnl_dat
+    use ffdev_err_pacpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
@@ -154,8 +154,8 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_sapt_dat
     use ffdev_err_sapt
 
-    use ffdev_err_chrgpnl_dat
-    use ffdev_err_chrgpnl
+    use ffdev_err_pacpnl_dat
+    use ffdev_err_pacpnl
 
     use ffdev_err_zerograd_dat
     use ffdev_err_zerograd
@@ -197,7 +197,7 @@ subroutine ffdev_errors_error_only(error)
     error%sapt_rep = 0.0d0
     error%sapt_dis = 0.0d0
     error%probe_ene = 0.0d0
-    error%chrgpnl = 0.0d0
+    error%pacpnl = 0.0d0
     error%zerograd = 0.0d0
     error%pbpnl = 0.0d0
     error%qnb = 0.0d0
@@ -253,9 +253,9 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%rmsd*RMSDErrorWeight
     end if
 
-    if( EnableChrgPnlError ) then
-        call ffdev_err_chrgpnl_error(error)
-        error%total = error%total + error%chrgpnl*ChrgPnlErrorWeight
+    if( EnablePACPnlError ) then
+        call ffdev_err_pacpnl_error(error)
+        error%total = error%total + error%pacpnl*PACPnlErrorWeight
     end if
 
     if( EnableZeroGradError ) then
@@ -297,7 +297,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
-    use ffdev_err_chrgpnl_dat
+    use ffdev_err_pacpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
@@ -343,7 +343,7 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableRMSDError ) then
         write(DEV_OUT,39,ADVANCE='NO')
     end if
-    if( EnableChrgPnlError ) then
+    if( EnablePACPnlError ) then
         write(DEV_OUT,43,ADVANCE='NO')
     end if
     if( EnableZeroGradError ) then
@@ -393,7 +393,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
-    use ffdev_err_chrgpnl_dat
+    use ffdev_err_pacpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
@@ -439,7 +439,7 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableRMSDError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-    if( EnableChrgPnlError ) then
+    if( EnablePACPnlError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
     if( EnableZeroGradError ) then
@@ -473,7 +473,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_impropers_dat
     use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
-    use ffdev_err_chrgpnl_dat
+    use ffdev_err_pacpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
@@ -520,8 +520,8 @@ subroutine ffdev_errors_ffopt_results(error)
     if( EnableRMSDError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%rmsd
     end if
-    if( EnableChrgPnlError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%chrgpnl
+    if( EnablePACPnlError ) then
+        write(DEV_OUT,15,ADVANCE='NO') error%pacpnl
     end if
     if( EnableZeroGradError ) then
         write(DEV_OUT,15,ADVANCE='NO') error%zerograd
@@ -577,8 +577,8 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_sapt_dat
     use ffdev_err_sapt
 
-    use ffdev_err_chrgpnl_dat
-    use ffdev_err_chrgpnl
+    use ffdev_err_pacpnl_dat
+    use ffdev_err_pacpnl
 
     use ffdev_err_zerograd_dat
     use ffdev_err_zerograd
@@ -601,7 +601,7 @@ subroutine ffdev_errors_summary(logmode)
     if( .not. (PrintEnergyErrorSummary .or. PrintSAPTErrorSummary .or. PrintZeroGradErrorSummary .or.  &
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
-            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary .or. &
+            PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. &
             PrintPBPnlErrorSummary .or. PrintQNBErrorSummary ) ) then
         ! no error to report
         return
@@ -672,7 +672,7 @@ subroutine ffdev_errors_summary(logmode)
     ! summary per points
     if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
         PrintImpropersErrorSummary .or. &
-        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintChrgPnlErrorSummary) then
+        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary) then
 
         write(DEV_OUT,*)
         write(DEV_OUT,20)
@@ -705,9 +705,9 @@ subroutine ffdev_errors_summary(logmode)
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
                     printme = printme .or. printsum
                 end if
-                if( EnableChrgPnlError ) then
+                if( EnablePACPnlError ) then
                     printsum = .false.
-                    call ffdev_err_chrgpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    call ffdev_err_pacpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
                     printme = printme .or. printsum
                 end if
 
@@ -731,8 +731,8 @@ subroutine ffdev_errors_summary(logmode)
                 if( PrintNBDistsErrorSummary ) then
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
                 end if
-                if( EnableChrgPnlError ) then
-                    call ffdev_err_chrgpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                if( EnablePACPnlError ) then
+                    call ffdev_err_pacpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
                 end if
             end do
         end do
