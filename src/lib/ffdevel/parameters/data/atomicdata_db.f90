@@ -101,5 +101,12 @@ real(DEVDP)     :: atomicdata_rho_PBE0_def2QZVPP_b012(1:atomicdata_rho_PBE0_def2
 /)
 
 ! ==============================================================================
+! B0ii optimized per element
+
+integer,parameter   :: B0OPT_MAX_Z = 86
+real(DEVDP)         :: atomicdata_b0opt(1:B0OPT_MAX_Z)
+logical             :: atomicdata_b0opt_initialized = .false.
+
+! ==============================================================================
 
 end module ffdev_atomicdata_db

@@ -24,6 +24,7 @@ use ffdev_variables
 ! bii source
 integer,parameter   :: AD_BII_IPEA              = 1     ! ionization potentials / electron affinities
 integer,parameter   :: AD_BII_ATDENS            = 2     ! spherically symmetrized atom densities
+integer,parameter   :: AD_BII_B0OPT             = 3     ! B0 per ellement
 
 ! bii modificators
 integer,parameter   :: AD_BII_RAW               = 1     ! raw data

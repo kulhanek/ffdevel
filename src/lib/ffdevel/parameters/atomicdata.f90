@@ -48,6 +48,11 @@ subroutine ffdev_atomicdata_update_db
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_update_db')
     end select
 
+    if( .not. atomicdata_b0opt_initialized ) then
+        atomicdata_b0opt(1:atomicdata_rho_PBE0_def2QZVPP_maxZ) = atomicdata_rho_b012(1:atomicdata_rho_PBE0_def2QZVPP_maxZ,1)
+        atomicdata_b0opt_initialized = .true.
+    end if
+
 end subroutine ffdev_atomicdata_update_db
 
 ! ==============================================================================
@@ -216,6 +221,8 @@ real(DEVDP) function ffdev_atomicdata_bii(gti)
             maxz = IPEA_MAXZ
         case(AD_BII_ATDENS)
             maxz = ATDENS_MAX_Z
+        case(AD_BII_B0OPT)
+            maxz = B0OPT_MAX_Z
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii 0')
     end select
@@ -238,6 +245,11 @@ real(DEVDP) function ffdev_atomicdata_bii(gti)
             b0 = atomicdata_rho_b012(z,1)
             b1 = atomicdata_rho_b012(z,2)
             b2 = atomicdata_rho_b012(z,3)
+    ! ------------
+        case(AD_BII_B0OPT)
+            b0 = atomicdata_b0opt(z)
+            b1 = 0.0
+            b2 = 0.0
     ! ------------
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii I')
@@ -444,6 +456,8 @@ integer function ffdev_atomicdata_bii_source_from_string(string)
             ffdev_atomicdata_bii_source_from_string = AD_BII_IPEA
         case('ATDENS')
             ffdev_atomicdata_bii_source_from_string = AD_BII_ATDENS
+        case('B0OPT')
+            ffdev_atomicdata_bii_source_from_string = AD_BII_B0OPT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_bii_source_from_string!')
     end select
@@ -467,6 +481,8 @@ character(80) function ffdev_atomicdata_bii_source_to_string(mode)
             ffdev_atomicdata_bii_source_to_string = 'IPEA'
         case(AD_BII_ATDENS)
             ffdev_atomicdata_bii_source_to_string = 'ATDENS'
+        case(AD_BII_B0OPT)
+            ffdev_atomicdata_bii_source_to_string = 'B0OPT'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_bii_source_to_string!')
     end select

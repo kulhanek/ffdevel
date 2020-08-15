@@ -45,31 +45,33 @@ integer,parameter       :: REALM_VDW_PA     = 14
 integer,parameter       :: REALM_VDW_PB     = 15
 integer,parameter       :: REALM_VDW_RC     = 16
 
+integer,parameter       :: REALM_VDW_B0     = 17
+
 ! non-bonded - vdW setup - dispersion
-integer,parameter       :: REALM_DISP_S6    = 17
-integer,parameter       :: REALM_DISP_S8    = 18
-integer,parameter       :: REALM_DISP_S10   = 19
+integer,parameter       :: REALM_DISP_S6    = 18
+integer,parameter       :: REALM_DISP_S8    = 19
+integer,parameter       :: REALM_DISP_S10   = 20
 
-integer,parameter       :: REALM_DAMP_FA    = 20
-integer,parameter       :: REALM_DAMP_FB    = 21
+integer,parameter       :: REALM_DAMP_FA    = 21
+integer,parameter       :: REALM_DAMP_FB    = 22
 
-integer,parameter       :: REALM_DAMP_PB    = 22
-integer,parameter       :: REALM_DAMP_TB    = 23
-integer,parameter       :: REALM_DAMP_PE    = 24
-
-! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 25
-integer,parameter       :: REALM_ELE_SQ     = 26
-
-integer,parameter       :: REALM_ZEFF       = 27
+integer,parameter       :: REALM_DAMP_PB    = 23
+integer,parameter       :: REALM_DAMP_TB    = 24
+integer,parameter       :: REALM_DAMP_PE    = 25
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_GLB_SCEE   = 28
-integer,parameter       :: REALM_GLB_SCNB   = 29
+integer,parameter       :: REALM_PAC        = 26
+integer,parameter       :: REALM_ELE_SQ     = 27
+
+integer,parameter       :: REALM_ZEFF       = 28
+
+! non-bonded - electrostatics
+integer,parameter       :: REALM_GLB_SCEE   = 29
+integer,parameter       :: REALM_GLB_SCNB   = 30
 
 ! Pauli repulsion K factors
-integer,parameter       :: REALM_K_EXC      = 30
-integer,parameter       :: REALM_K_IND      = 31
+integer,parameter       :: REALM_K_EXC      = 31
+integer,parameter       :: REALM_K_IND      = 32
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_K_IND
@@ -195,6 +197,9 @@ real(DEVDP)     :: MaxVdwPA
 
 real(DEVDP)     :: MinVdwPB
 real(DEVDP)     :: MaxVdwPB
+
+real(DEVDP)     :: MinVdwB0
+real(DEVDP)     :: MaxVdwB0
 
 real(DEVDP)     :: MinVdwRC
 real(DEVDP)     :: MaxVdwRC

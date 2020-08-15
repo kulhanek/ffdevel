@@ -946,7 +946,7 @@ subroutine setup_realm_identity(realm,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .eq. REALM_DIH_V) .or. (realm .eq. REALM_DIH_G) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unsupported real for setup_realm_identity!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_realm_identity!')
     end if
 
     lniden = 0

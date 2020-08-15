@@ -80,7 +80,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 2*sets(i)%top%nnb_types       ! eps, r0
         maxnparams = maxnparams + 3*sets(i)%top%natom_types     ! pa, pb, rc
-        maxnparams = maxnparams + 1*ntypes                      ! zeff
+        maxnparams = maxnparams + 2*ntypes                      ! zeff, vdw_b0
     end do
     maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
                                  ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, damp_pe
@@ -132,6 +132,7 @@ subroutine ffdev_parameters_reinit()
     use ffdev_utils
     use ffdev_disp_dat
     use ffdev_atomicdata_dat
+    use ffdev_atomicdata_db
 
     implicit none
     integer     :: i, j, k, parmid, ai, refid
@@ -139,6 +140,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb, use_damp_pe
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_zeff
+    logical     :: use_vdw_b0
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -459,6 +461,7 @@ subroutine ffdev_parameters_reinit()
     use_k_ind       = .false.
 
     use_zeff        = .false.
+    use_vdw_b0      = .false.
 
 ! common setup
     select case(nb_mode)
@@ -497,7 +500,9 @@ subroutine ffdev_parameters_reinit()
                 case(EXP_PB_FREEOPT)
                     use_vdw_pb      = .true.
                  case(EXP_PB_ADBII)
-                    ! nothing
+                    if( bii_source .eq. AD_BII_B0OPT ) then
+                        use_vdw_b0 = .true.
+                    end if
                 case default
                     call ffdev_utils_exit(DEV_ERR,1,'exp_pb_mode not implemented in ffdev_parameters_reinit!')
             end select
@@ -636,6 +641,27 @@ subroutine ffdev_parameters_reinit()
                     params(parmid)%ids(i) = j ! parameter already exists, update link
                 end if
             end do
+        end do
+    end if
+
+    if( use_vdw_b0 ) then
+        ! rep B0 realm =====================
+        do i=1,ntypes
+            parmid = find_parameter(sets(i)%top,0,types(i)%z,REALM_VDW_B0)
+            if( parmid .eq. 0 ) then    ! new parameter
+                ! add new parameter
+                nparams = nparams + 1
+                params(nparams)%value = atomicdata_b0opt(types(i)%z)
+                params(nparams)%realm = REALM_VDW_B0
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn      = types(i)%z
+                params(nparams)%ids(:)  = 0
+                params(nparams)%ti      = 0
+                params(nparams)%tj      = 0
+                params(nparams)%tk      = 0
+                params(nparams)%tl      = 0
+            end if
         end do
     end if
 
@@ -970,6 +996,10 @@ end function ffdev_parameters_is_nbtype_used
 
 ! ------------------------------------------------------------------------------
 
+! id, pn
+!  0, z   for REALM_VDW_B0
+
+
 integer function find_parameter(top,id,pn,realm)
 
     use ffdev_parameters_dat
@@ -987,6 +1017,18 @@ integer function find_parameter(top,id,pn,realm)
     ! --------------------------------------------------------------------------
 
     find_parameter = 0
+
+    if( realm .eq. REALM_VDW_B0 ) then
+        do i=1,nparams
+            if( params(i)%realm .ne. realm ) cycle
+            ! PN is Z
+            if( params(i)%pn .eq. pn ) then
+                find_parameter = i
+                return
+            end if
+        end do
+        return
+    end if
 
     ! find global type ids for given parameter realm
     select case(realm)
@@ -1296,7 +1338,6 @@ subroutine ffdev_parameters_gen_unique_types()
     end do
 
 end subroutine ffdev_parameters_gen_unique_types
-
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_pac_source_to_string
@@ -2128,6 +2169,8 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_VDW_PA
         case('vdw_pb')
             ffdev_parameters_get_realmid = REALM_VDW_PB
+        case('vdw_b0')
+            ffdev_parameters_get_realmid = REALM_VDW_B0
         case('vdw_rc')
             ffdev_parameters_get_realmid = REALM_VDW_RC
 
@@ -2222,6 +2265,8 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'vdw_pa'
         case(REALM_VDW_PB)
             ffdev_parameters_get_realm_name = 'vdw_pb'
+        case(REALM_VDW_B0)
+            ffdev_parameters_get_realm_name = 'vdw_b0'
         case(REALM_VDW_RC)
             ffdev_parameters_get_realm_name = 'vdw_rc'
 
@@ -2297,7 +2342,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ffdev_parameters_get_realm_scaling = DEV_R2D
         case(REALM_VDW_EPS,REALM_VDW_R0)
             ! nothing to do
-        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
+        case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_B0,REALM_VDW_RC)
             ! nothing to do
         case(REALM_ELE_SQ,REALM_PAC,REALM_ZEFF)
             ! nothing to do
@@ -2558,6 +2603,7 @@ subroutine ffdev_parameters_to_tops
     use ffdev_targetset_dat
     use ffdev_topology
     use ffdev_utils
+    use ffdev_atomicdata_db
 
     implicit none
     integer         :: i,j,k,ai,ndep,refid
@@ -2710,6 +2756,8 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+            case(REALM_VDW_B0)
+                atomicdata_b0opt(params(i)%pn) = params(i)%value
             case(REALM_VDW_RC)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
@@ -2889,6 +2937,9 @@ subroutine ffdev_params_reset_ranges
 
      MinVdwPB     =      1.0d0
      MaxVdwPB     =      6.0d0
+
+     MinVdwB0     =      1.0d0
+     MaxVdwB0     =      6.0d0
 
      MinVdwRC     =      0.0d0
      MaxVdwRC     =      5.0d0
@@ -3081,6 +3132,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinVdwPA
         case(REALM_VDW_PB)
             ffdev_params_get_lower_bound = MinVdwPB
+        case(REALM_VDW_B0)
+            ffdev_params_get_lower_bound = MinVdwB0
         case(REALM_VDW_RC)
             ffdev_params_get_lower_bound = MinVdwRC
 
@@ -3175,6 +3228,8 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
             MinVdwPA = mvalue
         case(REALM_VDW_PB)
             MinVdwPB = mvalue
+        case(REALM_VDW_B0)
+            MinVdwB0 = mvalue
         case(REALM_VDW_RC)
             MinVdwRC = mvalue
 
@@ -3320,6 +3375,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxVdwPA
         case(REALM_VDW_PB)
             ffdev_params_get_upper_bound = MaxVdwPB
+        case(REALM_VDW_B0)
+            ffdev_params_get_upper_bound = MaxVdwB0
         case(REALM_VDW_RC)
             ffdev_params_get_upper_bound = MaxVdwRC
 
@@ -3412,6 +3469,8 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxVdwPA = mvalue
         case(REALM_VDW_PB)
             MaxVdwPB = mvalue
+        case(REALM_VDW_B0)
+            MaxVdwB0 = mvalue
         case(REALM_VDW_RC)
             MaxVdwRC = mvalue
 
