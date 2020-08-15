@@ -329,6 +329,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
     integer                 :: logmode
     ! --------------------------------------------
     character(len=MAX_PATH) :: sname
+    character(len=MAX_PATH) :: pname
     character(len=MAX_PATH) :: progname
     type(FFERROR_TYPE)      :: error
     ! --------------------------------------------------------------------------
@@ -338,23 +339,30 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
         select case(logmode)
             case(SMMLOG_INITIAL)
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-0.initial.log'
+                pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-0.initial.prms'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_INTERMEDIATE)
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-1.intermediate.log'
+                pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-1.intermediate.prms'
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_FINAL)
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-2.final.log'
+                pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-2.final.prms'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_BEST)
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-3.best.log'
+                pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-3.best.prms'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
         end select
+
+        ! write parameters
+        call ffdev_parameters_save(pname)
 
         call ffdev_utils_open(DEV_ERRSUMLOG,sname,'U')
         DEV_OUT = DEV_ERRSUMLOG

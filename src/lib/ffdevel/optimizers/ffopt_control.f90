@@ -477,18 +477,20 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,35) Shark_InitialStep
         write(DEV_OUT,55) prmfile_onoff(Shark_EnableBoxing)
         write(DEV_OUT,65) Shark_NRuns
-        select case(Shark_ParameterGuess)
-            case(SHARK_GUESS_INPUT)
-                write(DEV_OUT,75) 'input'
-            case(SHARK_GUESS_RANDOMIZE)
-                write(DEV_OUT,75) 'randomize'
-            case(SHARK_GUESS_KEEP)
-                write(DEV_OUT,75) 'keep'
-            case(SHARK_GUESS_MIX)
-                write(DEV_OUT,75) 'mix'
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
-        end select
+        if( Shark_NRuns .gt. 1 ) then
+            select case(Shark_ParameterGuess)
+                case(SHARK_GUESS_INPUT)
+                    write(DEV_OUT,75) 'input'
+                case(SHARK_GUESS_RANDOMIZE)
+                    write(DEV_OUT,75) 'randomize'
+                case(SHARK_GUESS_KEEP)
+                    write(DEV_OUT,75) 'keep'
+                case(SHARK_GUESS_MIX)
+                    write(DEV_OUT,75) 'mix'
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
+            end select
+        end if
         return
     end if
 
@@ -527,36 +529,38 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,65) Shark_NRuns
     end if
 
-    if( prmfile_get_string_by_key(fin,'guess', string)) then
-        select case(trim(string))
-            case('input')
-                Shark_ParameterGuess = SHARK_GUESS_INPUT
-                write(DEV_OUT,70) trim(string)
-            case('randomize')
-                Shark_ParameterGuess = SHARK_GUESS_RANDOMIZE
-                write(DEV_OUT,70) trim(string)
-            case('keep')
-                Shark_ParameterGuess = SHARK_GUESS_KEEP
-                write(DEV_OUT,70) trim(string)
-            case('mix')
-                Shark_ParameterGuess = SHARK_GUESS_MIX
-                write(DEV_OUT,70) trim(string)
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
-        end select
-    else
-        select case(Shark_ParameterGuess)
-            case(SHARK_GUESS_INPUT)
-                write(DEV_OUT,75) 'input'
-            case(SHARK_GUESS_RANDOMIZE)
-                write(DEV_OUT,75) 'randomize'
-            case(SHARK_GUESS_KEEP)
-                write(DEV_OUT,75) 'keep'
-            case(SHARK_GUESS_MIX)
-                write(DEV_OUT,75) 'mix'
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
-        end select
+    if( Shark_NRuns .gt. 0 ) then
+        if( prmfile_get_string_by_key(fin,'guess', string)) then
+            select case(trim(string))
+                case('input')
+                    Shark_ParameterGuess = SHARK_GUESS_INPUT
+                    write(DEV_OUT,70) trim(string)
+                case('randomize')
+                    Shark_ParameterGuess = SHARK_GUESS_RANDOMIZE
+                    write(DEV_OUT,70) trim(string)
+                case('keep')
+                    Shark_ParameterGuess = SHARK_GUESS_KEEP
+                    write(DEV_OUT,70) trim(string)
+                case('mix')
+                    Shark_ParameterGuess = SHARK_GUESS_MIX
+                    write(DEV_OUT,70) trim(string)
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
+            end select
+        else
+            select case(Shark_ParameterGuess)
+                case(SHARK_GUESS_INPUT)
+                    write(DEV_OUT,75) 'input'
+                case(SHARK_GUESS_RANDOMIZE)
+                    write(DEV_OUT,75) 'randomize'
+                case(SHARK_GUESS_KEEP)
+                    write(DEV_OUT,75) 'keep'
+                case(SHARK_GUESS_MIX)
+                    write(DEV_OUT,75) 'mix'
+                case default
+                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported guess in read_shark_method!')
+            end select
+        end if
     end if
 
     return
