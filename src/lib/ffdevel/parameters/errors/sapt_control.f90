@@ -82,7 +82,7 @@ subroutine ffdev_err_sapt_ctrl(fin)
     else
         write(DEV_OUT,225) SAPTRepErrorWeight
     end if
-    if( prmfile_get_real8_by_key(fin,'weight_disp', SAPTDisErrorWeight)) then
+    if( prmfile_get_real8_by_key(fin,'weight_dis', SAPTDisErrorWeight)) then
         write(DEV_OUT,320) SAPTDisErrorWeight
     else
         write(DEV_OUT,325) SAPTDisErrorWeight
@@ -113,8 +113,8 @@ subroutine ffdev_err_sapt_ctrl(fin)
 415  format ('SAPT error weight (weight_ind)         = ',f21.8,'         (default)')
 220  format ('SAPT error weight (weight_rep)         = ',f21.8)
 225  format ('SAPT error weight (weight_rep)         = ',f21.8,'         (default)')
-320  format ('SAPT error weight (weight_disp)        = ',f21.8)
-325  format ('SAPT error weight (weight_disp)        = ',f21.8,'         (default)')
+320  format ('SAPT error weight (weight_dis)         = ',f21.8)
+325  format ('SAPT error weight (weight_dis)         = ',f21.8,'         (default)')
 
 140  format ('Induction as repulsion (indasrep)      = ',a12)
 145  format ('Induction as repulsion (indasrep)      = ',a12,'                  (default)')

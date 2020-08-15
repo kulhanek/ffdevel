@@ -59,6 +59,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
         write(DEV_OUT,245) trim(LoadEnergy)
+        write(DEV_OUT,445) trim(LoadSAPT)
         write(DEV_OUT,255) trim(LoadProbe)
         write(DEV_OUT,265) max_probe_energy
         write(DEV_OUT,235) trim(LoadCharges)
@@ -118,6 +119,13 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,240) trim(LoadEnergy)
     else
         write(DEV_OUT,245) trim(LoadEnergy)
+    end if
+
+    ! setup sapt, which should be loaded
+    if( prmfile_get_string_by_key(fin,'load_sapt',LoadSAPT) ) then
+        write(DEV_OUT,440) trim(LoadSAPT)
+    else
+        write(DEV_OUT,445) trim(LoadSAPT)
     end if
 
     ! setup energy, which should be loaded for probes
@@ -184,6 +192,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
 240  format ('Load energy (load_energy)                = ',A12)
 245  format ('Load energy (load_energy)                = ',A12,'                (default)')
+
+440  format ('Load SAPT (load_sapt)                    = ',A12)
+445  format ('Load SAPT (load_sapt)                    = ',A12,'                (default)')
 
 250  format ('Load probe energy (load_probe)           = ',A12)
 255  format ('Load probe energy (load_probe)           = ',A12,'                (default)')

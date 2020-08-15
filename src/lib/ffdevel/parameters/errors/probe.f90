@@ -78,7 +78,7 @@ subroutine ffdev_err_probe_error(error)
 
             err = 0.0d0
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
-                case(GEO_PROBE_ENE_REP)
+                case(GEO_PROBE_ENE_HF)
                     emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene + sets(i)%geo(j)%rep_ene
                 case(GEO_PROBE_ENE_TOT)
                     emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene &
@@ -150,9 +150,9 @@ subroutine ffdev_err_probe_summary
             err = 0.0d0
             string = ''
             select case(sets(i)%geo(j)%trg_probe_ene_mode)
-                case(GEO_PROBE_ENE_REP)
+                case(GEO_PROBE_ENE_HF)
                     emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene + sets(i)%geo(j)%rep_ene
-                    string = 'REP'
+                    string = 'HF'
                 case(GEO_PROBE_ENE_TOT)
                     emm = sets(i)%geo(j)%ele_ene + sets(i)%geo(j)%pen_ene + sets(i)%geo(j)%ind_ene &
                         + sets(i)%geo(j)%rep_ene + sets(i)%geo(j)%dis_ene

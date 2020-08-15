@@ -364,6 +364,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
         ! write parameters
         call ffdev_parameters_save(pname)
 
+        ! write summlog
         call ffdev_utils_open(DEV_ERRSUMLOG,sname,'U')
         DEV_OUT = DEV_ERRSUMLOG
 

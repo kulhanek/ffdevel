@@ -567,8 +567,8 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                 if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. trim(LoadProbe)) ) then
                     geo%trg_probe_ene_generic = trim(subkey) .eq. ''
                     select case(trim(key))
-                        case('Erep')
-                            geo%trg_probe_ene_mode = GEO_PROBE_ENE_REP
+                        case('Ehf')
+                            geo%trg_probe_ene_mode = GEO_PROBE_ENE_HF
                         case('Etot')
                             geo%trg_probe_ene_mode = GEO_PROBE_ENE_TOT
                         case default
@@ -579,29 +579,40 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                     geo%trg_probe_ene = rnum
                     geo%trg_probe_ene_loaded = .true.
                 end if
-            case('SAPT0')
-                do i=1,4
-                    read(DEV_GEO,*,iostat = read_stat) key, rnum
-                    if( read_stat .ne. 0 ) then
-                        write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! SAPT0 line = ',i
-                        call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
-                    end if
-                    select case(trim(key))
-                        case('Eele')
-                            geo%trg_sapt_ele = rnum
-                        case('Eexch')
-                            geo%trg_sapt_exc = rnum
-                        case('Eind')
-                            geo%trg_sapt_ind = rnum
-                        case('Edisp')
-                            geo%trg_sapt_dis = rnum
-                        case default
-                            write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! Unrecognized item (' &
-                                                   // trim(key) // ') at line = ',i
+            case('SAPT')
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. trim(LoadSAPT)) ) then
+                    geo%trg_sapt_generic = trim(subkey) .eq. ''
+                    do i=1,4
+                        read(DEV_GEO,*,iostat = read_stat) key, rnum
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3)') 'Unable to read SAPT entry! SAPT line = ',i
                             call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
-                    end select
-                end do
-                geo%trg_sapt_loaded = .true.
+                        end if
+                        select case(trim(key))
+                            case('Eele')
+                                geo%trg_sapt_ele = rnum
+                            case('Eexch')
+                                geo%trg_sapt_exc = rnum
+                            case('Eind')
+                                geo%trg_sapt_ind = rnum
+                            case('Edisp')
+                                geo%trg_sapt_dis = rnum
+                            case default
+                                write(buffer,'(A,I3)') 'Unable to read SAPT entry! Unrecognized item (' &
+                                                       // trim(key) // ') at line = ',i
+                                call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                        end select
+                    end do
+                    geo%trg_sapt_loaded = .true.
+                else
+                    do i=1,4
+                        read(DEV_GEO,*,iostat = read_stat) key, rnum
+                        if( read_stat .ne. 0 ) then
+                            write(buffer,'(A,I3)') 'Unable to read SAPT0 entry! SAPT0 line = ',i
+                            call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+                        end if
+                    end do
+                end if
             case('GRADIENT')
                 allocate( geo%trg_grd(3,geo%natoms), stat = alloc_stat )
                 if( alloc_stat .ne. 0 ) then
@@ -1210,7 +1221,7 @@ subroutine ffdev_geometry_info_point(geo,mode)
     integer             :: mode
     ! --------------------------------------------
     character(len=40)   :: lname
-    character(len=1)    :: enef, prbf, chrgf
+    character(len=1)    :: enef, prbf, chrgf, saptf
     ! --------------------------------------------------------------------------
 
     enef = 'F'
@@ -1219,6 +1230,15 @@ subroutine ffdev_geometry_info_point(geo,mode)
             enef = 'T'
         else
             enef = 'S'
+        end if
+    end if
+
+    saptf = 'F'
+    if( geo%trg_sapt_loaded ) then
+        if( geo%trg_sapt_generic ) then
+            saptf = 'T'
+        else
+            saptf = 'S'
         end if
     end if
 
@@ -1245,31 +1265,31 @@ subroutine ffdev_geometry_info_point(geo,mode)
     select case(mode)
         case(GEO_INFO_ABSENERGY)
             write(DEV_OUT,10) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
-                              geo%trg_sapt_loaded, prbf, &
+                              saptf, prbf, &
                               geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                               geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
         case(GEO_INFO_RELENERGY)
             write(DEV_OUT,20) geo%id,adjustl(lname), geo%weight, geo%trg_energy, enef, &
-                              geo%trg_sapt_loaded, prbf, &
+                              saptf, prbf, &
                               geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                               geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
         case(GEO_INFO_PRBENERGY)
             write(DEV_OUT,20) geo%id,adjustl(lname), geo%weight, geo%trg_probe_ene, enef, &
-                              geo%trg_sapt_loaded, prbf, &
+                              saptf, prbf, &
                               geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                               geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
         case default
             write(DEV_OUT,30) geo%id,adjustl(lname), geo%weight, enef, &
-                              geo%trg_sapt_loaded, prbf, &
+                              saptf, prbf, &
                               geo%trg_grd_loaded, geo%trg_hess_loaded, geo%trg_esp_loaded, &
                               geo%sup_xdm_loaded, geo%sup_surf_loaded, chrgf, geo%sup_hirshfeld_loaded
     end select
 
 ! '# ---- -------------------- ------ - - - -'
 
-  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
-  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
-  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,L1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 

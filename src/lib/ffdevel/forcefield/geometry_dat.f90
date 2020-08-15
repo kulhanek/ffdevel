@@ -31,8 +31,8 @@ end type RESTRAINT
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter   :: GEO_PROBE_ENE_REP    = 1
-integer,parameter   :: GEO_PROBE_ENE_TOT    = 2
+integer,parameter   :: GEO_PROBE_ENE_HF     = 1  ! ele+pen+ind+exc
+integer,parameter   :: GEO_PROBE_ENE_TOT    = 2  ! ele+pen+ind+exc+disp
 
 ! ------------------------------------------------------------------------------
 
@@ -98,6 +98,7 @@ type GEOMETRY
     integer                 :: trg_probe_ene_mode
 ! target SAPT
     logical                 :: trg_sapt_loaded
+    logical                 :: trg_sapt_generic
     real(DEVDP)             :: trg_sapt_ele
     real(DEVDP)             :: trg_sapt_exc
     real(DEVDP)             :: trg_sapt_ind
@@ -132,13 +133,16 @@ real(DEVDP)     :: DIS_FC   = 1000.0     ! kcal/mol/A^2
 real(DEVDP)     :: ANG_FC   = 1000.0     ! kcal/mol/rad^2
 
 ! which energy should be loaded
-character(len=MAX_PATH) :: LoadEnergy  = ''
+character(len=MAX_PATH) :: LoadEnergy   = ''
+
+! which energy should be loaded for sapt
+character(len=MAX_PATH) :: LoadSAPT     = ''
 
 ! which energy should be loaded for probes
-character(len=MAX_PATH) :: LoadProbe   = ''
+character(len=MAX_PATH) :: LoadProbe    = ''
 
 ! which charges should be loaded
-character(len=MAX_PATH) :: LoadCharges  = 'DDEC6'
+character(len=MAX_PATH) :: LoadCharges  = ''
 
 ! ------------------------------------------------------------------------------
 
