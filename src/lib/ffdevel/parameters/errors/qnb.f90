@@ -57,20 +57,32 @@ subroutine ffdev_err_qnb_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i
-    real(DEVDP)         :: gnb,r0,eps,glj
+    real(DEVDP)         :: gnb,r0,eps,glj,tote,totw
     ! --------------------------------------------------------------------------
 
     error%qnb = 0.0d0
 
+    tote = 0.0d0
+    totw = 0.0d0
+
     do i=1,nnb_types
         gnb = NB2NBTemp*DEV_Rgas*log(nb_types(i)%QNB)
+
         ! take LJ parameters from topology
         r0 = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
         eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
+
         glj = NB2NBTemp*DEV_Rgas*log(ffdev_nb2nb_calc_QLJ(r0,eps))
 
-        error%qnb = error%qnb + nb_types(i)%num*(glj-gnb)**2
+        tote = tote + nb_types(i)%num*(glj-gnb)**2
+        totw = totw + nb_types(i)%num
     end do
+
+    if( totw .gt. 0.0d0 ) then
+        tote = sqrt(tote/totw)
+    end if
+
+    error%qnb = tote
 
 end subroutine ffdev_err_qnb_error
 
@@ -89,7 +101,7 @@ subroutine ffdev_err_qnb_summary()
 
     implicit none
     integer         :: i
-    real(DEVDP)     :: gnb,r0,eps,glj,qnb,qlj,diff,totqnb,pnl
+    real(DEVDP)     :: gnb,r0,eps,glj,qnb,qlj,diff,pnl,tote,totw
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -97,7 +109,8 @@ subroutine ffdev_err_qnb_summary()
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
-    totqnb = 0.0d0
+    tote = 0.0d0
+    totw = 0.0d0
 
     do i=1,nnb_types
         qnb = nb_types(i)%QNB
@@ -108,23 +121,28 @@ subroutine ffdev_err_qnb_summary()
         qlj = ffdev_nb2nb_calc_QLJ(r0,eps)
         glj = NB2NBTemp*DEV_Rgas*log(qlj)
         diff = glj-gnb
-        pnl = nb_types(i)%num*diff**2
-        totqnb = totqnb + pnl
+
+        tote = tote + nb_types(i)%num*diff**2
+        totw = totw + nb_types(i)%num
 
         write(DEV_OUT,30) i,types(nb_types(i)%gti)%name,types(nb_types(i)%gtj)%name,nb_types(i)%num, &
                           qnb,qlj,gnb,glj,diff,pnl
     end do
 
+    if( totw .gt. 0.0d0 ) then
+        tote = sqrt(tote/totw)
+    end if
+
     write(DEV_OUT,20)
-    write(DEV_OUT,40) totqnb
-    write(DEV_OUT,45) totqnb*QNBErrorWeight
+    write(DEV_OUT,40) tote
+    write(DEV_OUT,45) tote*QNBErrorWeight
 
  5 format('# QNB Penalties')
-10 format('# ID TypA TypB   Num        Q(NB)      Q(LJ)      G(NB)      G(LJ)    G(diff)    Penalty')
-20 format('# -- ---- ---- ------- ---------- ---------- ---------- ---------- ---------- ----------')
+10 format('# ID TypA TypB   Num        Q(NB)      Q(LJ)      G(NB)      G(LJ)    G(diff)')
+20 format('# -- ---- ---- ------- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,A4,1X,I7,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
-40 format('# Final penalty               =                                               ',F10.4)
-45 format('# Final penalty (all weights) =                                               ',F10.4)
+40 format('# Final penalty               =                                    ',F10.4)
+45 format('# Final penalty (all weights) =                                    ',F10.4)
 
 end subroutine ffdev_err_qnb_summary
 

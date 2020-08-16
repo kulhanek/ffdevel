@@ -111,7 +111,7 @@ subroutine ffdev_err_pacpnl_summary
     implicit none
     integer         :: i,j,k
     logical         :: printsum
-    real(DEVDP)     :: totpnl, pnl, diff, w, molerr, tote, totw, maxv, minv
+    real(DEVDP)     :: pnl, diff, w, molerr, tote, totw, maxv, minv
     ! --------------------------------------------------------------------------
 
     printsum = .false.
