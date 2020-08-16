@@ -52,62 +52,6 @@ end interface
 contains
 
 ! ==============================================================================
-! subroutine ffdev_nb2nb_NB2NB_mode_to_string
-! ==============================================================================
-
-character(80) function ffdev_nb2nb_NB2NB_mode_to_string(mode)
-
-    use ffdev_nb2nb_dat
-    use ffdev_utils
-
-    implicit none
-    integer  :: mode
-    ! --------------------------------------------------------------------------
-
-    select case(mode)
-        case(NB2NB_MODE_MINIMUM)
-            ffdev_nb2nb_NB2NB_mode_to_string = 'MINIMUM'
-        case(NB2NB_MODE_OVERLAY)
-            ffdev_nb2nb_NB2NB_mode_to_string = 'OVERLAY'
-        case(NB2NB_MODE_OVERLAY_REP)
-            ffdev_nb2nb_NB2NB_mode_to_string = 'OVERLAY-REPULSION'
-        case(NB2NB_MODE_OVERLAY_DISP)
-            ffdev_nb2nb_NB2NB_mode_to_string = 'OVERLAY-DISPERSION'
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_nb2nb_NB2NB_mode_to_string!')
-    end select
-
-end function ffdev_nb2nb_NB2NB_mode_to_string
-
-! ==============================================================================
-! subroutine ffdev_nb2nb_NB2NB_mode_from_string
-! ==============================================================================
-
-integer function ffdev_nb2nb_NB2NB_mode_from_string(string)
-
-    use ffdev_nb2nb_dat
-    use ffdev_utils
-
-    implicit none
-    character(*)   :: string
-    ! --------------------------------------------------------------------------
-
-    select case(trim(string))
-        case('MINIMUM')
-            ffdev_nb2nb_NB2NB_mode_from_string = NB2NB_MODE_MINIMUM
-        case('OVERLAY')
-            ffdev_nb2nb_NB2NB_mode_from_string = NB2NB_MODE_OVERLAY
-        case('OVERLAY-REPULSION')
-            ffdev_nb2nb_NB2NB_mode_from_string = NB2NB_MODE_OVERLAY_REP
-        case('OVERLAY-DISPERSION')
-            ffdev_nb2nb_NB2NB_mode_from_string = NB2NB_MODE_OVERLAY_DISP
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_nb2nb_NB2NB_mode_from_string!')
-    end select
-
-end function ffdev_nb2nb_NB2NB_mode_from_string
-
-! ==============================================================================
 ! function ffdev_nb2nb_initdirs
 ! ==============================================================================
 
@@ -132,31 +76,24 @@ end subroutine ffdev_nb2nb_initdirs
 ! function ffdev_nb2nb_initdirs_for_prog
 ! ==============================================================================
 
-subroutine ffdev_nb2nb_initdirs_for_prog(conv)
+subroutine ffdev_nb2nb_initdirs_for_prog
 
     use ffdev_nb2nb_dat
     use ffdev_utils
 
     implicit none
-    logical                 :: conv
-    ! --------------------------------------------
     integer                 :: estat
     ! --------------------------------------------------------------------------
 
     estat = 0
 
-    if( conv ) then
-        write(NBPotPathPrg,10) trim(NBPotPathCore), CurrentProgID
-    else
-        write(NBPotPathPrg,20) trim(NBPotPathCore), CurrentProgID
-    end if
+    write(NBPotPathPrg,20) trim(NBPotPathCore), CurrentProgID
 
     call execute_command_line('mkdir -p ' // trim(NBPotPathPrg), exitstat = estat )
     if( estat .ne. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPathPrg in ffdev_nb2nb_initdirs_for_prog!')
     end if
 
- 10 format(A,'/',I3.3,'-conv')
  20 format(A,'/',I3.3,'-fin')
 
 end subroutine ffdev_nb2nb_initdirs_for_prog
@@ -177,7 +114,7 @@ subroutine ffdev_nb2nb_init_nbtypes
     integer         :: i,j,idx,alloc_status,gti,gtj,k,l
     ! --------------------------------------------------------------------------
 
-    if( ApplyCombiningRules ) then
+    if( ApplyCombiningRules .and. NB2NBLikeOnly ) then
         nnb_types = ntypes
     else
         nnb_types = ntypes * (ntypes - 1) / 2 + ntypes
@@ -192,13 +129,11 @@ subroutine ffdev_nb2nb_init_nbtypes
     idx = 1
     do i=1,ntypes
         do j=i,ntypes
-            if( ApplyCombiningRules ) then
+            if( ApplyCombiningRules .and. NB2NBLikeOnly ) then
                 if( i .ne. j ) cycle
             end if
             nb_types(idx)%gti   = i
             nb_types(idx)%gtj   = j
-            nb_types(idx)%eps   = 0
-            nb_types(idx)%r0    = 0
             nb_types(idx)%SigNB = 0
             nb_types(idx)%R0NB  = 0
             nb_types(idx)%EpsNB = 0
@@ -206,6 +141,10 @@ subroutine ffdev_nb2nb_init_nbtypes
             nb_types(idx)%setid = 0
             nb_types(idx)%nbt   = 0
             nb_types(idx)%num   = 0
+            allocate(nb_types(idx)%NBPot(NB2NBNBins),stat=alloc_status)
+            if( alloc_status .ne. 0 ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for NBPot in ffdev_nb2nb_init_nbtypes!')
+            end if
             idx = idx + 1
         end do
     end do
@@ -282,19 +221,9 @@ subroutine ffdev_nb2nb_gather_nbtypes
                     ((nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti)) ) then
                     nb_types(k)%setid = i
                     nb_types(k)%nbt   = j
-                    nb_types(k)%r0  = sets(i)%top%nb_types(j)%r0
-                    nb_types(k)%eps = sets(i)%top%nb_types(j)%eps
                     exit
                 end if
             end do
-        end do
-    end do
-
-    do i=1,nsets
-        do j=1,sets(i)%top%natom_types
-            types(sets(i)%top%atom_types(j)%glbtypeid)%PA = sets(i)%top%atom_types(j)%PA
-            types(sets(i)%top%atom_types(j)%glbtypeid)%PB = sets(i)%top%atom_types(j)%PB
-            types(sets(i)%top%atom_types(j)%glbtypeid)%RC = sets(i)%top%atom_types(j)%RC
         end do
     end do
 
@@ -325,8 +254,8 @@ subroutine ffdev_nb2nb_scatter_nbtypes
             do k=1,nnb_types
                 if( ((nb_types(k)%gti .eq. gti) .and. (nb_types(k)%gtj .eq. gtj)) .or. &
                     ((nb_types(k)%gti .eq. gtj) .and. (nb_types(k)%gtj .eq. gti)) ) then
-                    sets(i)%top%nb_types(j)%r0  = nb_types(k)%r0
-                    sets(i)%top%nb_types(j)%eps = nb_types(k)%eps
+                    sets(i)%top%nb_types(j)%r0  = nb_types(k)%R0NB
+                    sets(i)%top%nb_types(j)%eps = nb_types(k)%EpsNB
                     exit
                 end if
             end do
@@ -334,126 +263,7 @@ subroutine ffdev_nb2nb_scatter_nbtypes
         end do
     end do
 
-    do i=1,nsets
-        do j=1,sets(i)%top%natom_types
-            sets(i)%top%atom_types(j)%PA = types(sets(i)%top%atom_types(j)%glbtypeid)%PA
-            sets(i)%top%atom_types(j)%PB = types(sets(i)%top%atom_types(j)%glbtypeid)%PB
-            sets(i)%top%atom_types(j)%RC = types(sets(i)%top%atom_types(j)%glbtypeid)%RC
-        end do
-    end do
-
 end subroutine ffdev_nb2nb_scatter_nbtypes
-
-! ==============================================================================
-! function ffdev_nb2nb_switch_nbmode
-! ==============================================================================
-
-subroutine ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
-
-    use ffdev_topology_dat
-    use ffdev_utils
-    use ffdev_parameters_dat
-    use ffdev_atomicdata
-
-    implicit none
-    integer         :: from_nb_mode,to_nb_mode
-    ! --------------------------------------------
-    integer         :: nbt
-    ! --------------------------------------------------------------------------
-
-    if( from_nb_mode .ne. nb_mode ) then
-        call ffdev_utils_exit(DEV_ERR,1,'from_nb_mode .ne. nb_mode in ffdev_nb2nb_switch_nbmode!')
-    end if
-
-    select case(from_nb_mode)
-    !---------------------------------------------
-        case(NB_VDW_LJ)
-            select case(to_nb_mode)
-                case(NB_VDW_LJ)
-                    ! nothing to do
-
-                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
-
-                     do nbt=1,ntypes
-                        types(nbt)%pa = 2.0
-                        types(nbt)%pb = ffdev_atomicdata_bii(nb_types(nbt)%gti)
-                        types(nbt)%rc = ffdev_atomicdata_rcii(nb_types(nbt)%gti,damp_fa,damp_fb)
-                    end do
-
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_nb2nb_switch_nbmode!')
-            end select
-    !---------------------------------------------
-        case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
-            select case(to_nb_mode)
-
-                case(NB_VDW_LJ)
-                    write(DEV_OUT,*)
-                    call ffdev_nb2nb_initdirs_for_prog(.true.)
-                    write(DEV_OUT,10) trim(NBPotPathPrg)
-                    do nbt=1,nnb_types
-                        write(DEV_OUT,20) trim(types(nb_types(nbt)%gti)%name) &
-                                          // '-' // trim(types(nb_types(nbt)%gtj)%name)
-                        call ffdev_nb2nb_NB2NB(nbt)
-                    end do
-
-                case(NB_VDW_EXP_DISPTT,NB_VDW_EXP_DISPBJ)
-                    ! nothing to do
-
-                case default
-                    call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(to) in ffdev_nb2nb_switch_nbmode!')
-            end select
-    !---------------------------------------------
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode(from) in ffdev_nb2nb_switch_nbmode!')
-    end select
-
- 10 format('> Writing NB->LJ conversion summary to: ',A)
- 20 format('  > Converting ',A)
-
-end subroutine ffdev_nb2nb_switch_nbmode
-
-! ==============================================================================
-! subroutine ffdev_nb2nb_conv_sum
-! ==============================================================================
-
-subroutine ffdev_nb2nb_conv_sum
-
-    use ffdev_nb2nb_dat
-    use ffdev_parameters_dat
-    use prmfile
-
-    implicit none
-    integer                 :: gnbt
-    ! --------------------------------------------------------------------------
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,10) trim(ffdev_nb2nb_NB2NB_mode_to_string(NB2NBMode))
-    write(DEV_OUT,12) prmfile_onoff(NB2NBWeighted)
-    if( NB2NBWeighted ) then
-        write(DEV_OUT,14) NB2NBTemp
-    end if
-
-    write(DEV_OUT,*)
-    write(DEV_OUT,20)
-    write(DEV_OUT,30)
-
-    do gnbt = 1, nnb_types
-        write(DEV_OUT,40) trim(types(nb_types(gnbt)%gti)%name), trim(types(nb_types(gnbt)%gtj)%name), &
-                          nb_types(gnbt)%eps,nb_types(gnbt)%r0,nb_types(gnbt)%errval
-    end do
-
-    write(DEV_OUT,*)
-
-10 format('# NB->LJ conversion method: ',A)
-12 format('# Boltzmann weighting:      ',A)
-14 format('# Temperature factor:       ',F10.2)
-
-20 format('# TypA TypB          Eps           R0          Err')
-30 format('# ---- ---- ------------ ------------ ------------')
-40 format(2X,A4,1X,A4,1X,F12.6,1X,F12.6,1X,F12.6)
-
-end subroutine ffdev_nb2nb_conv_sum
 
 ! ==============================================================================
 ! subroutine ffdev_nb2nb_write_all_current_pots
@@ -470,11 +280,11 @@ subroutine ffdev_nb2nb_write_all_current_pots
     implicit none
     ! --------------------------------------------
     type(TOPOLOGY),target   :: top
-    integer                 :: gnbt,nbt
-    real(DEVDP)             :: sig,r0,eps
+    integer                 :: i,gnbt,nbt
+    real(DEVDP)             :: sig,r0,eps,r
     ! --------------------------------------------------------------------------
 
-    call ffdev_nb2nb_initdirs_for_prog(.false.)
+    call ffdev_nb2nb_initdirs_for_prog
 
     write(DEV_OUT,*)
     write(DEV_OUT,10) trim(NBPotPathPrg)
@@ -507,6 +317,12 @@ subroutine ffdev_nb2nb_write_all_current_pots
         nb_types(gnbt)%EpsNB    =  eps
         nb_types(gnbt)%QNB      = ffdev_nb2nb_calc_QNB(sig)
 
+        r = sig
+        do i=1,NB2NBNBins
+            nb_types(gnbt)%NBPot(i) = ffdev_nb2nb_nbpair_vdw_ene(NB2NBNBPair,r)
+            r = r + NB2NBCutoffR / real(NB2NBNBins,DEVDP)
+        end do
+
         ! write the source potential
         call ffdev_nb2nb_write_source_pot(gnbt)
     end do
@@ -515,154 +331,6 @@ subroutine ffdev_nb2nb_write_all_current_pots
  20 format('  > ',A)
 
 end subroutine ffdev_nb2nb_write_all_current_pots
-
-! ==============================================================================
-! subroutine ffdev_nb2nb_NB2NB
-! ==============================================================================
-
-subroutine ffdev_nb2nb_NB2NB(gnbt)
-
-    use ffdev_nb2nb_dat
-    use ffdev_topology_utils
-    use ffdev_parameters_dat
-    use ffdev_targetset_dat
-    use ffdev_utils
-
-    implicit none
-    integer                 :: gnbt
-    ! --------------------------------------------
-    real(DEVDP)             :: r0,eps,sig,errval
-    integer                 :: alloc_status,istep,nbt
-    type(TOPOLOGY),target   :: top
-    ! --------------------------------------------------------------------------
-
-    top =  sets(nb_types(gnbt)%setid)%top
-    nbt =  nb_types(gnbt)%nbt
-
-    ! setup potential
-    NB2NBNBPair%ai       = 0
-    NB2NBNBPair%aj       = 0
-    NB2NBNBPair%nbt      = nbt
-    NB2NBNBPair%dt       = 0
-    NB2NBNBPair%nbtii    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%ti,top%nb_types(nbt)%ti)
-    NB2NBNBPair%nbtjj    = ffdev_topology_find_nbtype_by_tindex(top,top%nb_types(nbt)%tj,top%nb_types(nbt)%tj)
-    call ffdev_topology_update_nbpair_prms(top,NB2NBNBPair)
-
-    if( Verbosity .ge. DEV_VERBOSITY_MEDIUM ) then
-        write(DEV_OUT,10) trim(types(nb_types(gnbt)%gti)%name), trim(types(nb_types(gnbt)%gtj)%name)
-    end if
-
-    ! find r0, eps, sigma
-    call ffdev_nb2nb_find_min_for_nbpair(r0,eps)
-    call ffdev_nb2nb_find_sig_for_nbpair(sig)
-
-    NB2NBSigma              = sig
-    nb_types(gnbt)%SigNB    = sig
-
-    nb_types(gnbt)%QNB = ffdev_nb2nb_calc_QNB(sig)
-
-    ! write the source potential
-    call ffdev_nb2nb_write_source_pot(gnbt)
-
-    select case(NB2NBMode)
-        case(NB2NB_MODE_MINIMUM)
-            nb_types(gnbt)%r0  = r0
-            nb_types(gnbt)%eps = eps
-
-            call ffdev_nb2nb_write_LJ(gnbt,r0,eps)
-            return
-        case(NB2NB_MODE_OVERLAY,NB2NB_MODE_OVERLAY_REP,NB2NB_MODE_OVERLAY_DISP)
-            ! nothing to be done here
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB2NBMode in ffdev_nb2nb_NB2NB!')
-    end select
-
-    ! minimize overlay
-    ! --------------------------------------------------------------------------
-
-    NB2NBNParams = 2
-
-    ! allocate working array
-    allocate(NB2NBtmp_lb(NB2NBNParams),NB2NBtmp_ub(NB2NBNParams),NB2NBprms(NB2NBNParams),&
-             NB2NBtmp_xg(NB2NBNParams),stat=alloc_status)
-    if( alloc_status .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for SHARK optimization in ffdev_nb2nb_NB2NB!')
-    end if
-
-    select case(NB2NBMode)
-        case(NB2NB_MODE_MINIMUM)
-            call ffdev_utils_exit(DEV_ERR,1,'Illegal exec path in ffdev_nb2nb_NB2NB!')
-        case(NB2NB_MODE_OVERLAY)
-            NB2NBMinR   = NB2NBSigma
-            NB2NBMaxR   = NB2NBCutoffR
-        case(NB2NB_MODE_OVERLAY_REP)
-            NB2NBMinR   = NB2NBSigma
-            NB2NBMaxR   = r0
-        case(NB2NB_MODE_OVERLAY_DISP)
-            NB2NBMinR   = r0
-            NB2NBMaxR   = NB2NBCutoffR
-        case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported NB2NBMode in ffdev_nb2nb_NB2NB!')
-    end select
-
-    NB2NBtmp_lb(1) = sig
-    NB2NBtmp_lb(2) = 0.0d0
-
-    NB2NBtmp_ub(1) = NB2NBMaxR
-    NB2NBtmp_ub(2) = 3.0d0*eps
-
-    NB2NBprms(1) = r0
-    NB2NBprms(2) = eps
-
-    ! write(*,*) r0,eps
-
-    ! box data
-    call ffdev_nb2nb_nb2nb_box_prms(NB2NBprms,NB2NBtmp_xg)
-
-    ! init optimizer
-    call shark_create2(NB2NBNParams,NB2NBSharkInitialStep,NB2NBtmp_xg)
-
-    if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-        write(DEV_OUT,*)
-        write(DEV_OUT,20)
-        write(DEV_OUT,30)
-    end if
-
-    NB2NBErrFceEval = 0
-    do istep = 1, NB2NBIterOpt
-        call shark_dostep2(errval)
-        if( Verbosity .ge. DEV_VERBOSITY_FULL ) then
-            write(DEV_OUT,40) istep,NB2NBErrFceEval,errval
-        end if
-        nb_types(gnbt)%errval = errval
-    end do
-
-    ! get solution
-    call shark_getsol2(NB2NBtmp_xg)
-
-    ! unbox data
-    call ffdev_nb2nb_nb2nb_unbox_prms(NB2NBtmp_xg,NB2NBprms)
-
-    nb_types(gnbt)%r0  = NB2NBprms(1)
-    nb_types(gnbt)%eps = NB2NBprms(2)
-
-    call ffdev_nb2nb_write_LJ(gnbt,NB2NBprms(1),NB2NBprms(2))
-
-    ! destroy optimizer
-    call shark_destroy2()
-
-    deallocate(NB2NBtmp_lb)
-    deallocate(NB2NBtmp_ub)
-    deallocate(NB2NBprms)
-    deallocate(NB2NBtmp_xg)
-
-10 format('Converting NB2NB parameters for:',1X,2A,1X,2A)
-
-20 format('#     Step FceEvals          Error')
-30 format('# -------- -------- --------------')
-40 format(I10,1X,I8,1X,E14.6)
-
-end subroutine ffdev_nb2nb_NB2NB
 
 ! ==============================================================================
 ! function ffdev_nb2nb_qnb_eps
@@ -1047,7 +715,7 @@ real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
     real(DEVDP)     :: sig
     ! --------------------------------------------
     integer         :: i
-    real(DEVDP)     :: r,e,q,n,bi,en
+    real(DEVDP)     :: r,e,q,n,bi,en,dr
     ! --------------------------------------------------------------------------
 
     ffdev_nb2nb_calc_QNB = 0.0d0
@@ -1069,16 +737,16 @@ real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
         ffdev_nb2nb_calc_QNB = ffdev_nb2nb_calc_QNB/NB2NBCutoffR
     else
         r  = sig
-
+        dr = NB2NBCutoffR/real(NB2NBNBins,DEVDP)
         q = 0.0d0
         n = 0.0d0
-        do while ( r .le. (sig + NB2NBCutoffR) )
+        do i=1,NB2NBNBins
             e = ffdev_nb2nb_nbpair_vdw_ene(NB2NBNBPair,r)
             if( e .lt. 0.0d0 ) then
-                q = q + exp(-e/((DEV_Rgas*NB2NBTemp)))*NB2NBdr
+                q = q + exp(-e/((DEV_Rgas*NB2NBTemp)))*dr
             end if
-            r = r + NB2NBdr
-            n = n + NB2NBdr
+            r = r + dr
+            n = n + dr
         end do
 
         ffdev_nb2nb_calc_QNB = 1.0d0
@@ -1099,7 +767,7 @@ real(DEVDP) function ffdev_nb2nb_calc_QLJ(r0,eps)
     real(DEVDP)     :: r0,eps
     ! --------------------------------------------
     integer         :: i
-    real(DEVDP)     :: r,e,q,sig,n,bi,en
+    real(DEVDP)     :: r,e,q,sig,n,bi,en,dr
     ! --------------------------------------------------------------------------
 
     ffdev_nb2nb_calc_QLJ = 0.0d0
@@ -1127,15 +795,16 @@ real(DEVDP) function ffdev_nb2nb_calc_QLJ(r0,eps)
         sig  = r0 / 2.0d0**(1.0d0/6.0d0)
         r = sig
 
+        dr = NB2NBCutoffR/real(NB2NBNBins,DEVDP)
         q = 0.0d0
         n = 0.0d0
-        do while ( r .le. (sig + NB2NBCutoffR) )
+        do i=1,NB2NBNBins
             e = ffdev_nb2nb_ljene_vdw_ene(r0,eps,r)
             if( e .lt. 0.0d0 ) then
-                q = q + exp(-e/((DEV_Rgas*NB2NBTemp)))*NB2NBdr
+                q = q + exp(-e/((DEV_Rgas*NB2NBTemp)))*dr
             end if
-            r = r + NB2NBdr
-            n = n + NB2NBdr
+            r = r + dr
+            n = n + dr
         end do
 
         ffdev_nb2nb_calc_QLJ = 1.0d0
@@ -1275,58 +944,6 @@ end subroutine ffdev_nb2nb_nbpair
 ! ------------------------------------------------------------------------------
 
 end module ffdev_nb2nb
-
-!===============================================================================
-! subroutine opt_shark_fce2
-!===============================================================================
-
-subroutine opt_shark_fce2(n, x, errval)
-
-    use ffdev_nb2nb_dat
-    use ffdev_nb2nb
-
-    implicit none
-    integer         :: n
-    real(DEVDP)     :: x(n)
-    real(DEVDP)     :: errval
-    ! --------------------------------------------
-    real(DEVDP)     :: r,enb,elj,r0,eps,w,sumw
-    ! --------------------------------------------------------------------------
-
-    call ffdev_nb2nb_nb2nb_unbox_prms(x,NB2NBprms)
-
-    r  = NB2NBMinR
-    errval = 0.0d0
-
-    r0  = NB2NBprms(1)
-    eps = NB2NBprms(2)
-
-    sumw = 0.0
-    do while(r .le. NB2NBMaxR)
-        enb = ffdev_nb2nb_nbpair_vdw_ene(NB2NBNBPair,r)
-        elj = ffdev_nb2nb_ljene_vdw_ene(r0,eps,r)
-
-        if( NB2NBWeighted ) then
-            ! eps is positive, but minimum is at -eps
-            w = exp(-(elj+eps)/(DEV_Rgas*NB2NBTemp))
-        else
-            w = 1.0
-        end if
-
-        errval = errval + w*(enb-elj)**2
-        sumw = sumw + w
-        r = r + NB2NBdr
-    end do
-
-    if( sumw .gt. 0.0d0 ) then
-        errval = sqrt(errval/sumw)
-    else
-        errval = 0.0d0
-    end if
-
-    NB2NBErrFceEval = NB2NBErrFceEval + 1
-
-end subroutine opt_shark_fce2
 
 !===============================================================================
 ! subroutine opt_shark_fce3

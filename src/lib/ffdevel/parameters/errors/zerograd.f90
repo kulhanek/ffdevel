@@ -148,9 +148,9 @@ subroutine ffdev_err_zerograd_summary
     write(DEV_OUT,45)  ZeroGradErrorWeight*totgrms
 
  5 format('# Zero gradient errors')
-10 format('# SET GeoID Weight   GRMS(MM)')
-20 format('# --- ----- ------ ----------')
-30 format(I5,1X,I5,1X,F6.3,1X,F10.3)
+10 format('# SET  GeoID Weight   GRMS(MM)')
+20 format('# --- ------ ------ ----------')
+30 format(I5,1X,I6,1X,F6.3,1X,F10.3)
 40 format('# Final error (weighted per geometry) =  ',F10.3)
 45 format('# Final error (all weights)           =  ',F10.3)
 

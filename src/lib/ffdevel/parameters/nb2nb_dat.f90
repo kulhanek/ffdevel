@@ -32,29 +32,31 @@ real(DEVDP) :: lj2exp6_alpha    = 12.0d0    ! alpha for lj to exp-6 potential co
 real(DEVDP) :: ljdefpb          = 3.0d0     ! default PB for r0=0
 real(DEVDP) :: ljdefrc          = 2.6d0     ! default Rc
 
-
 ! === [NB2NB] ==================================================================
-integer,parameter       :: NB2NB_MODE_MINIMUM           = 1
-integer,parameter       :: NB2NB_MODE_OVERLAY           = 2
-integer,parameter       :: NB2NB_MODE_OVERLAY_REP       = 3
-integer,parameter       :: NB2NB_MODE_OVERLAY_DISP      = 4
-
-integer                 :: NB2NBMode                    = NB2NB_MODE_OVERLAY
-logical                 :: NB2NBWeighted                = .false.
+logical                 :: NB2NBLikeOnly                = .false.
+real(DEVDP)             :: NB2NBTemp                    = 300.0         ! temp factor for weights
 real(DEVDP)             :: NB2NBCutoffR                 = 10.0          ! max range for r
+integer                 :: NB2NBNBins                   = 1000          ! discretion of NB potential
 integer                 :: NB2NBIterGS                  = 1000          ! precision - GoldenSearch for r0, eps
 integer                 :: NB2NBIterBS                  = 1000          ! precision - bisection for sigma
-integer                 :: NB2NBIterOpt                 = 300           ! precision - overlay optimization via CMA-ES
-real(DEVDP)             :: NB2NBSharkInitialStep        = 0.2           ! CMA-ES optimizer setup
-real(DEVDP)             :: NB2NBTemp                    = 300.0         ! temp factor for weights
-real(DEVDP)             :: NB2NBdr                      = 0.001         ! overlay calculation
+
 real(DEVDP)             :: NB2NBdrPrint                 = 0.02          ! for printing
-logical                 :: NB2NBCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
+
 character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
+
 logical                 :: NB2NBIncludePen              = .true.
 logical                 :: NB2NBIncludeInd              = .true.
 
-! Gaussian quadrature
+! QNBIsoline
+logical                 :: NB2NBCalcQNBIsoline          = .true.        ! add to NB pot also QNB isoline
+
+! ------------------------------------------------------------------------------
+
+! internal setup
+real(DEVDP)             :: NB2NBSharkInitialStep        = 0.2           ! CMA-ES optimizer setup
+integer                 :: NB2NBIterOpt                 = 300           ! precision - isoline optimization via CMA-ES
+
+! Gaussian quadrature for QNB calculation
 logical                 :: NB2NBUseGaussQuad            = .true.
 integer                 :: NB2NBGaussQuadOrder          = 60
 real(DEVDP),allocatable :: NB2NBGaussQuadA(:)
@@ -74,6 +76,7 @@ logical                 :: QNBModeEps = .true.
 real(DEVDP)             :: QNBR0
 real(DEVDP)             :: QNBEps
 real(DEVDP)             :: QNBTrg
+
 ! working data
 character(len=MAX_PATH) :: NBPotPathPrg
 
@@ -83,13 +86,13 @@ type GLBNB_TYPE
     integer             :: gti,gtj              ! atom types
     integer             :: setid                ! topology from set
     integer             :: nbt                  ! nb type from topology
-    real(DEVDP)         :: eps, r0              ! LJ parameters
 ! NB parameters
     real(DEVDP)         :: SigNB                ! sigma for NB
     real(DEVDP)         :: R0NB                 ! r0 for NB
     real(DEVDP)         :: EpsNB                ! r0 for NB
     real(DEVDP)         :: QNB                  ! partition function for NB
-    integer             :: num
+    real(DEVDP),pointer :: NBPot(:)             ! NB potential from SigNB to SigNB+NB2NBCutoffR, with NB2NBdr step
+    integer             :: num                  ! number of NB pair occurrences in all topologies
     real(DEVDP)         :: errval
 end type GLBNB_TYPE
 

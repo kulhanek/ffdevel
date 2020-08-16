@@ -45,6 +45,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_zerograd
     use ffdev_err_probe
     use ffdev_err_pbpnl
+    use ffdev_err_nbpnl
     use ffdev_err_qnb
     use ffdev_err_mue
 
@@ -73,6 +74,7 @@ subroutine ffdev_errors_init_all()
 
     call ffdev_err_pbpnl_init()
     call ffdev_err_qnb_init()
+    call ffdev_err_nbpnl_init()
     call ffdev_err_mue_init()
 
 end subroutine ffdev_errors_init_all
@@ -84,20 +86,10 @@ end subroutine ffdev_errors_init_all
 subroutine ffdev_errors_error_setup_domains(opterror)
 
     use ffdev_errors_dat
-    use ffdev_err_bonds_dat
-    use ffdev_err_angles_dat
-    use ffdev_err_dihedrals_dat
-    use ffdev_err_nbdists_dat
     use ffdev_err_energy_dat
-    use ffdev_err_ihess_dat
-    use ffdev_err_impropers_dat
-    use ffdev_err_rmsd_dat
     use ffdev_err_sapt_dat
-    use ffdev_err_pacpnl_dat
     use ffdev_err_zerograd_dat
     use ffdev_err_probe_dat
-    use ffdev_err_pbpnl_dat
-    use ffdev_err_qnb_dat
 
     implicit none
     logical         :: opterror
@@ -169,6 +161,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_qnb_dat
     use ffdev_err_qnb
 
+    use ffdev_err_nbpnl_dat
+    use ffdev_err_nbpnl
+
     use ffdev_err_mue_dat
     use ffdev_err_mue
 
@@ -200,6 +195,7 @@ subroutine ffdev_errors_error_only(error)
     error%pacpnl = 0.0d0
     error%zerograd = 0.0d0
     error%pbpnl = 0.0d0
+    error%nbpnl = 0.0d0
     error%qnb = 0.0d0
     error%mue = 0.0d0
 
@@ -273,6 +269,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%qnb*QNBErrorWeight
     end if
 
+    if( EnableNBPnlError ) then
+        call ffdev_err_nbpnl_error(error)
+        error%total = error%total + error%nbpnl*NBPnlErrorWeight
+    end if
+
     if( EnableMUEError ) then
         call ffdev_err_mue_error(error)
         error%total = error%total + error%mue*MUEErrorWeight
@@ -302,6 +303,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_nbpnl_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -355,6 +357,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableQNBError ) then
         write(DEV_OUT,70,ADVANCE='NO')
     end if
+    if( EnableNBPnlError ) then
+        write(DEV_OUT,90,ADVANCE='NO')
+    end if
     if( EnableMUEError ) then
         write(DEV_OUT,80,ADVANCE='NO')
     end if
@@ -370,11 +375,12 @@ subroutine ffdev_errors_ffopt_header_I()
  22 format('    SAPT(Ind)')
  41 format('    SAPT(Rep)')
  42 format('    SAPT(Dis)')
- 43 format('  ChrgPenalty')
+ 43 format('   PACPenalty')
  44 format(' ZeroGradient')
  50 format('     ProbeEne')
  60 format('    PBPenalty')
  70 format('          QNB')
+ 90 format('    NBPenalty')
  80 format('          MUE')
 
 end subroutine ffdev_errors_ffopt_header_I
@@ -398,6 +404,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_nbpnl_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -451,6 +458,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableQNBError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableNBPnlError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
     if( EnableMUEError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
@@ -478,6 +488,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_probe_dat
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
+    use ffdev_err_nbpnl_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -485,55 +496,58 @@ subroutine ffdev_errors_ffopt_results(error)
     ! -----------------------------------------------------------------------------
 
     if( EnableEnergyError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%energy
+        write(DEV_OUT,15,ADVANCE='NO') EnergyErrorWeight*error%energy
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ele
+        write(DEV_OUT,15,ADVANCE='NO') SAPTEleErrorWeight*error%sapt_ele
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_ind
+        write(DEV_OUT,15,ADVANCE='NO') SAPTIndErrorWeight*error%sapt_ind
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_rep
+        write(DEV_OUT,15,ADVANCE='NO') SAPTRepErrorWeight*error%sapt_rep
     end if
     if( EnableSAPTError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%sapt_dis
+        write(DEV_OUT,15,ADVANCE='NO') SAPTDisErrorWeight*error%sapt_dis
     end if
     if( EnableProbeError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%probe_ene
+        write(DEV_OUT,15,ADVANCE='NO') ProbeErrorWeight*error%probe_ene
     end if
     if( EnableBondsError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%bonds
+        write(DEV_OUT,15,ADVANCE='NO') BondErrorsWeight*error%bonds
     end if
     if( EnableAnglesError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%angles
+        write(DEV_OUT,15,ADVANCE='NO') AngleErrorsWeight*error%angles
     end if
     if( EnableDihedralsError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%dihedrals
+        write(DEV_OUT,15,ADVANCE='NO') DihedralsErrorWeight*error%dihedrals
     end if
     if( EnableImpropersError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%impropers
+        write(DEV_OUT,15,ADVANCE='NO') ImpropersErrorWeight*error%impropers
     end if
     if( EnableNBDistsError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%nbdists
+        write(DEV_OUT,15,ADVANCE='NO') NBDistsErrorWeight*error%nbdists
     end if
     if( EnableRMSDError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%rmsd
+        write(DEV_OUT,15,ADVANCE='NO') RMSDErrorWeight*error%rmsd
     end if
     if( EnablePACPnlError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%pacpnl
+        write(DEV_OUT,15,ADVANCE='NO') PACPnlErrorWeight*error%pacpnl
     end if
     if( EnableZeroGradError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%zerograd
+        write(DEV_OUT,15,ADVANCE='NO') ZeroGradErrorWeight*error%zerograd
     end if
     if( EnablePBPnlError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%pbpnl
+        write(DEV_OUT,15,ADVANCE='NO') PBPnlErrorWeight*error%pbpnl
     end if
     if( EnableQNBError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%qnb
+        write(DEV_OUT,15,ADVANCE='NO') QNBErrorWeight*error%qnb
+    end if
+    if( EnableNBPnlError ) then
+        write(DEV_OUT,15,ADVANCE='NO') NBPnlErrorWeight*error%nbpnl
     end if
     if( EnableMUEError ) then
-        write(DEV_OUT,15,ADVANCE='NO') error%mue
+        write(DEV_OUT,15,ADVANCE='NO') MUEErrorWeight*error%mue
     end if
 
  15 format(1X,E12.5)
@@ -592,6 +606,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_qnb_dat
     use ffdev_err_qnb
 
+    use ffdev_err_nbpnl_dat
+    use ffdev_err_nbpnl
+
     implicit none
     integer     :: logmode
     logical     :: printme, printsum
@@ -602,7 +619,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. &
-            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary ) ) then
+            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary .or. PrintNBPnlErrorSummary ) ) then
         ! no error to report
         return
     end if
@@ -628,12 +645,20 @@ subroutine ffdev_errors_summary(logmode)
         call ffdev_err_qnb_summary
     end if
 
+    if( PrintNBPnlErrorSummary ) then
+        call ffdev_err_nbpnl_summary
+    end if
+
     if( PrintEnergyErrorSummary ) then
         call ffdev_err_energy_summary
     end if
 
     if( PrintSAPTErrorSummary ) then
         call ffdev_err_sapt_summary
+    end if
+
+    if( EnablePACPnlError ) then
+        call ffdev_err_pacpnl_summary
     end if
 
     if( PrintProbeErrorSummary ) then
@@ -705,11 +730,6 @@ subroutine ffdev_errors_summary(logmode)
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
                     printme = printme .or. printsum
                 end if
-                if( EnablePACPnlError ) then
-                    printsum = .false.
-                    call ffdev_err_pacpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
-                    printme = printme .or. printsum
-                end if
 
                 if( .not. printme ) cycle
 
@@ -731,16 +751,13 @@ subroutine ffdev_errors_summary(logmode)
                 if( PrintNBDistsErrorSummary ) then
                     call ffdev_err_nbdists_summary(sets(i)%top,sets(i)%geo(j),printsum)
                 end if
-                if( EnablePACPnlError ) then
-                    call ffdev_err_pacpnl_summary(sets(i)%top,sets(i)%geo(j),printsum)
-                end if
             end do
         end do
     end if
 
  1 format('# ==============================================================================')
  5 format('== [SET] #',I2.2,' ===================================================================')
- 6 format('== [SET] #',I2.2,' / PTS',I6.6' =======================================================')
+ 6 format('== [SET#',I5.5,']/[GEO#',I6.6,'] ====================================================')
 10 format('== # SUMMARY PER SETS #')
 20 format('== # SUMMARY PER POINTS #')
 

@@ -682,15 +682,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 ! ---------------------------
     if( exec .and. changed ) then
-
-        call ffdev_nb2nb_gather_nbtypes
-        call ffdev_nb2nb_switch_nbmode(from_nb_mode,to_nb_mode)
-        if( to_nb_mode .eq. NB_VDW_LJ ) then
-            call ffdev_nb2nb_conv_sum
-        end if
-        call ffdev_nb2nb_scatter_nbtypes
         nb_mode = to_nb_mode
-
         do i=1,nsets
             ! update NB parameters
             call ffdev_topology_update_nb_params(sets(i)%top)

@@ -44,7 +44,7 @@ subroutine ffdev_err_pacpnl_ctrl(fin)
     if( .not. prmfile_open_section(fin,'pacpnl') ) then
         write(DEV_OUT,115) prmfile_onoff(EnablePACPnlError)
         write(DEV_OUT,135) prmfile_onoff(PrintPACPnlErrorSummary)
-
+        write(DEV_OUT,145) PACPnlErrorTempFactor
         write(DEV_OUT,125) PACPnlErrorWeight
         return
     end if
@@ -60,6 +60,12 @@ subroutine ffdev_err_pacpnl_ctrl(fin)
         write(DEV_OUT,135) prmfile_onoff(PrintPACPnlErrorSummary)
     end if
 
+    if( prmfile_get_real8_by_key(fin,'temp', PACPnlErrorTempFactor)) then
+        write(DEV_OUT,140) PACPnlErrorTempFactor
+    else
+        write(DEV_OUT,145) PACPnlErrorTempFactor
+    end if
+
     if( prmfile_get_real8_by_key(fin,'weight', PACPnlErrorWeight)) then
         write(DEV_OUT,120) PACPnlErrorWeight
     else
@@ -72,6 +78,9 @@ subroutine ffdev_err_pacpnl_ctrl(fin)
 115  format ('PAC penalty (enabled)                  = ',a12,'                  (default)')
 130  format ('PAC penalty summary (summary)          = ',a12)
 135  format ('PAC penalty summary (summary)          = ',a12,'                  (default)')
+
+140  format ('Boltzmann weighting per mol (temp)     = ',f21.8)
+145  format ('Boltzmann weighting per mol (temp)     = ',f21.8,'         (default)')
 
 120  format ('PAC penalty weight (weight)            = ',f21.8)
 125  format ('PAC penalty weight (weight)            = ',f21.8,'         (default)')

@@ -171,7 +171,6 @@ subroutine ffdev_ffopt_setup_rng(seed)
     ! --------------------------------------------------------------------------
 
     call shark_set_rngseed1(seed)
-    call shark_set_rngseed2(seed)
     call shark_set_rngseed3(seed)
 
 end subroutine ffdev_ffopt_setup_rng

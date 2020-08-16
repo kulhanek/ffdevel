@@ -30,6 +30,7 @@ integer,parameter   :: CHRG_PNL_QUADRATIC = 1
 logical     :: EnablePACPnlError
 logical     :: PrintPACPnlErrorSummary
 real(DEVDP) :: PACPnlErrorWeight
+real(DEVDP) :: PACPnlErrorTempFactor        ! Boltzmann weighting
 integer     :: PACPnlFce
 
 ! ------------------------------------------------------------------------------

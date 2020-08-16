@@ -529,7 +529,7 @@ subroutine read_shark_method(fin)
         write(DEV_OUT,65) Shark_NRuns
     end if
 
-    if( Shark_NRuns .gt. 0 ) then
+    if( Shark_NRuns .gt. 1 ) then
         if( prmfile_get_string_by_key(fin,'guess', string)) then
             select case(trim(string))
                 case('input')

@@ -90,6 +90,9 @@ SET(FFDEVEL_SRC
         parameters/errors/mue_dat.f90
         parameters/errors/mue.f90
         parameters/errors/mue_control.f90
+        parameters/errors/nbpnl_dat.f90
+        parameters/errors/nbpnl.f90
+        parameters/errors/nbpnl_control.f90
 
         parameters/buried_dat.f90
         parameters/buried.f90
@@ -119,7 +122,6 @@ SET(FFDEVEL_SRC
         optimizers/ffopt_control.f90
         optimizers/ffopt.f90
         optimizers/shark-ml1.cpp
-        optimizers/shark-ml2.cpp
         optimizers/shark-ml3.cpp
 
         dftd3/sizes.f90

@@ -51,6 +51,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: probe_ene
     real(DEVDP)         :: pbpnl
     real(DEVDP)         :: qnb
+    real(DEVDP)         :: nbpnl
     real(DEVDP)         :: mue
 end type FFERROR_TYPE
 

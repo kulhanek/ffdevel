@@ -38,6 +38,7 @@ subroutine ffdev_err_pacpnl_init
     PrintPACPnlErrorSummary  = .false.
     PACPnlErrorWeight        = 1.0
     PACPnlFce                = CHRG_PNL_QUADRATIC
+    PACPnlErrorTempFactor    = 0.0
 
 end subroutine ffdev_err_pacpnl_init
 
@@ -58,25 +59,41 @@ subroutine ffdev_err_pacpnl_error(error)
     type(FFERROR_TYPE)  :: error
     ! --------------------------------------------
     integer             :: i,j,k
-    real(DEVDP)         :: diff
+    real(DEVDP)         :: diff,totw,tote,w,molerr
     ! --------------------------------------------------------------------------
 
     error%pacpnl = 0.0d0
 
+    tote = 0.0d0
+    totw = 0.0d0
+
     do i=1,nsets
         do j=1,sets(i)%ngeos
             if( .not. sets(i)%geo(j)%sup_chrg_loaded ) cycle
+            w = 1.0d0
+            if( (PACPnlErrorTempFactor .gt. 0) .and. sets(i)%geo(j)%trg_ene_loaded ) then
+                w = exp(-sets(i)%geo(j)%trg_energy/(PACPnlErrorTempFactor*DEV_Rgas))
+            end if
+            molerr = 0.0
             do k=1,sets(i)%top%natoms
                 select case(PACPnlFce)
                     case(CHRG_PNL_QUADRATIC)
-                        diff = sets(i)%geo(j)%sup_chrg(k) - sets(i)%top%atoms(k)%charge
-                        error%pacpnl = error%pacpnl + diff**2
+                        diff = sets(i)%top%atoms(k)%charge - sets(i)%geo(j)%sup_chrg(k)
+                        molerr = molerr + diff**2
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pacpnl_error!')
                 end select
             end do
+            if( sets(i)%top%natoms .gt. 0 ) then
+                tote = tote + w*sqrt(molerr/real(sets(i)%top%natoms,DEVDP))
+                totw = totw + w
+            end if
         end do
     end do
+
+    if( totw .gt. 0.0d0 ) then
+        error%pacpnl = tote/totw
+    end if
 
 end subroutine ffdev_err_pacpnl_error
 
@@ -84,7 +101,7 @@ end subroutine ffdev_err_pacpnl_error
 ! subroutine ffdev_err_pacpnl_summary
 ! ==============================================================================
 
-subroutine ffdev_err_pacpnl_summary(top,geo,printsum)
+subroutine ffdev_err_pacpnl_summary
 
     use ffdev_targetset_dat
     use ffdev_geometry
@@ -92,54 +109,127 @@ subroutine ffdev_err_pacpnl_summary(top,geo,printsum)
     use ffdev_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
+    integer         :: i,j,k
     logical         :: printsum
-    ! --------------------------------------------
-    integer         :: k
-    real(DEVDP)     :: totpnl, pnl, diff
+    real(DEVDP)     :: totpnl, pnl, diff, w, molerr, tote, totw, maxv, minv
     ! --------------------------------------------------------------------------
 
-    if( .not. geo%sup_chrg_loaded) return
-
-    if( printsum .eqv. .false. ) then
-        printsum = .true.
-        return
-    end if
+    printsum = .false.
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( .not. sets(i)%geo(j)%sup_chrg_loaded ) cycle
+            printsum = .true.
+            exit
+        end do
+    end do
 
     write(DEV_OUT,*)
     write(DEV_OUT,5)
-    write(DEV_OUT,10)
-    write(DEV_OUT,20)
+    write(DEV_OUT,110)
+    write(DEV_OUT,120)
 
-    totpnl = 0.0d0
+    tote = 0.0d0
+    totw = 0.0d0
 
-    do k=1,top%natoms
-        diff = geo%sup_chrg(k) - top%atoms(k)%charge
-        pnl = 0.0
+    do i=1,nsets
+        printsum = .false.
+        do j=1,sets(i)%ngeos
+            if( .not. sets(i)%geo(j)%sup_chrg_loaded ) cycle
+            w = 1.0d0
+            if( (PACPnlErrorTempFactor .gt. 0) .and. sets(i)%geo(j)%trg_ene_loaded ) then
+                w = exp(-sets(i)%geo(j)%trg_energy/(PACPnlErrorTempFactor*DEV_Rgas))
+            end if
+            molerr = 0.0
+            do k=1,sets(i)%top%natoms
+                select case(PACPnlFce)
+                    case(CHRG_PNL_QUADRATIC)
+                        diff = sets(i)%top%atoms(k)%charge - sets(i)%geo(j)%sup_chrg(k)
+                        molerr = molerr + diff**2
+                    case default
+                        call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pacpnl_error!')
+                end select
+            end do
 
-        select case(PACPnlFce)
-            case(CHRG_PNL_QUADRATIC)
-                pnl = PACPnlErrorWeight*diff**2
-                totpnl = totpnl + pnl
-            case default
-                call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_err_pacpnl_error!')
-        end select
+            pnl = 0.0d0
+            if( sets(i)%top%natoms .gt. 0 ) then
+                pnl = sqrt(molerr/real(sets(i)%top%natoms,DEVDP))
+                tote = tote + w*pnl
+                totw = totw + w
+                printsum = .true.
+                write(DEV_OUT,130) i,j,w,pnl
+            end if
 
-        write(DEV_OUT,30) k, top%atoms(k)%name, top%atom_types(top%atoms(k)%typeid)%name, top%atoms(k)%symmclass, &
-                top%atoms(k)%charge, geo%sup_chrg(k), diff, pnl
+        end do
+        if( printsum ) write(DEV_OUT,120)
     end do
 
-    write(DEV_OUT,20)
-    write(DEV_OUT,40) totpnl
-    write(DEV_OUT,45) totpnl*PACPnlErrorWeight
+    if( totw .gt. 0.0d0 ) then
+        tote = tote/totw
+    end if
 
- 5 format('# Partial Atomic Charge Penalties')
-10 format('# Atom  Name  Type SymmClass  TopCharge  GeoCharge Difference    Penalty')
-20 format('# ---- ------ ---- --------- ---------- ---------- ---------- ----------')
-30 format(I6,1X,A6,1X,A4,1X,I9,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
-40 format('# Final penalty               =                               ',F10.3)
-45 format('# Final penalty (all weights) =                               ',F10.3)
+    write(DEV_OUT,140) tote
+    write(DEV_OUT,150) tote*PACPnlErrorWeight
+
+! ----------------------------
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,6)
+
+    do i=1,nsets
+        do j=1,sets(i)%ngeos
+            if( .not. sets(i)%geo(j)%sup_chrg_loaded ) cycle
+
+            write(DEV_OUT,*)
+            write(DEV_OUT,7) i,j
+
+            write(DEV_OUT,10)
+            write(DEV_OUT,20)
+
+            maxv = 0.0d0
+            minv = 0.0d0
+
+            do k=1,sets(i)%top%natoms
+                diff = sets(i)%geo(j)%sup_chrg(k) - sets(i)%top%atoms(k)%charge
+
+                write(DEV_OUT,30) k, sets(i)%top%atoms(k)%name, sets(i)%top%atom_types(sets(i)%top%atoms(k)%typeid)%name, &
+                        sets(i)%top%atoms(k)%symmclass, &
+                        sets(i)%top%atoms(k)%charge, sets(i)%geo(j)%sup_chrg(k), diff
+
+                if( k .eq. 1 ) then
+                    maxv = diff
+                    minv = diff
+                end if
+                if( maxv .lt. diff ) then
+                    maxv = diff
+                end if
+                if( minv .gt. diff ) then
+                    minv = diff
+                end if
+            end do
+
+            write(DEV_OUT,20)
+            write(DEV_OUT,60) minv
+            write(DEV_OUT,70) maxv
+
+        end do
+    end do
+
+  5 format('# Partial Atomic Charge Penalties')
+  6 format('# Partial Atomic Charge Summaries Per molecules')
+
+110 format('# SET  GeoID Weight    Penalty')
+120 format('# --- ------ ------ ----------')
+130 format(I5,1X,I6,1X,F6.4,1X,F10.4)
+140 format('# Final error (weighted per geometry) =  ',F10.3)
+150 format('# Final error (all weights)           =  ',F10.3)
+
+  7 format('== [SET ',I5.5,']/[GEO ',I6.6,'] ====================================================')
+
+ 10 format('# Atom  Name  Type SymmClass  TopCharge  GeoCharge Difference')
+ 20 format('# ---- ------ ---- --------- ---------- ---------- ----------')
+ 30 format(I6,1X,A6,1X,A4,1X,I9,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4,1X,F10.4)
+ 60 format('# Min difference       =                           ',F10.4)
+ 70 format('# Max difference       =                           ',F10.4)
 
 end subroutine ffdev_err_pacpnl_summary
 

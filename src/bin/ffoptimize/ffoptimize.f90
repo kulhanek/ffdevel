@@ -220,7 +220,6 @@ program ffdev_optimize_program
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
             call execute_ffmanip(fin,i,.false.)
-            i = i + 1
         end if
 
         if( string .eq. 'MMOPT' ) then
@@ -315,7 +314,6 @@ program ffdev_optimize_program
             write(string,110) i
             call ffdev_utils_heading(DEV_OUT,trim(string), ':')
             call execute_ffmanip(fin,i,.true.)
-            i = i + 1
         end if
 
     ! mmopt ---------------------------------------
@@ -465,7 +463,13 @@ subroutine execute_ffopt(grpin,pid,exec)
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
 
         ! write NB potentials
+        if( PACSource .eq. PAC_SOURCE_TOPOLOGY ) then
+            call ffdev_parameters_update_charge_stat
+            call ffdev_parameters_print_charge_stat
+        end if
+        call ffdev_nb2nb_gather_nbtypes
         call ffdev_nb2nb_write_all_current_pots
+        call ffdev_nb2nb_scatter_nbtypes
     end if
 
     return
@@ -510,9 +514,14 @@ subroutine execute_ffeval(grpin,pid,exec)
         ! print geoopt stat
         call ffdev_geoopt_print_stat_counters
 
-        ! write NB potentials
+        ! NB2NB data
+        if( PACSource .eq. PAC_SOURCE_TOPOLOGY ) then
+            call ffdev_parameters_update_charge_stat
+            call ffdev_parameters_print_charge_stat
+        end if
+        call ffdev_nb2nb_gather_nbtypes
         call ffdev_nb2nb_write_all_current_pots
-
+        call ffdev_nb2nb_scatter_nbtypes
     end if
 
     return
@@ -670,7 +679,7 @@ subroutine execute_check_gradient(grpin,exec)
         end do
     end do
 
-  1 format('=== [SET ',I3.3,']/[GEO ',I3.3,'] ========================================================')
+  1 format('=== [SET ',I5.5,']/[GEO ',I6.6,'] ===================================================')
 
 end subroutine execute_check_gradient
 

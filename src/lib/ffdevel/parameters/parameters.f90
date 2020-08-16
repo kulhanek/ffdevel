@@ -1173,6 +1173,9 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                 REALM_GLB_SCEE,REALM_GLB_SCNB)
                 find_parameter_by_ids = i
                 return
+           case(REALM_VDW_B0)
+                find_parameter_by_ids = i
+                return
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter_by_ids!')
         end select
@@ -1918,10 +1921,6 @@ subroutine ffdev_parameters_save_amber(name)
     end do
 
     if( enable_section ) then
-
-        ! collect data
-        call ffdev_nb2nb_gather_nbtypes
-
         ! reset data
         do i=1,ntypes
             types(i)%r0 = 0.0d0
@@ -1930,8 +1929,8 @@ subroutine ffdev_parameters_save_amber(name)
         ! populate data
         do i=1,nnb_types
             if( nb_types(i)%gti .eq. nb_types(i)%gtj ) then
-                types(i)%r0  = nb_types(i)%r0
-                types(i)%eps = nb_types(i)%eps
+                types(i)%r0  = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
+                types(i)%eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
             end if
         end do
         ! write data
