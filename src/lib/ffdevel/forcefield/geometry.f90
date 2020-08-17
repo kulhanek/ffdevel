@@ -591,11 +591,11 @@ subroutine ffdev_geometry_load_1point(geo,stream)
                         select case(trim(key))
                             case('Eele')
                                 geo%trg_sapt_ele = rnum
-                            case('Eexch')
+                            case('Eexc')
                                 geo%trg_sapt_exc = rnum
                             case('Eind')
                                 geo%trg_sapt_ind = rnum
-                            case('Edisp')
+                            case('Edis')
                                 geo%trg_sapt_dis = rnum
                             case default
                                 write(buffer,'(A,I3)') 'Unable to read SAPT entry! Unrecognized item (' &
