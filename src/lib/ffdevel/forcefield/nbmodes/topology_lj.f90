@@ -44,8 +44,8 @@ character(80) function ffdev_topology_LJ_comb_rules_to_string(comb_rules)
             ffdev_topology_LJ_comb_rules_to_string = 'WH (Waldman-Hagler)'
         case(LJ_COMB_RULE_KG)
             ffdev_topology_LJ_comb_rules_to_string = 'KG (Kong)'
-        case(LJ_COMB_RULE_FB)
-            ffdev_topology_LJ_comb_rules_to_string = 'FB (Fender-Halsey-Berthelot)'
+        case(LJ_COMB_RULE_FH)
+            ffdev_topology_LJ_comb_rules_to_string = 'FH (Fender-Halsey)'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_LJ_comb_rules_to_string!')
@@ -72,8 +72,8 @@ integer function ffdev_topology_LJ_comb_rules_from_string(string)
             ffdev_topology_LJ_comb_rules_from_string = LJ_COMB_RULE_WH
         case('KG')
             ffdev_topology_LJ_comb_rules_from_string = LJ_COMB_RULE_KG
-        case('FB')
-            ffdev_topology_LJ_comb_rules_from_string = LJ_COMB_RULE_FB
+        case('FH')
+            ffdev_topology_LJ_comb_rules_from_string = LJ_COMB_RULE_FH
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_LJ_comb_rules_from_string!')
@@ -126,7 +126,7 @@ subroutine ffdev_topology_LJ_update_nb_params(top)
                 l = ( ( (epsii*r0ii**12)**(1.0d0/13.0d0) + (epsjj*r0jj**12)**(1.0d0/13.0d0) )*0.5d0 )**13
                 r0ij = (l/k)**(1.0d0/6.0d0)
                 epsij = k / (r0ij**6)
-            case(LJ_COMB_RULE_FB)
+            case(LJ_COMB_RULE_FH)
                 r0ij = (r0ii+r0jj)*0.5d0
                 epsij = 2.0d0*epsii*epsjj/(epsii+epsjj)
             case default
