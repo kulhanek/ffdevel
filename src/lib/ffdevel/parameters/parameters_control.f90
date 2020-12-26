@@ -1681,6 +1681,8 @@ subroutine change_dih_realm_type(realmid,enable,options,nchanged)
         end if
     end do
 
+    return
+
 100 call ffdev_utils_exit(DEV_ERR,1,'Inproper definition of ''type'' option!')
 
 end subroutine change_dih_realm_type
@@ -1725,6 +1727,8 @@ subroutine change_dih_realm_Z_for_vdw_b0(realmid,enable,options,nchanged)
             end if
         end if
     end do
+
+    return
 
 100 call ffdev_utils_exit(DEV_ERR,1,'Inproper definition of ''Z'' option for vdw_b0!')
 
