@@ -1713,7 +1713,7 @@ subroutine change_dih_realm_Z_for_vdw_b0(realmid,enable,options,nchanged)
     read(options,*,end=100,err=100) k1, k2, k3, pn
 
     ! we need at least one type
-    if( pn .gt. 0 ) then
+    if( pn .le. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Z must be larger than zero for ''Z'' option for vdw_b0!')
     end if
 
