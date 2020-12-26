@@ -1267,7 +1267,7 @@ logical function is_realm_nooption(options)
     character(PRMFILE_MAX_PATH) :: k3
     ! --------------------------------------------------------------------------
 
-    is_realm_nooption = .false.
+    is_realm_nooption = .true.
     read(options,*,end=100,err=100) k1,k2,k3
 
     is_realm_nooption = len(k3) .eq. 0
