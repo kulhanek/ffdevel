@@ -66,6 +66,8 @@ subroutine ffdev_err_qnb_error(error)
     totw = 0.0d0
 
     do i=1,nnb_types
+        if( nb_types(i)%setid .le. 0 ) cycle
+
         gnb = NB2NBTemp*DEV_Rgas*log(nb_types(i)%QNB)
 
         ! take LJ parameters from topology
@@ -113,6 +115,8 @@ subroutine ffdev_err_qnb_summary()
     totw = 0.0d0
 
     do i=1,nnb_types
+        if( nb_types(i)%setid .le. 0 ) cycle
+
         qnb = nb_types(i)%QNB
         gnb = NB2NBTemp*DEV_Rgas*log(qnb)
         ! take LJ parameters from topology

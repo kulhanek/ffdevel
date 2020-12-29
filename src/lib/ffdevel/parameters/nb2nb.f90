@@ -292,8 +292,15 @@ subroutine ffdev_nb2nb_write_all_current_pots
     call ffdev_nb2nb_gather_nbtypes
 
     do gnbt = 1, nnb_types
-        write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
+
+        if( nb_types(gnbt)%setid .gt. 0 ) then
+            write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
                           // '-' // trim(types(nb_types(gnbt)%gtj)%name)
+        else
+            write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
+                          // '-' // trim(types(nb_types(gnbt)%gtj)%name) // ' - not present in the training set'
+            cycle
+        end if
 
         top =  sets(nb_types(gnbt)%setid)%top
         nbt =  nb_types(gnbt)%nbt

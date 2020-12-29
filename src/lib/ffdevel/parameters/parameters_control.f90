@@ -795,7 +795,9 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
             case(REALM_VDW_EPS,REALM_VDW_R0)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
             case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
-                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+                read(line,*,err=100,end=100) realm, sti, lvalue
+            case(REALM_VDW_B0)
+                read(line,*,err=100,end=100) realm, pn, lvalue
             case(REALM_ELE_SQ)
                 read(line,*,err=100,end=100) realm, lvalue
             case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB,REALM_DAMP_PE)
@@ -1253,6 +1255,28 @@ end function is_realm_option
 
 ! ------------------------------------------------------------------------------
 
+logical function is_realm_nooption(options)
+
+    use prmfile
+
+    implicit none
+    character(*)    :: options
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: k1
+    character(PRMFILE_MAX_PATH) :: k2
+    character(PRMFILE_MAX_PATH) :: k3
+    ! --------------------------------------------------------------------------
+
+    is_realm_nooption = .true.
+    read(options,*,end=100,err=100) k1,k2,k3
+
+    is_realm_nooption = len(k3) .eq. 0
+100 return
+
+end function is_realm_nooption
+
+! ------------------------------------------------------------------------------
+
 subroutine change_realms(realm,enable,options,nchanged)
 
     use ffdev_parameters
@@ -1266,12 +1290,8 @@ subroutine change_realms(realm,enable,options,nchanged)
     character(*)    :: options
     integer         :: nchanged
     ! --------------------------------------------
-    integer         :: realmid, i, pid, ti, tj, tk, tl
-    logical         :: lenable
-    character(80)   :: k1, k2, k3, sti, stj, stk, stl
+    integer         :: realmid, i
     ! --------------------------------------------------------------------------
-
-    pid = 0
 
     if( realm .ne. 'all' ) then
         realmid = ffdev_parameters_get_realmid(realm)
@@ -1279,184 +1299,152 @@ subroutine change_realms(realm,enable,options,nchanged)
         realmid = -1
     end if
 
-    ! process extra options
-    select case(realmid)
-        case(REALM_BOND_K)
-            if( is_realm_option(options,'zero') ) then
-                do i=1,nparams
-                    if( params(i)%realm .eq. realmid ) then
-                        if( params(i)%value .eq. 0.0d0 ) then
-                            if( params(i)%identity .eq. 0 ) then
-                                params(i)%enabled = enable
-                            end if
-                        end if
-                    end if
-                end do
-            else
-                do i=1,nparams
-                    if( params(i)%realm .eq. realmid ) then
-                        if( params(i)%identity .eq. 0 ) then
-                            params(i)%enabled = enable
-                        end if
-                    end if
-                end do
-            end if
-            return
-
-        case(REALM_ANGLE_K)
-            if( is_realm_option(options,'zero') ) then
-                do i=1,nparams
-                    if( params(i)%realm .eq. realmid ) then
-                        if( params(i)%value .eq. 0.0d0 ) then
-                            if( params(i)%identity .eq. 0 ) then
-                                params(i)%enabled = enable
-                            end if
-                        end if
-                    end if
-                end do
-            else
-                do i=1,nparams
-                    if( params(i)%realm .eq. realmid ) then
-                        if( params(i)%identity .eq. 0 ) then
-                            params(i)%enabled = enable
-                        end if
-                    end if
-                end do
-            end if
-            return
-
-        case(REALM_DIH_V)
-            if( is_realm_option(options,'bond') ) then
-                call change_dih_realm_bond(realmid,enable,options)
-                return
-            end if
-
-            if( is_realm_option(options,'pn') ) then
-                call change_dih_realm_pn(realmid,enable,options)
-                return
-            end if
-
-        case(REALM_DIH_C)
-            if( is_realm_option(options,'bond') ) then
-                call change_dih_realm_bond(realmid,enable,options)
-                return
-            end if
-
-            if( is_realm_option(options,'pn') ) then
-                call change_dih_realm_pn(realmid,enable,options)
-                return
-            end if
-
-        case(REALM_DIH_G)
-            if( is_realm_option(options,'bond') ) then
-                call change_dih_realm_bond(realmid,enable,options)
-                return
-            end if
-
-            if( is_realm_option(options,'pn') ) then
-                call change_dih_realm_pn(realmid,enable,options)
-                return
-            end if
-
-        case default
-            ! do nothing
-    end select
-
-    ti = 0
-    tj = 0
-    tk = 0
-    tl = 0
-
-    ! this option is generic  - filter by types
-    if( is_realm_option(options,'types') ) then
-        ! read types
-        sti = ''
-        stj = ''
-        stk = ''
-        stl = ''
-        read(options,*,end=555,err=555) k1, k2, k3, sti, stj, stk, stl
-555     do i=1,ntypes
-            if( types(i)%name .eq. sti ) ti = i
-            if( types(i)%name .eq. stj ) tj = i
-            if( types(i)%name .eq. stk ) tk = i
-            if( types(i)%name .eq. stl ) tl = i
-        end do
-        ! we need at least two types
-        if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) return
-    end if
-
-    do i=1,nparams
-
-        ! these two options have application only for NB
-        ! but for simplicity we will consider them for all parameters
-        if( is_realm_option(options,'like') ) then
-            if( params(i)%ti .le. 0 ) cycle
-            if( params(i)%tj .le. 0 ) cycle
-            if( params(i)%ti .ne. params(i)%tj ) cycle
-        end if
-
-        if( is_realm_option(options,'unlike') ) then
-            if( params(i)%ti .le. 0 ) cycle
-            if( params(i)%tj .le. 0 ) cycle
-            if( params(i)%ti .eq. params(i)%tj ) cycle
-        end if
-
-        if( is_realm_option(options,'buried') ) then
-            if( params(i)%ti .le. 0 ) cycle
-            if( params(i)%tj .le. 0 ) cycle
-            ! 0.0 - buried
-            ! 1.0 - exposed
-            if( (buried_atoms(params(i)%ti)%weight .gt. 0.5d0) .or. (buried_atoms(params(i)%tj)%weight .gt. 0.5d0) ) cycle
-        end if
-
-        if( is_realm_option(options,'types') ) then
-            if( (tk .eq. 0) .and. (tl .eq. 0) ) then
-                ! bond or NB
-                if( (params(i)%tk .ne. 0) .or. (params(i)%tl .ne. 0) ) cycle   ! incompatible parameter
-                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) ) cycle   ! incompatible parameter
-                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) ) .or. &
-                            ( (ti .eq. params(i)%tj) .and. (tj .eq. params(i)%ti) ) ) ) cycle
-            else if ( tl .eq. 0 ) then
-                ! angle
-                if( params(i)%tl .ne. 0 ) continue   ! incompatible parameter
-                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. (params(i)%tk .eq. 0)  ) cycle   ! incompatible parameter
-                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%tk) ) .or. &
-                            ( (ti .eq. params(i)%tk) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%ti) ) ) ) cycle
-            else
-                ! dihedral
-                if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. &
-                    (params(i)%tk .eq. 0) .or. (params(i)%tl .eq. 0)  ) cycle   ! incompatible parameter
-                if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. &
-                              (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%tl) ) .or. &
-                            ( (ti .eq. params(i)%tl) .and. (tj .eq. params(i)%tj) .and. &
-                              (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%ti) ) ) ) cycle
-
-            end if
-        end if
-
-        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) .or. (pid .eq. i) ) then
-            if( params(i)%identity .eq. 0 ) then
-                lenable = enable
-                if( realmid .eq. REALM_DIH_C ) then
-                    if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
-                        ! do nothing
-                    else
-                        params(i)%enabled = lenable
-                        nchanged = nchanged + 1
-                    end if
-                else
-                    params(i)%enabled = lenable
+    ! no options
+    if( is_realm_nooption(options) ) then
+        do i=1,nparams
+            if( params(i)%realm .eq. realmid ) then
+                if( params(i)%identity .eq. 0 ) then
+                    params(i)%enabled = enable
                     nchanged = nchanged + 1
                 end if
             end if
-        end if
-    end do
+        end do
+        return
+    end if
+
+    ! supported options
+    if( is_realm_option(options,'zero') ) then
+        select case(realmid)
+            case(REALM_BOND_K,REALM_ANGLE_K)
+                do i=1,nparams
+                    if( params(i)%realm .eq. realmid ) then
+                        if( params(i)%value .eq. 0.0d0 ) then
+                            if( params(i)%identity .eq. 0 ) then
+                                params(i)%enabled = enable
+                                nchanged = nchanged + 1
+                            end if
+                        end if
+                    end if
+                end do
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''zero'' can be used only with bond_k and angle_k')
+        end select
+! ------------------
+    else if( is_realm_option(options,'bond') ) then
+        select case(realmid)
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
+                call change_dih_realm_bond(realmid,enable,options,nchanged)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''bond'' can be used only with dih_v, dih_c, and dih_g')
+        end select
+! ------------------
+    else if( is_realm_option(options,'pn') ) then
+        select case(realmid)
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_VDW_B0)
+                call change_dih_realm_pn(realmid,enable,options,nchanged)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''pn'' can be used only with dih_v, dih_c, dih_g, wdv_b0')
+        end select
+! ------------------
+    else if( is_realm_option(options,'like') ) then
+        select case(realmid)
+            case(REALM_VDW_EPS,REALM_VDW_R0)
+                do i=1,nparams
+                    if( params(i)%realm .eq. realmid ) then
+                        if( params(i)%ti .eq. params(i)%tj ) then
+                            if( params(i)%identity .eq. 0 ) then
+                                params(i)%enabled = enable
+                                nchanged = nchanged + 1
+                            end if
+                        end if
+                    end if
+                end do
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''like'' can be used only with vdw_eps and wdv_r0')
+        end select
+! ------------------
+    else if( is_realm_option(options,'unlike') ) then
+        select case(realmid)
+            case(REALM_VDW_EPS,REALM_VDW_R0)
+                do i=1,nparams
+                    if( params(i)%realm .eq. realmid ) then
+                        if( params(i)%ti .ne. params(i)%tj ) then
+                            if( params(i)%identity .eq. 0 ) then
+                                params(i)%enabled = enable
+                                nchanged = nchanged + 1
+                            end if
+                        end if
+                    end if
+                end do
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''unlike'' can be used only with vdw_eps and wdv_r0')
+        end select
+! ------------------
+    else if( is_realm_option(options,'buried') ) then
+        select case(realmid)
+            case(REALM_VDW_EPS,REALM_VDW_R0)
+                do i=1,nparams
+                    if( params(i)%realm .eq. realmid ) then
+                        ! 0.0 - buried, 1.0 - exposed
+                        if( (buried_atoms(params(i)%ti)%weight .gt. 0.5d0) .and. &
+                            (buried_atoms(params(i)%tj)%weight .gt. 0.5d0) ) cycle
+                        if( params(i)%identity .eq. 0 ) then
+                            params(i)%enabled = enable
+                            nchanged = nchanged + 1
+                        end if
+                    end if
+                end do
+            case(REALM_VDW_PA,REALM_VDW_PB)
+                do i=1,nparams
+                    if( params(i)%realm .eq. realmid ) then
+                        ! 0.0 - buried, 1.0 - exposed
+                        if( buried_atoms(params(i)%ti)%weight .gt. 0.5d0 ) cycle
+                        if( params(i)%identity .eq. 0 ) then
+                            params(i)%enabled = enable
+                            nchanged = nchanged + 1
+                        end if
+                    end if
+                end do
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''buried'' can be used only with vdw_eps, wdv_r0, vdw_pa and vdw_pb')
+        end select
+! ------------------
+    else if( is_realm_option(options,'type') ) then
+        select case(realmid)
+            case(REALM_VDW_PA,REALM_VDW_PB)
+                call change_dih_realm_type(realmid,enable,options,nchanged)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''type'' can be used only with vdw_pa and vdw_pb')
+        end select
+! ------------------
+    else if( is_realm_option(options,'Z') ) then
+        select case(realmid)
+            case(REALM_VDW_B0)
+                call change_dih_realm_Z_for_vdw_b0(realmid,enable,options,nchanged)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''Z'' can be used only with vdw_b0')
+        end select
+! ------------------
+    else if( is_realm_option(options,'types') ) then
+        select case(realmid)
+            case(REALM_BOND_D0,REALM_BOND_K)
+            case(REALM_ANGLE_A0,REALM_ANGLE_K)
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
+            case(REALM_VDW_EPS,REALM_VDW_R0)
+                call change_dih_realm_types(realmid,enable,options,nchanged)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Option "pn" can be used only with bond_d0, bond_k,' &
+                                                // 'angle_a0, angle_k, dih_v, dih_c, dih_g, vdw_eps, and vdw_r0')
+        end select
+    else
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported option ('//trim(options)//')')
+    end if
 
 end subroutine change_realms
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_dih_realm_bond(realmid,enable,options)
+subroutine change_dih_realm_bond(realmid,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1468,6 +1456,7 @@ subroutine change_dih_realm_bond(realmid,enable,options)
     integer         :: realmid
     logical         :: enable
     character(*)    :: options
+    integer         :: nchanged
     ! --------------------------------------------
     integer                     :: sid, aj, ak, i, j
     character(PRMFILE_MAX_PATH) :: k1
@@ -1509,6 +1498,7 @@ subroutine change_dih_realm_bond(realmid,enable,options)
 
             if( params(i)%identity .eq. 0 ) then
                 params(i)%enabled = enable
+                nchanged = nchanged + 1
             end if
         end if
     end do
@@ -1521,7 +1511,7 @@ end subroutine change_dih_realm_bond
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_dih_realm_pn(realmid,enable,options)
+subroutine change_dih_realm_pn(realmid,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1533,6 +1523,7 @@ subroutine change_dih_realm_pn(realmid,enable,options)
     integer         :: realmid
     logical         :: enable
     character(*)    :: options
+    integer         :: nchanged
     ! --------------------------------------------
     integer                     :: pn, i
     character(PRMFILE_MAX_PATH) :: k1
@@ -1548,6 +1539,7 @@ subroutine change_dih_realm_pn(realmid,enable,options)
 
             if( params(i)%identity .eq. 0 ) then
                 params(i)%enabled = enable
+                nchanged = nchanged + 1
             end if
         end if
     end do
@@ -1557,6 +1549,190 @@ subroutine change_dih_realm_pn(realmid,enable,options)
 100 call ffdev_utils_exit(DEV_ERR,1,'Illegal option ''pn'' for dih_* realm!')
 
 end subroutine change_dih_realm_pn
+
+! ------------------------------------------------------------------------------
+
+subroutine change_dih_realm_types(realmid,enable,options,nchanged)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_utils
+    use ffdev_targetset_dat
+    use prmfile
+
+    implicit none
+    integer         :: realmid
+    logical         :: enable
+    character(*)    :: options
+    integer         :: nchanged
+    ! --------------------------------------------
+    integer         :: i, ti, tj, tk, tl
+    character(80)   :: k1, k2, k3, sti, stj, stk, stl
+    ! --------------------------------------------------------------------------
+
+    ! read types
+    sti = ''
+    stj = ''
+    stk = ''
+    stl = ''
+    ti = 0
+    tj = 0
+    tk = 0
+    tl = 0
+
+    read(options,*,end=555,err=555) k1, k2, k3, sti, stj, stk, stl
+555     do i=1,ntypes
+        if( types(i)%name .eq. sti ) ti = i
+        if( types(i)%name .eq. stj ) tj = i
+        if( types(i)%name .eq. stk ) tk = i
+        if( types(i)%name .eq. stl ) tl = i
+    end do
+
+    ! we need at least two types
+    if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'At least two types are required to be defined for ''types'' option!')
+    end if
+
+    do i=1,nparams
+
+        if( (tk .eq. 0) .and. (tl .eq. 0) ) then
+            ! bond or NB
+            if( (params(i)%tk .ne. 0) .or. (params(i)%tl .ne. 0) ) cycle   ! incompatible parameter
+            if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) ) cycle   ! incompatible parameter
+            if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) ) .or. &
+                        ( (ti .eq. params(i)%tj) .and. (tj .eq. params(i)%ti) ) ) ) cycle
+        else if ( tl .eq. 0 ) then
+            ! angle
+            if( params(i)%tl .ne. 0 ) continue   ! incompatible parameter
+            if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. (params(i)%tk .eq. 0)  ) cycle   ! incompatible parameter
+            if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%tk) ) .or. &
+                        ( (ti .eq. params(i)%tk) .and. (tj .eq. params(i)%tj) .and. (tk .eq. params(i)%ti) ) ) ) cycle
+        else
+            ! dihedral
+            if( (params(i)%ti .eq. 0) .or. (params(i)%tj .eq. 0) .or. &
+                (params(i)%tk .eq. 0) .or. (params(i)%tl .eq. 0)  ) cycle   ! incompatible parameter
+            if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. &
+                          (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%tl) ) .or. &
+                        ( (ti .eq. params(i)%tl) .and. (tj .eq. params(i)%tj) .and. &
+                          (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%ti) ) ) ) cycle
+
+        end if
+
+        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
+            if( params(i)%identity .eq. 0 ) then
+                if( realmid .eq. REALM_DIH_C ) then
+                    if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
+                        ! do nothing
+                    else
+                        params(i)%enabled = enable
+                        nchanged = nchanged + 1
+                    end if
+                else
+                    params(i)%enabled = enable
+                    nchanged = nchanged + 1
+                end if
+            end if
+        end if
+    end do
+
+end subroutine change_dih_realm_types
+
+! ------------------------------------------------------------------------------
+
+subroutine change_dih_realm_type(realmid,enable,options,nchanged)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_utils
+    use ffdev_targetset_dat
+    use prmfile
+
+    implicit none
+    integer         :: realmid
+    logical         :: enable
+    character(*)    :: options
+    integer         :: nchanged
+    ! --------------------------------------------
+    integer         :: i, ti
+    character(80)   :: k1, k2, k3, sti
+    ! --------------------------------------------------------------------------
+
+    ! read types
+    sti = ''
+    ti = 0
+
+    read(options,*,end=100,err=100) k1, k2, k3, sti
+    do i=1,ntypes
+        if( types(i)%name .eq. sti ) ti = i
+    end do
+
+    ! we need at least one type
+    if( ti .eq. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'One type is required to be defined for ''type'' option!')
+    end if
+
+    do i=1,nparams
+        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
+            if( params(i)%ti .ne. ti ) cycle
+            if( params(i)%identity .eq. 0 ) then
+                params(i)%enabled = enable
+                nchanged = nchanged + 1
+            end if
+        end if
+    end do
+
+    return
+
+100 call ffdev_utils_exit(DEV_ERR,1,'Inproper definition of ''type'' option!')
+
+end subroutine change_dih_realm_type
+
+! ------------------------------------------------------------------------------
+
+subroutine change_dih_realm_Z_for_vdw_b0(realmid,enable,options,nchanged)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_utils
+    use ffdev_targetset_dat
+    use prmfile
+
+    implicit none
+    integer         :: realmid
+    logical         :: enable
+    character(*)    :: options
+    integer         :: nchanged
+    ! --------------------------------------------
+    integer         :: i, pn
+    character(80)   :: k1, k2, k3
+    ! --------------------------------------------------------------------------
+
+    ! read types
+    pn = 0
+
+    read(options,*,end=100,err=100) k1, k2, k3, pn
+
+    ! we need at least one type
+    if( pn .le. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Z must be larger than zero for ''Z'' option for vdw_b0!')
+    end if
+
+    do i=1,nparams
+        if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
+            if( params(i)%pn .eq. pn ) then
+                if( params(i)%identity .eq. 0 ) then
+                    params(i)%enabled = enable
+                    nchanged = nchanged + 1
+                end if
+            end if
+        end if
+    end do
+
+    return
+
+100 call ffdev_utils_exit(DEV_ERR,1,'Inproper definition of ''Z'' option for vdw_b0!')
+
+end subroutine change_dih_realm_Z_for_vdw_b0
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_bond_r0

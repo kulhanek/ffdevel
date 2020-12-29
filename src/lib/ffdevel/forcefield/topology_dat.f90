@@ -240,7 +240,7 @@ integer,parameter   :: IND_MODE_K2EXC       = 802       ! proportional to exchan
 integer,parameter   :: LJ_COMB_RULE_LB      = 11        ! LB (Lorentz-Berthelot)
 integer,parameter   :: LJ_COMB_RULE_WH      = 12        ! WH (Waldman-Hagler)
 integer,parameter   :: LJ_COMB_RULE_KG      = 13        ! KG (Kong)
-integer,parameter   :: LJ_COMB_RULE_FB      = 14        ! FB (Fender-Halsey-Berthelot)
+integer,parameter   :: LJ_COMB_RULE_FH      = 14        ! FB (Fender-Halsey)
 
 ! ####################################################################
 

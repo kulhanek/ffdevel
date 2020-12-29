@@ -1929,8 +1929,8 @@ subroutine ffdev_parameters_save_amber(name)
         ! populate data
         do i=1,nnb_types
             if( nb_types(i)%gti .eq. nb_types(i)%gtj ) then
-                types(i)%r0  = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
-                types(i)%eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
+                types(nb_types(i)%gti)%r0  = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%r0
+                types(nb_types(i)%gti)%eps = sets(nb_types(i)%setid)%top%nb_types(nb_types(i)%nbt)%eps
             end if
         end do
         ! write data
