@@ -293,10 +293,7 @@ subroutine ffdev_nb2nb_write_all_current_pots
 
     do gnbt = 1, nnb_types
 
-        if( nb_types(gnbt)%setid .gt. 0 ) then
-            write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
-                          // '-' // trim(types(nb_types(gnbt)%gtj)%name)
-        else
+        if( nb_types(gnbt)%setid .eq. 0 ) then
             write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
                           // '-' // trim(types(nb_types(gnbt)%gtj)%name) // ' - not present in the training set'
             cycle
@@ -304,6 +301,15 @@ subroutine ffdev_nb2nb_write_all_current_pots
 
         top =  sets(nb_types(gnbt)%setid)%top
         nbt =  nb_types(gnbt)%nbt
+
+        if( (top%probe_size .gt. 0)  .and. lj_exp6_probe .and. (nb_mode  .eq. NB_VDW_LJ) ) then
+            write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
+                          // '-' // trim(types(nb_types(gnbt)%gtj)%name) // ' - disabled - in the Exp6 probing mode'
+            cycle
+        else
+            write(DEV_OUT,20) trim(types(nb_types(gnbt)%gti)%name) &
+                          // '-' // trim(types(nb_types(gnbt)%gtj)%name)
+        end if
 
         ! setup potential
         NB2NBNBPair%ai       = 0
@@ -735,6 +741,7 @@ real(DEVDP) function ffdev_nb2nb_calc_QNB(sig)
             e = ffdev_nb2nb_nbpair_vdw_ene(NB2NBNBPair,r)
             q = 0.0d0
             if( e .lt. 0.0d0 ) then
+                ! write(*,*) NB2NBNBPair,r,e
                 q = exp(-e/((DEV_Rgas*NB2NBTemp)))
             end if
             ffdev_nb2nb_calc_QNB = ffdev_nb2nb_calc_QNB + q*NB2NBGaussQuadW(i)

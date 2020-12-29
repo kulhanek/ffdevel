@@ -78,13 +78,13 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
-        maxnparams = maxnparams + 2*sets(i)%top%nnb_types       ! eps, r0
+        maxnparams = maxnparams + 3*sets(i)%top%nnb_types       ! eps, r0,alpha
         maxnparams = maxnparams + 3*sets(i)%top%natom_types     ! pa, pb, rc
         maxnparams = maxnparams + 2*ntypes                      ! zeff, vdw_b0
     end do
-    maxnparams = maxnparams + 13 ! ele_qscale, glb_iscee
+    maxnparams = maxnparams + 14 ! ele_qscale, glb_iscee
                                  ! glb_iscnb, disp_s6, disp_s8, disp_s10, damp_fa, damp_fb, damp_pb, damp_tb, damp_pe
-                                 ! k_exc, k_ind
+                                 ! k_exc, k_ind, alpha0
     write(DEV_OUT,*)
     write(DEV_OUT,20) maxnparams
 
@@ -140,7 +140,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_vdw_pa, use_vdw_pb, use_vdw_rc
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb, use_damp_pe
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_zeff
-    logical     :: use_vdw_b0
+    logical     :: use_vdw_b0, use_vdw_alpha, use_vdw_alpha0
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -440,6 +440,8 @@ subroutine ffdev_parameters_reinit()
 
     use_vdw_eps     = .false.
     use_vdw_r0      = .false.
+    use_vdw_alpha   = .false.
+    use_vdw_alpha0  = .false.
 
     use_vdw_pa      = .false.
     use_vdw_pb      = .false.
@@ -469,6 +471,20 @@ subroutine ffdev_parameters_reinit()
         case(NB_VDW_LJ)
             use_vdw_eps     = .true.
             use_vdw_r0      = .true.
+
+            if( lj_exp6_probe ) then
+                select case(lj_alpha_mode)
+                    case(LJ_ALPHA_CONST)
+                        use_vdw_alpha0  = .true.
+                     case(LJ_ALPHA_FREEOPT)
+                        use_vdw_alpha   = .true.
+                    case default
+                        call ffdev_utils_exit(DEV_ERR,1,'lj_alpha_mode not implemented in ffdev_parameters_reinit!')
+                end select
+
+                use_damp_fa     = .true.
+                use_damp_fb     = .true.
+            end if
 
         case(NB_VDW_EXP_DISPBJ,NB_VDW_EXP_DISPTT)
 
@@ -577,6 +593,32 @@ subroutine ffdev_parameters_reinit()
                     nparams = nparams + 1
                     params(nparams)%value = sets(i)%top%nb_types(j)%r0
                     params(nparams)%realm = REALM_VDW_R0
+                    params(nparams)%enabled = .false.
+                    params(nparams)%identity = 0
+                    params(nparams)%pn    = 0
+                    params(nparams)%ids(:) = 0
+                    params(nparams)%ids(i) = j
+                    params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%ti)
+                    params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%nb_types(j)%tj)
+                    params(nparams)%tk   = 0
+                    params(nparams)%tl   = 0
+                else
+                    params(parmid)%ids(i) = j ! parameter already exists, update link
+                end if
+            end do
+        end do
+    end if
+
+    if( use_vdw_alpha ) then
+        ! vdw alpha realm =====================
+        do i=1,nsets
+            do j=1,sets(i)%top%nnb_types
+                if( .not. ffdev_parameters_is_nbtype_used(sets(i)%top,j) ) cycle
+                parmid = find_parameter(sets(i)%top,j,0,REALM_VDW_ALPHA)
+                if( parmid .eq. 0 ) then    ! new parameter
+                    nparams = nparams + 1
+                    params(nparams)%value = sets(i)%top%nb_types(j)%alpha
+                    params(nparams)%realm = REALM_VDW_ALPHA
                     params(nparams)%enabled = .false.
                     params(nparams)%identity = 0
                     params(nparams)%pn    = 0
@@ -874,6 +916,21 @@ subroutine ffdev_parameters_reinit()
         params(nparams)%tl   = 0
     end if
 
+    if( use_vdw_alpha0 ) then
+        ! =====================
+        nparams = nparams + 1
+        params(nparams)%value = exp6_alpha
+        params(nparams)%realm = REALM_VDW_ALPHA0
+        params(nparams)%enabled = .false.
+        params(nparams)%identity = 0
+        params(nparams)%pn    = 0
+        params(nparams)%ids(:) = 0
+        params(nparams)%ti   = 0
+        params(nparams)%tj   = 0
+        params(nparams)%tk   = 0
+        params(nparams)%tl   = 0
+    end if
+
     nparams = nparams + 1
     if( glb_iscee .ne. 0.0d0 ) then
         params(nparams)%value = 1.0d0 / glb_iscee
@@ -1049,7 +1106,7 @@ integer function find_parameter(top,id,pn,realm)
             tj = get_common_type_id(top,top%improper_types(id)%tj)
             tk = get_common_type_id(top,top%improper_types(id)%tk)
             tl = get_common_type_id(top,top%improper_types(id)%tl)
-        case(REALM_VDW_EPS,REALM_VDW_R0)
+        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
             ti = get_common_type_id(top,top%nb_types(id)%ti)
             tj = get_common_type_id(top,top%nb_types(id)%tj)
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
@@ -1088,7 +1145,7 @@ integer function find_parameter(top,id,pn,realm)
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_VDW_EPS,REALM_VDW_R0)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -1156,7 +1213,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-            case(REALM_VDW_EPS,REALM_VDW_R0)
+            case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter_by_ids = i
@@ -1173,7 +1230,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                 REALM_GLB_SCEE,REALM_GLB_SCNB)
                 find_parameter_by_ids = i
                 return
-           case(REALM_VDW_B0)
+           case(REALM_VDW_B0,REALM_VDW_ALPHA0)
                 find_parameter_by_ids = i
                 return
             case default
@@ -2163,6 +2220,10 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_VDW_EPS
         case('vdw_r0')
             ffdev_parameters_get_realmid = REALM_VDW_R0
+        case('vdw_alpha')
+            ffdev_parameters_get_realmid = REALM_VDW_ALPHA
+        case('vdw_alpha0')
+            ffdev_parameters_get_realmid = REALM_VDW_ALPHA0
 
         case('vdw_pa')
             ffdev_parameters_get_realmid = REALM_VDW_PA
@@ -2259,6 +2320,10 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
             ffdev_parameters_get_realm_name = 'vdw_eps'
         case(REALM_VDW_R0)
             ffdev_parameters_get_realm_name = 'vdw_r0'
+        case(REALM_VDW_ALPHA)
+            ffdev_parameters_get_realm_name = 'vdw_alpha'
+        case(REALM_VDW_ALPHA0)
+            ffdev_parameters_get_realm_name = 'vdw_alpha0'
 
         case(REALM_VDW_PA)
             ffdev_parameters_get_realm_name = 'vdw_pa'
@@ -2339,7 +2404,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_IMPR_G)
             ffdev_parameters_get_realm_scaling = DEV_R2D
-        case(REALM_VDW_EPS,REALM_VDW_R0)
+        case(REALM_VDW_EPS,REALM_VDW_R0,REALM_VDW_ALPHA,REALM_VDW_ALPHA0)
             ! nothing to do
         case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_B0,REALM_VDW_RC)
             ! nothing to do
@@ -2741,6 +2806,16 @@ subroutine ffdev_parameters_to_tops
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
                     end if
                 end do
+            case(REALM_VDW_ALPHA)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%nb_types(params(i)%ids(j))%alpha = params(i)%value
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                    end if
+                end do
+            case(REALM_VDW_ALPHA0)
+                exp6_alpha = params(i)%value
+
             case(REALM_VDW_PA)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
@@ -2929,6 +3004,10 @@ subroutine ffdev_params_reset_ranges
      MaxVdwEps    =       2.0d0
      MinVdwR0     =       0.5d0
      MaxVdwR0     =       6.0d0
+     MinVdwAlpha  =      10.0d0
+     MaxVdwAlpha  =      18.0d0
+     MinVdwAlpha0 =      10.0d0
+     MaxVdwAlpha0 =      18.0d0
 
 ! non-bonded ABC
      MinVdwPA     =      0.0d0
@@ -3126,6 +3205,10 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinVdwEps
         case(REALM_VDW_R0)
             ffdev_params_get_lower_bound = MinVdwR0
+        case(REALM_VDW_ALPHA)
+            ffdev_params_get_lower_bound = MinVdwAlpha
+        case(REALM_VDW_ALPHA0)
+            ffdev_params_get_lower_bound = MinVdwAlpha0
 
         case(REALM_VDW_PA)
             ffdev_params_get_lower_bound = MinVdwPA
@@ -3222,6 +3305,10 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
             MinVdwEps = mvalue
         case(REALM_VDW_R0)
             MinVdwR0 = mvalue
+        case(REALM_VDW_ALPHA)
+            MinVdwAlpha = mvalue
+        case(REALM_VDW_ALPHA0)
+            MinVdwAlpha0 = mvalue
 
         case(REALM_VDW_PA)
             MinVdwPA = mvalue
@@ -3369,6 +3456,10 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxVdwEps
         case(REALM_VDW_R0)
             ffdev_params_get_upper_bound = MaxVdwR0
+        case(REALM_VDW_ALPHA)
+            ffdev_params_get_upper_bound = MaxVdwAlpha
+       case(REALM_VDW_ALPHA0)
+            ffdev_params_get_upper_bound = MaxVdwAlpha0
 
         case(REALM_VDW_PA)
             ffdev_params_get_upper_bound = MaxVdwPA
@@ -3463,6 +3554,10 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxVdwEps = mvalue
         case(REALM_VDW_R0)
             MaxVdwR0 = mvalue
+        case(REALM_VDW_ALPHA)
+            MaxVdwAlpha = mvalue
+        case(REALM_VDW_ALPHA0)
+            MaxVdwAlpha0 = mvalue
 
         case(REALM_VDW_PA)
             MaxVdwPA = mvalue

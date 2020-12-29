@@ -141,6 +141,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,265) max_probe_energy
     end if
 
+    if( prmfile_get_real8_by_key(fin,'exp6_alpha0', exp6_alpha)) then
+        write(DEV_OUT,460) exp6_alpha
+    else
+        write(DEV_OUT,465) exp6_alpha
+    end if
+
     ! setup charges, which should be loaded
     if( prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
         write(DEV_OUT,230) trim(LoadCharges)
@@ -207,6 +213,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
 330  format ('PAC source for stat (pac_source)         = ',A12)
 335  format ('PAC source for stat (pac_source)         = ',A12,'                (default)')
+
+460  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3)
+465  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3,'                (default)')
 
 end subroutine ffdev_parameters_ctrl_control
 
@@ -522,7 +531,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
     integer                     :: from_nb_mode,to_nb_mode,lpen_mode,lind_mode
     integer                     :: lcomb_rules,lexp_mode
     integer                     :: lexp_pa_mode
-    logical                     :: lpen_enabled,lind_enabled
+    logical                     :: lpen_enabled,lind_enabled,llj_exp6_probe
+    integer                     :: llj_alpha_mode
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -545,9 +555,13 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             write(DEV_OUT,45) ffdev_topology_BJ_dampbj_mode_to_string(dampbj_mode)
         end if
 
-        if( ApplyCombiningRules ) then
-            if( nb_mode .eq. NB_VDW_LJ ) then
+        if( nb_mode .eq. NB_VDW_LJ ) then
+            if( ApplyCombiningRules ) then
                 write(DEV_OUT,35) ffdev_topology_LJ_comb_rules_to_string(lj_comb_rules)
+            end if
+            write(DEV_OUT,230) prmfile_onoff(lj_exp6_probe)
+            if( lj_exp6_probe ) then
+                write(DEV_OUT,245) ffdev_topology_LJ_alpha_mode_to_string(lj_alpha_mode)
             end if
         end if
         return
@@ -665,8 +679,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 
 ! ---------------------------
-    if( ApplyCombiningRules ) then
-        if( to_nb_mode .eq. NB_VDW_LJ ) then
+    if( to_nb_mode .eq. NB_VDW_LJ ) then
+        if( ApplyCombiningRules ) then
             if( prmfile_get_string_by_key(fin,'lj_comb_rules', string)) then
                 lcomb_rules = ffdev_topology_LJ_comb_rules_from_string(string)
                 write(DEV_OUT,30) ffdev_topology_LJ_comb_rules_to_string(lcomb_rules)
@@ -676,6 +690,27 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
                 end if
             else
                 write(DEV_OUT,35) ffdev_topology_LJ_comb_rules_to_string(lj_comb_rules)
+            end if
+        end if
+        if( prmfile_get_logical_by_key(fin,'lj_exp6_probe', llj_exp6_probe)) then
+            write(DEV_OUT,230) prmfile_onoff(llj_exp6_probe)
+            if( exec ) then
+                lj_exp6_probe = llj_exp6_probe
+                changed = .true.
+            end if
+        else
+            write(DEV_OUT,235) prmfile_onoff(lj_exp6_probe)
+        end if
+        if(  lj_exp6_probe .or. llj_exp6_probe ) then
+            if( prmfile_get_string_by_key(fin,'lj_alpha_mode', string)) then
+                llj_alpha_mode = ffdev_topology_LJ_alpha_mode_from_string(string)
+                write(DEV_OUT,240) ffdev_topology_LJ_alpha_mode_to_string(llj_alpha_mode)
+                if( exec ) then
+                    lj_alpha_mode = llj_alpha_mode
+                    changed = .true.
+                end if
+            else
+                write(DEV_OUT,245) ffdev_topology_LJ_alpha_mode_to_string(lj_alpha_mode)
             end if
         end if
     end if
@@ -705,7 +740,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
  20 format('NB mode (nb_mode)                    = ',A)
  25 format('NB mode (nb_mode)                    = ',A31,' (current)')
 
- 30 format('LJ comb. rules (lj_comb_rules)       = ',A)
+ 30 format('LJ combining rules (lj_comb_rules)   = ',A)
  35 format('LJ combining rules (lj_comb_rules)   = ',A31,' (current)')
 
  40 format('BJ damping mode (dampbj_mode)        = ',A)
@@ -731,6 +766,12 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 220 format('Induction energy mode (ind_mode)     = ',A)
 225 format('Induction energy mode (ind_mode)     = ',A31,' (current)')
+
+230 format('LJ Exp6 probe (lj_exp6_probe)         = ',A)
+235 format('LJ Exp6 probe (lj_exp6_probe)         = ',A31,' (current)')
+
+240 format('LJ Exp6 alpha mode (lj_alpha_mode)    = ',A)
+245 format('LJ Exp6 alpha mode (lj_alpha_mode)    = ',A31,' (current)')
 
  15 format('=== SET ',I2.2)
 

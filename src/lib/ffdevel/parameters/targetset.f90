@@ -48,7 +48,6 @@ subroutine ffdev_targetset_init_pts
             ! allocate hessian as needed
             if( sets(i)%geo(j)%trg_hess_loaded ) then
                 call ffdev_hessian_allocate(sets(i)%geo(j))
-                call ffdev_gradient_allocate(sets(i)%geo(j))
             end if
         end do
     end do
@@ -288,6 +287,8 @@ subroutine ffdev_targetset_reinit_nbparams()
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%eps
                 case(REALM_VDW_R0)
                     params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%r0
+                case(REALM_VDW_ALPHA)
+                    params(i)%value = sets(j)%top%nb_types(params(i)%ids(j))%alpha
                 case(REALM_VDW_PA)
                     params(i)%value = sets(j)%top%atom_types(params(i)%ids(j))%PA
                 case(REALM_VDW_PB)

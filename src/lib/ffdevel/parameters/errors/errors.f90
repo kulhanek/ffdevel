@@ -46,6 +46,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_probe
     use ffdev_err_pbpnl
     use ffdev_err_nbpnl
+    use ffdev_err_nbr0
     use ffdev_err_qnb
     use ffdev_err_mue
 
@@ -75,6 +76,7 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_pbpnl_init()
     call ffdev_err_qnb_init()
     call ffdev_err_nbpnl_init()
+    call ffdev_err_nbr0_init()
     call ffdev_err_mue_init()
 
 end subroutine ffdev_errors_init_all
@@ -164,6 +166,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_nbpnl_dat
     use ffdev_err_nbpnl
 
+    use ffdev_err_nbr0_dat
+    use ffdev_err_nbr0
+
     use ffdev_err_mue_dat
     use ffdev_err_mue
 
@@ -196,6 +201,7 @@ subroutine ffdev_errors_error_only(error)
     error%zerograd = 0.0d0
     error%pbpnl = 0.0d0
     error%nbpnl = 0.0d0
+    error%nbr0 = 0.0d0
     error%qnb = 0.0d0
     error%mue = 0.0d0
 
@@ -274,6 +280,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%nbpnl*NBPnlErrorWeight
     end if
 
+    if( EnableNBR0Error ) then
+        call ffdev_err_nbr0_error(error)
+        error%total = error%total + error%nbr0*NBR0ErrorWeight
+    end if
+
     if( EnableMUEError ) then
         call ffdev_err_mue_error(error)
         error%total = error%total + error%mue*MUEErrorWeight
@@ -304,6 +315,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_nbpnl_dat
+    use ffdev_err_nbr0_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -360,6 +372,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableNBPnlError ) then
         write(DEV_OUT,90,ADVANCE='NO')
     end if
+    if( EnableNBR0Error ) then
+        write(DEV_OUT,95,ADVANCE='NO')
+    end if
     if( EnableMUEError ) then
         write(DEV_OUT,80,ADVANCE='NO')
     end if
@@ -381,6 +396,7 @@ subroutine ffdev_errors_ffopt_header_I()
  60 format('    PBPenalty')
  70 format('          QNB')
  90 format('    NBPenalty')
+ 95 format('    R0Penalty')
  80 format('          MUE')
 
 end subroutine ffdev_errors_ffopt_header_I
@@ -405,6 +421,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_nbpnl_dat
+    use ffdev_err_nbr0_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -461,6 +478,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableNBPnlError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableNBR0Error ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
     if( EnableMUEError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
@@ -489,6 +509,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_pbpnl_dat
     use ffdev_err_qnb_dat
     use ffdev_err_nbpnl_dat
+    use ffdev_err_nbr0_dat
     use ffdev_err_mue_dat
 
     implicit none
@@ -545,6 +566,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableNBPnlError ) then
         write(DEV_OUT,15,ADVANCE='NO') NBPnlErrorWeight*error%nbpnl
+    end if
+    if( EnableNBR0Error ) then
+        write(DEV_OUT,15,ADVANCE='NO') NBR0ErrorWeight*error%nbr0
     end if
     if( EnableMUEError ) then
         write(DEV_OUT,15,ADVANCE='NO') MUEErrorWeight*error%mue
@@ -603,6 +627,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_pbpnl_dat
     use ffdev_err_pbpnl
 
+    use ffdev_err_nbr0_dat
+    use ffdev_err_nbr0
+
     use ffdev_err_qnb_dat
     use ffdev_err_qnb
 
@@ -619,7 +646,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. &
-            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary .or. PrintNBPnlErrorSummary ) ) then
+            PrintPBPnlErrorSummary .or. PrintQNBErrorSummary .or. PrintNBPnlErrorSummary .or. PrintNBR0ErrorSummary  ) ) then
         ! no error to report
         return
     end if
@@ -647,6 +674,10 @@ subroutine ffdev_errors_summary(logmode)
 
     if( PrintNBPnlErrorSummary ) then
         call ffdev_err_nbpnl_summary
+    end if
+
+    if( PrintNBR0ErrorSummary ) then
+        call ffdev_err_nbr0_summary
     end if
 
     if( PrintEnergyErrorSummary ) then

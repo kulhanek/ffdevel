@@ -87,6 +87,73 @@ subroutine ffdev_energy_nb_LJ(top,geo)
 end subroutine ffdev_energy_nb_LJ
 
 !===============================================================================
+! subroutine ffdev_energy_nb_LJ_EXP6_probe
+!===============================================================================
+
+subroutine ffdev_energy_nb_LJ_EXP6_probe(top,geo)
+
+    use ffdev_topology_dat
+    use ffdev_geometry_dat
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: ip,i,j,dt
+    real(DEVDP)     :: inv_scee,inv_scnb,aLJa,aLJb,bLJa,crgij,dxa1,dxa2,dxa3
+    real(DEVDP)     :: r,r2,r2a,ra,r6a,V_aa,V_bb,V_ee
+    ! --------------------------------------------------------------------------
+
+    geo%ele14_ene = 0.0d0
+    geo%rep14_ene = 0.0d0
+    geo%dis14_ene = 0.0d0
+
+    geo%ele_ene = 0.0d0
+    geo%rep_ene = 0.0d0
+    geo%dis_ene = 0.0d0
+
+    do ip=1,top%nb_size
+        i     = top%nb_list(ip)%ai
+        j     = top%nb_list(ip)%aj
+        dt    = top%nb_list(ip)%dt
+
+        crgij = top%nb_list(ip)%q1 * top%nb_list(ip)%q2
+        aLJa  = top%nb_list(ip)%pa1
+        aLJb  = top%nb_list(ip)%pb1
+        bLJa  = top%nb_list(ip)%c6
+
+        dxa1  = geo%crd(1,i) - geo%crd(1,j)
+        dxa2  = geo%crd(2,i) - geo%crd(2,j)
+        dxa3  = geo%crd(3,i) - geo%crd(3,j)
+
+        r2    = dxa1*dxa1 + dxa2*dxa2 + dxa3*dxa3
+        r     = sqrt(r2)
+        ra    = 1.0d0/r
+        r2a   = 1.0d0/r2
+
+        r6a   = r2a*r2a*r2a
+
+        V_ee  =   crgij*ra
+        V_aa  =   aLJa*exp(-aLJb*r)
+        V_bb  = - bLJa*r6a
+
+        if( dt .eq. 0 ) then
+            geo%ele_ene = geo%ele_ene + V_ee
+            geo%rep_ene = geo%rep_ene + V_aa
+            geo%dis_ene = geo%dis_ene + V_bb
+        else
+            inv_scee = glb_iscee * top%dihedral_types(dt)%inv_scee
+            inv_scnb = glb_iscnb * top%dihedral_types(dt)%inv_scnb
+
+            geo%ele14_ene = geo%ele14_ene + inv_scee * V_ee
+            geo%rep14_ene = geo%rep14_ene + inv_scnb * V_aa
+            geo%dis14_ene = geo%dis14_ene + inv_scnb * V_bb
+        end if
+    end do
+
+end subroutine ffdev_energy_nb_LJ_EXP6_probe
+
+!===============================================================================
 ! subroutine ffdev_energy_sapt_LJ
 !===============================================================================
 

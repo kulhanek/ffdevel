@@ -33,6 +33,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     use ffdev_geometry
     use ffdev_utils
     use ffdev_timers
+    use ffdev_energy
 
     use ffdev_nbmode_LJ
     use ffdev_nbmode_EXP_DISPBJ
@@ -73,13 +74,17 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     ! reset gradient
     geo%grd(:,:) = 0.0d0
 
-    ! bonded terms
-    if( top%probe_size .eq. 0 ) then
-        call ffdev_gradient_bonds(top,geo)
-        call ffdev_gradient_angles(top,geo)
-        call ffdev_gradient_dihedrals(top,geo)
-        call ffdev_gradient_impropers(top,geo)
+    if( top%probe_size .gt. 0 ) then
+        ! in probed structures calculate only energy
+        call ffdev_energy_all(top,geo,skipnb)
+        return
     end if
+
+    ! bonded terms
+    call ffdev_gradient_bonds(top,geo)
+    call ffdev_gradient_angles(top,geo)
+    call ffdev_gradient_dihedrals(top,geo)
+    call ffdev_gradient_impropers(top,geo)
 
     if( calcnb ) then
         if( top%nb_params_update ) then

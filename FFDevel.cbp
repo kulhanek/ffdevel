@@ -582,6 +582,19 @@
 			<Option weight="3" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbr0.f90">
+			<Option weight="6" />
+			<Option virtualFolder="src/lib/ffdevel/forcefield/" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbr0_control.f90">
+			<Option weight="6" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/nbr0_dat.f90">
+			<Option weight="3" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/pacpnl.f90">
 			<Option weight="13" />
 			<Option target="&lt;{~None~}&gt;" />

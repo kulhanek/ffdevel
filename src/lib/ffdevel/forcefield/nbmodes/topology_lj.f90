@@ -82,6 +82,55 @@ integer function ffdev_topology_LJ_comb_rules_from_string(string)
 end function ffdev_topology_LJ_comb_rules_from_string
 
 ! ==============================================================================
+! subroutine ffdev_topology_LJ_alpha_mode_to_string
+! ==============================================================================
+
+character(80) function ffdev_topology_LJ_alpha_mode_to_string(alpha_mode)
+
+    use ffdev_utils
+
+    implicit none
+    integer  :: alpha_mode
+    ! --------------------------------------------------------------------------
+
+    select case(alpha_mode)
+
+        ! LJ potential
+        case(LJ_ALPHA_CONST)
+            ffdev_topology_LJ_alpha_mode_to_string = 'CONST'
+        case(LJ_ALPHA_FREEOPT)
+            ffdev_topology_LJ_alpha_mode_to_string = 'FREEOPT'
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_LJ_alpha_mode_to_string!')
+    end select
+
+end function ffdev_topology_LJ_alpha_mode_to_string
+
+! ==============================================================================
+! function ffdev_topology_LJ_alpha_mode_from_string
+! ==============================================================================
+
+integer function ffdev_topology_LJ_alpha_mode_from_string(string)
+
+    use ffdev_utils
+
+    implicit none
+    character(*)   :: string
+    ! --------------------------------------------------------------------------
+
+    select case(trim(string))
+        case('CONST')
+            ffdev_topology_LJ_alpha_mode_from_string = LJ_ALPHA_CONST
+        case('FREEOPT')
+            ffdev_topology_LJ_alpha_mode_from_string = LJ_ALPHA_FREEOPT
+
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_topology_LJ_alpha_mode_from_string!')
+    end select
+
+end function ffdev_topology_LJ_alpha_mode_from_string
+
+! ==============================================================================
 ! subroutine ffdev_topology_LJ_update_nb_params
 ! ==============================================================================
 
@@ -94,6 +143,7 @@ subroutine ffdev_topology_LJ_update_nb_params(top)
     ! --------------------------------------------
     integer         :: i,nbii,nbjj
     real(DEVDP)     :: epsii,r0ii,epsjj,r0jj,epsij,r0ij,k,l
+    real(DEVDP)     :: aii, ajj, aij
     ! --------------------------------------------------------------------------
 
     if( .not. ApplyCombiningRules ) return
@@ -110,9 +160,11 @@ subroutine ffdev_topology_LJ_update_nb_params(top)
 
         r0ii  = top%nb_types(nbii)%r0
         epsii = top%nb_types(nbii)%eps
+        aii   = top%nb_types(nbii)%alpha
 
         r0jj  = top%nb_types(nbjj)%r0
         epsjj = top%nb_types(nbjj)%eps
+        ajj   = top%nb_types(nbjj)%alpha
 
         select case(lj_comb_rules)
             case(LJ_COMB_RULE_LB)
@@ -133,8 +185,12 @@ subroutine ffdev_topology_LJ_update_nb_params(top)
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_topology_LJ_update_nb_params!')
         end select
 
-        top%nb_types(i)%r0 = r0ij
-        top%nb_types(i)%eps = epsij
+        ! only for probing in exp-6 mode
+        aij = 0.5d0 * (aii + ajj)
+
+        top%nb_types(i)%r0    = r0ij
+        top%nb_types(i)%eps   = epsij
+        top%nb_types(i)%alpha = aij
     end do
 
 end subroutine ffdev_topology_LJ_update_nb_params

@@ -137,7 +137,7 @@ subroutine ffdev_atomicdata_print
 
         rvdw = 0.0
         if( (z .ge. 1) .and. (z .le. VDW_RADII_MAXZ ) ) then
-            rvdw = vdw_radii(z)
+            rvdw = 2.0d0 * vdw_radii(z)
         end if
 
         write(DEV_OUT,330) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
@@ -181,7 +181,7 @@ subroutine ffdev_atomicdata_print
 230 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3,1X,F6.3,3X,F6.3,1X,F6.3)
 
 300 format('# van der Waals radii')
-310 format('# ID Type  Z  El |  Rvdw  |')
+310 format('# ID Type  Z  El | 2Rvdw  |')
 320 format('# -- ---- --- -- | ------ |')
 330 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3)
 
@@ -320,7 +320,7 @@ real(DEVDP) function ffdev_atomicdata_rcii(gti,fa,fb)
 
     select case(rcii_source)
         case(AD_RCII_VDW)
-            ffdev_atomicdata_rcii = fa * vdw_radii(z) + fb
+            ffdev_atomicdata_rcii = fa * 2.0d0 * vdw_radii(z) + fb
     ! -------------
         case(AD_RCII_DISP)
             if( .not. disp_data_loaded ) then

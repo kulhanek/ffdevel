@@ -551,6 +551,7 @@ subroutine ffdev_topology_load(top,name)
             call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [nb_types] section!')
         end if
         top%nb_types(i)%ffoptactive = .false.
+        top%nb_types(i)%alpha = exp6_alpha
     end do
 
     ! check if everything was read
@@ -1528,9 +1529,18 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
 
     select case(nb_mode)
         case(NB_VDW_LJ)
-            ! LJ parameters
-            nbpair%pa1 =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
-            nbpair%c6  = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+            if( (top%probe_size .gt. 0) .and. lj_exp6_probe ) then
+                ! probe mode - switch to exp6 potential
+                nbpair%pa1 = 6.0d0 * top%nb_types(nbt)%eps * exp( top%nb_types(nbt)%alpha ) &
+                           / (top%nb_types(nbt)%alpha - 6.0d0)
+                nbpair%pb1 = top%nb_types(nbt)%alpha / top%nb_types(nbt)%r0
+                nbpair%c6  = top%nb_types(nbt)%eps * top%nb_types(nbt)%alpha * top%nb_types(nbt)%r0**6 &
+                           / (top%nb_types(nbt)%alpha - 6.0d0)
+            else
+                ! LJ parameters - normal mode
+                nbpair%pa1 =         top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**12
+                nbpair%c6  = 2.0d0 * top%nb_types(nbt)%eps * top%nb_types(nbt)%r0**6
+            end if
     ! ------------------------
         case(NB_VDW_EXP_DISPBJ)
             ! exp

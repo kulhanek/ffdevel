@@ -40,38 +40,42 @@ integer,parameter       :: REALM_DIH_C      = 11
 integer,parameter       :: REALM_VDW_EPS    = 12
 integer,parameter       :: REALM_VDW_R0     = 13
 
-! non-bonded - vdW setup - repulsion
-integer,parameter       :: REALM_VDW_PA     = 14
-integer,parameter       :: REALM_VDW_PB     = 15
-integer,parameter       :: REALM_VDW_RC     = 16
+! exp-6 probing
+integer,parameter       :: REALM_VDW_ALPHA  = 14
+integer,parameter       :: REALM_VDW_ALPHA0 = 15
 
-integer,parameter       :: REALM_VDW_B0     = 17
+! non-bonded - vdW setup - repulsion
+integer,parameter       :: REALM_VDW_PA     = 16
+integer,parameter       :: REALM_VDW_PB     = 17
+integer,parameter       :: REALM_VDW_RC     = 18
+
+integer,parameter       :: REALM_VDW_B0     = 19
 
 ! non-bonded - vdW setup - dispersion
-integer,parameter       :: REALM_DISP_S6    = 18
-integer,parameter       :: REALM_DISP_S8    = 19
-integer,parameter       :: REALM_DISP_S10   = 20
+integer,parameter       :: REALM_DISP_S6    = 20
+integer,parameter       :: REALM_DISP_S8    = 21
+integer,parameter       :: REALM_DISP_S10   = 22
 
-integer,parameter       :: REALM_DAMP_FA    = 21
-integer,parameter       :: REALM_DAMP_FB    = 22
+integer,parameter       :: REALM_DAMP_FA    = 23
+integer,parameter       :: REALM_DAMP_FB    = 24
 
-integer,parameter       :: REALM_DAMP_PB    = 23
-integer,parameter       :: REALM_DAMP_TB    = 24
-integer,parameter       :: REALM_DAMP_PE    = 25
-
-! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 26
-integer,parameter       :: REALM_ELE_SQ     = 27
-
-integer,parameter       :: REALM_ZEFF       = 28
+integer,parameter       :: REALM_DAMP_PB    = 25
+integer,parameter       :: REALM_DAMP_TB    = 26
+integer,parameter       :: REALM_DAMP_PE    = 27
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_GLB_SCEE   = 29
-integer,parameter       :: REALM_GLB_SCNB   = 30
+integer,parameter       :: REALM_PAC        = 28
+integer,parameter       :: REALM_ELE_SQ     = 29
+
+integer,parameter       :: REALM_ZEFF       = 30
+
+! non-bonded - electrostatics
+integer,parameter       :: REALM_GLB_SCEE   = 31
+integer,parameter       :: REALM_GLB_SCNB   = 32
 
 ! Pauli repulsion K factors
-integer,parameter       :: REALM_K_EXC      = 31
-integer,parameter       :: REALM_K_IND      = 32
+integer,parameter       :: REALM_K_EXC      = 33
+integer,parameter       :: REALM_K_IND      = 34
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
 integer,parameter       :: REALM_LAST    = REALM_K_IND
@@ -190,6 +194,10 @@ real(DEVDP)     :: MinVdwEps
 real(DEVDP)     :: MaxVdwEps
 real(DEVDP)     :: MinVdwR0
 real(DEVDP)     :: MaxVdwR0
+real(DEVDP)     :: MinVdwAlpha
+real(DEVDP)     :: MaxVdwAlpha
+real(DEVDP)     :: MinVdwAlpha0
+real(DEVDP)     :: MaxVdwAlpha0
 
 ! non-bonded ABC
 real(DEVDP)     :: MinVdwPA

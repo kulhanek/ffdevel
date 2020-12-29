@@ -51,6 +51,7 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_pbpnl_control
     use ffdev_err_qnb_control
     use ffdev_err_nbpnl_control
+    use ffdev_err_nbr0_control
     use ffdev_err_mue_control
 
     implicit none
@@ -91,6 +92,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_pbpnl_ctrl(fin)
     call ffdev_err_qnb_ctrl(fin)
     call ffdev_err_nbpnl_ctrl(fin)
+    call ffdev_err_nbr0_ctrl(fin)
     call ffdev_err_mue_ctrl(fin)
 
  10 format('>>> INFO: All errors disabled by default (resetallsetup=on)!')

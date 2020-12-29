@@ -86,7 +86,11 @@ subroutine ffdev_energy_all(top,geo,skipnb)
 
         select case(nb_mode)
             case(NB_VDW_LJ)
-                call ffdev_energy_nb_LJ(top,geo)
+                if( (top%probe_size .gt. 0) .and. lj_exp6_probe ) then
+                    call ffdev_energy_nb_LJ_EXP6_probe(top,geo)
+                else
+                    call ffdev_energy_nb_LJ(top,geo)
+                end if
 
             case(NB_VDW_EXP_DISPBJ)
                 call ffdev_energy_nb_EXP_DISPBJ(top,geo)

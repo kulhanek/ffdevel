@@ -154,7 +154,7 @@ end type ATOM_TYPE
 
 type NB_TYPE
     integer             :: ti,tj                ! atom types
-    real(DEVDP)         :: eps, r0              ! LJ parameters
+    real(DEVDP)         :: eps, r0, alpha       ! LJ parameters
     logical             :: ffoptactive          ! this type is subject of ffopt
     integer             :: nbii, nbjj           ! links to like nb_types
 end type NB_TYPE
@@ -242,6 +242,9 @@ integer,parameter   :: LJ_COMB_RULE_WH      = 12        ! WH (Waldman-Hagler)
 integer,parameter   :: LJ_COMB_RULE_KG      = 13        ! KG (Kong)
 integer,parameter   :: LJ_COMB_RULE_FH      = 14        ! FB (Fender-Halsey)
 
+integer,parameter   :: LJ_ALPHA_CONST       = 471       ! Exp6 probe mode - constant alpha
+integer,parameter   :: LJ_ALPHA_FREEOPT     = 472       ! Exp6 probe mode - free to optimize per type
+
 ! ####################################################################
 
 ! exp_mode
@@ -281,6 +284,9 @@ integer     :: ind_mode                     = IND_MODE_K2EXC
 
 ! LJ
 integer     :: lj_comb_rules                = LJ_COMB_RULE_LB
+logical     :: lj_exp6_probe                = .false.
+integer     :: lj_alpha_mode                = LJ_ALPHA_CONST
+
 ! EXP
 integer     :: exp_mode                     = EXP_MODE_WO
 integer     :: exp_pa_mode                  = EXP_PA_FREEOPT
@@ -294,6 +300,9 @@ logical     :: ApplyCombiningRules          = .false.       ! apply combination 
 ! ------------------------------------------------------------------------------
 
 real(DEVDP) :: glb_iscnb                    = 1.0d0         ! global scaling for 1-4 NB interactions
+
+! exp6 probe mode
+real(DEVDP) :: exp6_alpha = 15.5d0
 
 ! tuneable parameters
 real(DEVDP) :: disp_s6  =  1.0d0

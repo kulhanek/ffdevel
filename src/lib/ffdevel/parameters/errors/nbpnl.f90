@@ -76,7 +76,7 @@ subroutine ffdev_err_nbpnl_error(error)
         tia = .false.
         do j=1,nparams
             if( .not. params(j)%enabled ) cycle
-            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_EPS) ) cycle
+            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_R0) ) cycle
             if( ((nb_types(i)%gti .eq. params(j)%ti) .or. (nb_types(i)%gti .eq. params(j)%tj)) ) then
                 tia = .true.
                 exit
@@ -85,7 +85,7 @@ subroutine ffdev_err_nbpnl_error(error)
         tja = .false.
         do j=1,nparams
             if( .not. params(j)%enabled ) cycle
-            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_EPS) ) cycle
+            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_R0) ) cycle
             if( ((nb_types(i)%gtj .eq. params(j)%ti) .or. (nb_types(i)%gtj .eq. params(j)%tj)) ) then
                 tja = .true.
                 exit
@@ -164,7 +164,7 @@ subroutine ffdev_err_nbpnl_summary()
         tia = .false.
         do j=1,nparams
             if( .not. params(j)%enabled ) cycle
-            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_EPS) ) cycle
+            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_R0) ) cycle
             if( ((nb_types(i)%gti .eq. params(j)%ti) .or. (nb_types(i)%gti .eq. params(j)%tj)) ) then
                 tia = .true.
                 exit
@@ -173,7 +173,7 @@ subroutine ffdev_err_nbpnl_summary()
         tja = .false.
         do j=1,nparams
             if( .not. params(j)%enabled ) cycle
-            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_EPS) ) cycle
+            if( (params(j)%realm .ne. REALM_VDW_EPS) .and. (params(j)%realm .ne. REALM_VDW_R0) ) cycle
             if( ((nb_types(i)%gtj .eq. params(j)%ti) .or. (nb_types(i)%gtj .eq. params(j)%tj)) ) then
                 tja = .true.
                 exit
