@@ -101,7 +101,7 @@ subroutine ffdev_err_qnb_summary()
 
     implicit none
     integer         :: i
-    real(DEVDP)     :: gnb,r0,eps,glj,qnb,qlj,diff,pnl,tote,totw
+    real(DEVDP)     :: gnb,r0,eps,glj,qnb,qlj,diff,tote,totw
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -126,7 +126,7 @@ subroutine ffdev_err_qnb_summary()
         totw = totw + nb_types(i)%num
 
         write(DEV_OUT,30) i,types(nb_types(i)%gti)%name,types(nb_types(i)%gtj)%name,nb_types(i)%num, &
-                          qnb,qlj,gnb,glj,diff,pnl
+                          qnb,qlj,gnb,glj,diff
     end do
 
     if( totw .gt. 0.0d0 ) then
