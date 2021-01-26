@@ -123,14 +123,14 @@ type PARM_TYPE
     real(DEVDP)             :: PA, PB, RC
 end type PARM_TYPE
 
-integer                     :: ntypes    ! number of types
-type(PARM_TYPE),allocatable :: types(:)  ! types
+integer                     :: ntypes    = 0    ! number of types
+type(PARM_TYPE),allocatable :: types(:)         ! types
 
 ! ------------------------------------------------------------------------------
 
 ! charges
-integer                     :: nprmchrgs    ! number of charges
-real(DEVDP),allocatable     :: prmchrgs     ! values
+integer                     :: nprmchrgs = 0    ! number of charges
+real(DEVDP),allocatable     :: prmchrgs         ! values
 
 ! ------------------------------------------------------------------------------
 

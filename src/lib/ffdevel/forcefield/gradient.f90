@@ -89,6 +89,7 @@ subroutine ffdev_gradient_all(top,geo,skipnb)
     if( calcnb ) then
         if( top%nb_params_update ) then
             call ffdev_topology_update_nb_params(top)
+            call ffdev_topology_update_nb_pairs(top)
         end if
 
         ! non-bonded terms

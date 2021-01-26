@@ -82,6 +82,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
 
         if( top%nb_params_update ) then
             call ffdev_topology_update_nb_params(top)
+            call ffdev_topology_update_nb_pairs(top)
         end if
 
         select case(nb_mode)

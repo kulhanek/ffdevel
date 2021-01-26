@@ -40,7 +40,8 @@ program ffdev_external_program
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo
     integer                 :: mode,i         ! what should be calculated
-    logical                 :: do_numerical
+    logical                 :: do_numerical_g
+    logical                 :: do_numerical_h
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF External')
@@ -55,7 +56,8 @@ program ffdev_external_program
         call ffdev_utils_exit(DEV_ERR,1,'Incorrect number of arguments was specified (4 or more are required)!')
     end if
 
-    do_numerical = .false.
+    do_numerical_g = .false.
+    do_numerical_h = .false.
 
     i = 1
     do while (i .le. command_argument_count() )
@@ -65,8 +67,11 @@ program ffdev_external_program
                 i = i + 1
                 if( i .le. command_argument_count() ) call get_command_argument(i, topname)
                 i = i + 1
-            case('-n')
-                do_numerical = .true.
+            case('-ng')
+                do_numerical_g = .true.
+                i = i + 1
+            case('-nh')
+                do_numerical_h = .true.
                 i = i + 1
             case default
                 exit
@@ -118,7 +123,7 @@ program ffdev_external_program
         case(1)
             write(DEV_OUT,141)
             call ffdev_gradient_allocate(geo)
-            if( do_numerical ) then
+            if( do_numerical_g ) then
                 call ffdev_gradient_num_all(top,geo)
             else
                 call ffdev_gradient_all(top,geo)
@@ -127,7 +132,7 @@ program ffdev_external_program
             write(DEV_OUT,142)
             call ffdev_gradient_allocate(geo)
             call ffdev_hessian_allocate(geo)
-            if( do_numerical ) then
+            if( do_numerical_h ) then
                 call ffdev_hessian_num_by_grds_all(top,geo)
             else
                 call ffdev_hessian_all(top,geo)
@@ -170,7 +175,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ffexternal <stopology> <gaussian_external_data>')
+10 format('    ffexternal -p <stopology> [-ng] [-nh] Layer InputFile OutputFile MsgFile FChkFile MatElFile')
 
 end subroutine print_usage
 

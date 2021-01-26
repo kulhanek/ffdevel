@@ -345,6 +345,11 @@ real(DEVDP) function ffdev_atomicdata_get_effZ(gti)
     integer     :: gti
     ! --------------------------------------------------------------------------
 
+    if( ntypes .eq. 0 ) then
+        ffdev_atomicdata_get_effZ = 0.0
+        return
+    end if
+
     select case(Zeff_mode)
         case(AD_ZEFF_MAX)
             ffdev_atomicdata_get_effZ = types(gti)%z

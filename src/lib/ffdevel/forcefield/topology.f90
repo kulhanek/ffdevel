@@ -1558,6 +1558,7 @@ subroutine ffdev_topology_update_nbpair_prms(top,nbpair)
             nbpair%rc6  = rc**6
             nbpair%rc8  = rc**8
             nbpair%rc10 = rc**10
+
     ! ------------------------
         case(NB_VDW_EXP_DISPTT)
             ! exp
