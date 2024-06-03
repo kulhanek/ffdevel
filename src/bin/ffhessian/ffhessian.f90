@@ -40,6 +40,7 @@ program ffdev_hessian_program
     logical                 :: do_test, do_numerical
     logical                 :: write_pts
     integer                 :: i
+    real(DEVDP)             :: serr2
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_header('FF Hessian')
@@ -175,6 +176,9 @@ program ffdev_hessian_program
             call ffdev_utils_heading(DEV_OUT,'Difference in Hessians','=')
             ngeo%hess = ngeo%hess - geo%hess
             call ffdev_hessian_print(DEV_OUT,ngeo)
+
+            serr2 = sum( ngeo%hess**2 )
+            write(DEV_ERR,*) 'SERR2 = ', serr2
 
             call ffdev_utils_exit(DEV_ERR,1,'Analytical and numerical Hessians do not match!')
         else

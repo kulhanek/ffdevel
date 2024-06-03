@@ -5,7 +5,6 @@
 		<Option title="FFDevel" />
 		<Option pch_mode="2" />
 		<Option compiler="gfortran" />
-		<Option virtualFolders="src/lib/ffdevel/forcefield/" />
 		<Build>
 			<Target title="All">
 				<Option platforms="Unix;" />
@@ -325,6 +324,9 @@
 			<Option weight="11" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="src/lib/ffdevel/forcefield/hessian_singular.f90">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/lib/ffdevel/forcefield/hessian_utils.f90">
 			<Option weight="9" />
 			<Option target="&lt;{~None~}&gt;" />
@@ -395,7 +397,6 @@
 		</Unit>
 		<Unit filename="src/lib/ffdevel/optimizers/ffopt_dat.f90">
 			<Option weight="3" />
-			<Option virtualFolder="src/lib/ffdevel/forcefield/" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/optimizers/geoopt.f90">
@@ -584,7 +585,6 @@
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/nbr0.f90">
 			<Option weight="6" />
-			<Option virtualFolder="src/lib/ffdevel/forcefield/" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/nbr0_control.f90">

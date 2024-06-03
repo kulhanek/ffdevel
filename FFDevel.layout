@@ -2,159 +2,9 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="All" />
-	<File name="src/bin/ffparams/ffparams.f90" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2855" topLine="72" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/topology.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="62618" topLine="1521" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_pen.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2559" topLine="30" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/parameters_dat.f90" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4762" topLine="46" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/topology_dat.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="7373" topLine="259" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/errors/ihess_dat.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/bin/ffexternal/ffexternal.f90" open="0" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4507" topLine="113" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/errors/nbpnl.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6644" topLine="176" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/gradient.f90" open="0" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2719" topLine="81" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/parameters_control.f90" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="61676" topLine="1561" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/errors/ihess.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2319" topLine="68" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/geometry.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="23559" topLine="678" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/parameters.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="55797" topLine="1415" />
-		</Cursor>
-	</File>
-	<File name="src/bin/ptsihessian/ptsihessian.f90" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="972" topLine="82" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/hessian.f90" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="137301" topLine="2177" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/hessian_utils.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="10612" topLine="341" />
-		</Cursor>
-	</File>
-	<File name="src/bin/ffoptimize/ffoptimize.f90" open="0" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="20001" topLine="601" />
-		</Cursor>
-	</File>
 	<File name="src/lib/ffdevel/parameters/xdm.f90" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="8975" topLine="221" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/buried_dat.f90" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1220" topLine="9" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/optimizers/ffopt.f90" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="12053" topLine="351" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/EXP-DISPTT.f90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="207" />
-		</Cursor>
-	</File>
-	<File name="src/bin/CMakeLists.txt" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="491" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/jacobian.f90" open="0" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="10256" topLine="289" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/errors/sapt_control.f90" open="0" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="78" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/nb2nb.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="9999" topLine="283" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/atomicdata.f90" open="0" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="11241" topLine="342" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/LJ.f90" open="0" top="0" tabpos="19" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2010" topLine="39" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_tt.f90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1108" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_lj.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4366" topLine="150" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/parameters/targetset.f90" open="0" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3151" topLine="78" />
-		</Cursor>
-	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_bj.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="4380" topLine="77" />
 		</Cursor>
 	</File>
 	<File name="src/lib/ffdevel/parameters/atomicdata_dat.f90" open="0" top="0" tabpos="23" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -162,24 +12,79 @@
 			<Cursor1 position="2505" topLine="15" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/forcefield/energy.f90" open="0" top="0" tabpos="18" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/lib/ffdevel/parameters/errors/sapt_control.f90" open="0" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2548" topLine="69" />
+			<Cursor1 position="0" topLine="78" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/parameters/errors/qnb.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/lib/ffdevel/parameters/parameters_control.f90" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2210" topLine="57" />
+			<Cursor1 position="61676" topLine="1561" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/forcefield/geometry_utils.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_bj.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="16566" topLine="512" />
+			<Cursor1 position="4380" topLine="77" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_exp.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/bin/ptsihessian/ptsihessian.f90" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7403" topLine="158" />
+			<Cursor1 position="972" topLine="82" />
+		</Cursor>
+	</File>
+	<File name="src/bin/ffparams/ffparams.f90" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2855" topLine="72" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/errors/ihess.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2319" topLine="68" />
+		</Cursor>
+	</File>
+	<File name="src/bin/ffexternal/ffexternal.f90" open="0" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4507" topLine="113" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/topology.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="62618" topLine="1521" />
+		</Cursor>
+	</File>
+	<File name="src/bin/ffoptimize/ffoptimize.f90" open="0" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="20001" topLine="601" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/hessian_singular.f90" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="5" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3477" topLine="135" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_exp.f90" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7403" topLine="131" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/jacobian.f90" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="10256" topLine="271" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/geometry.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="23559" topLine="678" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/parameters_dat.f90" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4762" topLine="46" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/gradient.f90" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2841" topLine="57" />
 		</Cursor>
 	</File>
 	<File name="src/lib/ffdevel/parameters/data/atomicdata_db.f90" open="0" top="0" tabpos="25" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -187,19 +92,14 @@
 			<Cursor1 position="3111" topLine="35" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/parameters/xdm_dat.f90" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_tt.f90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2221" topLine="30" />
+			<Cursor1 position="1108" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="src/lib/ffdevel/parameters/targetset_control.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/lib/ffdevel/forcefield/geometry_utils.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="16627" topLine="426" />
-		</Cursor>
-	</File>
-	<File name="src/bin/ffenergy/ffenergy.f90" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2533" topLine="66" />
+			<Cursor1 position="16566" topLine="512" />
 		</Cursor>
 	</File>
 	<File name="src/lib/ffdevel/parameters/errors/ihess_control.f90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -207,7 +107,117 @@
 			<Cursor1 position="3435" topLine="51" />
 		</Cursor>
 	</File>
+	<File name="src/lib/ffdevel/parameters/errors/nbpnl.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6644" topLine="176" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/topology_dat.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7373" topLine="259" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/atomicdata.f90" open="0" top="0" tabpos="24" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11241" topLine="342" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/nb2nb.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="9999" topLine="283" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/nbmodes/LJ.f90" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2010" topLine="270" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/errors/qnb.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2210" topLine="57" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/buried_dat.f90" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1220" topLine="9" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_pen.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2559" topLine="30" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/xdm_dat.f90" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2221" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/bin/CMakeLists.txt" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="491" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/hessian_utils.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="10612" topLine="341" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/energy.f90" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11722" topLine="330" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/targetset.f90" open="0" top="0" tabpos="21" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3151" topLine="78" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/parameters.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="55797" topLine="1415" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/hessian.f90" open="1" top="1" tabpos="5" split="0" active="1" splitpos="0" zoom_1="5" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="42208" topLine="1061" />
+		</Cursor>
+	</File>
 	<File name="src/lib/ffdevel/forcefield/geometry_dat.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/nbmodes/topology_lj.f90" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4366" topLine="91" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/forcefield/nbmodes/EXP-DISPTT.f90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="207" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/targetset_control.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="16627" topLine="426" />
+		</Cursor>
+	</File>
+	<File name="src/bin/ffhessian/ffhessian.f90" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="2" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6605" topLine="133" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/optimizers/ffopt.f90" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="12053" topLine="351" />
+		</Cursor>
+	</File>
+	<File name="src/bin/ffenergy/ffenergy.f90" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2533" topLine="66" />
+		</Cursor>
+	</File>
+	<File name="src/lib/ffdevel/parameters/errors/ihess_dat.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="0" topLine="0" />
 		</Cursor>

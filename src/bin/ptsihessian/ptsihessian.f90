@@ -26,6 +26,7 @@ program ffdev_ptsihessian_program
     use ffdev_hessian_utils
     use ffdev_gradient_utils
     use ffdev_hessian
+    use ffdev_nbmode_LJ
 
     implicit none
     character(len=MAX_PATH) :: topname

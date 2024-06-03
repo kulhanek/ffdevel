@@ -30,6 +30,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <openbabel/mol.h>
+#include <openbabel/atom.h>
 #include <openbabel/graphsym.h>
 
 //------------------------------------------------------------------------------

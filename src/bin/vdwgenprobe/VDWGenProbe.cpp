@@ -22,12 +22,14 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <set>
+#include <openbabel/atom.h>
 #include <openbabel/graphsym.h>
 #include <openbabel/obconversion.h>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include "Sphere.hpp"
 #include <PeriodicTable.hpp>
+#include <sys/time.h>
 
 //------------------------------------------------------------------------------
 
@@ -421,7 +423,7 @@ bool CVDWGenProbe::LoadStructure(void)
                 it++;
 
                 // only terminals
-                if( p_atom->GetValence() != 1 ) continue;
+                if( p_atom->GetTotalValence() != 1 ) continue;
 
                 OBBondIterator bi;
 
@@ -970,7 +972,7 @@ bool CVDWGenProbe::GeneratorVSEPR(void)
         int     atomid = *it;
         it++;
         OBAtom* p_atom = Mol.GetAtom(atomid+1);
-        int     valence = p_atom->GetValence();
+        int     valence = p_atom->GetTotalValence();
         CPoint  origin = Structure.GetPosition(atomid);
         CPoint  dir;
         bool    bothsides = false;

@@ -19,6 +19,7 @@
 #include <SmallTimeAndDate.hpp>
 #include <SimpleList.hpp>
 #include "GenRotors.hpp"
+#include <openbabel/bond.h>
 #include <openbabel/rotor.h>
 #include <iomanip>
 #include <set>
@@ -218,7 +219,7 @@ void CGenRotors::WriteRotatableBonds(std::ostream& sout)
         ibt++;
         if( rot_bonds.count(p_bond) > 0 ) continue; // already detected
         if( p_bond->IsInRing() ) continue;  // part of ring
-        if( ! p_bond->IsSingle() ) continue;    // not single bond
+        if( p_bond->GetBondOrder() != 1 ) continue;    // not single bond
 
         bool terminal1 = false;
         bool terminal2 = false;

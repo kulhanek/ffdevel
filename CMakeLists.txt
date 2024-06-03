@@ -108,19 +108,14 @@ INCLUDE_DIRECTORIES(${LBFGS_ROOT}/src/lib/flbfgs)
 LINK_DIRECTORIES(${LBFGS_ROOT}/lib)
 SET(LBFGS_LIB_NAME flbfgs90)
 
-# runlux =====================
-SET(RUNLUX_ROOT ${DEVELOPMENT_ROOT}/thirdparty/ranlux/1.0)
-LINK_DIRECTORIES(${RUNLUX_ROOT}/lib)
-SET(RANLUX_LIB_NAME franlux)
-
 # nlopt =====================
-SET(NLOPT_ROOT ${DEVELOPMENT_ROOT}/thirdparty/nlopt/2.4.2)
+SET(NLOPT_ROOT ${DEVELOPMENT_ROOT}/thirdparty/nlopt/2.7.1)
 INCLUDE_DIRECTORIES(${NLOPT_ROOT}/include)
 LINK_DIRECTORIES(${NLOPT_ROOT}/lib)
 SET(NLOPT_LIB_NAME nlopt)
 
 # OpenBabel --------------------------------------
-SET(OPEN_BABEL_ROOT ${DEVELOPMENT_ROOT}/thirdparty/obcore/2.4.0)
+SET(OPEN_BABEL_ROOT ${DEVELOPMENT_ROOT}/thirdparty/obcore/3.1.1)
 INCLUDE_DIRECTORIES(${OPEN_BABEL_ROOT}/include)
 LINK_DIRECTORIES(${OPEN_BABEL_ROOT}/lib)
 SET(OPEN_BABEL_LIB obcore)
