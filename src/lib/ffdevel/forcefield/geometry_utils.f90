@@ -465,7 +465,7 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
 140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.4,1X,F9.4,1X,F9.4)
 150 format('# Minimum unsigned difference (SUD)  = ',F9.4)
 160 format('# Largest unsigned difference (MUD)  = ',F9.4)
-170 format('# Average usigned difference (AD)    = ',F9.4)
+170 format('# Average unsigned difference (AD)   = ',F9.4)
 180 format('# Root mean square difference (RMSD) = ',F9.4)
 
     write(DEV_OUT,*)
@@ -596,7 +596,7 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
 140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.2,1X,F9.2,1X,F9.2)
 150 format('# Minimum unsigned difference (SUD)  = ',F9.2)
 160 format('# Largest unsigned difference (MUD)  = ',F9.2)
-170 format('# Average usigned difference (AD)    = ',F9.2)
+170 format('# Average unsigned difference (AD)   = ',F9.2)
 180 format('# Root mean square difference (RMSD) = ',F9.2)
 
 
@@ -743,7 +743,7 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
            A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.2,1X,F9.2,1X,F9.2)
 150 format('# Minimum unsigned difference (SUD)  = ',F9.2)
 160 format('# Largest unsigned difference (MUD)  = ',F9.2)
-170 format('# Average usigned difference (AD)    = ',F9.2)
+170 format('# Average unsigned difference (AD)   = ',F9.2)
 180 format('# Root mean square difference (RMSD) = ',F9.2)
 
 
@@ -899,7 +899,7 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
            A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.2,1X,F9.2,1X,F9.2)
 150 format('# Minimum unsigned difference (SUD)  = ',F9.2)
 160 format('# Largest unsigned difference (MUD)  = ',F9.2)
-170 format('# Average usigned difference (AD)    = ',F9.2)
+170 format('# Average unsigned difference (AD)   = ',F9.2)
 180 format('# Root mean square difference (RMSD) = ',F9.2)
 
 

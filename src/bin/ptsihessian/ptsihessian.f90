@@ -33,8 +33,8 @@ program ffdev_ptsihessian_program
     character(len=MAX_PATH) :: geoname
     character(len=MAX_PATH) :: arg
     type(TOPOLOGY)          :: top
-    type(GEOMETRY)          :: geo
-    logical                 :: excludenb
+    type(GEOMETRY)          :: geo,geo_backup
+    logical                 :: exclude_bonds,exclude_angles,exclude_dihedrals,exclude_impropers,exclude_nb
     integer                 :: i
     ! --------------------------------------------------------------------------
 
@@ -49,13 +49,25 @@ program ffdev_ptsihessian_program
     call get_command_argument(1, topname)
     call get_command_argument(2, geoname)
 
-    excludenb = .false.
+    exclude_bonds = .false.
+    exclude_angles = .false.
+    exclude_dihedrals = .true.
+    exclude_impropers = .true.
+    exclude_nb = .true.
 
     do i=3,command_argument_count()
         call get_command_argument(i, arg)
         select case(trim(arg))
-            case('excludenb')
-                excludenb = .true.
+            case('exclude_bonds')
+                exclude_bonds = .true.
+            case('noexclude_angles')
+                exclude_angles = .true.
+            case('noexclude_dihedrals')
+                exclude_dihedrals = .false.
+            case('noexclude_impropers')
+                exclude_impropers = .false.
+            case('noexclude_nb')
+                exclude_nb = .false.
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unrecognized argument ('//trim(arg)//')')
         end select
@@ -140,19 +152,56 @@ program ffdev_ptsihessian_program
 
     ! hessian in internal coordinates
     write(DEV_OUT,*)
-    call ffdev_utils_heading(DEV_OUT,'Final Frequencies', ':')
+    call ffdev_utils_heading(DEV_OUT,'Internal Coordinates - Force Constants', ':')
 
-    if( excludenb ) then
-        geo%hess = geo%trg_hess
-        ! remove LJ + electrostatics
-        call ffdev_hessian_nb_lj(top,geo,-1.0d0)
-        geo%trg_hess = geo%hess
+    call ffdev_hessian_allocate_trg_ihess(top,geo)
+
+    if( exclude_bonds .or. exclude_angles .or. exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
+        call ffdev_geometry_copy(geo_backup,geo)
+        call ffdev_gradient_allocate(geo_backup)
+        geo_backup%grd = 0.0d0
+        call ffdev_hessian_allocate(geo_backup)
+        geo_backup%hess = 0.0d0
     end if
 
-    ! allocate ihess
-    call ffdev_hessian_calc_ihess(top,geo)
+    if( exclude_bonds ) then
+        call ffdev_hessian_bonds(top,geo_backup)
+        write(DEV_OUT,'(a)') '> Bonds excluded ...'
+    end if
 
-    !
+    if( exclude_angles ) then
+        call ffdev_hessian_angles(top,geo_backup)
+        write(DEV_OUT,'(a)') '> Angles excluded ...'
+    end if
+
+    if( exclude_dihedrals ) then
+        call ffdev_hessian_dihedrals(top,geo_backup)
+        write(DEV_OUT,'(a)') '> Dihedrals excluded ...'
+    end if
+
+    if( exclude_impropers ) then
+        call ffdev_hessian_impropers(top,geo_backup)
+        write(DEV_OUT,'(a)') '> Impropers excluded ...'
+    end if
+
+    if( exclude_nb ) then
+        call ffdev_hessian_nb_lj(top,geo_backup)
+        write(DEV_OUT,'(a)') '> NB excluded ...'
+    end if
+
+    if( exclude_bonds .or. exclude_angles .or. exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
+        geo%trg_ihess = geo%trg_hess - geo_backup%hess
+        call ffdev_geometry_copy(geo,geo_backup)
+    else
+        geo%trg_ihess = geo%trg_hess
+    end if
+
+    ! calculate ihess
+    call ffdev_hessian_calc_trg_ihess(top,geo)
+
+    ! print results
+    call ffdev_hessian_print_trg_ihess_bonds(top,geo)
+    call ffdev_hessian_print_trg_ihess_angles(top,geo)
 
     ! end
     call ffdev_utils_footer('Hessian in Internal Coordinates')
@@ -180,7 +229,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ptfreq <stop> <point> [excludenb]')
+10 format('    ptsihessian <stop> <point> [excludenb]')
 
 end subroutine print_usage
 

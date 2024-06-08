@@ -333,7 +333,7 @@ end subroutine ffdev_gradient_nb_LJ
 ! subroutine ffdev_hessian_nb_lj
 !===============================================================================
 
-subroutine ffdev_hessian_nb_lj(top,geo,fac)
+subroutine ffdev_hessian_nb_lj(top,geo)
 
     use ffdev_topology
     use ffdev_geometry
@@ -341,7 +341,6 @@ subroutine ffdev_hessian_nb_lj(top,geo,fac)
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
-    real(DEVDP)     :: fac
     ! --------------------------------------------
     integer         :: ip, i, j, nbt
     real(DEVDP)     :: inv_scee,inv_scnb,aLJa,bLJa,crgij,rij(3)
@@ -418,34 +417,34 @@ subroutine ffdev_hessian_nb_lj(top,geo,fac)
         h22 = hxx*rij(2)**2 - hyy
         h33 = hxx*rij(3)**2 - hyy
 
-        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + fac*h11
-        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + fac*h22
-        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + fac*h33
+        geo%hess(1,i,1,i) = geo%hess(1,i,1,i) + h11
+        geo%hess(2,i,2,i) = geo%hess(2,i,2,i) + h22
+        geo%hess(3,i,3,i) = geo%hess(3,i,3,i) + h33
 
-        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + fac*h11
-        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + fac*h22
-        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + fac*h33
+        geo%hess(1,j,1,j) = geo%hess(1,j,1,j) + h11
+        geo%hess(2,j,2,j) = geo%hess(2,j,2,j) + h22
+        geo%hess(3,j,3,j) = geo%hess(3,j,3,j) + h33
 
         ! calculate hessian - off-diagonals - common
         h12 = hxx*rij(1)*rij(2)
         h13 = hxx*rij(1)*rij(3)
         h23 = hxx*rij(2)*rij(3)
 
-        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + fac*h12
-        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + fac*h13
-        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + fac*h23
+        geo%hess(1,i,2,i) = geo%hess(1,i,2,i) + h12
+        geo%hess(1,i,3,i) = geo%hess(1,i,3,i) + h13
+        geo%hess(2,i,3,i) = geo%hess(2,i,3,i) + h23
 
-        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + fac*h12
-        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + fac*h13
-        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + fac*h23
+        geo%hess(2,i,1,i) = geo%hess(2,i,1,i) + h12
+        geo%hess(3,i,1,i) = geo%hess(3,i,1,i) + h13
+        geo%hess(3,i,2,i) = geo%hess(3,i,2,i) + h23
 
-        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + fac*h12
-        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + fac*h13
-        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + fac*h23
+        geo%hess(1,j,2,j) = geo%hess(1,j,2,j) + h12
+        geo%hess(1,j,3,j) = geo%hess(1,j,3,j) + h13
+        geo%hess(2,j,3,j) = geo%hess(2,j,3,j) + h23
 
-        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + fac*h12
-        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + fac*h13
-        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + fac*h23
+        geo%hess(2,j,1,j) = geo%hess(2,j,1,j) + h12
+        geo%hess(3,j,1,j) = geo%hess(3,j,1,j) + h13
+        geo%hess(3,j,2,j) = geo%hess(3,j,2,j) + h23
 
        ! calculate hessian - off-diagonals - cross
         h11 = hyy - hxx*rij(1)*rij(1)
@@ -460,29 +459,29 @@ subroutine ffdev_hessian_nb_lj(top,geo,fac)
         h32 =     - hxx*rij(3)*rij(2)
         h33 = hyy - hxx*rij(3)*rij(3)
 
-        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + fac*h11
-        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + fac*h12
-        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + fac*h13
+        geo%hess(1,i,1,j) = geo%hess(1,i,1,j) + h11
+        geo%hess(1,i,2,j) = geo%hess(1,i,2,j) + h12
+        geo%hess(1,i,3,j) = geo%hess(1,i,3,j) + h13
 
-        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + fac*h21
-        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + fac*h22
-        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + fac*h23
+        geo%hess(2,i,1,j) = geo%hess(2,i,1,j) + h21
+        geo%hess(2,i,2,j) = geo%hess(2,i,2,j) + h22
+        geo%hess(2,i,3,j) = geo%hess(2,i,3,j) + h23
 
-        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + fac*h31
-        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + fac*h32
-        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + fac*h33
+        geo%hess(3,i,1,j) = geo%hess(3,i,1,j) + h31
+        geo%hess(3,i,2,j) = geo%hess(3,i,2,j) + h32
+        geo%hess(3,i,3,j) = geo%hess(3,i,3,j) + h33
 
-        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + fac*h11
-        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + fac*h21
-        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + fac*h31
+        geo%hess(1,j,1,i) = geo%hess(1,j,1,i) + h11
+        geo%hess(1,j,2,i) = geo%hess(1,j,2,i) + h21
+        geo%hess(1,j,3,i) = geo%hess(1,j,3,i) + h31
 
-        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + fac*h12
-        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + fac*h22
-        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + fac*h32
+        geo%hess(2,j,1,i) = geo%hess(2,j,1,i) + h12
+        geo%hess(2,j,2,i) = geo%hess(2,j,2,i) + h22
+        geo%hess(2,j,3,i) = geo%hess(2,j,3,i) + h32
 
-        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + fac*h13
-        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + fac*h23
-        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + fac*h33
+        geo%hess(3,j,1,i) = geo%hess(3,j,1,i) + h13
+        geo%hess(3,j,2,i) = geo%hess(3,j,2,i) + h23
+        geo%hess(3,j,3,i) = geo%hess(3,j,3,i) + h33
     end do
 
 end subroutine ffdev_hessian_nb_lj

@@ -69,7 +69,6 @@ type GEOMETRY
 ! derivatives, etc.
     real(DEVDP),pointer     :: grd(:,:)         ! gradient (3,natoms)
     real(DEVDP),pointer     :: hess(:,:,:,:)    ! hessian (3,natoms,3,natoms) or normal modes
-    real(DEVDP),pointer     :: ihess(:)         ! hessian in internal coordinates (na+nb+nd+ni)
     real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
 ! target data
@@ -86,7 +85,9 @@ type GEOMETRY
     real(DEVDP),pointer     :: trg_crd(:,:)         ! target geometry (3,natoms)
     real(DEVDP),pointer     :: trg_grd(:,:)         ! target gradient (3,natoms)
     real(DEVDP),pointer     :: trg_hess(:,:,:,:)    ! target hessian (3,natoms,3,natoms)
-    real(DEVDP),pointer     :: trg_ihess(:)         ! target hessian in internal coordinates (nb+na+nd+ni)
+    real(DEVDP),pointer     :: trg_ihess(:,:,:,:)   ! target hessian for ihess (3,natoms,3,natoms)
+    real(DEVDP),pointer     :: trg_ihess_bonds(:)   ! target hessian in internal coordinates - bonds
+    real(DEVDP),pointer     :: trg_ihess_angles(:)  ! target hessian in internal coordinates - angles
     real(DEVDP),pointer     :: trg_nmodes(:,:,:,:)  ! target normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: trg_freq(:)          ! target frequencies (3*natoms)
     integer                 :: esp_npoints          ! number of ESP points

@@ -51,6 +51,47 @@ subroutine ffdev_hessian_allocate(geo)
 
 end subroutine ffdev_hessian_allocate
 
+! ==============================================================================
+! subroutine ffdev_hessian_allocate_ihess
+! ==============================================================================
+
+subroutine ffdev_hessian_allocate_trg_ihess(top,geo)
+
+    use ffdev_geometry
+    use ffdev_utils
+    use ffdev_topology
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: alloc_stat
+    ! --------------------------------------------------------------------------
+
+    allocate(geo%trg_ihess(3,top%natoms,3,top%natoms), stat = alloc_stat)
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array trg_ihess for hessian!')
+    end if
+    geo%trg_ihess = 0.0d0
+
+    if( top%nbonds .gt. 0 ) then
+        allocate(geo%trg_ihess_bonds(top%nbonds), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array trg_ihess_bonds for hessian!')
+        end if
+        geo%trg_ihess_bonds = 0.0d0
+    end if
+
+    if( top%nbonds .gt. 0 ) then
+        allocate(geo%trg_ihess_angles(top%nangles), stat = alloc_stat)
+        if( alloc_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array trg_ihess_angles for hessian!')
+        end if
+        geo%trg_ihess_angles = 0.0d0
+    end if
+
+end subroutine ffdev_hessian_allocate_trg_ihess
+
 !===============================================================================
 ! logical function ffdev_hessian_test(geo1,geo2,alarm_treshold)
 !===============================================================================
@@ -347,10 +388,10 @@ subroutine ffdev_hessian_calc_freqs(geo)
 end subroutine ffdev_hessian_calc_freqs
 
 ! ==============================================================================
-! subroutine ffdev_hessian_calc_ihess
+! subroutine ffdev_hessian_calc_trg_ihess
 ! ==============================================================================
 
-subroutine ffdev_hessian_calc_ihess(top,geo)
+subroutine ffdev_hessian_calc_trg_ihess(top,geo)
 
     use ffdev_geometry
     use ffdev_utils
@@ -366,25 +407,30 @@ subroutine ffdev_hessian_calc_ihess(top,geo)
     ! --------------------------------------------------------------------------
 
     if( geo%natoms .le. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for ffdev_hessian_calc_ihess!')
+        call ffdev_utils_exit(DEV_ERR,1,'Number of atoms has to be greater than zero for ffdev_hessian_calc_trg_ihess!')
     end if
 
     m = top%natoms * 3
-    n = top%nbonds + top%nangles + top%ndihedrals + top%nimpropers
+    n = top%nbonds + top%nangles
+
+    if( n .le. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Number of bonds plus angles has to be greater than zero for ffdev_hessian_calc_trg_ihess!')
+    end if
+
+    ! DEBUG: write(*,*) 'm = ', m, ', n = ', n
 
     allocate(ihess(n,n), jac(m,n), ijac(n,m) , stat = alloc_stat)
     if( alloc_stat .ne. 0 ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for ffdev_hessian_calc_trg_ihess!')
     end if
 
-    if( .not. associated(geo%ihess) ) then
-        allocate(geo%ihess(n), stat = alloc_stat)
-        if( alloc_stat .ne. 0 ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate array for ffdev_hessian_calc_ihess!')
-        end if
+    if( associated(geo%trg_ihess_bonds) ) then
+        geo%trg_ihess_bonds(:) = 0.0d0
+    end if
+    if( associated(geo%trg_ihess_angles) ) then
+        geo%trg_ihess_angles(:) = 0.0d0
     end if
 
-    geo%ihess(:) = 0.0d0
     ihess(:,:) = 0.0d0
     jac(:,:) = 0.0d0
     ijac(:,:) = 0.0d0
@@ -392,17 +438,171 @@ subroutine ffdev_hessian_calc_ihess(top,geo)
     ! calculate jacobian
     call ffdev_jacobian_calc_all(top,geo%crd,jac)
     call ffdev_jacobian_inverse(jac,ijac)
-   ! call ffdev_jacobian_get_ihess(ihess,ijac,geo%hess)
+    call ffdev_jacobian_get_ihess(ijac,geo%trg_ihess,ihess)
 
-    ! copy results to geo%ihess, only diagonal items
-    do i=1,n
-        geo%ihess(i) = ihess(i,i)
+    ! copy results to geo%trg_ihess_bonds and geo%trg_ihess_angles, only diagonal items
+    do i=1,top%nbonds
+        if( associated(geo%trg_ihess_bonds) ) geo%trg_ihess_bonds(i) = ihess(i,i)
+    end do
+    do i=1,top%nangles
+        if( associated(geo%trg_ihess_angles) ) geo%trg_ihess_angles(i) = ihess(i+top%nbonds,i+top%nbonds)
     end do
 
     ! release working arrays
     deallocate(ijac,jac,ihess)
 
-end subroutine ffdev_hessian_calc_ihess
+end subroutine ffdev_hessian_calc_trg_ihess
+
+! ==============================================================================
+! subroutine ffdev_hessian_print_trg_ihess_bonds
+! ==============================================================================
+
+subroutine ffdev_hessian_print_trg_ihess_bonds(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i,ai,aj,bt
+    real(DEVDP)     :: k1,k2,diff
+    real(DEVDP)     :: serr,lerr,aerr,rmse
+    ! --------------------------------------------------------------------------
+
+    if( top%nbonds .le. 0 ) return ! no data - exit
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,100)
+    write(DEV_OUT,110)
+    write(DEV_OUT,120)
+    write(DEV_OUT,130)
+
+    serr = 0.0d0
+    lerr = 0.0d0
+    aerr = 0.0d0
+    rmse = 0.0d0
+
+    do i=1,top%nbonds
+        ai = top%bonds(i)%ai
+        aj = top%bonds(i)%aj
+        bt = top%bonds(i)%bt
+        k1 = top%bond_types(bt)%k
+        k2 = geo%trg_ihess_bonds(i)
+        diff = k2 - k1
+        write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
+                            top%atoms(ai)%residx, top%atoms(ai)%resname, &
+                            aj, top%atoms(aj)%name, top%atom_types(top%atoms(aj)%typeid)%name, &
+                            top%atoms(aj)%residx, top%atoms(aj)%resname, &
+                            k1,k2,diff
+        if( (serr .gt. abs(diff)) .or. (i .eq. 1) ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. (i .eq. 1) ) lerr = abs(diff)
+        aerr = aerr + abs(diff)
+        rmse = rmse + diff**2
+    end do
+
+    if( top%nbonds .gt. 0 ) then
+        aerr = aerr / real(top%nbonds)
+        rmse = sqrt(rmse / real(top%nbonds))
+    end if
+
+    write(DEV_OUT,110)
+    write(DEV_OUT,150) serr
+    write(DEV_OUT,160) lerr
+    write(DEV_OUT,170) aerr
+    write(DEV_OUT,180) rmse
+
+100 format('# Individual bonds')
+110 format('# --------------------------- = ----------------------------- -----------------------------')
+120 format('# Indx Name Type  RIdx  RName    Indx  Name Type  RIdx  RName K(top)    K(ihess)  diff(2-1)')
+130 format('# ---- ---- ---- ------ ----- = ------ ---- ---- ------ ----- --------- --------- ---------')
+140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.4,1X,F9.4,1X,F9.4)
+150 format('# Minimum unsigned difference (SUD)  = ',F9.4)
+160 format('# Largest unsigned difference (MUD)  = ',F9.4)
+170 format('# Average unsigned difference (AD)   = ',F9.4)
+180 format('# Root mean square difference (RMSD) = ',F9.4)
+
+
+end subroutine ffdev_hessian_print_trg_ihess_bonds
+
+!===============================================================================
+! subroutine:  ffdev_hessian_print_trg_ihess_angles
+!===============================================================================
+
+subroutine ffdev_hessian_print_trg_ihess_angles(top,geo)
+
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    type(TOPOLOGY)  :: top
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i,ai,aj,ak,at
+    real(DEVDP)     :: k1,k2,diff
+    real(DEVDP)     :: serr,lerr,aerr,rmse
+    ! --------------------------------------------------------------------------
+
+    if( top%nangles .le. 0 ) return ! no data - exit
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,100)
+    write(DEV_OUT,110)
+    write(DEV_OUT,120)
+    write(DEV_OUT,130)
+
+    serr = 0.0d0
+    lerr = 0.0d0
+    aerr = 0.0d0
+    rmse = 0.0d0
+
+    do i=1,top%nangles
+        ai = top%angles(i)%ai
+        aj = top%angles(i)%aj
+        ak = top%angles(i)%ak
+        at = top%angles(i)%at
+        k1 = top%angle_types(at)%k
+        k2 = geo%trg_ihess_angles(i)
+        diff = k2 - k1
+        write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
+                            top%atoms(ai)%residx, top%atoms(ai)%resname, &
+                            aj, top%atoms(aj)%name, top%atom_types(top%atoms(aj)%typeid)%name, &
+                            top%atoms(aj)%residx, top%atoms(aj)%resname, &
+                            ak, top%atoms(ak)%name, top%atom_types(top%atoms(ak)%typeid)%name, &
+                            top%atoms(ak)%residx, top%atoms(ak)%resname, &
+                            k1,k2,diff
+        if( (serr .gt. abs(diff)) .or. (i .eq. 1) ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. (i .eq. 1) ) lerr = abs(diff)
+        aerr = aerr + abs(diff)
+        rmse = rmse + diff**2
+    end do
+
+    if( top%nangles .gt. 0 ) then
+        aerr = aerr / real(top%nangles)
+        rmse = sqrt(rmse / real(top%nangles))
+    end if
+
+    write(DEV_OUT,110)
+    write(DEV_OUT,150) serr
+    write(DEV_OUT,160) lerr
+    write(DEV_OUT,170) aerr
+    write(DEV_OUT,180) rmse
+
+100 format('# Individual angles')
+110 format('# --------------------------- = ----------------------------- =&
+           & ----------------------------- -----------------------------')
+120 format('# Indx Name Type  RIdx  RName    Indx  Name Type  RIdx  RName&
+           &    Indx  Name Type  RIdx  RName K(top)    K(ihess)   diff(2-1)')
+130 format('# ---- ---- ---- ------ ----- = ------ ---- ---- ------ ----- =&
+             & ------ ---- ---- ------ ----- --------- --------- ---------')
+140 format(I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,3X,I6,1X,A4,1X,A4,1X,I6,1X,A5,1X,F9.2,1X,F9.2,1X,F9.2)
+150 format('# Minimum unsigned difference (SUD)  = ',F9.2)
+160 format('# Largest unsigned difference (MUD)  = ',F9.2)
+170 format('# Average unsigned difference (AD)   = ',F9.2)
+180 format('# Root mean square difference (RMSD) = ',F9.2)
+
+end subroutine ffdev_hessian_print_trg_ihess_angles
 
 ! ==============================================================================
 ! subroutine ffdev_hessian_calc_trg_freqs

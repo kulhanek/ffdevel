@@ -37,7 +37,7 @@ program ffdev_hessian_program
     character(len=MAX_PATH) :: arg
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo,ngeo,nggeo
-    logical                 :: do_test, do_numerical
+    logical                 :: do_test,do_numerical,do_test_ene
     logical                 :: write_pts
     integer                 :: i
     real(DEVDP)             :: serr2
@@ -58,6 +58,7 @@ program ffdev_hessian_program
     call get_command_argument(2, crdname)
 
     do_test = .false.
+    do_test_ene = .false.
     do_numerical = .false.
     write_pts = .false.
 
@@ -66,6 +67,10 @@ program ffdev_hessian_program
         select case(trim(arg))
             case('test')
                 do_test = .true.
+                do_test_ene = .false.
+            case('test-viaene')
+                do_test = .true.
+                do_test_ene = .true.
             case('numerical')
                 do_numerical = .true.
             case('write')
@@ -162,8 +167,13 @@ program ffdev_hessian_program
         call ffdev_hessian_allocate(ngeo)
 
         write(DEV_OUT,'(A)') 'Numerical hessian ...'
-        ! call ffdev_hessian_num_all(top,ngeo)
-        call ffdev_hessian_num_by_grds_all(top,ngeo)
+        if( do_test_ene ) then
+            write(DEV_OUT,'(A)') '> Employing energies only ...'
+            call ffdev_hessian_num_all(top,ngeo)
+        else
+            write(DEV_OUT,'(A)') '> Employing gradients ...'
+            call ffdev_hessian_num_by_grds_all(top,ngeo)
+        end if
 
         if( .not. ffdev_hessian_test(geo,ngeo,1.0d-3) ) then
             write(DEV_OUT,*)

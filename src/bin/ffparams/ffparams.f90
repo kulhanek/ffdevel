@@ -79,8 +79,6 @@ program ffdev_params_program
 
     call ffdev_utils_footer('FF Parameters')
 
-100 format('Control file : ',A)
-
 contains
 
 !===============================================================================

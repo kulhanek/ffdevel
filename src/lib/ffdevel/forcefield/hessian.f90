@@ -90,7 +90,7 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
         ! non-bonded terms
         select case(nb_mode)
             case(NB_VDW_LJ)
-                call ffdev_hessian_nb_lj(top,geo,+1.0d0)
+                call ffdev_hessian_nb_lj(top,geo)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported vdW mode in ffdev_hessian_all!')
         end select
@@ -101,60 +101,6 @@ subroutine ffdev_hessian_all(top,geo,skipnb)
                   + geo%ele_ene + geo%pen_ene + geo%ind_ene + geo%rep_ene + geo%dis_ene
 
 end subroutine ffdev_hessian_all
-
-! ==============================================================================
-! subroutine ffdev_hessian_ihess_bonded
-! ==============================================================================
-
-subroutine ffdev_hessian_ihess_bonded(top,geo)
-
-    use ffdev_topology
-    use ffdev_geometry
-    use ffdev_utils
-    use ffdev_timers
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    ! --------------------------------------------------------------------------
-
-    ! reset energy
-    geo%bond_ene = 0.0d0
-    geo%angle_ene = 0.0d0
-    geo%dih_ene = 0.0d0
-    geo%impropr_ene = 0.0d0
-
-    geo%ele14_ene = 0.0d0
-    geo%rep14_ene = 0.0d0
-    geo%dis14_ene = 0.0d0
-
-    geo%ele_ene = 0.0d0
-    geo%pen_ene = 0.0d0
-    geo%ind_ene = 0.0d0
-    geo%rep_ene = 0.0d0
-    geo%dis_ene = 0.0d0
-
-    geo%total_ene = 0.0d0
-    geo%rst_energy = 0.0d0
-
-    ! reset gradient
-    geo%grd(:,:) = 0.0d0
-
-    ! reset hessian
-    geo%hess(:,:,:,:) = 0.0d0
-
-    ! bonded terms
-    if( top%probe_size .eq. 0 ) then
-        call ffdev_hessian_bonds(top,geo)
-        call ffdev_hessian_angles(top,geo)
-        call ffdev_hessian_dihedrals(top,geo)
-        call ffdev_hessian_impropers(top,geo)
-    end if
-
-    geo%total_ene = geo%bond_ene + geo%angle_ene + geo%dih_ene &
-                  + geo%impropr_ene
-
-end subroutine ffdev_hessian_ihess_bonded
 
 ! ==============================================================================
 ! subroutine ffdev_hessian_num_all
@@ -847,8 +793,8 @@ subroutine ffdev_hessian_dihedrals(top,geo)
     real(DEVDP)     ::  fg,hg,a2,b2,gv,scp,phi,f1,f2,arg,sarg,carg
     real(DEVDP)     ::  di(3),dj(3),dk(3),dl(3)
     real(DEVDP)     ::  tmp_tens(3,3),tmp_tens1(3,3),tmp_tens2(3,3)
-    real(DEVDP)     ::  tmp_d1(3),tmp_d2(3)
-    real(DEVDP)     ::  diff,sc1,sc2
+    real(DEVDP)     ::  tmp_d1(3)
+    real(DEVDP)     ::  diff,sc1
     ! -----------------------------------------------------------------------------
 
     ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
@@ -1131,13 +1077,13 @@ subroutine ffdev_hessian_impropers(top,geo)
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
     ! --------------------------------------------
-    integer         ::  i,j,k,l,ic,ip,pn
+    integer         ::  i,j,k,l,ic,ip
     real(DEVDP)     ::  f(3),g(3),h(3),a(3),b(3)
     real(DEVDP)     ::  fg,hg,a2,b2,gv,scp,phi,f1,f2,arg,sarg,carg
     real(DEVDP)     ::  di(3),dj(3),dk(3),dl(3)
     real(DEVDP)     ::  tmp_tens(3,3),tmp_tens1(3,3),tmp_tens2(3,3)
-    real(DEVDP)     ::  tmp_d1(3),tmp_d2(3)
-    real(DEVDP)     ::  diff,sc1,sc2
+    real(DEVDP)     ::  tmp_d1(3)
+    real(DEVDP)     ::  sc1
     ! -----------------------------------------------------------------------------
 
     geo%impropr_ene = 0.0d0

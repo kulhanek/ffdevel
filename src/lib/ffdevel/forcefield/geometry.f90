@@ -104,12 +104,15 @@ subroutine ffdev_geometry_init(geo)
     geo%nmodes      => null()
     geo%freq        => null()
 
-    geo%trg_crd         => null()
-    geo%trg_grd         => null()
-    geo%trg_hess        => null()
-    geo%trg_nmodes      => null()
-    geo%trg_freq        => null()
-    geo%trg_esp         => null()
+    geo%trg_crd             => null()
+    geo%trg_grd             => null()
+    geo%trg_hess            => null()
+    geo%trg_ihess           => null()
+    geo%trg_ihess_bonds     => null()
+    geo%trg_ihess_angles    => null()
+    geo%trg_nmodes          => null()
+    geo%trg_freq            => null()
+    geo%trg_esp             => null()
 
     geo%sup_xdm_c6      => null()
     geo%sup_xdm_c8      => null()
@@ -165,6 +168,15 @@ subroutine ffdev_geometry_destroy(geo)
     end if
     if( associated(geo%trg_hess) ) then
         deallocate(geo%trg_hess)
+    end if
+    if( associated(geo%trg_ihess) ) then
+        deallocate(geo%trg_ihess)
+    end if
+    if( associated(geo%trg_ihess_bonds) ) then
+        deallocate(geo%trg_ihess_bonds)
+    end if
+    if( associated(geo%trg_ihess_angles) ) then
+        deallocate(geo%trg_ihess_angles)
     end if
     if( associated(geo%trg_freq) ) then
         deallocate(geo%trg_freq)

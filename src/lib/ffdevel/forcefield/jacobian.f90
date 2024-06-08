@@ -38,17 +38,13 @@ subroutine ffdev_jacobian_calc_all(top,crd,jac)
     integer         :: idx
     ! --------------------------------------------------------------------------
 
+    jac(:,:) = 0.0d0
+
     idx = 0
     call ffdev_jacobian_bonds(top,crd,idx,jac)
+
     idx = idx + top%nbonds
-
     call ffdev_jacobian_angles(top,crd,idx,jac)
-    idx = idx + top%nangles
-
-    call ffdev_jacobian_dihedrals(top,crd,idx,jac)
-    idx = idx + top%ndihedrals
-
-    call ffdev_jacobian_impropers(top,crd,idx,jac)
 
 end subroutine ffdev_jacobian_calc_all
 
@@ -72,7 +68,7 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
     real(DEVDP)             :: fac
     ! --------------------------------------------------------------------------
 
-    fac = 1d-5
+    fac = 1d-3  ! FIXME - need to be tunable
 
     m = size(jac,1)
     n = size(jac,2)
@@ -100,8 +96,8 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
     end if
 
     ! reinit working array
-    deallocate(work)
     lwork = int(work(1))
+    deallocate(work)
     allocate(work(lwork), stat = alloc_stat)
 
     if( alloc_stat .ne. 0) then
@@ -135,6 +131,48 @@ subroutine ffdev_jacobian_inverse(jac,ijac)
 end subroutine ffdev_jacobian_inverse
 
 ! ==============================================================================
+! subroutine ffdev_jacobian_get_ihess(ijac,hess,ihess)
+! ==============================================================================
+
+subroutine ffdev_jacobian_get_ihess(ijac,hess,ihess)
+
+    use ffdev_topology_dat
+    use ffdev_utils
+
+    implicit none
+    real(DEVDP)             :: ijac(:,:)
+    real(DEVDP)             :: hess(:,:,:,:)
+    real(DEVDP)             :: ihess(:,:)
+    ! --------------------------------------------
+    integer                 :: m,n,k,l,q,w,alloc_stat
+    real(DEVDP),allocatable :: temp_mat(:,:)
+    ! --------------------------------------------------------------------------
+
+    m = size(hess,2)*3   ! 3n
+    n = size(hess,4)*3   ! 3n
+    k = size(ijac,1)     ! nint
+    l = size(ijac,2)     ! 3n
+    q = size(ihess,1)    ! nint
+    w = size(ihess,2)    ! nint
+
+    if( m .ne. n ) stop 'ffdev_jacobian_get_ihess 1'
+    if( l .ne. m ) stop 'ffdev_jacobian_get_ihess 2'
+    if( q .ne. w ) stop 'ffdev_jacobian_get_ihess 3'
+    if( k .ne. q ) stop 'ffdev_jacobian_get_ihess 4'
+
+    allocate(temp_mat(m,k), stat = alloc_stat)
+    if( alloc_stat .ne. 0) then
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays I in ffdev_jacobian_get_ihess!')
+    end if
+
+    CALL dgemm('N', 'T', m, k, n, 1.0d0, hess, m, ijac, k, 0.0d0, temp_mat, m)
+    CALL dgemm('N', 'N', k, k, m, 1.0d0, ijac, k, temp_mat, m, 0.0d0, ihess, k)
+
+    deallocate(temp_mat)
+
+end subroutine ffdev_jacobian_get_ihess
+
+! ==============================================================================
 ! subroutine ffdev_jacobian_bonds
 ! ==============================================================================
 
@@ -154,9 +192,6 @@ subroutine ffdev_jacobian_bonds(top,crd,idx,jac)
 
     ! bonds
     do ib=1,top%nbonds
-
-        ! reset
-        jac(:,idx+ib) = 0.0d0
 
         ! for each bond
         i  = top%bonds(ib)%ai
@@ -199,8 +234,6 @@ subroutine ffdev_jacobian_angles(top,crd,idx,jac)
     ! --------------------------------------------------------------------------
 
     do ia=1,top%nangles
-        ! reset
-        jac(:,idx+ia) = 0.0d0
 
         i  = top%angles(ia)%ai
         j  = top%angles(ia)%aj
@@ -251,145 +284,10 @@ subroutine ffdev_jacobian_angles(top,crd,idx,jac)
         jac(k*3-2,idx+ia) = + dk(1)
         jac(k*3-1,idx+ia) = + dk(2)
         jac(k*3-0,idx+ia) = + dk(3)
+
     end do
 
 end subroutine ffdev_jacobian_angles
-
-! ==============================================================================
-! subroutine ffdev_jacobian_dihedrals
-! ==============================================================================
-
-subroutine ffdev_jacobian_dihedrals(top,crd,idx,jac)
-
-    use ffdev_topology_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    real(DEVDP)     :: crd(:,:)
-    integer         :: idx
-    real(DEVDP)     :: jac(:,:)
-    ! --------------------------------------------
-    integer         :: i,j,k,l,ip
-    real(DEVDP)     :: f(3),g(3),h(3),a(3),b(3),fg,hg,a2,b2,gv
-    ! --------------------------------------------------------------------------
-
-    ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
-
-    do ip=1,top%ndihedrals
-
-        ! reset
-        jac(:,idx+ip) = 0.0d0
-
-        i  = top%dihedrals(ip)%ai
-        j  = top%dihedrals(ip)%aj
-        k  = top%dihedrals(ip)%ak
-        l  = top%dihedrals(ip)%al
-
-        f(:) = crd(:,i) - crd(:,j)
-        g(:) = crd(:,j) - crd(:,k)
-        h(:) = crd(:,l) - crd(:,k)
-
-        a(1) = f(2)*g(3) - f(3)*g(2)
-        a(2) = f(3)*g(1) - f(1)*g(3)
-        a(3) = f(1)*g(2) - f(2)*g(1)
-
-        b(1) = h(2)*g(3) - h(3)*g(2)
-        b(2) = h(3)*g(1) - h(1)*g(3)
-        b(3) = h(1)*g(2) - h(2)*g(1)
-
-        fg = dot_product(f,g)
-        hg = dot_product(h,g)
-        a2 = a(1)**2 + a(2)**2 + a(3)**2
-        b2 = b(1)**2 + b(2)**2 + b(3)**2
-        gv = sqrt( g(1)**2 + g(2)**2 + g(3)**2 )
-
-        ! calculate gradient
-        jac(i*3-2,idx+ip) = -gv/a2*a(1)
-        jac(i*3-1,idx+ip) = -gv/a2*a(2)
-        jac(i*3-0,idx+ip) = -gv/a2*a(3)
-
-        jac(j*3-2,idx+ip) = (gv/a2 + fg/(a2*gv))*a(1) - hg/(b2*gv)*b(1)
-        jac(j*3-1,idx+ip) = (gv/a2 + fg/(a2*gv))*a(2) - hg/(b2*gv)*b(2)
-        jac(j*3-0,idx+ip) = (gv/a2 + fg/(a2*gv))*a(3) - hg/(b2*gv)*b(3)
-
-        jac(k*3-2,idx+ip) = (hg/(b2*gv) - gv/b2)*b(1) - fg/(a2*gv)*a(1)
-        jac(k*3-1,idx+ip) = (hg/(b2*gv) - gv/b2)*b(2) - fg/(a2*gv)*a(2)
-        jac(k*3-0,idx+ip) = (hg/(b2*gv) - gv/b2)*b(3) - fg/(a2*gv)*a(3)
-
-        jac(l*3-2,idx+ip) =  gv/b2*b(1)
-        jac(l*3-1,idx+ip) =  gv/b2*b(2)
-        jac(l*3-0,idx+ip) =  gv/b2*b(3)
-    end do
-
-end subroutine ffdev_jacobian_dihedrals
-
-! ==============================================================================
-! subroutine ffdev_jacobian_impropers
-! ==============================================================================
-
-subroutine ffdev_jacobian_impropers(top,crd,idx,jac)
-
-    use ffdev_topology_dat
-
-    implicit none
-    type(TOPOLOGY)  :: top
-    real(DEVDP)     :: crd(:,:)
-    integer         :: idx
-    real(DEVDP)     :: jac(:,:)
-    ! --------------------------------------------
-    integer         :: i,j,k,l,ip
-    real(DEVDP)     :: f(3),g(3),h(3),a(3),b(3),fg,hg,a2,b2,gv
-    ! --------------------------------------------------------------------------
-
-    ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
-
-    do ip=1,top%nimpropers
-
-        ! reset
-        jac(:,idx+ip) = 0.0d0
-
-        i  = top%dihedrals(ip)%ai
-        j  = top%dihedrals(ip)%aj
-        k  = top%dihedrals(ip)%ak
-        l  = top%dihedrals(ip)%al
-
-        f(:) = crd(:,i) - crd(:,j)
-        g(:) = crd(:,j) - crd(:,k)
-        h(:) = crd(:,l) - crd(:,k)
-
-        a(1) = f(2)*g(3) - f(3)*g(2)
-        a(2) = f(3)*g(1) - f(1)*g(3)
-        a(3) = f(1)*g(2) - f(2)*g(1)
-
-        b(1) = h(2)*g(3) - h(3)*g(2)
-        b(2) = h(3)*g(1) - h(1)*g(3)
-        b(3) = h(1)*g(2) - h(2)*g(1)
-
-        fg = dot_product(f,g)
-        hg = dot_product(h,g)
-        a2 = a(1)**2 + a(2)**2 + a(3)**2
-        b2 = b(1)**2 + b(2)**2 + b(3)**2
-        gv = sqrt( g(1)**2 + g(2)**2 + g(3)**2 )
-
-        ! calculate gradient
-        jac(i*3-2,idx+ip) = -gv/a2*a(1)
-        jac(i*3-1,idx+ip) = -gv/a2*a(2)
-        jac(i*3-0,idx+ip) = -gv/a2*a(3)
-
-        jac(j*3-2,idx+ip) = (gv/a2 + fg/(a2*gv))*a(1) - hg/(b2*gv)*b(1)
-        jac(j*3-1,idx+ip) = (gv/a2 + fg/(a2*gv))*a(2) - hg/(b2*gv)*b(2)
-        jac(j*3-0,idx+ip) = (gv/a2 + fg/(a2*gv))*a(3) - hg/(b2*gv)*b(3)
-
-        jac(k*3-2,idx+ip) = (hg/(b2*gv) - gv/b2)*b(1) - fg/(a2*gv)*a(1)
-        jac(k*3-1,idx+ip) = (hg/(b2*gv) - gv/b2)*b(2) - fg/(a2*gv)*a(2)
-        jac(k*3-0,idx+ip) = (hg/(b2*gv) - gv/b2)*b(3) - fg/(a2*gv)*a(3)
-
-        jac(l*3-2,idx+ip) =  gv/b2*b(1)
-        jac(l*3-1,idx+ip) =  gv/b2*b(2)
-        jac(l*3-0,idx+ip) =  gv/b2*b(3)
-    end do
-
-end subroutine ffdev_jacobian_impropers
 
 ! ------------------------------------------------------------------------------
 
