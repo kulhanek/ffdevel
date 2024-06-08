@@ -2,7 +2,7 @@
 # FFDevel CMake File
 # ==============================================================================
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+MAKE_MINIMUM_REQUIRED(VERSION 3.10 FATAL_ERROR
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 # define project name ----------------------------------------------------------
