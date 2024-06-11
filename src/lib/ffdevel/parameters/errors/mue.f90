@@ -22,6 +22,8 @@ use ffdev_variables
 
 contains
 
+! MUE - Maximum Unsigned Energy error
+
 ! ==============================================================================
 ! subroutine ffdev_err_mue_init
 ! ==============================================================================

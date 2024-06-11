@@ -53,6 +53,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: qnb
     real(DEVDP)         :: nbpnl
     real(DEVDP)         :: nbr0
+    real(DEVDP)         :: nbc6
     real(DEVDP)         :: mue
 end type FFERROR_TYPE
 
