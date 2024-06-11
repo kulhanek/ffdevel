@@ -29,6 +29,7 @@ logical     :: PrintNBC6ErrorSummary
 real(DEVDP) :: NBC6ErrorWeight
 logical     :: NBC6BurriedOnly
 logical     :: NBC6Sqrt16
+integer     :: NBC6Eff
 
 ! ------------------------------------------------------------------------------
 

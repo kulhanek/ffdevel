@@ -40,6 +40,7 @@ subroutine ffdev_err_nbc6_init
     NBC6ErrorWeight        = 1.0
     NBC6BurriedOnly        = .false.
     NBC6Sqrt16             = .true.
+    NBC6Eff                = 0
 
 end subroutine ffdev_err_nbc6_init
 
@@ -100,7 +101,18 @@ subroutine ffdev_err_nbc6_error(error)
         if( .not. (i_enabled .or. j_enabled) ) cycle    ! at least one parameter, either r0 or eps must be enabled
 
         c6mm = 2.0d0 * eps * r0**6
-        c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6
+
+        select case(NBC6Eff)
+            case(0)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6
+            case(1)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / disp_pairs(params(i)%ti,params(i)%ti)%rc**2
+            case(2)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / disp_pairs(params(i)%ti,params(i)%ti)%rc**2 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c10 / disp_pairs(params(i)%ti,params(i)%ti)%rc**4
+        end select
 
         diff = c6mm - c6ex
         err = diff**2
@@ -142,6 +154,20 @@ subroutine ffdev_err_nbc6_summary()
 
     write(DEV_OUT,*)
     write(DEV_OUT,5)
+
+    if( NBC6Sqrt16 ) then
+        write(DEV_OUT,6)
+    end if
+
+    select case(NBC6Eff)
+        case(0)
+            write(DEV_OUT,7)
+        case(1)
+            write(DEV_OUT,8)
+        case(2)
+            write(DEV_OUT,9)
+    end select
+
     write(DEV_OUT,10)
     write(DEV_OUT,20)
 
@@ -175,7 +201,18 @@ subroutine ffdev_err_nbc6_summary()
         if( .not. (i_enabled .or. j_enabled) ) cycle    ! at least one parameter, either r0 or eps must be enabled
 
         c6mm = 2.0d0 * eps * r0**6
-        c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6
+
+        select case(NBC6Eff)
+            case(0)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6
+            case(1)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / disp_pairs(params(i)%ti,params(i)%ti)%rc**2
+            case(2)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / disp_pairs(params(i)%ti,params(i)%ti)%rc**2 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c10 / disp_pairs(params(i)%ti,params(i)%ti)%rc**4
+        end select
 
         diff = c6mm - c6ex
 
@@ -214,11 +251,15 @@ subroutine ffdev_err_nbc6_summary()
     write(DEV_OUT,45) tote*NBC6ErrorWeight
 
  5 format('# NB C6 Penalties')
-10 format('# ID TypA TypB     eps        R0       C6 (FF)    C6 (DB)     Diff       Error       Flag  ')
+ 6 format('# err**(1/6) mode')
+ 7 format('# C6eff = C6')
+ 8 format('# C6eff = C6 + C8/Rvdw**2')
+ 9 format('# C6eff = C6 + C8/Rvdw**2 + C10/Rvdw**4')
+10 format('# ID TypA TypB  eps (FF)    R0 (FF)    C6 (FF)    C6 (DB)     Diff       Error       Flag  ')
 20 format('# -- ---- ---- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
-30 format(I4,1X,A4,1X,A4,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,A)
-40 format('# Final penalty      =                          ',F10.5)
-45 format('# Final penalty w/w  =                          ',F10.5)
+30 format(I4,1X,A4,1X,A4,1X,F10.5,1X,F10.5,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.5,1X,A)
+40 format('# Final penalty      =                                                ',F10.5)
+45 format('# Final penalty w/w  =                                                ',F10.5)
 
 end subroutine ffdev_err_nbc6_summary
 

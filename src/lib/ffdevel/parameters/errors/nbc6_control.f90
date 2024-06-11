@@ -74,6 +74,18 @@ subroutine ffdev_err_nbc6_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(NBC6BurriedOnly)
     end if
 
+    if( prmfile_get_logical_by_key(fin,'sqrt16', NBC6Sqrt16)) then
+        write(DEV_OUT,150) prmfile_onoff(NBC6Sqrt16)
+    else
+        write(DEV_OUT,155) prmfile_onoff(NBC6Sqrt16)
+    end if
+
+    if( prmfile_get_integer_by_key(fin,'C6eff', NBC6Eff)) then
+        write(DEV_OUT,160) NBC6Eff
+    else
+        write(DEV_OUT,165) NBC6Eff
+    end if
+
  10 format('=== [nbc6] ====================================================================')
 
 110  format ('LJ C6 penalty (enabled)                = ',a12)
@@ -86,6 +98,12 @@ subroutine ffdev_err_nbc6_ctrl(fin)
 
 140  format ('LJ C6 penalty only buried (buried)     = ',a12)
 145  format ('LJ C6 penalty only buried (buried)     = ',a12,'                  (default)')
+
+150  format ('LJ C6 use err**(1/6) as error (sqrt16) = ',a12)
+155  format ('LJ C6 use err**(1/6) as error (sqrt16) = ',a12,'                  (default)')
+
+160  format ('Use C6eff calc from C6,C8,C10 ((C6eff) = ',i12)
+165  format ('Use C6eff calc from C6,C8,C10 ((C6eff) = ',i12,'                  (default)')
 
 end subroutine ffdev_err_nbc6_ctrl
 
