@@ -37,7 +37,7 @@ subroutine ffdev_err_nbr0_init
     EnableNBR0Error        = .false.
     PrintNBR0ErrorSummary  = .false.
     NBR0ErrorWeight        = 1.0
-    NBR0BurriedOnly        = .true.
+    NBR0BurriedOnly        = .false.
 
 end subroutine ffdev_err_nbr0_init
 

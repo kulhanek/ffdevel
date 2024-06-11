@@ -38,7 +38,8 @@ subroutine ffdev_err_nbc6_init
     EnableNBC6Error        = .false.
     PrintNBC6ErrorSummary  = .false.
     NBC6ErrorWeight        = 1.0
-    NBC6BurriedOnly        = .true.
+    NBC6BurriedOnly        = .false.
+    NBC6Sqrt16             = .true.
 
 end subroutine ffdev_err_nbc6_init
 
@@ -103,6 +104,11 @@ subroutine ffdev_err_nbc6_error(error)
 
         diff = c6mm - c6ex
         err = diff**2
+
+        if( NBC6Sqrt16 ) then
+            err = err ** (1.0d0/6.0d0)
+        end if
+
         w = 1.0d0
 
         tote = tote + err
@@ -172,7 +178,13 @@ subroutine ffdev_err_nbc6_summary()
         c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6
 
         diff = c6mm - c6ex
+
         err = diff**2
+
+        if( NBC6Sqrt16 ) then
+            err = err ** (1.0d0/6.0d0)
+        end if
+
         w = 1.0d0
         flag = ''
 
@@ -186,7 +198,7 @@ subroutine ffdev_err_nbc6_summary()
             end if
         end if
 
-        write(DEV_OUT,30) i,types(params(i)%ti)%name,types(params(i)%tj)%name,c6mm,c6ex, &
+        write(DEV_OUT,30) i,types(params(i)%ti)%name,types(params(i)%tj)%name,eps,r0,c6mm,c6ex, &
                           diff,err,trim(flag)
 
         tote = tote + err
@@ -202,9 +214,9 @@ subroutine ffdev_err_nbc6_summary()
     write(DEV_OUT,45) tote*NBC6ErrorWeight
 
  5 format('# NB C6 Penalties')
-10 format('# ID TypA TypB   C6 (FF)    C6 (DB)     Diff       Error       Flag  ')
-20 format('# -- ---- ---- ---------- ---------- ---------- ---------- ----------')
-30 format(I4,1X,A4,1X,A4,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,A)
+10 format('# ID TypA TypB     eps        R0       C6 (FF)    C6 (DB)     Diff       Error       Flag  ')
+20 format('# -- ---- ---- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
+30 format(I4,1X,A4,1X,A4,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,F10.5,1X,A)
 40 format('# Final penalty      =                          ',F10.5)
 45 format('# Final penalty w/w  =                          ',F10.5)
 
