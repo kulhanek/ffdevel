@@ -274,6 +274,8 @@ subroutine ffdev_ffopt_run()
 
     FFOptFceEvals = 0
 
+    CurrentProgRP = 1
+
     select case(OptimizationMethod)
         case(MINIMIZATION_STEEPEST_DESCENT)
             call write_header(.true.)
@@ -284,6 +286,7 @@ subroutine ffdev_ffopt_run()
         case(MINIMIZATION_NLOPT)
             call write_header(.true.)
             do istep=1,NLOPt_NRuns
+                CurrentProgRP = istep
                 call opt_nlopt
             end do
         case(MINIMIZATION_SHARK)
@@ -296,6 +299,8 @@ subroutine ffdev_ffopt_run()
         case default
             call ffdev_utils_exit(DEV_ERR,1,'OptimizationMethod not implemented in ffdev_ffopt_run!')
     end select
+
+    CurrentProgRP = 1
 
     ! return finial statistics
     ! wee need to recalculate error due to nrun shark mode
@@ -417,7 +422,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
     end if
 
   1 format('# ==============================================================================')
- 10 format('errorsum',I3.3)
+ 10 format('errorsum',I3.3,'-',I3.3)
  30 format('>>> Error summary written to: ',A)
 
 
@@ -862,6 +867,8 @@ subroutine opt_shark_nruns
     tmp_InitialParams = FFParams
     besterr = 0.0d0
     do istep=1,Shark_NRuns
+
+        CurrentProgRP = istep
 
         write(DEV_OUT,*)
         call ffdev_utils_heading(DEV_OUT,'+', '-')

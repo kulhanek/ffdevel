@@ -221,10 +221,10 @@ subroutine ffdev_xdm_run_stat()
                                       + (xdm_pairs(ti,tj)%C10ave/xdm_pairs(ti,tj)%C6ave)**(1.0/4.0) ) / 3.0d0
 
                 ! DOI: 10.1103/PhysRevLett.121.183401
-                xdm_pairs(ti,tj)%Rvdw = DEV_AU2A * 2.0d0 * xdm_pol2rvdw * &
+                xdm_pairs(ti,tj)%Rvdw = 2.0d0 * DEV_AU2A * xdm_pol2rvdw * &
                                         ((xdm_atoms(ti)%pol + xdm_atoms(tj)%pol)*0.5d0)**(1.0d0/7.0d0)
 
-                xdm_pairs(ti,tj)%Rvol = DEV_AU2A * ( (3.0d0 * xdm_atoms(ti)%vave / (4.0d0 * DEV_PI))**(1.0d0/3.0d0) + &
+                xdm_pairs(ti,tj)%Rvol = 2.0d0 * DEV_AU2A * ( (3.0d0 * xdm_atoms(ti)%vave / (4.0d0 * DEV_PI))**(1.0d0/3.0d0) + &
                                                      (3.0d0 * xdm_atoms(tj)%vave / (4.0d0 * DEV_PI))**(1.0d0/3.0d0) )
             end if
 

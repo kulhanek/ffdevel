@@ -28,7 +28,8 @@ integer     :: DEV_ERR      = DEV_STD_OUTPUT
 integer     :: Verbosity    = DEV_VERBOSITY_MINIMAL
 
 ! program index ----------------------------------------------------------------
-integer     :: CurrentProgID = 0
+integer     :: CurrentProgID = 0    ! program ID
+integer     :: CurrentProgRP = 1    ! program repeat
 
 !===============================================================================
 
