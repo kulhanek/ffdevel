@@ -339,26 +339,29 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
     ! --------------------------------------------------------------------------
 
     if( SaveSumLogs ) then
-        write(progname,10) CurrentProgID
         select case(logmode)
             case(SMMLOG_INITIAL)
+                write(progname,10) CurrentProgID, CurrentProgRP
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-0.initial.log'
                 pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-0.initial.prms'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_INTERMEDIATE)
+                write(progname,10) CurrentProgID, CurrentProgRP
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-1.intermediate.log'
                 pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-1.intermediate.prms'
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_FINAL)
+                write(progname,10) CurrentProgID, CurrentProgRP
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-2.final.log'
                 pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-2.final.prms'
                 write(DEV_OUT,*)
                 write(DEV_OUT,30) trim(sname)
 
             case(SMMLOG_BEST)
+                write(progname,11) CurrentProgID
                 sname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-3.best.log'
                 pname = trim(SaveSumLogsPath)//'/'//trim(progname)//'-3.best.prms'
                 write(DEV_OUT,*)
@@ -422,7 +425,8 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
     end if
 
   1 format('# ==============================================================================')
- 10 format('errorsum',I3.3,'-',I3.3)
+ 10 format('errorsum-',I3.3,'-',I3.3)
+ 11 format('errorsum-',I3.3)
  30 format('>>> Error summary written to: ',A)
 
 

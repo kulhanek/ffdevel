@@ -1452,10 +1452,10 @@ subroutine change_realms(realm,enable,options,nchanged)
 ! ------------------
     else if( is_realm_option(options,'type') ) then
         select case(realmid)
-            case(REALM_VDW_PA,REALM_VDW_PB)
+            case(REALM_VDW_PA,REALM_VDW_PB,REALM_PAC)
                 call change_dih_realm_type(realmid,enable,options,nchanged)
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Option ''type'' can be used only with vdw_pa and vdw_pb')
+                call ffdev_utils_exit(DEV_ERR,1,'Option ''type'' can be used only with vdw_pa, vdw_pb, and pac')
         end select
 ! ------------------
     else if( is_realm_option(options,'Z') ) then
@@ -1474,7 +1474,7 @@ subroutine change_realms(realm,enable,options,nchanged)
             case(REALM_VDW_EPS,REALM_VDW_R0)
                 call change_dih_realm_types(realmid,enable,options,nchanged)
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Option "pn" can be used only with bond_d0, bond_k,' &
+                call ffdev_utils_exit(DEV_ERR,1,'Option "types" can be used only with bond_d0, bond_k,' &
                                                 // 'angle_a0, angle_k, dih_v, dih_c, dih_g, vdw_eps, and vdw_r0')
         end select
     else

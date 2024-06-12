@@ -218,14 +218,8 @@ subroutine ffdev_energy_nbpair_LJ(nbpair,r,nbene)
     type(NB_PAIR_ENERGY)    :: nbene
     ! --------------------------------------------
     real(DEVDP)     :: aLJa,bLJa
-    real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb,V_ee,V_pe
+    real(DEVDP)     :: r2,r2a,r6a,V_aa,V_bb
     ! --------------------------------------------------------------------------
-
-    nbene%ele_ene = 0.0
-    nbene%pen_ene = 0.0
-    nbene%rep_ene = 0.0
-    nbene%dis_ene = 0.0
-    nbene%tot_ene = 0.0
 
     aLJa  = nbpair%pa1
     bLJa  = nbpair%c6
@@ -234,16 +228,15 @@ subroutine ffdev_energy_nbpair_LJ(nbpair,r,nbene)
     r2a   = 1.0d0/r2
     r6a   = r2a*r2a*r2a
 
-    V_ee  = 0.0d0
-    V_pe  = 0.0d0
     V_aa  =   aLJa*r6a*r6a
     V_bb  = - bLJa*r6a
 
-    nbene%ele_ene = V_ee
-    nbene%pen_ene = V_pe
+    nbene%ele_ene = 0.0d0
+    nbene%ind_ene = 0.0d0
+    nbene%pen_ene = 0.0d0
     nbene%rep_ene = V_aa
     nbene%dis_ene = V_bb
-    nbene%tot_ene = V_ee + V_pe + V_aa + V_bb
+    nbene%tot_ene = V_aa + V_bb
 
 end subroutine ffdev_energy_nbpair_LJ
 

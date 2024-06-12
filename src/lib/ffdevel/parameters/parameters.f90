@@ -975,7 +975,7 @@ subroutine ffdev_parameters_reinit()
         ! first consider non-referenced sets
         do i=1,nsets
             if( sets(i)%nrefs .gt. 0 ) cycle
-            ! one symmetry class is dependent (total charge constraint)
+            ! one symmetry class is dependent (total charge is constrained)
             do j=1,sets(i)%top%nsymm_classes-1
                 ! add new parameter
                 nparams = nparams + 1
@@ -994,6 +994,13 @@ subroutine ffdev_parameters_reinit()
                     if( sets(i)%top%atoms(k)%symmclass .eq. j ) then
                         sets(i)%top%atoms(k)%chrg_prm_id = nparams
                         params(nparams)%value = sets(i)%top%atoms(k)%charge ! simply use the last value
+                        if( params(nparams)%ti .eq. 0 ) then
+                            params(nparams)%ti = get_common_type_id(sets(i)%top,sets(i)%top%atoms(k)%typeid)
+                        else
+                            if( params(nparams)%ti .ne. get_common_type_id(sets(i)%top,sets(i)%top%atoms(k)%typeid) ) then
+                                call ffdev_utils_exit(DEV_ERR,1,'Atom type inconsistency for pac prms in ffdev_parameters_reinit!')
+                            end if
+                        end if
                     end if
                 end do
             end do
