@@ -94,6 +94,7 @@ subroutine ffdev_err_nbc6_error(error)
             end if
             if( params(i)%ti .eq. params(j)%ti ) then
                 eps = params(j)%value
+                j_enabled = params(j)%enabled
                 exit
             end if
         end do
@@ -194,6 +195,7 @@ subroutine ffdev_err_nbc6_summary()
             end if
             if( params(i)%ti .eq. params(j)%ti ) then
                 eps = params(j)%value
+                j_enabled = params(j)%enabled
                 exit
             end if
         end do
