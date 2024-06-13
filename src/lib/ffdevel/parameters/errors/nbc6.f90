@@ -116,6 +116,12 @@ subroutine ffdev_err_nbc6_error(error)
             case(3)
                 c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
                        disp_pairs(params(i)%ti,params(i)%ti)%c8 / r0**2
+            case(4)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / r0**2
+                if( types(params(i)%ti)%z .eq. 1 ) then
+                    c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 / 2.0d0
+                end if
             case default
                 stop 'ffdev_err_nbc6_error'
         end select
@@ -174,6 +180,8 @@ subroutine ffdev_err_nbc6_summary()
             write(DEV_OUT,73)
         case(3)
             write(DEV_OUT,74)
+        case(4)
+            write(DEV_OUT,75)
         case default
             stop 'ffdev_err_nbc6_summary'
     end select
@@ -226,6 +234,12 @@ subroutine ffdev_err_nbc6_summary()
             case(3)
                 c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
                        disp_pairs(params(i)%ti,params(i)%ti)%c8 / r0**2
+            case(4)
+                c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 + &
+                       disp_pairs(params(i)%ti,params(i)%ti)%c8 / r0**2
+                if( types(params(i)%ti)%z .eq. 1 ) then
+                    c6ex = disp_pairs(params(i)%ti,params(i)%ti)%c6 / 2.0d0
+                end if
         end select
 
         diff = c6mm - c6ex
@@ -270,6 +284,7 @@ subroutine ffdev_err_nbc6_summary()
 72 format('# C6eff = C6 + C8/Rvdw**2')
 73 format('# C6eff = C6 + C8/Rvdw**2 + C10/Rvdw**4')
 74 format('# C6eff = C6 + C8/R0**2')
+75 format('# C6eff = C6 + C8/R0**2, C6eff = C6/2.0 (hydrogens)')
 10 format('# ID TypA TypB  eps (FF)    R0 (FF)    C6 (FF)    C6 (DB)     Diff       Error       Flag  ')
 20 format('# -- ---- ---- ---------- ---------- ---------- ---------- ---------- ---------- ----------')
 30 format(I4,1X,A4,1X,A4,1X,F10.5,1X,F10.5,1X,F10.2,1X,F10.2,1X,F10.2,1X,F10.5,1X,A)
