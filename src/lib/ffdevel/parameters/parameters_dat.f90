@@ -77,8 +77,11 @@ integer,parameter       :: REALM_GLB_SCNB   = 32
 integer,parameter       :: REALM_K_EXC      = 33
 integer,parameter       :: REALM_K_IND      = 34
 
+! rcii_r0opt
+integer,parameter       :: REALM_RCII_R0OPT = 35
+
 integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
-integer,parameter       :: REALM_LAST    = REALM_K_IND
+integer,parameter       :: REALM_LAST    = REALM_RCII_R0OPT
 
 ! ------------------------------------------------------------------------------
 
@@ -254,6 +257,9 @@ real(DEVDP)     :: MinKExc
 real(DEVDP)     :: MaxKExc
 real(DEVDP)     :: MinKInd
 real(DEVDP)     :: MaxKInd
+
+real(DEVDP)     :: MinRCiiR0OPT
+real(DEVDP)     :: MaxRCiiR0OPT
 
 ! === [files] ==================================================================
 character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters

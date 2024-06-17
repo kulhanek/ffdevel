@@ -108,5 +108,10 @@ real(DEVDP)         :: atomicdata_b0opt(1:B0OPT_MAX_Z)
 logical             :: atomicdata_b0opt_initialized = .false.
 
 ! ==============================================================================
+! R0ii optimized per element
+real(DEVDP)         :: atomicdata_r0opt(1:VDW_RADII_MAXZ)
+logical             :: atomicdata_r0opt_initialized = .false.
+
+! ==============================================================================
 
 end module ffdev_atomicdata_db

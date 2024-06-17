@@ -55,6 +55,7 @@ type FFERROR_TYPE
     real(DEVDP)         :: nbr0
     real(DEVDP)         :: nbc6
     real(DEVDP)         :: mue
+    real(DEVDP)         :: aimr0
 end type FFERROR_TYPE
 
 type(FFERROR_TYPE)      :: FFError

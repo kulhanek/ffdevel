@@ -141,6 +141,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb, use_damp_pe
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_zeff
     logical     :: use_vdw_b0, use_vdw_alpha, use_vdw_alpha0
+    logical     :: use_rcii_r0opt, found
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -465,6 +466,8 @@ subroutine ffdev_parameters_reinit()
     use_zeff        = .false.
     use_vdw_b0      = .false.
 
+    use_rcii_r0opt  = rcii_source .eq. AD_RCII_R0OPT
+
 ! common setup
     select case(nb_mode)
 
@@ -748,6 +751,37 @@ subroutine ffdev_parameters_reinit()
             params(nparams)%tj   = 0
             params(nparams)%tk   = 0
             params(nparams)%tl   = 0
+        end do
+    end if
+
+    if( use_rcii_r0opt ) then
+        ! =====================
+        do j=1,ntypes
+            found = .false.
+            do k=1,j-1
+                if( types(j)%Z .eq. types(k)%Z ) then
+                    found = .true.
+                    exit
+                end if
+            end do
+
+            if( .not. found ) then
+                ! add new parameter
+                nparams = nparams + 1
+                if( (types(j)%Z .gt. VDW_RADII_MAXZ) .or. (types(j)%Z  .lt. 1) ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range for rcii_r0opt in ffdev_parameters_reinit!')
+                end if
+                params(nparams)%value = atomicdata_r0opt(types(j)%Z)
+                params(nparams)%realm = REALM_RCII_R0OPT
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ti   = j
+                params(nparams)%tj   = 0
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            end if
         end do
     end if
 
@@ -2280,6 +2314,9 @@ integer function ffdev_parameters_get_realmid(realm)
         case('k_ind')
             ffdev_parameters_get_realmid = REALM_K_IND
 
+        case('rcii_r0opt')
+            ffdev_parameters_get_realmid = REALM_RCII_R0OPT
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
     end select
@@ -2377,6 +2414,9 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_K_IND)
             ffdev_parameters_get_realm_name = 'k_ind'
 
+        case(REALM_RCII_R0OPT)
+            ffdev_parameters_get_realm_name = 'rcii_r0opt'
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
     end select
@@ -2424,6 +2464,8 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
         case(REALM_GLB_SCEE,REALM_GLB_SCNB)
             ! nothing to do
         case(REALM_K_EXC,REALM_K_IND)
+            ! nothing to do
+        case(REALM_RCII_R0OPT)
             ! nothing to do
         case default
             write(DEV_ERR,*) 'realmid = ', realmid
@@ -2895,6 +2937,9 @@ subroutine ffdev_parameters_to_tops
                     end if
                 end do
 
+            case(REALM_RCII_R0OPT)
+                atomicdata_r0opt(types(params(i)%ti)%Z) = params(i)%value
+
         ! PAC - partial atomic charges
             case(REALM_PAC)
                 ! update independent charges in all sets
@@ -3072,6 +3117,9 @@ subroutine ffdev_params_reset_ranges
      MaxKExc      =      15.0d0
      MinKInd      =     -15.0d0
      MaxKInd      =      15.0d0
+
+    MinRCiiR0OPT  =      1.0d0
+    MaxRCiiR0OPT  =      2.5d0
 
 end subroutine ffdev_params_reset_ranges
 
@@ -3264,6 +3312,9 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_K_IND)
             ffdev_params_get_lower_bound = MinKInd
 
+        case(REALM_RCII_R0OPT)
+            ffdev_params_get_lower_bound = MinRCiiR0OPT
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
     end select
@@ -3362,6 +3413,9 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
 
         case(REALM_K_IND)
             MinKInd = mvalue
+
+        case(REALM_RCII_R0OPT)
+            MinRCiiR0OPT = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_lower_bound')
@@ -3513,6 +3567,9 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
         case(REALM_K_IND)
             ffdev_params_get_upper_bound = MaxKInd
 
+        case(REALM_RCII_R0OPT)
+            ffdev_params_get_upper_bound = MaxRCiiR0OPT
+
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')
     end select
@@ -3610,6 +3667,9 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxKExc = mvalue
         case(REALM_K_IND)
             MaxKInd = mvalue
+
+        case(REALM_RCII_R0OPT)
+            MaxRCiiR0OPT = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_upper_bound')

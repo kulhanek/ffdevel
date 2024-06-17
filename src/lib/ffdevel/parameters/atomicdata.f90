@@ -53,6 +53,11 @@ subroutine ffdev_atomicdata_update_db
         atomicdata_b0opt_initialized = .true.
     end if
 
+    if( .not. atomicdata_r0opt_initialized ) then
+        atomicdata_r0opt(1:VDW_RADII_MAXZ) = vdw_radii(1:VDW_RADII_MAXZ)
+        atomicdata_r0opt_initialized = .true.
+    end if
+
 end subroutine ffdev_atomicdata_update_db
 
 ! ==============================================================================
@@ -68,7 +73,7 @@ subroutine ffdev_atomicdata_print
 
     implicit none
     integer     :: i,z
-    real(DEVDP) :: b0,b1,b2,rvdw,bii,rcii
+    real(DEVDP) :: b0,b1,b2,rvdw,bii,rcii,r0opt
     real(DEVDP) :: ip0,ipp
     ! --------------------------------------------------------------------------
 
@@ -149,6 +154,27 @@ subroutine ffdev_atomicdata_print
 ! ------------------------
 
     write(DEV_OUT,*)
+    write(DEV_OUT,600)
+    write(DEV_OUT,610)
+    write(DEV_OUT,320)
+
+    do i=1,ntypes
+        z = types(i)%z
+
+        rvdw = 0.0
+        if( (z .ge. 1) .and. (z .le. VDW_RADII_MAXZ ) ) then
+            r0opt = 2.0d0 * atomicdata_r0opt(z)
+        end if
+
+        write(DEV_OUT,330) i, adjustl(types(i)%name), types(i)%z, adjustl(pt_symbols(types(i)%z)), &
+                          r0opt
+
+    end do
+    write(DEV_OUT,320)
+
+! ------------------------
+
+    write(DEV_OUT,*)
     write(DEV_OUT,410) trim(ffdev_atomicdata_bii_source_to_string(bii_source))
     write(DEV_OUT,420) trim(ffdev_atomicdata_bii_mods_to_string(bii_mods))
     write(DEV_OUT,430) trim(ffdev_atomicdata_rcii_source_to_string(rcii_source))
@@ -184,6 +210,9 @@ subroutine ffdev_atomicdata_print
 310 format('# ID Type  Z  El | 2Rvdw  |')
 320 format('# -- ---- --- -- | ------ |')
 330 format(I4,1X,A4,1X,I3,1X,A2,3X,F6.3)
+
+600 format('# RCii_R0Opt')
+610 format('# ID Type  Z  El | 2R0Opt |')
 
 410 format('# Bii data source  : ',A)
 420 format('# Bii data mods    : ',A)
@@ -604,6 +633,8 @@ integer function ffdev_atomicdata_rcii_source_from_string(string)
             ffdev_atomicdata_rcii_source_from_string = AD_RCII_VDW
         case('DISP')
             ffdev_atomicdata_rcii_source_from_string = AD_RCII_DISP
+        case('R0OPT')
+            ffdev_atomicdata_rcii_source_from_string = AD_RCII_R0OPT
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented "' // trim(string) //'" in ffdev_atomicdata_rcii_source_from_string!')
     end select
@@ -627,6 +658,8 @@ character(80) function ffdev_atomicdata_rcii_source_to_string(mode)
             ffdev_atomicdata_rcii_source_to_string = 'VDW'
         case(AD_RCII_DISP)
             ffdev_atomicdata_rcii_source_to_string = 'DISP'
+        case(AD_RCII_R0OPT)
+            ffdev_atomicdata_rcii_source_to_string = 'R0OPT'
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_atomicdata_rcii_source_to_string!')
     end select

@@ -99,6 +99,9 @@ SET(FFDEVEL_SRC
         parameters/errors/nbc6_dat.f90
         parameters/errors/nbc6.f90
         parameters/errors/nbc6_control.f90
+        parameters/errors/aimr0_dat.f90
+        parameters/errors/aimr0.f90
+        parameters/errors/aimr0_control.f90
 
         parameters/buried_dat.f90
         parameters/buried.f90
