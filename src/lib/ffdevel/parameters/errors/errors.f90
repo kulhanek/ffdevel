@@ -51,6 +51,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_qnb
     use ffdev_err_mue
     use ffdev_err_aimr0
+    use ffdev_err_aimxdm
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -83,6 +84,8 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_mue_init()
 
     call ffdev_err_aimr0_init()
+
+    call ffdev_err_aimxdm_init()
 
 end subroutine ffdev_errors_init_all
 
@@ -183,6 +186,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_aimr0_dat
     use ffdev_err_aimr0
 
+    use ffdev_err_aimxdm_dat
+    use ffdev_err_aimxdm
+
     use ffdev_timers
 
     implicit none
@@ -217,6 +223,7 @@ subroutine ffdev_errors_error_only(error)
     error%qnb = 0.0d0
     error%mue = 0.0d0
     error%aimr0 = 0.0d0
+    error%aimxdm = 0.0d0
 
 ! energy based errors
     if( EnableEnergyError ) then
@@ -313,6 +320,11 @@ subroutine ffdev_errors_error_only(error)
         error%total = error%total + error%aimr0*AIMR0ErrorWeight
     end if
 
+    if( EnableAIMXDMError ) then
+        call ffdev_err_aimxdm_error(error)
+        error%total = error%total + error%aimxdm*AIMXDMErrorWeight
+    end if
+
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
 
 end subroutine ffdev_errors_error_only
@@ -342,6 +354,7 @@ subroutine ffdev_errors_ffopt_header_I()
     use ffdev_err_nbc6_dat
     use ffdev_err_mue_dat
     use ffdev_err_aimr0_dat
+    use ffdev_err_aimxdm_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -409,6 +422,9 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableAIMR0Error ) then
         write(DEV_OUT,110,ADVANCE='NO')
     end if
+    if( EnableAIMXDMError ) then
+        write(DEV_OUT,120,ADVANCE='NO')
+    end if
 
  30 format('       Energy')
  33 format('        Bonds')
@@ -431,6 +447,7 @@ subroutine ffdev_errors_ffopt_header_I()
  96 format('    C6Penalty')
  80 format('          MUE')
 110 format('        AIMR0')
+120 format('        AIMXDM')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -458,6 +475,8 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_nbc6_dat
     use ffdev_err_mue_dat
     use ffdev_err_aimr0_dat
+    use ffdev_err_aimxdm_dat
+
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -525,6 +544,9 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableAIMR0Error ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableAIMXDMError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
 
  50 format(' ------------')
@@ -555,7 +577,7 @@ subroutine ffdev_errors_ffopt_results(error)
     use ffdev_err_nbc6_dat
     use ffdev_err_mue_dat
     use ffdev_err_aimr0_dat
-
+    use ffdev_err_aimxdm_dat
 
     implicit none
     type(FFERROR_TYPE)  :: error
@@ -623,6 +645,9 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableAIMR0Error ) then
         write(DEV_OUT,15,ADVANCE='NO') AIMR0ErrorWeight*error%aimr0
+    end if
+    if( EnableAIMXDMError ) then
+        write(DEV_OUT,15,ADVANCE='NO') AIMXDMErrorWeight*error%aimxdm
     end if
 
  15 format(1X,E12.5)
@@ -693,6 +718,9 @@ subroutine ffdev_errors_summary(logmode)
     use ffdev_err_aimr0_dat
     use ffdev_err_aimr0
 
+    use ffdev_err_aimxdm_dat
+    use ffdev_err_aimxdm
+
     implicit none
     integer     :: logmode
     logical     :: printme, printsum
@@ -704,7 +732,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. &
             PrintPBPnlErrorSummary .or. PrintQNBErrorSummary .or. PrintNBPnlErrorSummary .or. PrintNBR0ErrorSummary .or. &
-            PrintNBC6ErrorSummary .or. PrintAIMR0ErrorSummary   ) ) then
+            PrintNBC6ErrorSummary .or. PrintAIMR0ErrorSummary .or. PrintAIMXDMErrorSummary ) ) then
         ! no error to report
         return
     end if
@@ -764,6 +792,10 @@ subroutine ffdev_errors_summary(logmode)
 
     if( PrintAIMR0ErrorSummary ) then
         call ffdev_err_aimr0_summary
+    end if
+
+    if( PrintAIMXDMErrorSummary ) then
+        call ffdev_err_aimxdm_summary
     end if
 
     ! summary per sets

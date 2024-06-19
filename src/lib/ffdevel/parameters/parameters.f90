@@ -141,7 +141,7 @@ subroutine ffdev_parameters_reinit()
     logical     :: use_ele_sq, use_damp_fa, use_damp_fb, use_damp_pb, use_damp_tb, use_damp_pe
     logical     :: use_disp_s6, use_disp_s8, use_disp_s10, use_k_exc, use_k_ind, use_zeff
     logical     :: use_vdw_b0, use_vdw_alpha, use_vdw_alpha0
-    logical     :: use_rcii_r0opt, found
+    logical     :: use_vdw_r0free, use_vdw_pbfree, found
     ! --------------------------------------------------------------------------
 
     nparams = 0
@@ -466,7 +466,8 @@ subroutine ffdev_parameters_reinit()
     use_zeff        = .false.
     use_vdw_b0      = .false.
 
-    use_rcii_r0opt  = rcii_source .eq. AD_RCII_R0OPT
+    use_vdw_r0free  = .false.
+    use_vdw_pbfree  = .false.
 
 ! common setup
     select case(nb_mode)
@@ -488,6 +489,9 @@ subroutine ffdev_parameters_reinit()
                 use_damp_fa     = .true.
                 use_damp_fb     = .true.
             end if
+
+            use_vdw_r0free = .true.
+            use_vdw_pbfree = .true.
 
         case(NB_VDW_EXP_DISPBJ,NB_VDW_EXP_DISPTT)
 
@@ -754,7 +758,7 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_rcii_r0opt ) then
+    if( use_vdw_r0free ) then
         ! =====================
         do j=1,ntypes
             found = .false.
@@ -769,10 +773,41 @@ subroutine ffdev_parameters_reinit()
                 ! add new parameter
                 nparams = nparams + 1
                 if( (types(j)%Z .gt. VDW_RADII_MAXZ) .or. (types(j)%Z  .lt. 1) ) then
-                    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range for rcii_r0opt in ffdev_parameters_reinit!')
+                    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range for vdw_r0free in ffdev_parameters_reinit!')
                 end if
-                params(nparams)%value = atomicdata_r0opt(types(j)%Z)
-                params(nparams)%realm = REALM_RCII_R0OPT
+                params(nparams)%value = atomicdata_vdw_r0free(types(j)%Z)
+                params(nparams)%realm = REALM_VDW_R0FREE
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ti   = j
+                params(nparams)%tj   = 0
+                params(nparams)%tk   = 0
+                params(nparams)%tl   = 0
+            end if
+        end do
+    end if
+
+    if( use_vdw_pbfree ) then
+        ! =====================
+        do j=1,ntypes
+            found = .false.
+            do k=1,j-1
+                if( types(j)%Z .eq. types(k)%Z ) then
+                    found = .true.
+                    exit
+                end if
+            end do
+
+            if( .not. found ) then
+                ! add new parameter
+                nparams = nparams + 1
+                if( (types(j)%Z .gt. VDW_RADII_MAXZ) .or. (types(j)%Z  .lt. 1) ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Z out-of-range for vdw_ppbfree in ffdev_parameters_reinit!')
+                end if
+                params(nparams)%value = atomicdata_vdw_pbfree(types(j)%Z)
+                params(nparams)%realm = REALM_VDW_PBFREE
                 params(nparams)%enabled = .false.
                 params(nparams)%identity = 0
                 params(nparams)%pn    = 0
@@ -2314,8 +2349,10 @@ integer function ffdev_parameters_get_realmid(realm)
         case('k_ind')
             ffdev_parameters_get_realmid = REALM_K_IND
 
-        case('rcii_r0opt')
-            ffdev_parameters_get_realmid = REALM_RCII_R0OPT
+        case('vdw_r0free')
+            ffdev_parameters_get_realmid = REALM_VDW_R0FREE
+        case('vdw_pbfree')
+            ffdev_parameters_get_realmid = REALM_VDW_PBFREE
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realmid (' // trim(realm) // ')!')
@@ -2414,8 +2451,10 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_K_IND)
             ffdev_parameters_get_realm_name = 'k_ind'
 
-        case(REALM_RCII_R0OPT)
-            ffdev_parameters_get_realm_name = 'rcii_r0opt'
+        case(REALM_VDW_R0FREE)
+            ffdev_parameters_get_realm_name = 'vdw_r0free'
+        case(REALM_VDW_PBFREE)
+            ffdev_parameters_get_realm_name = 'vdw_pbfree'
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_get_realm_name!')
@@ -2465,7 +2504,9 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ! nothing to do
         case(REALM_K_EXC,REALM_K_IND)
             ! nothing to do
-        case(REALM_RCII_R0OPT)
+        case(REALM_VDW_R0FREE)
+            ! nothing to do
+        case(REALM_VDW_PBFREE)
             ! nothing to do
         case default
             write(DEV_ERR,*) 'realmid = ', realmid
@@ -2937,8 +2978,11 @@ subroutine ffdev_parameters_to_tops
                     end if
                 end do
 
-            case(REALM_RCII_R0OPT)
-                atomicdata_r0opt(types(params(i)%ti)%Z) = params(i)%value
+            case(REALM_VDW_R0FREE)
+                atomicdata_vdw_r0free(types(params(i)%ti)%Z) = params(i)%value
+
+            case(REALM_VDW_PBFREE)
+                atomicdata_vdw_pbfree(types(params(i)%ti)%Z) = params(i)%value
 
         ! PAC - partial atomic charges
             case(REALM_PAC)
@@ -3028,98 +3072,101 @@ subroutine ffdev_params_reset_ranges
 
 ! === [ranges] =================================================================
 
-     MinBondD0    =       0.5d0
-     MaxBondD0    =       5.0d0
-     MinBondK     =       0.0
-     MaxBondK     =    1500.0d0
-     MinAngleA0   =       0.0
-     MaxAngleA0   =       DEV_PI
-     MinAngleK    =       0.0d0
-     MaxAngleK    =    1000.0d0
-     MinDihV      =       0.0d0
-     MaxDihV      =      50.0d0
-     MinDihG      =       0.0d0
-     MaxDihG      =     2*DEV_PI
-     MinDihSCEE   =       0.5d0
-     MaxDihSCEE   =       3.0d0
-     MinDihSCNB   =       0.5d0
-     MaxDihSCNB   =       3.0d0
-     MinImprV     =       0.0d0
-     MaxImprV     =      50.0d0
-     MinImprG     =      -DEV_PI
-     MaxImprG     =       DEV_PI
-     MinDihC      =     -50.0d0
-     MaxDihC      =      50.0d0
+    MinBondD0    =       0.5d0
+    MaxBondD0    =       5.0d0
+    MinBondK     =       0.0
+    MaxBondK     =    1500.0d0
+    MinAngleA0   =       0.0
+    MaxAngleA0   =       DEV_PI
+    MinAngleK    =       0.0d0
+    MaxAngleK    =    1000.0d0
+    MinDihV      =       0.0d0
+    MaxDihV      =      50.0d0
+    MinDihG      =       0.0d0
+    MaxDihG      =     2*DEV_PI
+    MinDihSCEE   =       0.5d0
+    MaxDihSCEE   =       3.0d0
+    MinDihSCNB   =       0.5d0
+    MaxDihSCNB   =       3.0d0
+    MinImprV     =       0.0d0
+    MaxImprV     =      50.0d0
+    MinImprG     =      -DEV_PI
+    MaxImprG     =       DEV_PI
+    MinDihC      =     -50.0d0
+    MaxDihC      =      50.0d0
 
 ! non-bonded ERA
-     MinVdwEps    =       0.0d0
-     MaxVdwEps    =       2.0d0
-     MinVdwR0     =       0.5d0
-     MaxVdwR0     =       6.0d0
-     MinVdwAlpha  =      10.0d0
-     MaxVdwAlpha  =      18.0d0
-     MinVdwAlpha0 =      10.0d0
-     MaxVdwAlpha0 =      18.0d0
+    MinVdwEps    =       0.0d0
+    MaxVdwEps    =       2.0d0
+    MinVdwR0     =       0.5d0
+    MaxVdwR0     =       6.0d0
+    MinVdwAlpha  =      10.0d0
+    MaxVdwAlpha  =      18.0d0
+    MinVdwAlpha0 =      10.0d0
+    MaxVdwAlpha0 =      18.0d0
 
 ! non-bonded ABC
-     MinVdwPA     =      0.0d0
-     MaxVdwPA     =     20.0d0
+    MinVdwPA     =      0.0d0
+    MaxVdwPA     =     20.0d0
 
-     MinVdwPB     =      1.0d0
-     MaxVdwPB     =      6.0d0
+    MinVdwPB     =      1.0d0
+    MaxVdwPB     =      6.0d0
 
-     MinVdwB0     =      1.0d0
-     MaxVdwB0     =      6.0d0
+    MinVdwB0     =      1.0d0
+    MaxVdwB0     =      6.0d0
 
-     MinVdwRC     =      0.0d0
-     MaxVdwRC     =      5.0d0
+    MinVdwRC     =      0.0d0
+    MaxVdwRC     =      5.0d0
 
 ! non-bonded scaling factors
-     MinEleSQ     =      0.0d0
-     MaxEleSQ     =      3.0d0
+    MinEleSQ     =      0.0d0
+    MaxEleSQ     =      3.0d0
 
 ! partial atomic charges
-     MinPAC       =     -2.0d0
-     MaxPAC       =      2.0d0
+    MinPAC       =     -2.0d0
+    MaxPAC       =      2.0d0
 
  ! zeff has special margins
-     MinZeff       =     1.0d0
-     MaxZeff       =    89.0d0
+    MinZeff       =     1.0d0
+    MaxZeff       =    89.0d0
 
 ! vdW interactions
-     MinDampFA    =      0.0d0
-     MaxDampFA    =      2.0d0
-     MinDampFB    =      0.0d0
-     MaxDampFB    =      6.0d0
+    MinDampFA    =      0.0d0
+    MaxDampFA    =      2.0d0
+    MinDampFB    =      0.0d0
+    MaxDampFB    =      6.0d0
 
-     MinDampPB    =      0.5d0
-     MaxDampPB    =      1.5d0
-     MinDampTB    =      0.5d0
-     MaxDampTB    =      1.5d0
-     MinDampPE    =      0.5d0
-     MaxDampPE    =      1.5d0
+    MinDampPB    =      0.5d0
+    MaxDampPB    =      1.5d0
+    MinDampTB    =      0.5d0
+    MaxDampTB    =      1.5d0
+    MinDampPE    =      0.5d0
+    MaxDampPE    =      1.5d0
 
 ! dispersion scaling
-     MinDispS6    =      0.0d0
-     MaxDispS6    =     10.0d0
-     MinDispS8    =      0.0d0
-     MaxDispS8    =     10.0d0
-     MinDispS10   =      0.0d0
-     MaxDispS10   =     10.0d0
+    MinDispS6    =      0.0d0
+    MaxDispS6    =     10.0d0
+    MinDispS8    =      0.0d0
+    MaxDispS8    =     10.0d0
+    MinDispS10   =      0.0d0
+    MaxDispS10   =     10.0d0
 
-     MinGlbSCEE   =      0.0d0
-     MaxGlbSCEE   =      4.0d0
-     MinGlbSCNB   =      0.0d0
-     MaxGlbSCNB   =      4.0d0
+    MinGlbSCEE   =      0.0d0
+    MaxGlbSCEE   =      4.0d0
+    MinGlbSCNB   =      0.0d0
+    MaxGlbSCNB   =      4.0d0
 
 ! exchange and induction factors
-     MinKExc      =     -15.0d0
-     MaxKExc      =      15.0d0
-     MinKInd      =     -15.0d0
-     MaxKInd      =      15.0d0
+    MinKExc      =     -15.0d0
+    MaxKExc      =      15.0d0
+    MinKInd      =     -15.0d0
+    MaxKInd      =      15.0d0
 
-    MinRCiiR0OPT  =      1.0d0
-    MaxRCiiR0OPT  =      2.5d0
+    MinVdwR0Free  =      2.0d0
+    MaxVdwR0Free  =      5.0d0
+
+    MinVdwPBFree  =      2.0d0
+    MaxVdwPBFree  =      4.0d0
 
 end subroutine ffdev_params_reset_ranges
 
@@ -3312,8 +3359,10 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
         case(REALM_K_IND)
             ffdev_params_get_lower_bound = MinKInd
 
-        case(REALM_RCII_R0OPT)
-            ffdev_params_get_lower_bound = MinRCiiR0OPT
+        case(REALM_VDW_R0FREE)
+            ffdev_params_get_lower_bound = MinVdwR0Free
+        case(REALM_VDW_PBFREE)
+            ffdev_params_get_lower_bound = MinVdwPBFree
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_lower_bounds')
@@ -3414,8 +3463,10 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
         case(REALM_K_IND)
             MinKInd = mvalue
 
-        case(REALM_RCII_R0OPT)
-            MinRCiiR0OPT = mvalue
+        case(REALM_VDW_R0FREE)
+            MinVdwR0Free = mvalue
+        case(REALM_VDW_PBFREE)
+            MinVdwPBFree = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_lower_bound')
@@ -3567,8 +3618,10 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
         case(REALM_K_IND)
             ffdev_params_get_upper_bound = MaxKInd
 
-        case(REALM_RCII_R0OPT)
-            ffdev_params_get_upper_bound = MaxRCiiR0OPT
+        case(REALM_VDW_R0FREE)
+            ffdev_params_get_upper_bound = MaxVdwR0Free
+        case(REALM_VDW_PBFREE)
+            ffdev_params_get_upper_bound = MaxVdwPBFree
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_get_upper_bounds')
@@ -3668,8 +3721,10 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
         case(REALM_K_IND)
             MaxKInd = mvalue
 
-        case(REALM_RCII_R0OPT)
-            MaxRCiiR0OPT = mvalue
+        case(REALM_VDW_R0FREE)
+            MaxVdwR0Free = mvalue
+        case(REALM_VDW_PBFREE)
+            MaxVdwPBFree = mvalue
 
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_params_set_upper_bound')

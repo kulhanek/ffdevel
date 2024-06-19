@@ -86,7 +86,7 @@ subroutine ffdev_err_nbc6_ctrl(fin)
         write(DEV_OUT,165) NBC6Eff
     end if
 
- 10 format('=== [nbc6] ====================================================================')
+ 10 format('=== [nbc6] =====================================================================')
 
 110  format ('LJ C6 penalty (enabled)                = ',a12)
 115  format ('LJ C6 penalty (enabled)                = ',a12,'                  (default)')

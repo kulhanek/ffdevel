@@ -100,7 +100,7 @@ subroutine ffdev_energy_all(top,geo,skipnb)
                 call ffdev_energy_nb_EXP_DISPTT(top,geo)
 
             case default
-                call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_all!')
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_energy_all!')
         end select
     end if
 
@@ -156,7 +156,7 @@ subroutine ffdev_energy_sapt(top,geo)
             call ffdev_energy_sapt_EXP_DISPTT(top,geo)
 
         case default
-            call ffdev_utils_exit(DEV_ERR,1,'Unsupported in ffdev_energy_sapt!')
+            call ffdev_utils_exit(DEV_ERR,1,'Unsupported nb_mode in ffdev_energy_sapt!')
     end select
 
     geo%sapt_total = geo%sapt_ele + geo%sapt_pen + geo%sapt_rep + geo%sapt_dis

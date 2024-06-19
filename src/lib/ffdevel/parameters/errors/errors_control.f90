@@ -55,6 +55,8 @@ subroutine ffdev_errors_ctrl(fin)
     use ffdev_err_nbc6_control
     use ffdev_err_mue_control
     use ffdev_err_aimr0_control
+    use ffdev_err_aimxdm_control
+
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
@@ -98,6 +100,7 @@ subroutine ffdev_errors_ctrl(fin)
     call ffdev_err_nbc6_ctrl(fin)
     call ffdev_err_mue_ctrl(fin)
     call ffdev_err_aimr0_ctrl(fin)
+    call ffdev_err_aimxdm_ctrl(fin)
 
  10 format('>>> INFO: All errors disabled by default (resetallsetup=on)!')
  20 format('>>> INFO: All errors disabled by the explicit request ([setdefault])!')

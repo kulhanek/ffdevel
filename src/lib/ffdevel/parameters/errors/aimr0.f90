@@ -86,7 +86,7 @@ subroutine ffdev_err_aimr0_error(error)
         end if
 
         r0    = params(i)%value
-        r0opt = atomicdata_r0opt(z)
+        r0opt = atomicdata_vdw_r0free(z)
         v0    = xdm_atoms(params(i)%ti)%v0ave
         vaim  = xdm_atoms(params(i)%ti)%vave
 
@@ -152,7 +152,7 @@ subroutine ffdev_err_aimr0_summary()
         end if
 
         r0    = params(i)%value
-        r0opt = atomicdata_r0opt(z)
+        r0opt = atomicdata_vdw_r0free(z)
         v0    = xdm_atoms(params(i)%ti)%v0ave
         vaim  = xdm_atoms(params(i)%ti)%vave
 

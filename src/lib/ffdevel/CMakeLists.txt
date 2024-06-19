@@ -102,6 +102,9 @@ SET(FFDEVEL_SRC
         parameters/errors/aimr0_dat.f90
         parameters/errors/aimr0.f90
         parameters/errors/aimr0_control.f90
+        parameters/errors/aimxdm_dat.f90
+        parameters/errors/aimxdm.f90
+        parameters/errors/aimxdm_control.f90
 
         parameters/buried_dat.f90
         parameters/buried.f90

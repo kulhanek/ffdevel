@@ -15,7 +15,7 @@
 ! along with FFDevel. If not, see <http://www.gnu.org/licenses/>.
 ! ==============================================================================
 
-module ffdev_err_nbr0_control
+module ffdev_err_aimxdm_control
 
 use ffdev_constants
 use ffdev_variables
@@ -23,12 +23,12 @@ use ffdev_variables
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_nbr0_ctrl
+! subroutine ffdev_err_aimxdm_ctrl
 ! ==============================================================================
 
-subroutine ffdev_err_nbr0_ctrl(fin)
+subroutine ffdev_err_aimxdm_ctrl(fin)
 
-    use ffdev_err_nbr0_dat
+    use ffdev_err_aimxdm_dat
     use ffdev_errors_dat
     use ffdev_utils
     use ffdev_errors_utils
@@ -41,39 +41,39 @@ subroutine ffdev_err_nbr0_ctrl(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'nbr0') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableNBR0Error)
-        write(DEV_OUT,135) prmfile_onoff(PrintNBR0ErrorSummary)
-        write(DEV_OUT,125) NBR0ErrorWeight
-        write(DEV_OUT,145) prmfile_onoff(NBR0BurriedOnly)
+    if( .not. prmfile_open_section(fin,'aimxdm') ) then
+        write(DEV_OUT,115) prmfile_onoff(EnableAIMXDMError)
+        write(DEV_OUT,135) prmfile_onoff(PrintAIMXDMErrorSummary)
+        write(DEV_OUT,125) AIMXDMErrorWeight
+        write(DEV_OUT,145) prmfile_onoff(AIMXDMBurriedOnly)
         return
     end if
 
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableNBR0Error)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableNBR0Error)
+    if( prmfile_get_logical_by_key(fin,'enabled', EnableAIMXDMError)) then
+        write(DEV_OUT,110) prmfile_onoff(EnableAIMXDMError)
     else
-        write(DEV_OUT,115) prmfile_onoff(EnableNBR0Error)
+        write(DEV_OUT,115) prmfile_onoff(EnableAIMXDMError)
     end if
 
-    if( prmfile_get_logical_by_key(fin,'summary', PrintNBR0ErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintNBR0ErrorSummary)
+    if( prmfile_get_logical_by_key(fin,'summary', PrintAIMXDMErrorSummary)) then
+        write(DEV_OUT,130) prmfile_onoff(PrintAIMXDMErrorSummary)
     else
-        write(DEV_OUT,135) prmfile_onoff(PrintNBR0ErrorSummary)
+        write(DEV_OUT,135) prmfile_onoff(PrintAIMXDMErrorSummary)
     end if
 
-    if( prmfile_get_real8_by_key(fin,'weight', NBR0ErrorWeight)) then
-        write(DEV_OUT,120) NBR0ErrorWeight
+    if( prmfile_get_real8_by_key(fin,'weight', AIMXDMErrorWeight)) then
+        write(DEV_OUT,120) AIMXDMErrorWeight
     else
-        write(DEV_OUT,125) NBR0ErrorWeight
+        write(DEV_OUT,125) AIMXDMErrorWeight
     end if
 
-    if( prmfile_get_logical_by_key(fin,'buried', NBR0BurriedOnly)) then
-        write(DEV_OUT,140) prmfile_onoff(NBR0BurriedOnly)
+    if( prmfile_get_logical_by_key(fin,'buried', AIMXDMBurriedOnly)) then
+        write(DEV_OUT,140) prmfile_onoff(AIMXDMBurriedOnly)
     else
-        write(DEV_OUT,145) prmfile_onoff(NBR0BurriedOnly)
+        write(DEV_OUT,145) prmfile_onoff(AIMXDMBurriedOnly)
     end if
 
- 10 format('=== [nbr0] =====================================================================')
+ 10 format('=== [aimxdm] ===================================================================')
 
 110  format ('LJ R0 penalty (enabled)                = ',a12)
 115  format ('LJ R0 penalty (enabled)                = ',a12,'                  (default)')
@@ -86,8 +86,8 @@ subroutine ffdev_err_nbr0_ctrl(fin)
 140  format ('LJ R0 penalty only buried (buried)     = ',a12)
 145  format ('LJ R0 penalty only buried (buried)     = ',a12,'                  (default)')
 
-end subroutine ffdev_err_nbr0_ctrl
+end subroutine ffdev_err_aimxdm_ctrl
 
 ! ------------------------------------------------------------------------------
 
-end module ffdev_err_nbr0_control
+end module ffdev_err_aimxdm_control

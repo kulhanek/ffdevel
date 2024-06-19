@@ -57,7 +57,7 @@ subroutine ffdev_err_mue_ctrl(fin)
         write(DEV_OUT,125) MUEErrorWeight
     end if
 
- 10 format('=== [mue] =================================================================')
+ 10 format('=== [mue] ======================================================================')
 
 110  format ('Energy error (enabled)                 = ',a12)
 115  format ('Energy error (enabled)                 = ',a12,'                  (default)')
