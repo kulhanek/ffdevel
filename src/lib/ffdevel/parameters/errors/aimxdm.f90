@@ -158,9 +158,9 @@ subroutine ffdev_err_aimxdm_error(error)
                 c6eff = (c6xdm*w6 + c8xdm*w8/ttrij**2 + c10xdm*w10/ttrij**4)
              !   write(*,*) w6, w8, w10, c6xdm, c6eff, c6
 
-                write(1035,*) zi, zj, sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%ti)%name, &
-                              sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%tj)%name, &
-                              c6, c6eff, c6xdm
+           !     write(1035,*) zi, zj, sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%ti)%name, &
+           !                   sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%tj)%name, &
+           !                   c6, c6eff, c6xdm
 
                 ! errors
                 err_r0 = r0 - rij
