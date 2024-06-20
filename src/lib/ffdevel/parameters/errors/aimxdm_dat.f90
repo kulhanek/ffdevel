@@ -27,7 +27,7 @@ logical     :: EnableAIMXDMError
 logical     :: PrintAIMXDMErrorSummary
 real(DEVDP) :: AIMXDMErrorWeight
 logical     :: AIMXDMBurriedOnly
-
-! ------------------------------------------------------------------------------
+integer     :: TTRIJSource
+real(DEVDP) :: RvdWPower
 
 end module ffdev_err_aimxdm_dat

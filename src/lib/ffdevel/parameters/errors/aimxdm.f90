@@ -38,6 +38,8 @@ subroutine ffdev_err_aimxdm_init
     PrintAIMXDMErrorSummary  = .false.
     AIMXDMErrorWeight        = 1.0
     AIMXDMBurriedOnly        = .false.
+    TTRIJSource              = 0
+    RvdWPower                = 3.0d0
 
 end subroutine ffdev_err_aimxdm_init
 
@@ -67,7 +69,7 @@ subroutine ffdev_err_aimxdm_error(error)
     real(DEVDP)             :: rii,rjj,rij
     real(DEVDP)             :: bii,bjj,bij
     real(DEVDP)             :: totc,totr,totw
-    real(DEVDP)             :: w6,w8,w10
+    real(DEVDP)             :: w6,w8,w10,ttrij
     ! --------------------------------------------------------------------------
 
     error%aimxdm = 0.0d0
@@ -131,19 +133,34 @@ subroutine ffdev_err_aimxdm_error(error)
 
                 ! DOI: 10.1021/ct200602x - eq 5
                 bij = 2.0d0 * bii * bjj / (bii + bjj)
+                ! bij = sqrt(bii * bjj)
+
 
                 ! DOI: 10.1021/acs.jctc.6b00027 - eq 8
-                rii = r0free_i * (vaim_i / v0free_i)**(1.0d0 / 3.0d0)
-                rjj = r0free_j * (vaim_j / v0free_J)**(1.0d0 / 3.0d0)
+                rii = r0free_i * (vaim_i / v0free_i)**(1.0d0 / RvdWPower)
+                rjj = r0free_j * (vaim_j / v0free_J)**(1.0d0 / RvdWPower)
 
                 ! Lorentz(-Berthelot) rules
                 rij = 0.5d0 * (rii + rjj)
 
-                ! c6eff
-                call ffdev_err_aimxdm_wx(bij*r0,w6,w8,w10)
+                select case(TTRIJSource)
+                    case(0)
+                        ttrij = r0
+                    case(1)
+                        ttrij = rij
+                    case default
+                        stop 'TTRIJSource'
+                end select
 
-                c6eff = (c6xdm*w6 + c8xdm*w8/r0**2 + c10xdm*w10/r0**4)
+                ! c6eff
+                call ffdev_err_aimxdm_wx(bij*ttrij,w6,w8,w10)
+
+                c6eff = (c6xdm*w6 + c8xdm*w8/ttrij**2 + c10xdm*w10/ttrij**4)
              !   write(*,*) w6, w8, w10, c6xdm, c6eff, c6
+
+                write(1035,*) zi, zj, sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%ti)%name, &
+                              sets(i)%top%atom_types(sets(i)%top%nb_types(nbt)%tj)%name, &
+                              c6, c6eff, c6xdm
 
                 ! errors
                 err_r0 = r0 - rij
@@ -161,8 +178,8 @@ subroutine ffdev_err_aimxdm_error(error)
     end do
 
     if( totw .gt. 0.0d0 ) then
-        totr = totr / totw
-        totc = totc / totw
+        totr = sqrt( totr / totw )
+        totc = sqrt( totc / totw )
     end if
 
    ! write(*,*) totr, totc
@@ -226,7 +243,7 @@ subroutine ffdev_err_aimxdm_summary()
     real(DEVDP)             :: rii,rjj,rij
     real(DEVDP)             :: bii,bjj,bij
     real(DEVDP)             :: totc,totr,totw
-    real(DEVDP)             :: w6,w8,w10
+    real(DEVDP)             :: w6,w8,w10,ttrij
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -295,16 +312,25 @@ subroutine ffdev_err_aimxdm_summary()
                 bij = 2.0d0 * bii * bjj / (bii + bjj)
 
                 ! DOI: 10.1021/acs.jctc.6b00027 - eq 8
-                rii = r0free_i * (vaim_i / v0free_i)**(1.0d0 / 3.0d0)
-                rjj = r0free_j * (vaim_j / v0free_J)**(1.0d0 / 3.0d0)
+                rii = r0free_i * (vaim_i / v0free_i)**(1.0d0 / RvdWPower)
+                rjj = r0free_j * (vaim_j / v0free_J)**(1.0d0 / RvdWPower)
 
                 ! Lorentz(-Berthelot) rules
                 rij = 0.5d0 * (rii + rjj)
 
-                ! c6eff
-                call ffdev_err_aimxdm_wx(bij*r0,w6,w8,w10)
+                select case(TTRIJSource)
+                    case(0)
+                        ttrij = r0
+                    case(1)
+                        ttrij = rij
+                    case default
+                        stop 'TTRIJSource'
+                end select
 
-                c6eff = (c6xdm*w6 + c8xdm*w8/r0**2 + c10xdm*w10/r0**4)
+                ! c6eff
+                call ffdev_err_aimxdm_wx(bij*ttrij,w6,w8,w10)
+
+                c6eff = (c6xdm*w6 + c8xdm*w8/ttrij**2 + c10xdm*w10/ttrij**4)
 
                 ! errors
                 err_r0 = r0 - rij
@@ -322,8 +348,8 @@ subroutine ffdev_err_aimxdm_summary()
     end do
 
     if( totw .gt. 0.0d0 ) then
-        totr = totr / totw
-        totc = totc / totw
+        totr = sqrt( totr / totw )
+        totc = sqrt( totc / totw )
     end if
 
     write(DEV_OUT,20)

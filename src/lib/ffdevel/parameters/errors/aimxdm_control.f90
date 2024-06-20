@@ -73,6 +73,18 @@ subroutine ffdev_err_aimxdm_ctrl(fin)
         write(DEV_OUT,145) prmfile_onoff(AIMXDMBurriedOnly)
     end if
 
+    if( prmfile_get_integer_by_key(fin,'ttrijsource', TTRIJSource)) then
+        write(DEV_OUT,150) TTRIJSource
+    else
+        write(DEV_OUT,155) TTRIJSource
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'rvdwpower', RvdWPower)) then
+        write(DEV_OUT,160) RvdWPower
+    else
+        write(DEV_OUT,165) RvdWPower
+    end if
+
  10 format('=== [aimxdm] ===================================================================')
 
 110  format ('LJ R0 penalty (enabled)                = ',a12)
@@ -85,6 +97,12 @@ subroutine ffdev_err_aimxdm_ctrl(fin)
 
 140  format ('LJ R0 penalty only buried (buried)     = ',a12)
 145  format ('LJ R0 penalty only buried (buried)     = ',a12,'                  (default)')
+
+150  format ('ttrijsource                            = ',i12)
+155  format ('ttrijsource                            = ',i12,'                  (default)')
+
+160  format ('rvdwpower                              = ',f12.3)
+165  format ('rvdwpower                              = ',f12.3,'                  (default)')
 
 end subroutine ffdev_err_aimxdm_ctrl
 

@@ -1309,6 +1309,11 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
            case(REALM_VDW_B0,REALM_VDW_ALPHA0)
                 find_parameter_by_ids = i
                 return
+            case(REALM_VDW_R0FREE,REALM_VDW_PBFREE)
+                if( params(i)%ti .eq. ti ) then
+                    find_parameter_by_ids = i
+                    return
+                end if
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in find_parameter_by_ids!')
         end select
