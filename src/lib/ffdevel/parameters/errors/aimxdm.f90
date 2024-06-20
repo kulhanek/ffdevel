@@ -334,7 +334,7 @@ subroutine ffdev_err_aimxdm_summary()
 
                 ! errors
                 err_r0 = r0 - rij
-                err_c6 = (c6 - c6eff)/(2.0d0 * sets(i)%top%nb_types(nbt)%eps)
+                err_c6 = c6 - c6eff
 
                 totr = totr + err_r0**2
                 totc = totc + (err_c6**2)**(1.0d0/6.0d0)
