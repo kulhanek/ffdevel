@@ -2116,6 +2116,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     integer                     :: i, pn, alloc_stat
     real(DEVDP)                 :: phi, ene, offset, rmse, arg
     integer*8                   :: plan
+    integer                     :: nfreq,nsample
     ! --------------------------------------------------------------------------
 
     if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
@@ -2127,14 +2128,17 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
                                     top%atom_types(top%dihedral_types(idx)%tk)%name, &
                                     top%atom_types(top%dihedral_types(idx)%tl)%name
 
-    allocate(x(GRBF2COSMaxN),y(GRBF2COSMaxN/2+1), stat = alloc_stat)
+    nfreq   = GRBF2COSMaxN          ! number of frequency components
+    nsample = GRBF2COSMaxN*16       ! number of samples
+
+    allocate(x(nsample),y(nsample/2+1), stat = alloc_stat)
     if(alloc_stat .ne. 0) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for FFTW in ffdev_parameters_grbf2cos!')
     end if
 
     ! calculate the dihedral potential
-    do i=1,GRBF2COSMaxN
-        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSMaxN))
+    do i=1,nsample
+        phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
         ene = 0.0d0
         do pn=1,top%dihedral_types(idx)%n
             if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
@@ -2146,28 +2150,30 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     end do
 
     ! run FFT
-    call dfftw_plan_dft_r2c_1d(plan,GRBF2COSMaxN,x,y,FFTW_ESTIMATE)
+    call dfftw_plan_dft_r2c_1d(plan,nsample,x,y,FFTW_ESTIMATE)
     call dfftw_execute_dft_r2c(plan, x, y)
     call dfftw_destroy_plan(plan)
 
     ! filter them and update dihedral_type
     top%dihedral_types(idx)%mode = DIH_COS
     top%dihedral_types(idx)%enabled(:) = .false.
-    do i=1,GRBF2COSMaxN
-        if( 2.0d0*abs(y(i+1))/real(GRBF2COSMaxN) .gt. GRBF2COSMinV ) then
+
+    ! y(1) - DC component, maybe we can use it to get the value of offset?
+    do i=1,nfreq
+        if( 2.0d0*abs(y(i+1))/real(nsample,DEVDP) .gt. GRBF2COSMinV ) then
             top%dihedral_types(idx)%enabled(i) = .true.
             top%dihedral_types(idx)%g(i) = 2*DEV_PI - atan2(aimag(y(i+1)),real(y(i+1)))
             ! wrap phase into <0;360>
             top%dihedral_types(idx)%g(i) = top%dihedral_types(idx)%g(i) &
                                          - 2.0d0*DEV_PI*floor(top%dihedral_types(idx)%g(i)/(2.0d0*DEV_PI))
-            top%dihedral_types(idx)%v(i) = 2.0d0*abs(y(i+1))/real(GRBF2COSMaxN)
+            top%dihedral_types(idx)%v(i) = 2.0d0*abs(y(i+1))/real(nsample,DEVDP)
         end if
     end do
 
     ! calculate offset
     offset = 0.0d0
-    do i=1,GRBF2COSMaxN
-        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSMaxN))
+    do i=1,nsample
+        phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
         ene = 0.0d0
         do pn=1,top%dihedral_types(idx)%n
             if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
@@ -2180,14 +2186,14 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
         end do
         offset = offset + ene - x(i)
     end do
-    offset = offset / real(GRBF2COSMaxN)
+    offset = offset / real(nsample,DEVDP)
 
     ! write(*,*) 'offset=',offset
 
     ! calculate error
     rmse = 0.0d0
-    do i=1,GRBF2COSMaxN
-        phi = 2.0d0*DEV_PI*(i-1)/(real(GRBF2COSMaxN))
+    do i=1,nsample
+        phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
         ene = 0.0d0
         do pn=1,top%dihedral_types(idx)%n
             if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
@@ -2201,13 +2207,13 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
         ! write(*,*) ene- offset, x(i)
         rmse = rmse + (ene - x(i) - offset)**2
     end do
-    rmse = sqrt(rmse / real(GRBF2COSMaxN))
+    rmse = sqrt(rmse / real(nsample,DEVDP))
 
     write(DEV_OUT,20) rmse
 
     deallocate(x,y)
 
- 10 format('# converting grbf2cos for: ',A2,'-',A2,'-',A2,'-',A2)
+ 10 format('       # converting grbf2cos for: ',A2,'-',A2,'-',A2,'-',A2)
  20 format(', RMSE= ',F10.4)
 
 end subroutine ffdev_parameters_grbf2cos

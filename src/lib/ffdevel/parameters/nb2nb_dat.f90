@@ -42,7 +42,7 @@ integer                 :: NB2NBIterBS                  = 1000          ! precis
 
 real(DEVDP)             :: NB2NBdrPrint                 = 0.02          ! for printing
 
-character(len=MAX_PATH) :: NBPotPathCore                = '04.nbpot'    ! NB potential storage
+character(len=MAX_PATH) :: NBPotPathCore                = '-none-'    ! NB potential storage
 
 logical                 :: NB2NBIncludePen              = .true.
 logical                 :: NB2NBIncludeInd              = .true.

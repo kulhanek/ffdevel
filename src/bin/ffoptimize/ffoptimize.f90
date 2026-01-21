@@ -463,7 +463,7 @@ subroutine execute_ffopt(grpin,pid,exec)
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
 
         ! write NB potentials
-        if( PACSource .eq. PAC_SOURCE_TOPOLOGY ) then
+        if( (PACSource .eq. PAC_SOURCE_TOPOLOGY) .and. ShowPACStat ) then
             call ffdev_parameters_update_charge_stat
             call ffdev_parameters_print_charge_stat
         end if
@@ -515,7 +515,7 @@ subroutine execute_ffeval(grpin,pid,exec)
         call ffdev_geoopt_print_stat_counters
 
         ! NB2NB data
-        if( PACSource .eq. PAC_SOURCE_TOPOLOGY ) then
+        if( (PACSource .eq. PAC_SOURCE_TOPOLOGY) .and. ShowPACStat ) then
             call ffdev_parameters_update_charge_stat
             call ffdev_parameters_print_charge_stat
         end if

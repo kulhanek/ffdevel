@@ -53,16 +53,31 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
         write(DEV_OUT,25) ffdev_parameters_prmsmode_to_string(NBParamsMode)
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+        write(DEV_OUT,345) prmfile_onoff(ShowPACStat)
         write(DEV_OUT,335) trim(ffdev_topology_nb_mode_to_string(PACSource))
 
         write(DEV_OUT,65)  prmfile_onoff(OnlyDefinedDihItems)
         write(DEV_OUT,75)  prmfile_onoff(LockDihC_PN1)
         write(DEV_OUT,85)  prmfile_onoff(ResetAllSetup)
-        write(DEV_OUT,245) trim(LoadEnergy)
-        write(DEV_OUT,445) trim(LoadSAPT)
-        write(DEV_OUT,255) trim(LoadProbe)
+    !-------
+        string = LoadEnergy
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,245) trim(string)
+    !-------
+        string = LoadSAPT
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,445) trim(string)
+    !-------
+        string = LoadProbe
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,255) trim(string)
+    !-------
         write(DEV_OUT,265) max_probe_energy
-        write(DEV_OUT,235) trim(LoadCharges)
+    !-------
+        string = LoadCharges
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,235) trim(string)
+    !-------
         write(DEV_OUT,95)  GlbRngSeed
         write(DEV_OUT,105) Verbosity
 
@@ -87,6 +102,12 @@ subroutine ffdev_parameters_ctrl_control(fin)
         write(DEV_OUT,110) prmfile_onoff(PACAsPrms)
     else
         write(DEV_OUT,115) prmfile_onoff(PACAsPrms)
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'show_pac', ShowPACStat)) then
+        write(DEV_OUT,340) prmfile_onoff(ShowPACStat)
+    else
+        write(DEV_OUT,345) prmfile_onoff(ShowPACStat)
     end if
 
     if( prmfile_get_string_by_key(fin,'pac_source', string)) then
@@ -118,21 +139,27 @@ subroutine ffdev_parameters_ctrl_control(fin)
     if( prmfile_get_string_by_key(fin,'load_energy',LoadEnergy) ) then
         write(DEV_OUT,240) trim(LoadEnergy)
     else
-        write(DEV_OUT,245) trim(LoadEnergy)
+        string = LoadEnergy
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,245) trim(string)
     end if
 
     ! setup sapt, which should be loaded
     if( prmfile_get_string_by_key(fin,'load_sapt',LoadSAPT) ) then
         write(DEV_OUT,440) trim(LoadSAPT)
     else
-        write(DEV_OUT,445) trim(LoadSAPT)
+        string = LoadSAPT
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,445) trim(string)
     end if
 
     ! setup energy, which should be loaded for probes
     if( prmfile_get_string_by_key(fin,'load_probe',LoadProbe) ) then
         write(DEV_OUT,250) trim(LoadProbe)
     else
-        write(DEV_OUT,255) trim(LoadProbe)
+        string = LoadProbe
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,255) trim(string)
     end if
 
     if( prmfile_get_real8_by_key(fin,'max_probe_energy', max_probe_energy)) then
@@ -151,7 +178,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
     if( prmfile_get_string_by_key(fin,'load_charges',LoadCharges) ) then
         write(DEV_OUT,230) trim(LoadCharges)
     else
-        write(DEV_OUT,235) trim(LoadCharges)
+        string = LoadCharges
+        if( len_trim(string) .eq. 0 ) string = "-generic-"
+        write(DEV_OUT,235) trim(string)
     end if
 
     if( prmfile_get_integer_by_key(fin,'seed', GlbRngSeed)) then
@@ -181,7 +210,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
  10 format('=== [control] ==================================================================')
 
  20  format ('NB parameter assembly mode (nb_params)   = ',a12)
- 25  format ('NB parameter assembly mode (nb_params)   = ',a12,'                (default)')
+ 25  format ('NB parameter assembly mode (nb_params)   = ',a27,' (default)')
 110  format ('Partial charges as params (pac_as_prms)  = ',a12)
 115  format ('Partial charges as params (pac_as_prms)  = ',a12,'                (default)')
  60  format ('Use defined dih items (dih_only_defined) = ',a12)
@@ -213,6 +242,9 @@ subroutine ffdev_parameters_ctrl_control(fin)
 
 330  format ('PAC source for stat (pac_source)         = ',A12)
 335  format ('PAC source for stat (pac_source)         = ',A12,'                (default)')
+
+340  format ('Show PAC statistics (show_pac)           = ',A12)
+345  format ('PShow PAC statistics (show_pac)           = ',A12,'                (default)')
 
 460  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3)
 465  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3,'                (default)')
@@ -737,41 +769,41 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
  10 format('=== [nbsetup] ==================================================================')
 
- 20 format('NB mode (nb_mode)                    = ',A)
- 25 format('NB mode (nb_mode)                    = ',A31,' (current)')
+ 20 format('NB mode (nb_mode)                  = ',A)
+ 25 format('NB mode (nb_mode)                  = ',A33,' (current)')
 
- 30 format('LJ combining rules (lj_comb_rules)   = ',A)
- 35 format('LJ combining rules (lj_comb_rules)   = ',A31,' (current)')
+ 30 format('LJ combining rules (lj_comb_rules) = ',A)
+ 35 format('LJ combining rules (lj_comb_rules) = ',A33,' (current)')
 
- 40 format('BJ damping mode (dampbj_mode)        = ',A)
- 45 format('BJ damping mode (dampbj_mode)        = ',A31,' (current)')
+ 40 format('BJ damping mode (dampbj_mode)      = ',A)
+ 45 format('BJ damping mode (dampbj_mode)      = ',A33,' (current)')
 
- 80 format('EXP mode (exp_mode)                  = ',A)
- 85 format('EXP mode (exp_mode)                  = ',A31,' (current)')
+ 80 format('EXP mode (exp_mode)                = ',A)
+ 85 format('EXP mode (exp_mode)                = ',A33,' (current)')
 
- 60 format('EXP PA mode (exp_pa_mode)            = ',A)
- 65 format('EXP PA mode (exp_pa_mode)            = ',A31,' (current)')
+ 60 format('EXP PA mode (exp_pa_mode)          = ',A)
+ 65 format('EXP PA mode (exp_pa_mode)          = ',A33,' (current)')
 
- 70 format('EXP PB mode (exp_pb_mode)            = ',A)
- 75 format('EXP PB mode (exp_pb_mode)            = ',A31,' (current)')
+ 70 format('EXP PB mode (exp_pb_mode)          = ',A)
+ 75 format('EXP PB mode (exp_pb_mode)          = ',A33,' (current)')
 
- 90 format('Penetration energy (pen_enabled)     = ',A)
- 95 format('Penetration energy (pen_enabled)     = ',A31,' (current)')
+ 90 format('Penetration energy (pen_enabled)   = ',A)
+ 95 format('Penetration energy (pen_enabled)   = ',A33,' (current)')
 
-120 format('Pen energy mode (pen_mode)           = ',A)
-125 format('Pen energy mode (pen_mode)           = ',A31,' (current)')
+120 format('Pen energy mode (pen_mode)         = ',A)
+125 format('Pen energy mode (pen_mode)         = ',A33,' (current)')
 
-210 format('Induction energy (ind_enabled)       = ',A)
-215 format('Induction energy (ind_enabled)       = ',A31,' (current)')
+210 format('Induction energy (ind_enabled)     = ',A)
+215 format('Induction energy (ind_enabled)     = ',A33,' (current)')
 
-220 format('Induction energy mode (ind_mode)     = ',A)
-225 format('Induction energy mode (ind_mode)     = ',A31,' (current)')
+220 format('Induction energy mode (ind_mode)   = ',A)
+225 format('Induction energy mode (ind_mode)   = ',A33,' (current)')
 
-230 format('LJ Exp6 probe (lj_exp6_probe)         = ',A)
-235 format('LJ Exp6 probe (lj_exp6_probe)         = ',A31,' (current)')
+230 format('LJ Exp6 probe (lj_exp6_probe)      = ',A)
+235 format('LJ Exp6 probe (lj_exp6_probe)      = ',A33,' (current)')
 
-240 format('LJ Exp6 alpha mode (lj_alpha_mode)    = ',A)
-245 format('LJ Exp6 alpha mode (lj_alpha_mode)    = ',A31,' (current)')
+240 format('LJ Exp6 alpha mode (lj_alpha_mode) = ',A)
+245 format('LJ Exp6 alpha mode (lj_alpha_mode) = ',A33,' (current)')
 
  15 format('=== SET ',I2.2)
 
@@ -1468,10 +1500,10 @@ subroutine change_realms(realm,enable,options,nchanged)
 ! ------------------
     else if( is_realm_option(options,'types') ) then
         select case(realmid)
-            case(REALM_BOND_D0,REALM_BOND_K)
-            case(REALM_ANGLE_A0,REALM_ANGLE_K)
-            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
-            case(REALM_VDW_EPS,REALM_VDW_R0)
+            case(REALM_BOND_D0,REALM_BOND_K,            &
+                 REALM_ANGLE_A0,REALM_ANGLE_K,          &
+                 REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,   &
+                 REALM_VDW_EPS,REALM_VDW_R0)
                 call change_dih_realm_types(realmid,enable,options,nchanged)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Option "types" can be used only with bond_d0, bond_k,' &
@@ -1654,8 +1686,8 @@ subroutine change_dih_realm_types(realmid,enable,options,nchanged)
                 (params(i)%tk .eq. 0) .or. (params(i)%tl .eq. 0)  ) cycle   ! incompatible parameter
             if( .not. ( ( (ti .eq. params(i)%ti) .and. (tj .eq. params(i)%tj) .and. &
                           (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%tl) ) .or. &
-                        ( (ti .eq. params(i)%tl) .and. (tj .eq. params(i)%tj) .and. &
-                          (tk .eq. params(i)%tk) .and. (tl .eq. params(i)%ti) ) ) ) cycle
+                        ( (ti .eq. params(i)%tl) .and. (tj .eq. params(i)%tk) .and. &
+                          (tk .eq. params(i)%tj) .and. (tl .eq. params(i)%ti) ) ) ) cycle
 
         end if
 

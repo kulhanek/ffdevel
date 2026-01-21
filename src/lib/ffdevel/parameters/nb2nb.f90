@@ -65,6 +65,8 @@ subroutine ffdev_nb2nb_initdirs
     integer         :: estat
     ! --------------------------------------------------------------------------
 
+    if( trim(NBPotPathCore) .eq. '-none-' ) return ! no printing
+
     call execute_command_line('mkdir -p ' // trim(NBPotPathCore), exitstat = estat )
     if( estat .ne. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to create NBPotPathCore in ffdev_nb2nb_initdirs!')
@@ -283,6 +285,8 @@ subroutine ffdev_nb2nb_write_all_current_pots
     integer                 :: i,gnbt,nbt
     real(DEVDP)             :: sig,r0,eps,r
     ! --------------------------------------------------------------------------
+
+    if( trim(NBPotPathCore) .eq. '-none-' ) return ! no printing
 
     call ffdev_nb2nb_initdirs_for_prog
 

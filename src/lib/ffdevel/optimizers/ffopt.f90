@@ -1034,6 +1034,8 @@ subroutine opt_shark
     write(DEV_OUT,20)
     write(DEV_OUT,30)
 
+    lasterror = 0.0d0
+
     do istep = 1, NOptSteps
         call shark_dostep1(error)
 
@@ -1055,7 +1057,6 @@ subroutine opt_shark
                 call ffdev_ffopt_write_error_sumlogs(SMMLOG_INTERMEDIATE)
             end if
         end if
-
         if( istep .ne. 1 .and. abs(error - lasterror) .le. MinErrorChange ) then
             mineneattempts = mineneattempts - 1
         else
@@ -1064,8 +1065,8 @@ subroutine opt_shark
 
         if( mineneattempts .eq. 0 ) then
             write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change     : ', abs(error - lasterror)
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change treshold : ', MinErrorChange
-            write(DEV_OUT,'(a)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change threshold : ', MinErrorChange
+            write(DEV_OUT,'(a)') ' >>> INFO: Error change is below threshold! Minimization was stopped.'
             exit
         end if
 

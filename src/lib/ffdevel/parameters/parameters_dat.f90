@@ -161,6 +161,7 @@ logical         :: LockDihC_PN1         = .true.
 logical         :: ResetAllSetup        = .true.
 integer         :: GlbRngSeed           = 5489                      ! random number generator setup
 integer         :: PACSource            = PAC_SOURCE_TOPOLOGY
+logical         :: ShowPACStat          = .false.
 
 ! === [grbf2cos] ===============================================================
 integer         :: GRBF2COSMaxN     = 4             ! max length of cos series
