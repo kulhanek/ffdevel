@@ -437,68 +437,69 @@ subroutine ffdev_topology_load(top,name)
         end do
     end if
 
+    if( top%nimpropers .gt. 0 ) then
+        ! read impropers -------------------------------------
+        if( .not. prmfile_open_section(fin,'impropers') ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to open [impropers] section!')
+        end if
 
-    ! read impropers -------------------------------------
-    if( .not. prmfile_open_section(fin,'impropers') ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [impropers] section!')
+        do i=1,top%nimpropers
+            if( .not. prmfile_get_line(fin,buffer) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Premature end of [impropers] section!')
+            end if
+            read(buffer,*,iostat=io_stat) idx, top%impropers(i)%ai, top%impropers(i)%aj, &
+                                          top%impropers(i)%ak, top%impropers(i)%al, top%impropers(i)%dt
+            if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [impropers] section!')
+            end if
+            if( (top%impropers(i)%ai .le. 0) .or. (top%impropers(i)%ai .gt. top%natoms) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
+            end if
+            if( (top%impropers(i)%aj .le. 0) .or. (top%impropers(i)%aj .gt. top%natoms) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
+            end if
+            if( (top%impropers(i)%ak .le. 0) .or. (top%impropers(i)%ak .gt. top%natoms) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
+            end if
+            if( (top%impropers(i)%al .le. 0) .or. (top%impropers(i)%al .gt. top%natoms) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
+            end if
+            if( (top%impropers(i)%dt .le. 0) .or. (top%impropers(i)%dt .gt. top%nimproper_types) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Bond type out-of-legal range in [impropers] section!')
+            end if
+        end do
+
+        ! read improper types -------------------------------------
+        if( .not. prmfile_open_section(fin,'improper_types') ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to open [improper_types] section!')
+        end if
+
+        do i=1,top%nimproper_types
+            if( .not. prmfile_get_line(fin,buffer) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Premature end of [improper_types] section!')
+            end if
+            read(buffer,*,iostat=io_stat) idx, top%improper_types(i)%ti, top%improper_types(i)%tj, &
+                                          top%improper_types(i)%tk, top%improper_types(i)%tl, &
+                                          top%improper_types(i)%v, top%improper_types(i)%g
+            if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [improper_types] section!')
+            end if
+            if( (top%improper_types(i)%ti .le. 0) .or. (top%improper_types(i)%ti .gt. top%natom_types) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
+            end if
+            if( (top%improper_types(i)%tj .le. 0) .or. (top%improper_types(i)%tj .gt. top%natom_types) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
+            end if
+            if( (top%improper_types(i)%tk .le. 0) .or. (top%improper_types(i)%tk .gt. top%natom_types) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
+            end if
+            if( (top%improper_types(i)%tl .le. 0) .or. (top%improper_types(i)%tl .gt. top%natom_types) ) then
+                call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
+            end if
+
+            top%improper_types(i)%ffoptactive = .false.
+        end do
     end if
-
-    do i=1,top%nimpropers
-        if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [impropers] section!')
-        end if
-        read(buffer,*,iostat=io_stat) idx, top%impropers(i)%ai, top%impropers(i)%aj, &
-                                      top%impropers(i)%ak, top%impropers(i)%al, top%impropers(i)%dt
-        if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [impropers] section!')
-        end if
-        if( (top%impropers(i)%ai .le. 0) .or. (top%impropers(i)%ai .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
-        end if
-        if( (top%impropers(i)%aj .le. 0) .or. (top%impropers(i)%aj .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
-        end if
-        if( (top%impropers(i)%ak .le. 0) .or. (top%impropers(i)%ak .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
-        end if
-        if( (top%impropers(i)%al .le. 0) .or. (top%impropers(i)%al .gt. top%natoms) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom index out-of-legal range in [impropers] section!')
-        end if
-        if( (top%impropers(i)%dt .le. 0) .or. (top%impropers(i)%dt .gt. top%nimproper_types) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Bond type out-of-legal range in [impropers] section!')
-        end if
-    end do
-
-    ! read improper types -------------------------------------
-    if( .not. prmfile_open_section(fin,'improper_types') ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to open [improper_types] section!')
-    end if
-
-    do i=1,top%nimproper_types
-        if( .not. prmfile_get_line(fin,buffer) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Premature end of [improper_types] section!')
-        end if
-        read(buffer,*,iostat=io_stat) idx, top%improper_types(i)%ti, top%improper_types(i)%tj, &
-                                      top%improper_types(i)%tk, top%improper_types(i)%tl, &
-                                      top%improper_types(i)%v, top%improper_types(i)%g
-        if( (idx .ne. i) .or. (io_stat .ne. 0) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Illegal record in [improper_types] section!')
-        end if
-        if( (top%improper_types(i)%ti .le. 0) .or. (top%improper_types(i)%ti .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
-        end if
-        if( (top%improper_types(i)%tj .le. 0) .or. (top%improper_types(i)%tj .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
-        end if
-        if( (top%improper_types(i)%tk .le. 0) .or. (top%improper_types(i)%tk .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
-        end if
-        if( (top%improper_types(i)%tl .le. 0) .or. (top%improper_types(i)%tl .gt. top%natom_types) ) then
-            call ffdev_utils_exit(DEV_ERR,1,'Atom type out-of-legal range in [improper_types] section!')
-        end if
-
-        top%improper_types(i)%ffoptactive = .false.
-    end do
 
     ! read NB list -------------------------------------
     if( .not. prmfile_open_section(fin,'nb_list') ) then

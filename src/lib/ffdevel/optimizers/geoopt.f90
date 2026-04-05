@@ -97,9 +97,9 @@ subroutine ffdev_geoopt_print_stat_counters()
     write(DEV_OUT,30) NumberOfGrdEvals
 
   5 format("# >> GeoOpt Statistics")
- 10 format('#    Number of geometry optimizations (all)    : ',I9)
- 20 format('#    Number of geometry optimizations (failed) : ',I9)
- 30 format('#    Number of gradient evaluations            : ',I9)
+ 10 format('#    Number of geometry optimizations (all)    : ',I12)
+ 20 format('#    Number of geometry optimizations (failed) : ',I12)
+ 30 format('#    Number of gradient evaluations            : ',I12)
 
 end subroutine ffdev_geoopt_print_stat_counters
 
