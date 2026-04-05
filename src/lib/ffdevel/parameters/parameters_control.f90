@@ -244,7 +244,7 @@ subroutine ffdev_parameters_ctrl_control(fin)
 335  format ('PAC source for stat (pac_source)         = ',A12,'                (default)')
 
 340  format ('Show PAC statistics (show_pac)           = ',A12)
-345  format ('PShow PAC statistics (show_pac)           = ',A12,'                (default)')
+345  format ('Show PAC statistics (show_pac)           = ',A12,'                (default)')
 
 460  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3)
 465  format ('Value of Exp6 alpha0 (exp6_alpha0)       = ',F12.3,'                (default)')

@@ -596,6 +596,7 @@ subroutine ffdev_topology_save(top,name)
     ! --------------------------------------------
     character(len=20)   :: key
     integer             :: i,j,dm
+    logical             :: dihedral_seq_cos, dihedral_seq_grbf
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_TOP,name,'U')
@@ -648,129 +649,161 @@ subroutine ffdev_topology_save(top,name)
                                adjustl(top%atoms(i)%name), &
                                top%atoms(i)%residx, &
                                adjustl(top%atoms(i)%resname), &
-                               top%atoms(i)%charge
+                               top%atoms(i)%charge, &
+                               top%atoms(i)%symmclass
     end do
- 40 format(I7,1X,I4,1X,A4,1X,I5,1X,A4,1X,F10.6)
-
+ 40 format(I7,1X,I4,1X,A4,1X,I5,1X,A4,1X,F10.6,1X,I9)
 
     ! bonds ----------------------------
-
-    write(DEV_TOP,10) 'bond_types'
-    do i=1,top%nbond_types
-        write(DEV_TOP,50)   i, top%bond_types(i)%ti, &
-                               top%bond_types(i)%tj, &
-                               top%bond_types(i)%model, &
-                               top%bond_types(i)%d0, top%bond_types(i)%k
-    end do
+    if( top%nbond_types .ne. 0 ) then
+        write(DEV_TOP,10) 'bond_types'
+        do i=1,top%nbond_types
+            write(DEV_TOP,50)   i, top%bond_types(i)%ti, &
+                                   top%bond_types(i)%tj, &
+                                   top%bond_types(i)%model, &
+                                   top%bond_types(i)%d0, top%bond_types(i)%k
+        end do
+    end if
  50 format(I7,1X,I5,1X,I5,1X,I4,1X,F13.6,1X,F13.6)
 
-    write(DEV_TOP,10) 'bonds'
-    do i=1,top%nbonds
-        write(DEV_TOP,60)   i, top%bonds(i)%ai, top%bonds(i)%aj, top%bonds(i)%bt
-    end do
+    if( top%nbonds .ne. 0 ) then
+        write(DEV_TOP,10) 'bonds'
+        do i=1,top%nbonds
+            write(DEV_TOP,60)   i, top%bonds(i)%ai, top%bonds(i)%aj, top%bonds(i)%bt
+        end do
+    end if
  60 format(I7,1X,I5,1X,I5,1X,I4)
 
     ! angles ----------------------------
-    write(DEV_TOP,10) 'angle_types'
-    do i=1,top%nangle_types
-        write(DEV_TOP,70)   i, top%angle_types(i)%ti, &
-                               top%angle_types(i)%tj, &
-                               top%angle_types(i)%tk, &
-                               top%angle_types(i)%model, &
-                               top%angle_types(i)%a0, top%angle_types(i)%k
-    end do
+    if( top%nangle_types .ne. 0 ) then
+        write(DEV_TOP,10) 'angle_types'
+        do i=1,top%nangle_types
+            write(DEV_TOP,70)   i, top%angle_types(i)%ti, &
+                                   top%angle_types(i)%tj, &
+                                   top%angle_types(i)%tk, &
+                                   top%angle_types(i)%model, &
+                                   top%angle_types(i)%a0, top%angle_types(i)%k
+        end do
+    end if
  70 format(I7,1X,I5,1X,I5,1X,I5,1X,I4,1X,F13.6,1X,F13.6)
 
-    write(DEV_TOP,10) 'angles'
-    do i=1,top%nangles
-        write(DEV_TOP,80)   i, top%angles(i)%ai, top%angles(i)%aj, top%angles(i)%ak, top%angles(i)%at
-    end do
+    if( top%nangles .ne. 0 ) then
+        write(DEV_TOP,10) 'angles'
+        do i=1,top%nangles
+            write(DEV_TOP,80)   i, top%angles(i)%ai, top%angles(i)%aj, top%angles(i)%ak, top%angles(i)%at
+        end do
+    end if
  80 format(I7,1X,I5,1X,I5,1X,I5,1X,I4)
 
     ! dihedrals -------------------------
-    write(DEV_TOP,10) 'dihedral_types'
-    do i=1,top%ndihedral_types
-        write(DEV_TOP,90)   i, top%dihedral_types(i)%ti, &
-                               top%dihedral_types(i)%tj, &
-                               top%dihedral_types(i)%tk, &
-                               top%dihedral_types(i)%tl, &
-                               top%dihedral_types(i)%mode,  &
-                               1.0/top%dihedral_types(i)%inv_scee, 1.0/top%dihedral_types(i)%inv_scnb
-    end do
+    if( top%ndihedral_types .ne. 0 ) then
+        write(DEV_TOP,10) 'dihedral_types'
+        do i=1,top%ndihedral_types
+            write(DEV_TOP,90)   i, top%dihedral_types(i)%ti, &
+                                   top%dihedral_types(i)%tj, &
+                                   top%dihedral_types(i)%tk, &
+                                   top%dihedral_types(i)%tl, &
+                                   top%dihedral_types(i)%mode,  &
+                                   1.0/top%dihedral_types(i)%inv_scee, 1.0/top%dihedral_types(i)%inv_scnb
+        end do
+    end if
 
  90 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4,1X,F13.6,1X,F13.6,1X,F13.6,1X,F13.6)
 
-    ! dihedrals -------------------------
-    write(DEV_TOP,10) 'dihedral_seq_cos'
+    dihedral_seq_cos = .false.
+    dihedral_seq_grbf = .false.
+
     do i=1,top%ndihedral_types
         if( top%dihedral_types(i)%mode .eq. DIH_COS ) then
-            do j=1,top%dihedral_types(i)%n
-                dm = 0
-                if( top%dihedral_types(i)%enabled(j) ) dm = 1
-                write(DEV_TOP,92)   i, j, &
-                                       top%dihedral_types(i)%v(j), &
-                                       top%dihedral_types(i)%g(j), &
-                                       dm
-            end do
+            dihedral_seq_cos = .true.
+        end if
+        if( top%dihedral_types(i)%mode .eq. DIH_GRBF ) then
+            dihedral_seq_grbf = .true.
         end if
     end do
+
+    if( dihedral_seq_cos ) then
+        write(DEV_TOP,10) 'dihedral_seq_cos'
+        do i=1,top%ndihedral_types
+            if( top%dihedral_types(i)%mode .eq. DIH_COS ) then
+                do j=1,top%dihedral_types(i)%n
+                    dm = 0
+                    if( top%dihedral_types(i)%enabled(j) ) dm = 1
+                    write(DEV_TOP,92)   i, j, &
+                                           top%dihedral_types(i)%v(j), &
+                                           top%dihedral_types(i)%g(j), &
+                                           dm
+                end do
+            end if
+        end do
+    end if
 
  92 format(I6,1X,I2,1X,F13.6,1X,F13.6,1X,I7)
 
-    ! dihedrals -------------------------
-    write(DEV_TOP,10) 'dihedral_seq_grbf'
-    do i=1,top%ndihedral_types
-        if( top%dihedral_types(i)%mode .eq. DIH_GRBF ) then
-            do j=1,top%dihedral_types(i)%n
-                write(DEV_TOP,93)   i, j, &
-                                       top%dihedral_types(i)%c(j), &
-                                       top%dihedral_types(i)%p(j), &
-                                       top%dihedral_types(i)%w2(j)
-            end do
-        end if
-    end do
+    if( dihedral_seq_grbf ) then
+        write(DEV_TOP,10) 'dihedral_seq_grbf'
+        do i=1,top%ndihedral_types
+            if( top%dihedral_types(i)%mode .eq. DIH_GRBF ) then
+                do j=1,top%dihedral_types(i)%n
+                    write(DEV_TOP,93)   i, j, &
+                                           top%dihedral_types(i)%c(j), &
+                                           top%dihedral_types(i)%p(j), &
+                                           top%dihedral_types(i)%w2(j)
+                end do
+            end if
+        end do
+    end if
 
  93 format(I6,1X,I2,1X,F13.6,1X,F13.6,1X,F13.6)
 
-    write(DEV_TOP,10) 'dihedrals'
-    do i=1,top%ndihedrals
-        write(DEV_TOP,100)   i, top%dihedrals(i)%ai, top%dihedrals(i)%aj, &
-                               top%dihedrals(i)%ak, top%dihedrals(i)%al, top%dihedrals(i)%dt
-    end do
+    if( top%ndihedrals .ne. 0 ) then
+        write(DEV_TOP,10) 'dihedrals'
+        do i=1,top%ndihedrals
+            write(DEV_TOP,100)   i, top%dihedrals(i)%ai, top%dihedrals(i)%aj, &
+                                   top%dihedrals(i)%ak, top%dihedrals(i)%al, top%dihedrals(i)%dt
+        end do
+    end if
 100 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4)
 
-    ! impropers ------------------------
-    write(DEV_TOP,10) 'improper_types'
-    do i=1,top%nimproper_types
-        write(DEV_TOP,110)   i, top%improper_types(i)%ti, &
-                               top%improper_types(i)%tj, &
-                               top%improper_types(i)%tk, &
-                               top%improper_types(i)%tl, &
-                               top%improper_types(i)%v, top%improper_types(i)%g
-    end do
-
+   ! impropers ------------------------
+    if( top%nimproper_types .ne. 0 ) then
+        write(DEV_TOP,10) 'improper_types'
+        do i=1,top%nimproper_types
+            write(DEV_TOP,110)   i, top%improper_types(i)%ti, &
+                                   top%improper_types(i)%tj, &
+                                   top%improper_types(i)%tk, &
+                                   top%improper_types(i)%tl, &
+                                   top%improper_types(i)%v, top%improper_types(i)%g
+        end do
+    end if
 110 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,F13.6,1X,F13.6)
 
-    write(DEV_TOP,10) 'impropers'
-    do i=1,top%nimpropers
-        write(DEV_TOP,120)   i, top%impropers(i)%ai, top%impropers(i)%aj, &
-                               top%impropers(i)%ak, top%impropers(i)%al, top%impropers(i)%dt
-    end do
+    if( top%nimpropers .ne. 0 ) then
+        write(DEV_TOP,10) 'impropers'
+        do i=1,top%nimpropers
+            write(DEV_TOP,120)   i, top%impropers(i)%ai, top%impropers(i)%aj, &
+                                   top%impropers(i)%ak, top%impropers(i)%al, top%impropers(i)%dt
+        end do
+    end if
 120 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4)
 
     ! NB list --------------------------
-    write(DEV_TOP,10) 'nb_types'
-    do i=1,top%nnb_types
-        write(DEV_TOP,125)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
-                               top%nb_types(i)%eps, top%nb_types(i)%r0
-    end do
+    if( top%nnb_types .ne. 0 ) then
+        write(DEV_TOP,10) 'nb_types'
+        do i=1,top%nnb_types
+            write(DEV_TOP,125)   i, top%nb_types(i)%ti, top%nb_types(i)%tj, &
+                                   top%nb_types(i)%eps, top%nb_types(i)%r0
+        end do
+    end if
 125 format(I7,1X,I5,1X,I5,1X,F13.7,1X,F13.7)
 
-    write(DEV_TOP,10) 'nb_list'
-    do i=1,top%nb_size
-        write(DEV_TOP,130)   i, top%nb_list(i)%ai, top%nb_list(i)%aj, &
-                               top%nb_list(i)%nbt, top%nb_list(i)%dt
-    end do
+    if( top%nb_size .ne. 0 ) then
+        write(DEV_TOP,10) 'nb_list'
+        do i=1,top%nb_size
+            write(DEV_TOP,130)   i, top%nb_list(i)%ai, top%nb_list(i)%aj, &
+                                   top%nb_list(i)%nbt, top%nb_list(i)%dt
+        end do
+    end if
 130 format(I7,1X,I5,1X,I5,1X,I5,1X,I5)
 
     close(DEV_TOP)

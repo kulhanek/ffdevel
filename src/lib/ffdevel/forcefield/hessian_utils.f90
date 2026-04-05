@@ -436,7 +436,7 @@ subroutine ffdev_hessian_calc_trg_ihess(top,geo)
     ijac(:,:) = 0.0d0
 
     ! calculate jacobian
-    call ffdev_jacobian_calc_all(top,geo%crd,jac)
+    call ffdev_jacobian_calc_all(top,geo%trg_crd,jac)
     call ffdev_jacobian_inverse(jac,ijac)
     call ffdev_jacobian_get_ihess(ijac,geo%trg_ihess,ihess)
 
@@ -447,6 +447,8 @@ subroutine ffdev_hessian_calc_trg_ihess(top,geo)
     do i=1,top%nangles
         if( associated(geo%trg_ihess_angles) ) geo%trg_ihess_angles(i) = ihess(i+top%nbonds,i+top%nbonds)
     end do
+
+  !  write(*,*) ihess
 
     ! release working arrays
     deallocate(ijac,jac,ihess)

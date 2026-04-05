@@ -52,6 +52,7 @@ subroutine ffdev_errors_init_all()
     use ffdev_err_mue
     use ffdev_err_aimr0
     use ffdev_err_aimxdm
+    use ffdev_err_ihess
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -66,6 +67,8 @@ subroutine ffdev_errors_init_all()
     call ffdev_err_energy_init()
     call ffdev_err_sapt_init()
     call ffdev_err_probe_init()
+
+    call ffdev_err_ihess_init()
 
     call ffdev_err_bonds_init()
     call ffdev_err_angles_init()
@@ -189,6 +192,9 @@ subroutine ffdev_errors_error_only(error)
     use ffdev_err_aimxdm_dat
     use ffdev_err_aimxdm
 
+    use ffdev_err_ihess_dat
+    use ffdev_err_ihess
+
     use ffdev_timers
 
     implicit none
@@ -207,8 +213,6 @@ subroutine ffdev_errors_error_only(error)
     error%rmsd = 0.0d0
     error%ihess_bonds = 0.0d0
     error%ihess_angles = 0.0d0
-    error%ihess_dihedrals = 0.0d0
-    error%ihess_impropers = 0.0d0
     error%sapt_ele = 0.0d0
     error%sapt_ind = 0.0d0
     error%sapt_rep = 0.0d0
@@ -242,6 +246,12 @@ subroutine ffdev_errors_error_only(error)
     if( EnableProbeError ) then
         call ffdev_err_probe_error(error)
         error%total = error%total + error%probe_ene * ProbeErrorWeight
+    end if
+
+    if( EnableIHessError ) then
+        call ffdev_err_ihess_error(error)
+        error%total = error%total + error%ihess_bonds * IHessErrorsWeightBonds &
+                                  + error%ihess_angles * IHessErrorsWeightAngles
     end if
 
 ! geometry based errors
@@ -377,6 +387,12 @@ subroutine ffdev_errors_ffopt_header_I()
     if( EnableProbeError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
+    if( EnableIHessError ) then
+        write(DEV_OUT,130,ADVANCE='NO')
+    end if
+    if( EnableIHessError ) then
+        write(DEV_OUT,140,ADVANCE='NO')
+    end if
     if( EnableBondsError ) then
         write(DEV_OUT,33,ADVANCE='NO')
     end if
@@ -447,7 +463,9 @@ subroutine ffdev_errors_ffopt_header_I()
  96 format('    C6Penalty')
  80 format('          MUE')
 110 format('        AIMR0')
-120 format('        AIMXDM')
+120 format('       AIMXDM')
+130 format('  IHess(bond)')
+140 format(' IHess(angle)')
 
 end subroutine ffdev_errors_ffopt_header_I
 
@@ -476,7 +494,7 @@ subroutine ffdev_errors_ffopt_header_II()
     use ffdev_err_mue_dat
     use ffdev_err_aimr0_dat
     use ffdev_err_aimxdm_dat
-
+    use ffdev_err_ihess_dat
 
     implicit none
     ! --------------------------------------------------------------------------
@@ -547,7 +565,12 @@ subroutine ffdev_errors_ffopt_header_II()
     if( EnableAIMXDMError ) then
         write(DEV_OUT,50,ADVANCE='NO')
     end if
-
+    if( EnableIHessError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
+    if( EnableIHessError ) then
+        write(DEV_OUT,50,ADVANCE='NO')
+    end if
 
  50 format(' ------------')
 
@@ -559,6 +582,7 @@ end subroutine ffdev_errors_ffopt_header_II
 
 subroutine ffdev_errors_ffopt_results(error)
 
+    use ffdev_err_ihess_dat
     use ffdev_err_bonds_dat
     use ffdev_err_angles_dat
     use ffdev_err_dihedrals_dat
@@ -600,6 +624,12 @@ subroutine ffdev_errors_ffopt_results(error)
     end if
     if( EnableProbeError ) then
         write(DEV_OUT,15,ADVANCE='NO') ProbeErrorWeight*error%probe_ene
+    end if
+    if( EnableIHessError ) then
+        write(DEV_OUT,15,ADVANCE='NO') IHessErrorsWeightBonds*error%ihess_bonds
+    end if
+    if( EnableIHessError ) then
+        write(DEV_OUT,15,ADVANCE='NO') IHessErrorsWeightAngles*error%ihess_angles
     end if
     if( EnableBondsError ) then
         write(DEV_OUT,15,ADVANCE='NO') BondErrorsWeight*error%bonds
@@ -732,7 +762,7 @@ subroutine ffdev_errors_summary(logmode)
             PrintImpropersErrorSummary .or. PrintProbeErrorSummary .or. &
             PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. &
             PrintPBPnlErrorSummary .or. PrintQNBErrorSummary .or. PrintNBPnlErrorSummary .or. PrintNBR0ErrorSummary .or. &
-            PrintNBC6ErrorSummary .or. PrintAIMR0ErrorSummary .or. PrintAIMXDMErrorSummary ) ) then
+            PrintNBC6ErrorSummary .or. PrintAIMR0ErrorSummary .or. PrintAIMXDMErrorSummary .or. PrintIHessErrorSummary ) ) then
         ! no error to report
         return
     end if
@@ -826,7 +856,7 @@ subroutine ffdev_errors_summary(logmode)
     ! summary per points
     if( PrintBondsErrorSummary .or. PrintAnglesErrorSummary .or. PrintDihedralsErrorSummary .or. &
         PrintImpropersErrorSummary .or. &
-        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary) then
+        PrintNBDistsErrorSummary .or. PrintRMSDErrorSummary .or. PrintPACPnlErrorSummary .or. PrintIHessErrorSummary) then
 
         write(DEV_OUT,*)
         write(DEV_OUT,20)
@@ -834,6 +864,11 @@ subroutine ffdev_errors_summary(logmode)
         do i=1,nsets
             do j=1,sets(i)%ngeos
                 printme = .false.
+                if( PrintIHessErrorSummary ) then
+                    printsum = .false.
+                    call ffdev_err_ihess_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                    printme = printme .or. printsum
+                end if
                 if( PrintBondsErrorSummary ) then
                     printsum = .false.
                     call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j),printsum)
@@ -865,6 +900,9 @@ subroutine ffdev_errors_summary(logmode)
                 write(DEV_OUT,*)
                 write(DEV_OUT,6) i,j
                 printsum = .true.
+                if( PrintIHessErrorSummary ) then
+                    call ffdev_err_ihess_summary(sets(i)%top,sets(i)%geo(j),printsum)
+                end if
                 if( PrintBondsErrorSummary ) then
                     call ffdev_err_bonds_summary(sets(i)%top,sets(i)%geo(j),printsum)
                 end if

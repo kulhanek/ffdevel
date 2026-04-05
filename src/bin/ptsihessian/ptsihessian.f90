@@ -34,7 +34,7 @@ program ffdev_ptsihessian_program
     character(len=MAX_PATH) :: arg
     type(TOPOLOGY)          :: top
     type(GEOMETRY)          :: geo,geo_backup
-    logical                 :: exclude_bonds,exclude_angles,exclude_dihedrals,exclude_impropers,exclude_nb
+    logical                 :: exclude_dihedrals,exclude_impropers,exclude_nb
     integer                 :: i
     ! --------------------------------------------------------------------------
 
@@ -49,8 +49,6 @@ program ffdev_ptsihessian_program
     call get_command_argument(1, topname)
     call get_command_argument(2, geoname)
 
-    exclude_bonds = .false.
-    exclude_angles = .false.
     exclude_dihedrals = .true.
     exclude_impropers = .true.
     exclude_nb = .true.
@@ -58,10 +56,6 @@ program ffdev_ptsihessian_program
     do i=3,command_argument_count()
         call get_command_argument(i, arg)
         select case(trim(arg))
-            case('exclude_bonds')
-                exclude_bonds = .true.
-            case('noexclude_angles')
-                exclude_angles = .true.
             case('noexclude_dihedrals')
                 exclude_dihedrals = .false.
             case('noexclude_impropers')
@@ -156,22 +150,12 @@ program ffdev_ptsihessian_program
 
     call ffdev_hessian_allocate_trg_ihess(top,geo)
 
-    if( exclude_bonds .or. exclude_angles .or. exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
+    if( exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
         call ffdev_geometry_copy(geo_backup,geo)
         call ffdev_gradient_allocate(geo_backup)
         geo_backup%grd = 0.0d0
         call ffdev_hessian_allocate(geo_backup)
         geo_backup%hess = 0.0d0
-    end if
-
-    if( exclude_bonds ) then
-        call ffdev_hessian_bonds(top,geo_backup)
-        write(DEV_OUT,'(a)') '> Bonds excluded ...'
-    end if
-
-    if( exclude_angles ) then
-        call ffdev_hessian_angles(top,geo_backup)
-        write(DEV_OUT,'(a)') '> Angles excluded ...'
     end if
 
     if( exclude_dihedrals ) then
@@ -189,9 +173,9 @@ program ffdev_ptsihessian_program
         write(DEV_OUT,'(a)') '> NB excluded ...'
     end if
 
-    if( exclude_bonds .or. exclude_angles .or. exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
+    if( exclude_dihedrals .or. exclude_impropers .or. exclude_nb ) then
+        ! write(*,*) geo_backup%hess
         geo%trg_ihess = geo%trg_hess - geo_backup%hess
-        call ffdev_geometry_copy(geo,geo_backup)
     else
         geo%trg_ihess = geo%trg_hess
     end if
@@ -229,7 +213,7 @@ subroutine print_usage()
 
     return
 
-10 format('    ptsihessian <stop> <point> [excludenb]')
+10 format('    ptsihessian <stop> <point> [exclude_bonds|exclude_angles|noexclude_dihedrals|noexclude_impropers|noexclude_nb]')
 
 end subroutine print_usage
 

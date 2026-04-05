@@ -523,14 +523,14 @@ subroutine ffdev_geometry_load_1point(geo,stream)
             read(sym,*) geo%z(i)
         end if
     end do
-    if( geo%trg_crd_loaded ) then
-        ! always load trg_geo
+
+    ! always load trg_geo
         allocate( geo%trg_crd(3,geo%natoms), stat = alloc_stat )
         if( alloc_stat .ne. 0 ) then
             call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arays for geometry!')
         end if
         geo%trg_crd = geo%crd
-    end if
+        geo%trg_crd_loaded = .true.
 
     ! extra data - optional
     do while( .true. )
@@ -1940,7 +1940,7 @@ subroutine ffdev_geometry_rstsum(unid,geo)
     end do
 
  10 format('# Geometry Restraint Summary')
- 20 format('# ID  Type  Target value Curent value  Deviation  ')
+ 20 format('# ID  Type  Target value Current val.  Deviation  ')
  30 format('# --- ----- ------------ ------------ ------------')
  40 format(I5,1X,A5,1X,F12.6,1X,F12.6,1X,F12.6)
 

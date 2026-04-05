@@ -52,81 +52,159 @@ end subroutine ffdev_jacobian_calc_all
 ! subroutine ffdev_jacobian_inverse(jac,ijac,fac)
 ! ==============================================================================
 
-subroutine ffdev_jacobian_inverse(jac,ijac)
+! OLD
+!subroutine ffdev_jacobian_inverse(jac,ijac)
+!
+!    use ffdev_topology_dat
+!    use ffdev_utils
+!
+!    implicit none
+!    real(DEVDP)     :: jac(:,:)
+!    real(DEVDP)     :: ijac(:,:)
+!    ! --------------------------------------------
+!    integer                 :: i, m, n, k, alloc_stat, info, lwork
+!    real(DEVDP),allocatable :: u(:,:), vt(:,:), sig(:), sig_plus(:,:)
+!    real(DEVDP),allocatable :: temp_mat(:,:), work(:)
+!    integer,allocatable     :: iwork(:)
+!    real(DEVDP)             :: fac
+!    ! --------------------------------------------------------------------------
+!
+!    fac = 1d-3  ! FIXME - need to be tunable
+!
+!    m = size(jac,1)
+!    n = size(jac,2)
+!    k = min(m,n)
+!
+!    allocate(u(m,m),vt(n,n),sig(k),sig_plus(n,m),iwork(8*k),work(1),temp_mat(n,m), &
+!             stat = alloc_stat)
+!    if( alloc_stat .ne. 0) then
+!       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays I in ffdev_jacobian_inverse!')
+!    end if
+!
+!    u(:,:)          = 0.0d0
+!    vt(:,:)         = 0.0d0
+!    sig(:)          = 0.0d0
+!    sig_plus(:,:)   = 0.0d0
+!    work(:)         = 0.0d0
+!
+!    ! work size query
+!    lwork = -1
+!    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
+!                lwork, iwork(1), info)
+!
+!    if( info .ne. 0) then
+!       call ffdev_utils_exit(DEV_ERR,1,'Unable to get size of working array in ffdev_jacobian_inverse!')
+!    end if
+!
+!    ! reinit working array
+!    lwork = int(work(1))
+!    deallocate(work)
+!    allocate(work(lwork), stat = alloc_stat)
+!
+!    if( alloc_stat .ne. 0) then
+!       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays II in ffdev_jacobian_inverse!')
+!    end if
+!
+!    ! do SVD
+!    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
+!                lwork, iwork(1), info)
+!
+!    if( info .ne. 0) then
+!       call ffdev_utils_exit(DEV_ERR,1,'SVD failed in ffdev_jacobian_inverse!')
+!    end if
+!
+!    ! set singular values that are too small to zero
+!    do i = 1, k
+!       if( sig(i) > fac*maxval(sig) ) then
+!          sig_plus(i,i) = 1.0d0/sig(i)
+!       else
+!          sig_plus(i,i) = 0.0d0
+!       end if
+!    end do
+!
+!    ! build pseudoinverse: V*sig_plus*UT
+!    CALL dgemm('N', 'T', n, m, m, 1.0d0, sig_plus, n, u, m, 0.0d0, temp_mat, n)
+!    CALL dgemm('T', 'N', n, m, n, 1.0d0, vt, n, temp_mat, n, 0.0d0, ijac, n)
+!
+!    ! clean data
+!    deallocate(u, vt, sig, iwork, work, sig_plus, temp_mat)
+!
+!end subroutine ffdev_jacobian_inverse
+
+subroutine ffdev_jacobian_inverse(jac, ijac)
 
     use ffdev_topology_dat
     use ffdev_utils
 
     implicit none
-    real(DEVDP)     :: jac(:,:)
-    real(DEVDP)     :: ijac(:,:)
-    ! --------------------------------------------
-    integer                 :: i, m, n, k, alloc_stat, info, lwork
-    real(DEVDP),allocatable :: u(:,:), vt(:,:), sig(:), sig_plus(:,:)
-    real(DEVDP),allocatable :: temp_mat(:,:), work(:)
-    integer,allocatable     :: iwork(:)
-    real(DEVDP)             :: fac
-    ! --------------------------------------------------------------------------
 
-    fac = 1d-3  ! FIXME - need to be tunable
+    real(DEVDP)                 :: jac(:,:)
+    real(DEVDP)                 :: ijac(:,:)
+
+    integer                     :: i, m, n, k, alloc_stat, info, lwork
+    real(DEVDP), allocatable    :: a(:,:), u(:,:), vt(:,:), sig(:), sig_plus(:,:)
+    real(DEVDP), allocatable    :: temp_mat(:,:), work(:)
+    integer, allocatable        :: iwork(:)
+    real(DEVDP)                 :: tol, smax
 
     m = size(jac,1)
     n = size(jac,2)
     k = min(m,n)
 
-    allocate(u(m,m),vt(n,n),sig(k),sig_plus(n,m),iwork(8*k),work(1),temp_mat(n,m), &
-             stat = alloc_stat)
-    if( alloc_stat .ne. 0) then
-       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays I in ffdev_jacobian_inverse!')
+    if (size(ijac,1) /= n .or. size(ijac,2) /= m) then
+       call ffdev_utils_exit(DEV_ERR,1,'ijac has incorrect dimensions in ffdev_jacobian_inverse!')
     end if
 
-    u(:,:)          = 0.0d0
-    vt(:,:)         = 0.0d0
-    sig(:)          = 0.0d0
-    sig_plus(:,:)   = 0.0d0
-    work(:)         = 0.0d0
+    allocate(a(m,n), u(m,m), vt(n,n), sig(k), sig_plus(n,m), temp_mat(n,m), &
+             iwork(8*k), work(1), stat=alloc_stat)
+    if (alloc_stat /= 0) then
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays in ffdev_jacobian_inverse!')
+    end if
 
-    ! work size query
+    a = jac
+    u = 0.0d0
+    vt = 0.0d0
+    sig = 0.0d0
+    sig_plus = 0.0d0
+    work = 0.0d0
+
+    ! workspace query
     lwork = -1
-    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
-                lwork, iwork(1), info)
-
-    if( info .ne. 0) then
-       call ffdev_utils_exit(DEV_ERR,1,'Unable to get size of working array in ffdev_jacobian_inverse!')
+    call dgesdd('A', m, n, a, m, sig, u, m, vt, n, work, lwork, iwork, info)
+    if (info .ne. 0) then
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to query workspace in ffdev_jacobian_inverse!')
     end if
 
-    ! reinit working array
-    lwork = int(work(1))
+    lwork = ceiling(work(1))
     deallocate(work)
-    allocate(work(lwork), stat = alloc_stat)
-
-    if( alloc_stat .ne. 0) then
-       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate arrays II in ffdev_jacobian_inverse!')
+    allocate(work(lwork), stat=alloc_stat)
+    if (alloc_stat .ne. 0) then
+       call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate work array in ffdev_jacobian_inverse!')
     end if
 
-    ! do SVD
-    call dgesdd('A', m, n, jac(1,1), m, sig(1), u(1,1), m, vt(1,1), n, work(1), &
-                lwork, iwork(1), info)
-
-    if( info .ne. 0) then
+    ! recompute with real workspace
+    a = jac
+    call dgesdd('A', m, n, a, m, sig, u, m, vt, n, work, lwork, iwork, info)
+    if (info .ne. 0) then
        call ffdev_utils_exit(DEV_ERR,1,'SVD failed in ffdev_jacobian_inverse!')
     end if
 
-    ! set singular values that are too small to zero
+    smax = maxval(sig)
+    tol  = epsilon(1.0d0) * max(m,n) * smax
+
     do i = 1, k
-       if( sig(i) > fac*maxval(sig) ) then
-          sig_plus(i,i) = 1.0d0/sig(i)
+       if (sig(i) .gt. tol) then
+          sig_plus(i,i) = 1.0d0 / sig(i)
        else
           sig_plus(i,i) = 0.0d0
        end if
     end do
 
-    ! build pseudoinverse: V*sig_plus*UT
-    CALL dgemm('N', 'T', n, m, m, 1.0d0, sig_plus, n, u, m, 0.0d0, temp_mat, n)
-    CALL dgemm('T', 'N', n, m, n, 1.0d0, vt, n, temp_mat, n, 0.0d0, ijac, n)
+    ! ijac = V * sig_plus * U^T
+    call dgemm('N', 'T', n, m, m, 1.0d0, sig_plus, n, u, m, 0.0d0, temp_mat, n)
+    call dgemm('T', 'N', n, m, n, 1.0d0, vt, n, temp_mat, n, 0.0d0, ijac, n)
 
-    ! clean data
-    deallocate(u, vt, sig, iwork, work, sig_plus, temp_mat)
+    deallocate(a, u, vt, sig, sig_plus, temp_mat, work, iwork)
 
 end subroutine ffdev_jacobian_inverse
 
@@ -229,7 +307,7 @@ subroutine ffdev_jacobian_angles(top,crd,idx,jac)
     real(DEVDP)     :: jac(:,:)
     ! --------------------------------------------
     integer         :: ia,i,j,k
-    real(DEVDP)     :: scp,f1,bji2inv,bjk2inv,bjiinv,bjkinv,angv
+    real(DEVDP)     :: scp,f1,bji2inv,bjk2inv,bjiinv,bjkinv
     real(DEVDP)     :: rji(3),rjk(3),di(3),dk(3)
     ! --------------------------------------------------------------------------
 
@@ -249,22 +327,35 @@ subroutine ffdev_jacobian_angles(top,crd,idx,jac)
         bjiinv = sqrt(bji2inv)
         bjkinv = sqrt(bjk2inv)
 
-        ! calculate scp and angv
+        ! calculate scp
         scp = ( rji(1)*rjk(1) + rji(2)*rjk(2) + rji(3)*rjk(3) )
         scp = scp * bjiinv*bjkinv
-        if ( scp .gt.  1.0d0 ) then
-            scp =  1.0d0
-        else if ( scp .lt. -1.0d0 ) then
-            scp = -1.0d0
-        end if
-        angv = acos(scp)
 
-        ! gradient
-        f1 = sin ( angv )
-        if ( abs(f1) .lt. 1.0d-3 ) then
-            ! sin(0.1 deg) = 1.7e-3
-            ! this is set for angles close to 0 deg or 180 deg by 0.1 deg
-            ! the aim is to avoid division be zero
+! OLD
+!        if ( scp .gt.  1.0d0 ) then
+!            scp =  1.0d0
+!        else if ( scp .lt. -1.0d0 ) then
+!            scp = -1.0d0
+!        end if
+!        angv = acos(scp)
+!
+!        ! gradient
+!        f1 = sin ( angv )
+!        if ( abs(f1) .lt. 1.0d-3 ) then
+!            ! sin(0.1 deg) = 1.7e-3
+!            ! this is set for angles close to 0 deg or 180 deg by 0.1 deg
+!            ! the aim is to avoid division be zero
+!            f1 = -1.0d3
+!        else
+!            f1 = -1.0d0 / f1
+!        end if
+
+! NEW
+        scp = max(-1.0d0,min(1.0d0,scp))
+
+        f1 = sqrt(max(0.0d0,1.0d0-scp*scp))
+        if( f1 .lt. 2.0d-3 ) then
+            ! sin(ang) close to zero: angle close to 0 or 180 deg
             f1 = -1.0d3
         else
             f1 = -1.0d0 / f1

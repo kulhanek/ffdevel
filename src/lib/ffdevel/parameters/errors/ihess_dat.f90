@@ -1,6 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
-!    Copyright (C) 2019 Petr Kulhanek, kulhanek@chemi.muni.cz
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -25,8 +25,12 @@ use ffdev_variables
 ! initialization in ffdev_err_ihess_init
 logical                 :: EnableIHessError
 logical                 :: PrintIHessErrorSummary
-real(DEVDP)             :: IHessErrorsWeight
-logical                 :: OnlyFFOptIHess
+real(DEVDP)             :: IHessErrorsWeightBonds
+real(DEVDP)             :: IHessErrorsWeightAngles
+logical                 :: IHessErrorsExcludeDihedrals
+logical                 :: IHessErrorsExcludeImpropers
+logical                 :: IHessErrorsExcludeNB
+logical                 :: OnlyFFOptIHess               ! only bonds and angles with active parameters
 
 ! ------------------------------------------------------------------------------
 

@@ -477,19 +477,19 @@ subroutine opt_steepest_descent()
         rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
 
         if( istep .ne. 1 .and. abs(FFError%total - lasterror) .le. MinErrorChange ) then
-            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change     : ', abs(FFError%total - lasterror)
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change treshold : ', MinErrorChange
-            write(DEV_OUT,'(a,/)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
+            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change      : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change threshold : ', MinErrorChange
+            write(DEV_OUT,'(a,/)') ' >>> INFO: Error change is below threshold! Minimization was stopped.'
             exit
         end if
 
         if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
-            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: RMS of gradient                 : ', rmsg
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component          : ', abs(maxgrad)
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Last error change               : ', abs(FFError%total - lasterror)
-            write(DEV_OUT,'(a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
+            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: RMS of gradient                  : ', rmsg
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: RMS of gradient threshold        : ', MaxRMSG
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component           : ', abs(maxgrad)
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component threshold : ', MaxG
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Last error change                : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,/)') ' >>> INFO: Gradient thresholds were satisfied! Minimization was stopped.'
             exit
         end if
 
