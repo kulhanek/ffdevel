@@ -69,8 +69,7 @@ private:
     std::vector<CDihedralTypeFilter>    DihFilters;
     std::vector<unsigned int>           SymmClasses;
 
-    int dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
-    int dih_samp_freq;  // dihedral sampling frequency
+    EDihMode dih_mode;       // dihedral mode: 1 - cos; 2 - grbf
 
     // dimmensions
     int natoms;
@@ -110,9 +109,15 @@ private:
 
     void WriteDihedralTypes(std::ostream& sout);
     void WriteDihedralSeqCosMode(std::ostream& sout);
+
     void TransformCosToGRBF(void);
-    void SolveTransformation(int type);
+    void SolveGRBFTransformation(int type);
     void WriteDihedralSeqGRBFMode(std::ostream& sout);
+
+    void TransformCosToCBS(void);
+    void SolveCBSTransformation(int type);
+    void WriteDihedralSeqCBSMode(std::ostream& sout);
+
     void WriteDihedrals(std::ostream& sout);
 
     void WriteImproperTypes(std::ostream& sout);

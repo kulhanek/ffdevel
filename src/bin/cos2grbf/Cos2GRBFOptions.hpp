@@ -32,7 +32,7 @@ public:
     CSO_PROG_NAME_END
 
     CSO_PROG_DESC_BEGIN
-    "Convert the cosinus dihedral series to rational gaussian basis functions."
+    "Convert the cosine dihedral series to Gaussian radial basis functions."
     CSO_PROG_DESC_END
 
     CSO_PROG_VERS_BEGIN
@@ -47,6 +47,7 @@ public:
     // options ------------------------------
     CSO_OPT(int,DihedralSeriesSize)
     CSO_OPT(int,DihedralSamplingSize)
+    CSO_OPT(double,GWidthFactor)
     CSO_OPT(bool,Help)
     CSO_OPT(bool,Version)
     CSO_OPT(bool,Verbose)
@@ -83,6 +84,15 @@ public:
                 "sampling",                      /* long option name */
                 NULL,                           /* parametr name */
                 "number of samples per segment")   /* option description */
+    //----------------------------------------------------------------------
+    CSO_MAP_OPT(double,                           /* option type */
+                GWidthFactor,                        /* option name */
+                1.0,                          /* default value */
+                false,                          /* is option mandatory */
+                'f',                           /* short option name */
+                "wfactor",                      /* long option name */
+                NULL,                           /* parametr name */
+                "gaussian width modulation factor for GRBF")   /* option description */
     //----------------------------------------------------------------------
     CSO_MAP_OPT(bool,                           /* option type */
                 Verbose,                        /* option name */

@@ -1212,13 +1212,13 @@ subroutine ffdev_geometry_info_point_header(mode)
             write(DEV_OUT,190)
     end select
 
- 10 format('# ID   File                                     Weight   Abs Energy E S V G H P X A C I')
- 20 format('# ID   File                                     Weight   Rel Energy E S V G H P X A C I')
- 30 format('# ID   File                                     Weight Probe Energy E S V G H P X A C I')
- 90 format('# ---- ---------------------------------------- ------ ------------ - - - - - - - - - -')
+ 10 format('# ID   File                                     Weight     Abs Energy E S V G H P X A C I')
+ 20 format('# ID   File                                     Weight     Rel Energy E S V G H P X A C I')
+ 30 format('# ID   File                                     Weight   Probe Energy E S V G H P X A C I')
+ 90 format('# ---- ---------------------------------------- ------ -------------- - - - - - - - - - -')
 
-110 format('# ID   File                                     Weight E S V G H P X A C I')
-190 format('# ---- ---------------------------------------- ------ - - - - - - - - - -')
+110 format('# ID   File                                     Weight                E S V G H P X A C I')
+190 format('# ---- ---------------------------------------- ------ -------------- - - - - - - - - - -')
 
 end subroutine ffdev_geometry_info_point_header
 
@@ -1299,9 +1299,9 @@ subroutine ffdev_geometry_info_point(geo,mode)
 
 ! '# ---- -------------------- ------ - - - -'
 
-  10 format(I6,1X,A40,1X,F6.3,1X,E12.6,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
-  20 format(I6,1X,A40,1X,F6.3,1X,F12.4,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
-  30 format(I6,1X,A40,1X,F6.3,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  10 format(I6,1X,A40,1X,F6.3,1X,E14.6,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  20 format(I6,1X,A40,1X,F6.3,1X,F14.4,1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
+  30 format(I6,1X,A40,1X,F6.3,1X,14X,  1X,A1,1X,A1,1X,A1,1X,L1,1X,L1,1X,L1,1X,L1,1X,L1,1X,A1,1X,L1)
 
 end subroutine ffdev_geometry_info_point
 

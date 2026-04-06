@@ -936,6 +936,7 @@ subroutine ffdev_parameters_ctrl_identities(fin)
     character(PRMFILE_MAX_PATH) :: string
     logical                     :: rst
     character(50)               :: key
+    character(50)               :: subkey
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -955,7 +956,7 @@ subroutine ffdev_parameters_ctrl_identities(fin)
     niden = 0
     rst = prmfile_first_line(fin)
     do while ( prmfile_get_line(fin,string) )
-        read(string,*) key
+        read(string,*) key, subkey
         select case(key)
             case('dih_v')
                 write(DEV_OUT,*)
@@ -966,9 +967,18 @@ subroutine ffdev_parameters_ctrl_identities(fin)
                 write(DEV_OUT,40) adjustl(key),'byrot'
                 call setup_dih_identity_byrot(REALM_DIH_G,niden)
             case('dih_c')
-                write(DEV_OUT,*)
-                write(DEV_OUT,40) adjustl(key),'byrot'
-                call setup_dih_identity_byrot(REALM_DIH_C,niden)
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. 'byrot') ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(key),'byrot'
+                    call setup_dih_identity_byrot(REALM_DIH_C,niden)
+                else if( trim(subkey) .eq. 'types' ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(string)
+                    call setup_dih_identity_types(REALM_DIH_C,string,niden)
+                else
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                               'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
+                end if
             case('dih_scee')
                 write(DEV_OUT,*)
                 write(DEV_OUT,40) adjustl(key),'all'
@@ -1118,6 +1128,120 @@ subroutine setup_dih_identity_byrot(realm,niden)
  20 format(I4,1X)
 
 end subroutine setup_dih_identity_byrot
+
+! ------------------------------------------------------------------------------
+
+subroutine setup_dih_identity_types(realm,string,niden)
+
+    use ffdev_parameters
+    use ffdev_parameters_dat
+    use ffdev_utils
+    use prmfile
+
+    implicit none
+    integer                     :: realm
+    character(PRMFILE_MAX_PATH) :: string
+    integer                     :: niden
+    ! --------------------------------------------
+    integer                     :: i,j,lniden,pn
+    real(DEVDP)                 :: value
+    ! --------------------------------------------
+    integer                     :: ti1, tj1, tk1, tl1, ti2, tj2, tk2, tl2
+    character(80)               :: k1, k2, k3, sti1, stj1, stk1, stl1, sti2, stj2, stk2, stl2
+    ! --------------------------------------------------------------------------
+
+    if( (realm .ne. REALM_DIH_V) .and. (realm .ne. REALM_DIH_G) .and. (realm .ne. REALM_DIH_C) ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_dih_identity_types!')
+    end if
+
+    ! read types
+    sti1 = ''
+    stj1 = ''
+    stk1 = ''
+    stl1 = ''
+    ti1 = 0
+    tj1 = 0
+    tk1 = 0
+    tl1 = 0
+
+    sti2 = ''
+    stj2 = ''
+    stk2 = ''
+    stl2 = ''
+    ti2 = 0
+    tj2 = 0
+    tk2 = 0
+    tl2 = 0
+
+    read(string,*,end=556,err=556) k1, k2, sti1, stj1, stk1, stl1, k3, sti2, stj2, stk2, stl2
+556     do i=1,ntypes
+        if( types(i)%name .eq. sti1 ) ti1 = i
+        if( types(i)%name .eq. stj1 ) tj1 = i
+        if( types(i)%name .eq. stk1 ) tk1 = i
+        if( types(i)%name .eq. stl1 ) tl1 = i
+
+        if( types(i)%name .eq. sti2 ) ti2 = i
+        if( types(i)%name .eq. stj2 ) tj2 = i
+        if( types(i)%name .eq. stk2 ) tk2 = i
+        if( types(i)%name .eq. stl2 ) tl2 = i
+    end do
+
+    do i=1,nparams
+        ! skip different realms
+        if( params(i)%realm .ne. realm ) cycle
+        ! skip already set identities
+        if( params(i)%identity .gt. 0 ) cycle
+
+        if( .not. ( &
+            ((params(i)%ti .eq. ti1) .and. (params(i)%tj .eq. tj1) .and. &
+             (params(i)%tk .eq. tk1) .and. (params(i)%tl .eq. tl1)) .or. &
+            ((params(i)%ti .eq. tl1) .and. (params(i)%tj .eq. tk1) .and. &
+             (params(i)%tk .eq. tj1) .and. (params(i)%tl .eq. ti1)) ) ) then
+            cycle
+        end if
+
+        ! get root parameters
+        write(DEV_OUT,10,ADVANCE='NO') i
+        value = params(i)%value
+        pn = params(i)%pn
+
+        ! set identity for the compatible parameters
+        lniden = 0
+        do j=1,nparams
+            ! skip self
+            if( i .eq. j ) cycle
+            ! skip different realms
+            if( params(j)%realm .ne. realm ) cycle
+            ! skip incorrect pn
+            if( params(j)%pn .ne. pn ) cycle
+
+            if( .not. ( &
+                ((params(j)%ti .eq. ti2) .and. (params(j)%tj .eq. tj2) .and. &
+                 (params(j)%tk .eq. tk2) .and. (params(j)%tl .eq. tl2)) .or. &
+                ((params(j)%ti .eq. tl2) .and. (params(j)%tj .eq. tk2) .and. &
+                 (params(j)%tk .eq. tj2) .and. (params(j)%tl .eq. ti2)) ) ) then
+                cycle
+            end if
+
+            params(j)%identity = i
+            params(j)%enabled = .false.
+            params(j)%value = value
+
+            lniden = lniden + 1
+            write(DEV_OUT,20,ADVANCE='NO') j
+            if( MOD(lniden,16) .eq. 0 ) write(DEV_OUT,*)
+        end do
+        write(DEV_OUT,*)
+
+        niden = niden + lniden
+
+    end do
+
+
+ 10 format('    >>> Parameter ',I4,' is root for:')
+ 20 format(1X,I4)
+
+end subroutine setup_dih_identity_types
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_realms

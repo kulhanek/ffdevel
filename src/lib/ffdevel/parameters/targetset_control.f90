@@ -42,9 +42,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
     integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints,ai
     logical                     :: data_avail,rst,shift2zero,stream,has_sapt
-    real(DEVDP)                 :: minenergy,weight
+    real(DEVDP)                 :: minenergy,weight,temperature
     logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
+
+    ! employed in weights by Boltzmann
+    temperature = 300.0d0
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'{TARGETS}', ':')
@@ -272,6 +275,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,95) trim(wmode)
         end if
 
+        if( prmfile_get_real8_by_key(fin,'temperature', temperature)) then
+            write(DEV_OUT,400) temperature
+        else
+            write(DEV_OUT,405) temperature
+        end if
+
         ! get name of initial driving profile
         if( .not. prmfile_get_string_by_key(fin,'initial_drvene',sets(i)%initial_drvene) ) then
             sets(i)%initial_drvene = ''
@@ -366,7 +375,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     call ffdev_geometry_info_point_header(GEO_INFO_ABSENERGY)
                 end if
             else
-                call ffdev_geometry_info_point_header(GEO_INFO_NOENERGY)
+                call ffdev_geometry_info_point_header(GEO_INFO_ABSENERGY)
             end if
         end if
 
@@ -442,14 +451,20 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                             end if
                         end if
                     case('ire2')
-                        if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
-                            sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
+                        if( sets(i)%geo(j)%trg_ene_loaded ) then
+                            if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
+                                sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
+                            end if
                         end if
                     case('boltzmannProbe')
-                        ! FIXME - add tunable value for Temp
-                        !if( sets(i)%geo(j)%trg_probe_ene .gt. 0d0 ) then
-                            sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*300.0d0))
-                        !end if
+                        if( sets(i)%geo(j)%trg_probe_ene_loaded ) then
+                            sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*temperature))
+                        end if
+                    case('boltzmann')
+                        ! for this we need relative energy - it is recalculated later
+!                       if( sets(i)%geo(j)%trg_ene_loaded ) then
+!                           sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+!                       end if
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
@@ -552,6 +567,17 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 do j=1,sets(i)%ngeos
                     if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - minenergy
+
+                    ! overwrite weights
+                    select case(trim(wmode))
+                        case('boltzmann')
+                            if( sets(i)%geo(j)%trg_ene_loaded ) then
+                                sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+                            end if
+                        case default
+                            call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+                    end select
+
                     call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_RELENERGY)
                 end do
             end if
@@ -617,12 +643,15 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
  90 format('Point weights mode (wmode)              = ',a12)
  95 format('Point weights mode (wmode)              = ',a12,'                  (default)')
 
+400 format('Temperature (temperature)               = ',F20.2)
+405 format('Temperature (temperature)               = ',F20.2,'          (default)')
+
 110 format('Do not calculate frequencies (nofreq)   = ',a12)
 115 format('Do not calculate frequencies (nofreq)   = ',a12,'                  (default)')
 
 200 format('Number of target points                 = ',I6)
 300 format('Minimum energy point #',I5.5,' has energy ',F20.4)
-305 format('Substracting energy of reference states ...')
+305 format('Subtracting energy of reference states ...')
 308 format('Shifting minimum to zero ...')
 
 end subroutine ffdev_targetset_ctrl

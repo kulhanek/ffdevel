@@ -48,6 +48,8 @@ public:
     CSO_OPT(CSmallString,CrdName)
     CSO_OPT(int,DihedralSeriesSize)
     CSO_OPT(CSmallString,DihedralMode)
+    CSO_OPT(int,NDihSamples)
+    CSO_OPT(double,GWidthFactor)
     CSO_OPT(CSmallString,DihedralTypes)
     CSO_OPT(bool,ZeroDihPhase)
     CSO_OPT(CSmallString,Transform)
@@ -59,119 +61,53 @@ public:
     CSO_LIST_END
 
     CSO_MAP_BEGIN
-// description of arguments ---------------------------------------------------
-    CSO_MAP_ARG(CSmallString,                   /* argument type */
-                TopologyName,                          /* argument name */
-                NULL,                           /* default value */
-                true,                           /* is argument mandatory */
-                "TOPOLOGY",                           /* parametr name */
-                "AMBER topology name. If the name is '-' then the AMBER topology is read from the standard input.")   /* argument description */
-    CSO_MAP_ARG(CSmallString,                   /* argument type */
-                STopologyName,                          /* argument name */
-                NULL,                           /* default value */
-                true,                           /* is argument mandatory */
-                "STOPOLOGY",                           /* parametr name */
-                "Simplified topology name. If the name is '-' then the simplified topology is written to the standard output.")   /* argument description */
-// description of options -----------------------------------------------------
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                CrdName,                        /* option name */
-                NULL,                          /* default value */
-                false,                          /* is option mandatory */
-                'c',                           /* short option name */
-                "coords",                      /* long option name */
-                "NAME",                           /* parametr name */
-                "file with coordinates")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(int,                           /* option type */
-                DihedralSeriesSize,                        /* option name */
-                4,                          /* default value */
-                false,                          /* is option mandatory */
-                'd',                           /* short option name */
-                "dihsize",                      /* long option name */
-                "SIZE",                           /* parametr name */
-                "dihedral series size")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                DihedralMode,                        /* option name */
-                "cos",                          /* default value */
-                false,                          /* is option mandatory */
-                'm',                           /* short option name */
-                "dihmode",                      /* long option name */
-                "MODE",                           /* parametr name */
-                "dihedral mode: cos - cosine series, grbf - gaussian radial basis functions")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                DihedralTypes,                        /* option name */
-                NULL,                          /* default value */
-                false,                          /* is option mandatory */
-                'f',                           /* short option name */
-                "dihfilters",                      /* long option name */
-                "NAME",                           /* parametr name */
-                "name of file with atoms types defining dihedrals for grbf transformation, multiple filters can be specified each on a line, "
-                "either two atom types for central bond or four atom types for exact dihedaral type")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(bool,                           /* option type */
-                ZeroDihPhase,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                'z',                           /* short option name */
-                "zerophase",                      /* long option name */
-                NULL,                           /* parametr name */
-                "transform all dihedral phases to zero if applicable")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(CSmallString,                           /* option type */
-                Transform,                        /* option name */
-                "none",                          /* default value */
-                false,                          /* is option mandatory */
-                't',                           /* short option name */
-                "transform",                      /* long option name */
-                "MODE",                           /* parametr name */
-                "transform atom type names by letter capitalization. Allowed modes are: none, first, second, both.")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(bool,                           /* option type */
-                RebuildNBList,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                'r',                           /* short option name */
-                "rebuild",                      /* long option name */
-                NULL,                           /* parametr name */
-                "rebuild NB list from scratch")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(double,                           /* option type */
-                DihCOffset,                        /* option name */
-                0.0,                          /* default value */
-                false,                          /* is option mandatory */
-                'o',                           /* short option name */
-                "offset",                      /* long option name */
-                "NUM",                           /* parametr name */
-                "dih_c offset")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(bool,                           /* option type */
-                Verbose,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                'v',                           /* short option name */
-                "verbose",                      /* long option name */
-                NULL,                           /* parametr name */
-                "increase output verbosity")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(bool,                           /* option type */
-                Version,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                '\0',                           /* short option name */
-                "version",                      /* long option name */
-                NULL,                           /* parametr name */
-                "output version information and exit")   /* option description */
-    //----------------------------------------------------------------------
-    CSO_MAP_OPT(bool,                           /* option type */
-                Help,                        /* option name */
-                false,                          /* default value */
-                false,                          /* is option mandatory */
-                'h',                           /* short option name */
-                "help",                      /* long option name */
-                NULL,                           /* parametr name */
-                "display this help and exit")   /* option description */
+    // -------------------------------------------
+        CSO_MAP_ARG(CSmallString, TopologyName, NULL, true, "TOPOLOGY",
+                "AMBER topology file name. If the name is '-', the AMBER topology is read from the standard input.")
+    // -------------------------------------------
+        CSO_MAP_ARG(CSmallString, STopologyName, NULL, true, "STOPOLOGY",
+                "Simplified topology file name. If the name is '-', the simplified topology is written to the standard output.")
+    // -------------------------------------------
+        CSO_MAP_OPT(CSmallString, CrdName, NULL, false, 'c', "coords", "NAME",
+                "Input file with coordinates.")
+    // -------------------------------------------
+        CSO_MAP_OPT(int, DihedralSeriesSize, 4, false, 'd', "dihsize", "SIZE",
+                "Size of the dihedral cosine series.")
+    // -------------------------------------------
+        CSO_MAP_OPT(CSmallString, DihedralMode, "cos", false, 'm', "dihmode", "MODE",
+                "Dihedral representation mode: cos - cosine series; grbf - Gaussian radial basis functions; cbs - cubic B-spline.")
+    // -------------------------------------------
+        CSO_MAP_OPT(int, NDihSamples, 180, false, 's', "ndihsamples", NULL,
+                "Number of samples for the 2pi rotation.")
+    // -------------------------------------------
+        CSO_MAP_OPT(double, GWidthFactor, 1.0, false, 'w', "wfactor", NULL,
+                "Gaussian width modulation factor for GRBF.")
+    // -------------------------------------------
+        CSO_MAP_OPT(CSmallString, DihedralTypes, NULL, false, 'f', "dihfilters", "NAME",
+                "File with atom types defining dihedral angles for GRBF transformation. Multiple filters can be specified, "
+                "each on a separate line, either as two atom types for the central bond or four atom types for the exact dihedral type.")
+    // -------------------------------------------
+        CSO_MAP_OPT(bool, ZeroDihPhase, false, false, 'z', "zerophase", NULL,
+                "Transform all dihedral phases to zero, if applicable.")
+    // -------------------------------------------
+        CSO_MAP_OPT(CSmallString, Transform, "none", false, 't', "transform", "MODE",
+                "Transform atom type names by letter capitalization. Allowed modes: none, first, second, both.")
+    // -------------------------------------------
+        CSO_MAP_OPT(bool, RebuildNBList, false, false, 'r', "rebuild", NULL,
+                "Rebuild the non-bonded list from scratch.")
+    // -------------------------------------------
+        CSO_MAP_OPT(double, DihCOffset, 0.0, false, 'o', "offset", "NUM",
+                "Offset applied to dih_c.")
+    // -------------------------------------------
+        CSO_MAP_OPT(bool, Verbose, false, false, 'v', "verbose", NULL,
+                "Increase output verbosity.")
+    // -------------------------------------------
+        CSO_MAP_OPT(bool, Version, false, false, '\0', "version", NULL,
+                "Output version information and exit.")
+    // -------------------------------------------
+        CSO_MAP_OPT(bool, Help, false, false, 'h', "help", NULL,
+                "Display this help and exit.")
+    // -------------------------------------------
     CSO_MAP_END
 
 // final operation with options ------------------------------------------------

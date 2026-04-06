@@ -62,8 +62,7 @@ CTop2STop::CTop2STop(void)
     nb_size14 = 0;
     nb_sizeij = 0;
     nnb_types = 0;
-    dih_mode = 0;
-    dih_samp_freq = 5;
+    dih_mode = EDM_ND;
     nsymm_classes = 0;
 
     Coords.AssignTopology(&Topology);
@@ -551,6 +550,8 @@ void CTop2STop::WriteAngleTypes(ostream& sout)
         }
     }
 
+   if( AngleTypes.size() == 0 ) return;
+
     sout << "[angle_types]" << endl;
     sout << "! 0.5*k(a-a0)^2" << endl;
     sout << "! Index TypeA TypeB TypeC Form            a0             K ! TypeA TypeB TypeC" << endl;
@@ -580,6 +581,8 @@ void CTop2STop::WriteAngleTypes(ostream& sout)
 
 void CTop2STop::WriteAngles(ostream& sout)
 {
+   if( Topology.AngleList.GetNumberOfAngles() == 0 ) return;
+
     sout << "[angles]" << endl;
     sout << "! Index AtomA AtomB AtomC Type ! AtomA TypeA AtomB TypeB AtomC TypeC" << endl;
 
@@ -676,7 +679,7 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
 
         if( dtype.idx == -1 ){
             // new type
-            dtype.SetSeriesSize(ndihedral_seq_size);
+            dtype.SetSeriesSize(ndihedral_seq_size,Options.GetOptGWidthFactor());
             dtype.idx = idx;
             idx++;
             dtype.at1 = FindAtomTypeIdx(ip);
@@ -700,21 +703,28 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         DihedralTypes[dtype.idx] = dtype;
     }
 
-    dih_mode = 0;
+    dih_mode = EDM_ND;
     if( Options.GetOptDihedralMode() == "cos" ){
-        dih_mode = 1;
+        dih_mode = EDM_COS;
     } else if( Options.GetOptDihedralMode() == "grbf" ){
-        dih_mode = 2;
+        dih_mode = EDM_GRBF;
+    } else if( Options.GetOptDihedralMode() == "cbs" ){
+        dih_mode = EDM_CBS;
     }
-    if( dih_mode == 0 ){
-        RUNTIME_ERROR("unsupported dihedral mode - p1");
+    if( dih_mode == EDM_ND ){
+        RUNTIME_ERROR("unsupported dihedral mode");
     }
 
     ndihedral_types = DihedralTypes.size();
 
-    if( dih_mode == 2 ){
+    if( dih_mode == EDM_GRBF ){
         TransformCosToGRBF();
     }
+    if( dih_mode == EDM_CBS ){
+        TransformCosToCBS();
+    }
+
+    if( DihedralTypes.size() == 0 ) return;
 
     sout << "[dihedral_types]" << endl;
     sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb ! TypeA TypeB TypeC TypeD" << endl;
@@ -729,10 +739,16 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         sout << right << setw(5) << dtype.at2 << " ";
         sout << right << setw(5) << dtype.at3 << " ";
         sout << right << setw(5) << dtype.at4 << " ";
-        if( dtype.grbf ){
-            sout << right << setw(4) << 2 << " ";
-        } else {
+        switch( dtype.mode ){
+        case(EDM_COS):
             sout << right << setw(4) << 1 << " ";
+            break;
+        case(EDM_GRBF):
+            sout << right << setw(4) << 2 << " ";
+            break;
+        case(EDM_CBS):
+            sout << right << setw(4) << 3 << " ";
+            break;
         }
         sout << right << fixed << setw(13) << setprecision(6) << dtype.scee << " ";
         sout << right << fixed << setw(13) << setprecision(6) << dtype.scnb << " ! ";
@@ -745,21 +761,30 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
 
     int costypes = 0;
     int grbftypes = 0;
+    int cbstypes = 0;
+
     std::map<int,CDihedralType>::iterator tit = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator tie = DihedralTypes.end();
 
     while( tit != tie ){
         CDihedralType dtype = tit->second;
-        if( dtype.grbf ){
-            grbftypes++;
-        } else {
+        switch( dtype.mode ){
+        case(EDM_COS):
             costypes++;
+            break;
+        case(EDM_GRBF):
+            grbftypes++;
+            break;
+        case(EDM_CBS):
+            cbstypes++;
+            break;
         }
         tit++;
     }
 
     if( costypes > 0 ) WriteDihedralSeqCosMode(sout);
     if( grbftypes > 0 ) WriteDihedralSeqGRBFMode(sout);
+    if( cbstypes > 0 ) WriteDihedralSeqCBSMode(sout);
 }
 
 //------------------------------------------------------------------------------
@@ -774,7 +799,7 @@ void CTop2STop::WriteDihedralSeqCosMode(ostream& sout)
 
     while( it != ie ){
         CDihedralType dtype = it->second;
-        if( dtype.grbf == false ){
+        if( dtype.mode == EDM_COS ){
             for(int i=0; i < dtype.GetSeriesSize(); i++ ){
                 sout << right << setw(6) << dtype.idx << " ";
                 sout << right << setw(2) << i+1 << " ";
@@ -807,7 +832,7 @@ void CTop2STop::TransformCosToGRBF(void)
     vout << "Transforming dihedral cos series to rgbf series ..." << endl;
     vout << "   Number of series (dihedral types) = " << ndihedral_types << endl;
     vout << "   Series size                       = " << ndihedral_seq_size << endl;
-    vout << "   Number of training points         = " << (ndihedral_seq_size+1)*dih_samp_freq << endl;
+    vout << "   Number of training points         = " << Options.GetOptNDihSamples() << endl;
 
     std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
@@ -846,8 +871,8 @@ void CTop2STop::TransformCosToGRBF(void)
         }
 
         if( ok ){
-            SolveTransformation(type.idx);
-            DihedralTypes[type.idx].grbf = true;
+            SolveGRBFTransformation(type.idx);
+            DihedralTypes[type.idx].mode = EDM_GRBF;
         }
         it++;
     }
@@ -855,16 +880,16 @@ void CTop2STop::TransformCosToGRBF(void)
 
 //------------------------------------------------------------------------------
 
-void CTop2STop::SolveTransformation(int type)
+void CTop2STop::SolveGRBFTransformation(int type)
 {
     vout << "   fitting dihedral type " << setw(4) << type << " ... final error = ";
 
     // transform
     DihedralTypes[type].DihCOffset = Options.GetOptDihCOffset();
-    DihedralTypes[type].Cos2GRBF(dih_samp_freq);
+    DihedralTypes[type].Cos2GRBF(Options.GetOptNDihSamples());
 
     // calculate rmse
-    double rmse = DihedralTypes[type].RMSECos2GRBF(dih_samp_freq);
+    double rmse = DihedralTypes[type].RMSECos2GRBF(Options.GetOptNDihSamples());
 
     vout << fixed << setw(13) << setprecision(8) << rmse << endl;
 }
@@ -881,13 +906,107 @@ void CTop2STop::WriteDihedralSeqGRBFMode(ostream& sout)
 
     while( it != ie ){
         CDihedralType dtype = it->second;
-        if( dtype.grbf == true ){
+        if( dtype.mode == EDM_GRBF ){
             for(int i=0; i < dtype.GetSeriesSize(); i++ ){
                 sout << right << setw(6) << dtype.idx << " ";
                 sout << right << setw(2) << i+1 << " ";
                 sout << right << fixed << setw(13) << setprecision(6) << dtype.c[i] << " ";
                 sout << right << fixed << setw(13) << setprecision(6) << dtype.p[i] << " ";
                 sout << right << fixed << setw(13) << setprecision(6) << dtype.w2[i];
+                sout << endl;
+            }
+        }
+        it++;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CTop2STop::TransformCosToCBS(void)
+{
+    vout << endl;
+    vout << "Transforming dihedral cos series to cbs series ..." << endl;
+    vout << "   Number of series (dihedral types) = " << ndihedral_types << endl;
+    vout << "   Series size                       = " << ndihedral_seq_size << endl;
+    vout << "   Number of training points         = " << Options.GetOptNDihSamples() << endl;
+
+    std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
+    std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
+
+    vout << endl;
+    while(it != ie){
+        CDihedralType type =  it->second;
+
+        bool ok = false;
+        if( DihFilters.size() > 0 ){
+            for(size_t i=0; i < DihFilters.size(); i++ ){
+                if( DihFilters[i].full ){
+                    if( ((trim_copy(AtomTypes[DihedralTypes[type.idx].at1].name) == DihFilters[i].t1) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t3) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at4].name) == DihFilters[i].t4)) ||
+                        ((trim_copy(AtomTypes[DihedralTypes[type.idx].at1].name) == DihFilters[i].t4) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t3) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at4].name) == DihFilters[i].t1)) ){
+                        ok = true;
+                        break;
+                    }
+                } else {
+                    if( ((trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t1) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t2)) ||
+                        ((trim_copy(AtomTypes[DihedralTypes[type.idx].at2].name) == DihFilters[i].t2) &&
+                         (trim_copy(AtomTypes[DihedralTypes[type.idx].at3].name) == DihFilters[i].t1)) ){
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+        } else {
+            ok = true;
+        }
+
+        if( ok ){
+            SolveCBSTransformation(type.idx);
+            DihedralTypes[type.idx].mode = EDM_CBS;
+        }
+        it++;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CTop2STop::SolveCBSTransformation(int type)
+{
+    vout << "   fitting dihedral type " << setw(4) << type << " ... final error = ";
+
+    // transform
+    DihedralTypes[type].DihCOffset = Options.GetOptDihCOffset();
+    DihedralTypes[type].Cos2CBS();
+
+    // calculate rmse
+    double rmse = DihedralTypes[type].RMSECos2CBS(Options.GetOptNDihSamples());
+
+    vout << fixed << setw(13) << setprecision(8) << rmse << endl;
+}
+
+//------------------------------------------------------------------------------
+
+void CTop2STop::WriteDihedralSeqCBSMode(ostream& sout)
+{
+    sout << "[dihedral_seq_cbs]" << endl;
+    sout << "! Type pn             c" << endl;
+
+    std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
+    std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
+
+    while( it != ie ){
+        CDihedralType dtype = it->second;
+        if( dtype.mode == EDM_CBS ){
+            for(int i=0; i < dtype.GetSeriesSize(); i++ ){
+                sout << right << setw(6) << dtype.idx << " ";
+                sout << right << setw(2) << i+1 << " ";
+                sout << right << fixed << setw(13) << setprecision(6) << dtype.c[i] << " ";
                 sout << endl;
             }
         }
@@ -931,6 +1050,8 @@ void CTop2STop::WriteDihedrals(ostream& sout)
         dih.at4 = lp;
         UniqueDihedrals.push_back(dih);
     }
+
+    if( UniqueDihedrals.size() == 0 ) return;
 
     sout << "[dihedrals]" << endl;
     sout << "! Index AtomA AtomB AtomC AtomD Type ! AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;
@@ -1001,7 +1122,7 @@ void CTop2STop::WriteImproperTypes(ostream& sout)
 
         if( dtype.idx == -1 ){
             // new type
-            dtype.SetSeriesSize(1);
+            dtype.SetSeriesSize(1,1.0);
             dtype.idx = idx;
             idx++;
             dtype.at1 = FindAtomTypeIdx(ip);
@@ -1018,6 +1139,8 @@ void CTop2STop::WriteImproperTypes(ostream& sout)
 
         ImproperTypes[dtype.idx] = dtype;
     }
+
+    if( ImproperTypes.size() == 0 ) return;
 
     sout << "[improper_types]" << endl;
     sout << "! Index TypeA TypeB TypeC TypeD            v0         phase ! TypeA TypeB TypeC TypeD" << endl;
@@ -1081,6 +1204,8 @@ void CTop2STop::WriteImpropers(ostream& sout)
         dih.at4 = lp;
         UniqueImpropers.push_back(dih);
     }
+
+    if( UniqueImpropers.size() == 0 ) return;
 
     sout << "[impropers]" << endl;
     sout << "! Index AtomA AtomB AtomC AtomD Type ! AtomA TypeA AtomB TypeB AtomC TypeC AtomD TypeD" << endl;

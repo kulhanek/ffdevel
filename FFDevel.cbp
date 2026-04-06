@@ -64,6 +64,7 @@
 			<Option weight="10" />
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="src/bin/cos2grbf/CMakeLists.txt" />
 		<Unit filename="src/bin/cos2grbf/Cos2GRBF.cpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>

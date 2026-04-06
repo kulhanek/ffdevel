@@ -94,14 +94,14 @@ int CCos2GRBF::Init(int argc,char* argv[])
 bool CCos2GRBF::Run(void)
 {
     // read input
-    if( ReadFrcMod() == false ) return(false); 
+    if( ReadFrcMod() == false ) return(false);
 
     // convert
     DihedralType.Cos2GRBF(Options.GetOptDihedralSamplingSize());
-    
+
     // write output
-     if( WriteOutput() == false ) return(false); 
-    
+     if( WriteOutput() == false ) return(false);
+
     return(true);
 }
 
@@ -114,9 +114,9 @@ bool CCos2GRBF::ReadFrcMod(void)
         ES_ERROR("unable to open input file");
         return(false);
     }
-    
-    DihedralType.SetSeriesSize(Options.GetOptDihedralSeriesSize());
-    
+
+    DihedralType.SetSeriesSize(Options.GetOptDihedralSeriesSize(),Options.GetOptGWidthFactor());
+
     string line;
     while( getline(ifs,line) ){
         stringstream str(line);
@@ -137,7 +137,7 @@ bool CCos2GRBF::ReadFrcMod(void)
             DihedralType.defined[n] = true;
         }
     }
-    
+
     return(true);
 }
 
@@ -150,7 +150,7 @@ bool CCos2GRBF::WriteOutput(void)
         ES_ERROR("unable to open output file");
         return(false);
     }
-    
+
     ofs << "# original cos series ..." << endl;
     ofs << "#  N     V0         Phase      " << endl;
     ofs << "# --- ------------ ------------" << endl;
@@ -160,21 +160,21 @@ bool CCos2GRBF::WriteOutput(void)
         }
     }
     ofs << endl;
-    
-    
+
+
     double rmse = DihedralType.RMSECos2GRBF(Options.GetOptDihedralSamplingSize());
-    
+
     ofs << format("# rmse = %12.6f\n")%rmse;
     ofs << "#     phi           cos        grbf          diff    " << endl;
     ofs << "# ------------ ------------ ------------ ------------" << endl;
-    
+
     for(int k=0; k <= (DihedralType.GetSeriesSize()+1)*Options.GetOptDihedralSamplingSize(); k++){
         double x = -M_PI + 2.0*M_PI*k/((DihedralType.GetSeriesSize()+1)*Options.GetOptDihedralSamplingSize());
         double value1 = DihedralType.GetCOSValue(x);
         double value2 = DihedralType.GetGRBFValue(x);
         ofs << format("  %12.3f %12.6f %12.6f %12.6f\n")%(x*180.0/M_PI)%value1%value2%(value2-value1);
     }
-    
+
     return(true);
 }
 
@@ -198,13 +198,6 @@ void CCos2GRBF::Finalize(void)
 
     vout << endl;
 }
-
-//==============================================================================
-//------------------------------------------------------------------------------
-//==============================================================================
-
-
-
 
 //==============================================================================
 //------------------------------------------------------------------------------

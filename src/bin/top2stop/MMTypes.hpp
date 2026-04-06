@@ -67,6 +67,15 @@ public:
 
 //------------------------------------------------------------------------------
 
+enum EDihMode {
+    EDM_ND = 0,
+    EDM_COS,
+    EDM_GRBF,
+    EDM_CBS
+};
+
+//------------------------------------------------------------------------------
+
 class CDihedralType {
 public:
     int                 idx;
@@ -75,7 +84,7 @@ public:
     int                 at3;
     int                 at4;
     std::vector<bool>   defined;
-    bool                grbf;
+    EDihMode            mode;
     double              DihCOffset;
     // cos series
     std::vector<double> v0;
@@ -89,12 +98,19 @@ public:
     bool                nb_processed;
 public:
     CDihedralType(void);
-    void    SetSeriesSize(int size);
+    void    SetSeriesSize(int size,double wfac);
     int     GetSeriesSize(void);
-    void    Cos2GRBF(int dih_samp_freq);
-    double  RMSECos2GRBF(int dih_samp_freq);
+
+    void    Cos2GRBF(int nsamples);
+    double  RMSECos2GRBF(int nsamples);
+
+    void    Cos2CBS(void);
+    double  RMSECos2CBS(int nsamples);
+
     double  GetCOSValue(double x);
     double  GetGRBFValue(double x);
+    double  GetCBSValue(double x);
+
     double  GetDihDeviation(double value1, double value2);
 };
 
