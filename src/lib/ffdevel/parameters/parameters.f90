@@ -3907,21 +3907,21 @@ end subroutine ffdev_parameters_angle_a0_init
 ! subroutine ffdev_parameters_error
 ! ==============================================================================
 
-subroutine ffdev_parameters_error(prms,error,grads)
+subroutine ffdev_parameters_error(prms,errfcetot,grads)
 
     use ffdev_parameters_dat
     use ffdev_errors_dat
 
     implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    real(DEVDP)         :: grads(:)
+    real(DEVDP) :: prms(:)
+    real(DEVDP) :: errfcetot
+    real(DEVDP) :: grads(:)
     ! --------------------------------------------------------------------------
 
-    error%total = 0.0d0
+    errfcetot = 0.0d0
     grads(:) = 0.0d0
 
-    call ffdev_parameters_error_num(prms,error,grads)
+    call ffdev_parameters_error_num(prms,errfcetot,grads)
 
 end subroutine ffdev_parameters_error
 
@@ -3929,27 +3929,27 @@ end subroutine ffdev_parameters_error
 ! subroutine ffdev_parameters_error_num
 ! ==============================================================================
 
-subroutine ffdev_parameters_error_num(prms,error,grads)
+subroutine ffdev_parameters_error_num(prms,errfcetot,grads)
 
     use ffdev_utils
     use ffdev_parameters_dat
     use ffdev_errors_dat
 
     implicit none
-    real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
-    real(DEVDP)         :: grads(:)
+    real(DEVDP)             :: prms(:)
+    real(DEVDP)             :: errfcetot
+    real(DEVDP)             :: grads(:)
     ! --------------------------------------------------------------------------
     real(DEVDP),allocatable :: tmp_prms(:)
     real(DEVDP)             :: d
-    type(FFERROR_TYPE)      :: err1,err2
+    real(DEVDP)             :: err1,err2
     integer                 :: i
     ! --------------------------------------------------------------------------
 
     d = 0.5d-5  ! differentiation parameter
 
     ! calculate base energy
-    call ffdev_parameters_error_only(prms,error,.true.)
+    call ffdev_parameters_error_only(prms,errfcetot,.true.)
 
     ! write(*,*) 'total= ',error%total,prms
 
@@ -3974,7 +3974,7 @@ subroutine ffdev_parameters_error_num(prms,error,grads)
         ! write(*,*) ene1%total,ene2%total
 
         ! gradient
-        grads(i) = 0.5d0*(err1%total-err2%total)/d
+        grads(i) = 0.5d0*(err1-err2)/d
 
         ! move back
         tmp_prms(i) = prms(i)
@@ -3990,9 +3990,10 @@ end subroutine ffdev_parameters_error_num
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_error_only
+! opterr - calculate minimum for error optimization
 ! ==============================================================================
 
-subroutine ffdev_parameters_error_only(prms,error,opterr)
+subroutine ffdev_parameters_error_only(prms,errfcetot,opterr)
 
     use ffdev_errors_dat
     use ffdev_errors
@@ -4001,7 +4002,7 @@ subroutine ffdev_parameters_error_only(prms,error,opterr)
 
     implicit none
     real(DEVDP)         :: prms(:)
-    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: errfcetot
     logical             :: opterr
     ! --------------------------------------------------------------------------
 
@@ -4019,7 +4020,7 @@ subroutine ffdev_parameters_error_only(prms,error,opterr)
     call ffdev_targetset_calc_all()
 
     ! calculate error
-    call ffdev_errors_error_only(error)
+    call ffdev_errors_error_only(errfcetot,opterr)
 
 end subroutine ffdev_parameters_error_only
 

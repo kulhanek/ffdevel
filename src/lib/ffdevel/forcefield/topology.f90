@@ -1091,6 +1091,9 @@ subroutine ffdev_topology_finalize_setup(top)
 
     ! reserved for future usage
 
+    ! disable unused variable warning
+    ignored_arg__ = same_type_as(top,top)
+
 end subroutine ffdev_topology_finalize_setup
 
 ! ==============================================================================

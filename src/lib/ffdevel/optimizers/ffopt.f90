@@ -191,7 +191,7 @@ subroutine ffdev_ffopt_single_point()
 
     implicit none
     integer             :: alloc_stat, bmethod
-    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: errfcetot
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -209,7 +209,7 @@ subroutine ffdev_ffopt_single_point()
     call ffdev_parameters_gather(FFParams)
 
     ! get error
-    call ffdev_parameters_error_only(FFParams,error,.false.)
+    call ffdev_parameters_error_only(FFParams,errfcetot,.false.)
 
     ! print error statistics
     call ffdev_ffopt_write_error_sumlogs(SMMLOG_FINAL)
@@ -217,7 +217,7 @@ subroutine ffdev_ffopt_single_point()
     ! write error
     write(DEV_OUT,*)
     call write_header(.true.)
-    call write_results(0,error,0.0d0,0.0d0,.true.)
+    call write_results(0,errfcetot,0.0d0,0.0d0,.true.)
 
     deallocate(FFParams,FFParamsGrd)
 
@@ -335,7 +335,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
     character(len=MAX_PATH) :: sname
     character(len=MAX_PATH) :: pname
     character(len=MAX_PATH) :: progname
-    type(FFERROR_TYPE)      :: error
+    real(DEVDP)             :: errfcetot
     ! --------------------------------------------------------------------------
 
     if( SaveSumLogs ) then
@@ -395,7 +395,7 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
         end select
         write(DEV_OUT,1)
 
-        call ffdev_errors_error_only(error)
+        call ffdev_errors_error_only(errfcetot,.false.)
 
         ! print error summary
         write(DEV_OUT,*)
@@ -407,8 +407,8 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
         call ffdev_errors_ffopt_header_II
 
         write(DEV_OUT,*)
-        write(DEV_OUT,300,ADVANCE='NO') error%total
-        call ffdev_errors_ffopt_results(error)
+        write(DEV_OUT,300,ADVANCE='NO') errfcetot
+        call ffdev_errors_ffopt_results()
 
         write(DEV_OUT,*)
 
@@ -476,8 +476,8 @@ subroutine opt_steepest_descent()
         ! check all criteria
         rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
 
-        if( istep .ne. 1 .and. abs(FFError%total - lasterror) .le. MinErrorChange ) then
-            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change      : ', abs(FFError%total - lasterror)
+        if( istep .ne. 1 .and. abs(FFError - lasterror) .le. MinErrorChange ) then
+            write(DEV_OUT,'(/,a,E16.10)') ' >>> INFO: Last error change      : ', abs(FFError - lasterror)
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Error change threshold : ', MinErrorChange
             write(DEV_OUT,'(a,/)') ' >>> INFO: Error change is below threshold! Minimization was stopped.'
             exit
@@ -488,7 +488,7 @@ subroutine opt_steepest_descent()
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: RMS of gradient threshold        : ', MaxRMSG
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component           : ', abs(maxgrad)
             write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Max gradient component threshold : ', MaxG
-            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Last error change                : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,E16.10)')   ' >>> INFO: Last error change                : ', abs(FFError - lasterror)
             write(DEV_OUT,'(a,/)') ' >>> INFO: Gradient thresholds were satisfied! Minimization was stopped.'
             exit
         end if
@@ -510,17 +510,17 @@ subroutine opt_steepest_descent()
         !===============================================================================
         ! correct step size and do steepest-descent minimization
 
-        if( AdaptiveStep .and. istep .ne. 1 .and. FFError%total .lt. lasterror ) then
+        if( AdaptiveStep .and. istep .ne. 1 .and. FFError .lt. lasterror ) then
             stepsize = stepsize * AcceptRatio
             if( stepsize .gt. MaximalStepSize ) then
                 stepsize = MaximalStepSize
             end if
             tmp_xg1(:)      = FFParams(:)
             tmp_xg2(:)      = FFParamsGrd(:)
-            lasterror       = FFError%total
+            lasterror       = FFError
             FFParams(:)     = FFParams(:) - FFParamsGrd(:)*stepsize/sqrt(rmsg)
             !write(DEV_OUT,'(/,a,I10,a)') '>>> INFO: Minimization step ',istep,' was accepted!'
-        else if ( adaptivestep .and. istep .ne. 1 .and. FFError%total .ge. lasterror ) then
+        else if ( adaptivestep .and. istep .ne. 1 .and. FFError .ge. lasterror ) then
             ! go back and try smaller step
             stepsize = stepsize * RejectRatio
             FFParams(:)       = tmp_xg1(:)
@@ -532,7 +532,7 @@ subroutine opt_steepest_descent()
             ! first step
             tmp_xg1(:)      = FFParams(:)
             tmp_xg2(:)      = FFParamsGrd(:)
-            lasterror       = FFError%total
+            lasterror       = FFError
             FFParams(:)     = FFParams(:) - FFParamsGrd(:)*stepsize/sqrt(rmsg)
         end if
 
@@ -607,9 +607,9 @@ subroutine opt_lbfgs
         ! check all criteria
         rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
 
-        if( istep .ne. 1 .and. abs(FFError%total - lasterror) .le. MinErrorChange ) then
+        if( istep .ne. 1 .and. abs(FFError - lasterror) .le. MinErrorChange ) then
             write(DEV_OUT,'(/,a,/)') ' >>> INFO: Error change is below treshold! Minimization was stoped.'
-            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change     : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change     : ', abs(FFError - lasterror)
             write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Error change treshold : ', MinErrorChange
             exit
         end if
@@ -620,7 +620,7 @@ subroutine opt_lbfgs
             write(DEV_OUT,'(a,E16.10)') ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
             write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Max gradient component          : ', abs(maxgrad)
             write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Max gradient component treshold : ', MaxG
-            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change               : ', abs(FFError%total - lasterror)
+            write(DEV_OUT,'(a,E16.10)') ' >>> INFO: Last error change               : ', abs(FFError - lasterror)
             exit
         end if
 
@@ -640,7 +640,7 @@ subroutine opt_lbfgs
         !===============================================================================
         ! do L-BFGS minimization
         call LBFGS(nactparms, NumberOfCorrections, &
-                   FFParams,FFError%total,FFParamsGrd, &
+                   FFParams,FFError,FFParamsGrd, &
                    .false.,tmp_xg,iprint,eps,xtol,work,iflag,ctx)
 
         if( iflag .eq. 0 ) exit
@@ -649,7 +649,7 @@ subroutine opt_lbfgs
             exit
         end if
 
-        lasterror = FFError%total
+        lasterror = FFError
     end do
 
     !===============================================================================
@@ -810,7 +810,7 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
 
     if( need_gradient .gt. 0 ) then
         call ffdev_parameters_error(FFParams,FFError,FFParamsGrd)
-        value = FFError%Total
+        value = FFError
         grad(:) = FFParamsGrd(:)
     else
         FFParamsGrd(:) = 0.0d0
@@ -819,7 +819,7 @@ subroutine opt_nlopt_fce(value, n, x, grad, need_gradient, istep)
         else
             call ffdev_parameters_error_only(FFParams,FFError,.true.)
         end if
-        value = FFError%Total
+        value = FFError
     end if
 
     rmsg = ffdev_fopt_rmsg(FFParamsGrd,maxgrad)
@@ -920,16 +920,16 @@ subroutine opt_shark_nruns
 
         ! save results
         tmp_FinalParams(:,istep) = FFParams(:)
-        tmp_FinalError(istep)    = FFError%total
+        tmp_FinalError(istep)    = FFError
 
 ! print final parameters
         call ffdev_parameters_print_parameters(PARAMS_SUMMARY_OPTIMIZED)
 
         call ffdev_ffopt_write_error_sumlogs(SMMLOG_FINAL)
 
-        if( (istep .eq. 1) .or. (besterr .gt. FFError%total) ) then
+        if( (istep .eq. 1) .or. (besterr .gt. FFError) ) then
             call ffdev_ffopt_write_error_sumlogs(SMMLOG_BEST)
-            besterr = FFError%total
+            besterr = FFError
         end if
 
         if( istep .ne. Shark_NRuns ) then
@@ -1171,7 +1171,7 @@ end subroutine write_header
 ! subroutine write_results
 !===============================================================================
 
-subroutine write_results(istep,error,rmsg,maxgrad,done)
+subroutine write_results(istep,errfcetot,rmsg,maxgrad,done)
 
     use ffdev_ffopt_dat
     use ffdev_errors_dat
@@ -1179,7 +1179,7 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
 
     implicit none
     integer             :: istep
-    type(FFERROR_TYPE)  :: error
+    real(DEVDP)         :: errfcetot
     real(DEVDP)         :: rmsg
     real(DEVDP)         :: maxgrad
     logical             :: done
@@ -1194,9 +1194,9 @@ subroutine write_results(istep,error,rmsg,maxgrad,done)
 
     ! write energies
     if( ldone) then
-        write(DEV_OUT,10,ADVANCE='NO') istep, error%total
+        write(DEV_OUT,10,ADVANCE='NO') istep, errfcetot
 
-        call ffdev_errors_ffopt_results(error)
+        call ffdev_errors_ffopt_results()
 
         select case(OptimizationMethod)
             case(MINIMIZATION_LBFGS,MINIMIZATION_STEEPEST_DESCENT)
@@ -1374,7 +1374,7 @@ subroutine opt_shark_fce1(n, x, value)
     end if
     call ffdev_parameters_error_only(FFParams,FFError,.true.)
 
-    value = FFError%Total
+    value = FFError
 
 end subroutine opt_shark_fce1
 

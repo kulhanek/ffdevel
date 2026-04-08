@@ -1237,7 +1237,6 @@ subroutine setup_dih_identity_types(realm,string,niden)
 
     end do
 
-
  10 format('    >>> Parameter ',I4,' is root for:')
  20 format(1X,I4)
 

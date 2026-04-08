@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2013 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -24,10 +25,15 @@ integer, parameter  :: MAX_PATH      = 255  ! max length of file names
 integer, parameter  :: MAX_TNAME     =   4  ! max length of type name
 integer, parameter  :: MAX_RNAME     =   4  ! max length of residue name
 integer, parameter  :: MAX_CVTYPE    =   5  ! max length of CV type
+integer, parameter  :: MAX_TITLE     =  12  ! max error title length
 
 ! real numbers -----------------------------------------------------------------
 integer, parameter  :: DEVDP         = 8
 
+! ------------------------------------------------------------------------------
+
+logical                 :: ignored_arg__    = .false.   ! it is used in disabling
+                                                        ! unused variable warning
 ! ------------------------------------------------------------------------------
 
 end module ffdev_sizes

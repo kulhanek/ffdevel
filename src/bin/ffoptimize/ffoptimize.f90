@@ -194,7 +194,7 @@ program ffdev_optimize_program
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
-    call ffdev_errors_init_all()
+    call ffdev_errors_init()
     call ffdev_params_reset_ranges()
 
     ! do fake input file processing
@@ -270,14 +270,14 @@ program ffdev_optimize_program
     ! reset initial setup
     call ffdev_targetset_ctrl_optgeo_set_default()
     call ffdev_parameters_disable_all_realms()
-    call ffdev_errors_init_all()
+    call ffdev_errors_init()
     call ffdev_params_reset_ranges()
 
     ! initialize
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Initialize', ':')
 
-    ! FIXME this must be done in FFOPT after all is setup, for exemple in FFMANIP
+    ! FIXME this must be done in FFOPT after all is setup, for example in FFMANIP
 !    ! calculate initial data
 !    errors_calc_ene = .true. ! we need at least energies for ffdev_targetset_save_initial_drvs
 !    call ffdev_targetset_calc_all()

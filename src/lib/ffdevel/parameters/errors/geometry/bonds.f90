@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2018 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -20,48 +21,43 @@ module ffdev_err_bonds
 use ffdev_constants
 use ffdev_variables
 
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTBonds
+    contains
+        ! executive methods
+        procedure   :: calc_errfce              => ffdev_err_bonds_error
+        procedure   :: print_pts_summary_errfce => ffdev_err_bonds_summary
+end type TypeEFTBonds
+
 contains
 
 ! ==============================================================================
-! subroutine ffdev_err_bonds_init
-! ==============================================================================
-
-subroutine ffdev_err_bonds_init
-
-    use ffdev_err_bonds_dat
-
-    implicit none
-    ! --------------------------------------------------------------------------
-
-    EnableBondsError          = .false.
-    PrintBondsErrorSummary    = .false.
-    BondErrorsWeight          = 1.0
-    OnlyFFOptBonds            = .false.
-
-end subroutine ffdev_err_bonds_init
-
-! ==============================================================================
 ! subroutine ffdev_err_bonds_error
+! opterr - calculate minimum for error optimization
 ! ==============================================================================
 
-subroutine ffdev_err_bonds_error(error)
+subroutine ffdev_err_bonds_error(err_item,opterr)
 
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_bonds_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    type(TypeEFTBonds)  :: err_item
+    logical             :: opterr
     ! --------------------------------------------
     integer             :: i,j,q,ai,aj
     real(DEVDP)         :: err,seterrbonds,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%bonds = 0.0d0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     ! calculate error
     seterrbonds = 0.0
@@ -90,7 +86,7 @@ subroutine ffdev_err_bonds_error(error)
 
     ! geometry
     if( totw .gt. 0 ) then
-        error%bonds = sqrt(seterrbonds/totw)
+        err_item%ErrFceValue = sqrt(seterrbonds/totw)
     end if
 
 end subroutine ffdev_err_bonds_error
@@ -99,18 +95,20 @@ end subroutine ffdev_err_bonds_error
 ! subroutine ffdev_err_bonds_summary
 ! ==============================================================================
 
-subroutine ffdev_err_bonds_summary(top,geo,printsum)
+subroutine ffdev_err_bonds_summary(err_item,top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    logical         :: printsum
+    type(TypeEFTBonds)  :: err_item
+    type(TOPOLOGY)      :: top
+    type(GEOMETRY)      :: geo
+    logical             :: printsum
     ! --------------------------------------------------------------------------
 
+    if( .not. err_item%PrintSummary ) return
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
