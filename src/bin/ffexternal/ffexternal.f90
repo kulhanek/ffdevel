@@ -18,7 +18,6 @@
 program ffdev_external_program
 
     use ffdev_sizes
-    use ffdev_utils
     use ffdev_constants
     use ffdev_variables
     use ffdev_topology
@@ -29,6 +28,7 @@ program ffdev_external_program
     use ffdev_hessian
     use ffdev_hessian_utils
     use ffdev_timers
+    use ffdev_utils
 
     implicit none
 

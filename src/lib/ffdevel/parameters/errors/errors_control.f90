@@ -28,84 +28,143 @@ contains
 
 subroutine ffdev_errors_ctrl(fin)
 
-    use prmfile
-    use ffdev_utils
-
     use ffdev_errors_dat
-    use ffdev_errors
-
-    use ffdev_parameters_dat
-
-    use ffdev_err_bonds_control
-    use ffdev_err_angles_control
-    use ffdev_err_dihedrals_control
-    use ffdev_err_impropers_control
-    use ffdev_err_nbdists_control
-    use ffdev_err_energy_control
-    use ffdev_err_rmsd_control
-    use ffdev_err_ihess_control
-    use ffdev_err_sapt_control
-    use ffdev_err_pacpnl_control
-    use ffdev_err_zerograd_control
-    use ffdev_err_probe_control
-    use ffdev_err_pbpnl_control
-    use ffdev_err_qnb_control
-    use ffdev_err_nbpnl_control
-    use ffdev_err_nbr0_control
-    use ffdev_err_nbc6_control
-    use ffdev_err_mue_control
-    use ffdev_err_aimr0_control
-    use ffdev_err_aimxdm_control
-
+    use ffdev_utils
+    use prmfile
 
     implicit none
     type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------
+    character(MAX_PATH) :: errfcename
+    logical             :: retval
+    integer             :: alloc_stat, i
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'FFERROR', ':')
 
-    ! clear what should be calculated
-    errors_calc_hess    = .false.
-    errors_calc_grad    = .false.
-    errors_calc_ene     = .false.
-    errors_calc_sapt   = .false.
-
-    ! reset setup by external request or default setup
-    if( ResetAllSetup ) then
-        call ffdev_errors_init_all()
-        write(DEV_OUT,10)
-    else if ( prmfile_open_section(fin,'setdefault') ) then
-        call ffdev_errors_init_all()
-        write(DEV_OUT,20)
+    ! by default all setup is reset if this part is reached
+    if( NumOfErrorFces .gt. 0 ) then
+        do i=1,NumOfErrorFces
+            deallocate(ErrorFceList(i)%ErrFce)
+        end do
+        deallocate(ErrorFceList)
+        NumOfErrorFces = 0
     end if
 
-    ! read setup
-    call ffdev_err_energy_ctrl(fin)
-    call ffdev_err_sapt_ctrl(fin)
-    call ffdev_err_probe_ctrl(fin)
-    call ffdev_err_bonds_ctrl(fin)
-    call ffdev_err_angles_ctrl(fin)
-    call ffdev_err_dihedrals_ctrl(fin)
-    call ffdev_err_impropers_ctrl(fin)
-    call ffdev_err_nbdists_ctrl(fin)
-    call ffdev_err_ihess_ctrl(fin)
-    call ffdev_err_rmsd_ctrl(fin)
-    call ffdev_err_pacpnl_ctrl(fin)
-    call ffdev_err_zerograd_ctrl(fin)
-    call ffdev_err_pbpnl_ctrl(fin)
-    call ffdev_err_qnb_ctrl(fin)
-    call ffdev_err_nbpnl_ctrl(fin)
-    call ffdev_err_nbr0_ctrl(fin)
-    call ffdev_err_nbc6_ctrl(fin)
-    call ffdev_err_mue_ctrl(fin)
-    call ffdev_err_aimr0_ctrl(fin)
-    call ffdev_err_aimxdm_ctrl(fin)
+    ! load new error setup
+    ! count number of sections in the group
+    NumOfErrorFces = prmfile_count_group(fin)
+    if( NumOfErrorFces .le. 0 ) return
 
- 10 format('>>> INFO: All errors disabled by default (resetallsetup=on)!')
- 20 format('>>> INFO: All errors disabled by the explicit request ([setdefault])!')
+    ! allocate
+    allocate(ErrorFceList(NumOfErrorFces), stat = alloc_stat)
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for error functions!')
+    end if
+
+    retval = prmfile_first_section(fin)
+    i = 1
+    do while( retval )
+        ! create error function
+        retval = prmfile_get_section_name(fin,errfcename)
+
+        write(DEV_OUT,*)
+        write(DEV_OUT,10) trim(errfcename)
+
+        call ffdev_errors_ctrl_create_errfce(ErrorFceList(i)%ErrFce,errfcename)
+
+        ! setup error function
+        call ErrorFceList(i)%ErrFce%init_errfce()
+        call ErrorFceList(i)%ErrFce%load_errfce(fin)
+        call ErrorFceList(i)%ErrFce%set_title_errfce()
+
+        ! next
+        retval = prmfile_next_section(fin)
+        i = i + 1
+    end do
+
+10 format('# === [',A,'] ===')
 
 end subroutine ffdev_errors_ctrl
+
+! ==============================================================================
+! subroutine ffdev_errors_ctrl_create_errfce
+! ==============================================================================
+
+subroutine ffdev_errors_ctrl_create_errfce(errfce,errfcename)
+
+    use ffdev_errors_dat
+    use ffdev_utils
+
+! geometry based
+    use ffdev_err_bonds
+    use ffdev_err_angles
+    use ffdev_err_dihedrals
+    use ffdev_err_impropers
+    use ffdev_err_nbdists
+    use ffdev_err_rmsd
+
+! energy based
+    use ffdev_err_energy
+    use ffdev_err_ihess
+    use ffdev_err_mue
+    use ffdev_err_zerograd
+
+! parameters
+    use ffdev_err_l1reg
+    use ffdev_err_l2reg
+
+    implicit none
+    class(ErrorFceType),pointer :: errfce
+    character(MAX_PATH)         :: errfcename
+    ! --------------------------------------------
+    integer             :: alloc_stat
+    ! --------------------------------------------------------------------------
+
+    select case(trim(errfcename))
+    ! geometry based
+        case('bonds')
+            allocate(TypeEFTBonds::errfce, stat = alloc_stat)
+        case('angles')
+            allocate(TypeEFTAngles::errfce, stat = alloc_stat)
+        case('dihedrals')
+            allocate(TypeEFTDihedrals::errfce, stat = alloc_stat)
+        case('impropers')
+            allocate(TypeEFTImpropers::errfce, stat = alloc_stat)
+        case('nbdists')
+            allocate(TypeEFTImpropers::errfce, stat = alloc_stat)
+        case('rmsd')
+            allocate(TypeEFTImpropers::errfce, stat = alloc_stat)
+
+    ! energy based
+        case('energy')
+            allocate(TypeEFTEnergy::errfce, stat = alloc_stat)
+        case('ihess')
+            allocate(TypeEFTIhess::errfce, stat = alloc_stat)
+        case('mue')
+            allocate(TypeEFTMUE::errfce, stat = alloc_stat)
+        case('zerogrd')
+            allocate(TypeEFTZeroGrad::errfce, stat = alloc_stat)
+
+    ! parameters
+        case('l1reg')
+            allocate(TypeEFTL1Reg::errfce, stat = alloc_stat)
+        case('l2reg')
+            allocate(TypeEFTL2Reg::errfce, stat = alloc_stat)
+
+    ! not found
+        case default
+            call ffdev_utils_exit(DEV_ERR,1, &
+                       'The error function '''//trim(errfcename)//''' is not implemented!')
+    end select
+
+    if( alloc_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1, &
+                   'Unable to allocate memory for the error function: '''//trim(errfcename)//'''!')
+    end if
+
+end subroutine ffdev_errors_ctrl_create_errfce
 
 ! ------------------------------------------------------------------------------
 

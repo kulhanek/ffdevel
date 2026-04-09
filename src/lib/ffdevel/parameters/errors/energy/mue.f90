@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2020 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,48 +20,58 @@ module ffdev_err_mue
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
 
-contains
+!===============================================================================
 
 ! MUE - Maximum Unsigned Energy error
 
-! ==============================================================================
-! subroutine ffdev_err_mue_init
-! ==============================================================================
+type, extends(ErrorFceType) :: TypeEFTMUE
+    contains
+        ! executive methods
+        procedure   :: set_title_errfce         => ffdev_err_mue_set_title
+        procedure   :: calc_errfce              => ffdev_err_mue_error
+end type TypeEFTMUE
 
-subroutine ffdev_err_mue_init
+contains
 
-    use ffdev_err_mue_dat
-    use ffdev_errors_dat
+!===============================================================================
+! Subroutine:  ffdev_err_mue_set_title
+!===============================================================================
+
+subroutine ffdev_err_mue_set_title(err_item)
 
     implicit none
+    class(TypeEFTMUE)   :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableMUEError       = .false.
-    MUEErrorWeight       = 1.0
+    err_item%Title = 'MUE'
 
-end subroutine ffdev_err_mue_init
+end subroutine ffdev_err_mue_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_mue
 ! ==============================================================================
 
-subroutine ffdev_err_mue_error(error)
+subroutine ffdev_err_mue_error(err_item,opterr)
 
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_mue_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTMUE)   :: err_item
+    logical             :: opterr
     ! --------------------------------------------
     integer             :: i,j
     ! --------------------------------------------------------------------------
 
-    error%mue = 0.0d0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     do i=1,nsets
         ! use only sets, which can provide reliable energy
@@ -70,8 +81,8 @@ subroutine ffdev_err_mue_error(error)
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
 
-            if( abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) .gt. error%mue ) then
-                error%mue = abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)
+            if( abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) .gt. err_item%ErrFceValue ) then
+                err_item%ErrFceValue = abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)
             end if
 
         end do

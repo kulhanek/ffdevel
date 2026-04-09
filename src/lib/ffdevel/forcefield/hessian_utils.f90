@@ -459,7 +459,7 @@ end subroutine ffdev_hessian_calc_trg_ihess
 ! subroutine ffdev_hessian_print_trg_ihess_bonds
 ! ==============================================================================
 
-subroutine ffdev_hessian_print_trg_ihess_bonds(top,geo)
+subroutine ffdev_hessian_print_trg_ihess_bonds(top,geo,onlyffopt)
 
     use ffdev_topology
     use ffdev_geometry
@@ -467,6 +467,7 @@ subroutine ffdev_hessian_print_trg_ihess_bonds(top,geo)
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
+    logical         :: onlyffopt
     ! --------------------------------------------
     integer         :: i,ai,aj,bt
     real(DEVDP)     :: k1,k2,diff
@@ -492,6 +493,11 @@ subroutine ffdev_hessian_print_trg_ihess_bonds(top,geo)
         bt = top%bonds(i)%bt
         k1 = top%bond_types(bt)%k
         k2 = geo%trg_ihess_bonds(i)
+
+        if( onlyffopt ) then
+            if( .not. top%bond_types(bt)%ffoptactive ) cycle
+        end if
+
         diff = k2 - k1
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &
@@ -532,7 +538,7 @@ end subroutine ffdev_hessian_print_trg_ihess_bonds
 ! subroutine:  ffdev_hessian_print_trg_ihess_angles
 !===============================================================================
 
-subroutine ffdev_hessian_print_trg_ihess_angles(top,geo)
+subroutine ffdev_hessian_print_trg_ihess_angles(top,geo,onlyffopt)
 
     use ffdev_topology
     use ffdev_geometry
@@ -540,6 +546,7 @@ subroutine ffdev_hessian_print_trg_ihess_angles(top,geo)
     implicit none
     type(TOPOLOGY)  :: top
     type(GEOMETRY)  :: geo
+    logical         :: onlyffopt
     ! --------------------------------------------
     integer         :: i,ai,aj,ak,at
     real(DEVDP)     :: k1,k2,diff
@@ -566,6 +573,11 @@ subroutine ffdev_hessian_print_trg_ihess_angles(top,geo)
         at = top%angles(i)%at
         k1 = top%angle_types(at)%k
         k2 = geo%trg_ihess_angles(i)
+
+        if( onlyffopt ) then
+            if( .not. top%angle_types(at)%ffoptactive ) cycle
+        end if
+
         diff = k2 - k1
         write(DEV_OUT,140) ai, top%atoms(ai)%name, top%atom_types(top%atoms(ai)%typeid)%name, &
                             top%atoms(ai)%residx, top%atoms(ai)%resname, &

@@ -20,17 +20,33 @@ module ffdev_err_bonds
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
 
 !===============================================================================
 
 type, extends(ErrorFceType) :: TypeEFTBonds
     contains
         ! executive methods
+        procedure   :: set_title_errfce         => ffdev_err_bonds_set_title
         procedure   :: calc_errfce              => ffdev_err_bonds_error
         procedure   :: print_pts_summary_errfce => ffdev_err_bonds_summary
 end type TypeEFTBonds
 
 contains
+
+!===============================================================================
+! Subroutine:  ffdev_err_bonds_set_title
+!===============================================================================
+
+subroutine ffdev_err_bonds_set_title(err_item)
+
+    implicit none
+    class(TypeEFTBonds)    :: err_item
+    ! --------------------------------------------------------------------------
+
+    err_item%Title = 'Bonds'
+
+end subroutine ffdev_err_bonds_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_bonds_error
@@ -46,7 +62,7 @@ subroutine ffdev_err_bonds_error(err_item,opterr)
     use ffdev_errors_dat
 
     implicit none
-    type(TypeEFTBonds)  :: err_item
+    class(TypeEFTBonds) :: err_item
     logical             :: opterr
     ! --------------------------------------------
     integer             :: i,j,q,ai,aj
@@ -65,7 +81,7 @@ subroutine ffdev_err_bonds_error(err_item,opterr)
 
     do i=1,nsets
         do q=1,sets(i)%top%nbonds
-            if( OnlyFFOptBonds ) then
+            if( err_item%OnlyFFOpt ) then
                 if( .not. sets(i)%top%bond_types(sets(i)%top%bonds(q)%bt)%ffoptactive ) cycle
             end if
             ai = sets(i)%top%bonds(q)%ai
@@ -102,7 +118,7 @@ subroutine ffdev_err_bonds_summary(err_item,top,geo,printsum)
     use ffdev_geometry_utils
 
     implicit none
-    type(TypeEFTBonds)  :: err_item
+    class(TypeEFTBonds) :: err_item
     type(TOPOLOGY)      :: top
     type(GEOMETRY)      :: geo
     logical             :: printsum

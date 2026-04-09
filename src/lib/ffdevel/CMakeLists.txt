@@ -45,30 +45,21 @@ SET(FFDEVEL_SRC
         parameters/errors/errors_control.f90
         parameters/errors/errors_utils.f90
 
-#        parameters/errors/bonds_dat.f90
-#        parameters/errors/bonds.f90
-#        parameters/errors/bonds_control.f90
-#        parameters/errors/angles_dat.f90
-#        parameters/errors/angles.f90
-#        parameters/errors/angles_control.f90
-#        parameters/errors/dihedrals_dat.f90
-#        parameters/errors/dihedrals.f90
-#        parameters/errors/dihedrals_control.f90
-#        parameters/errors/impropers_dat.f90
-#        parameters/errors/impropers.f90
-#        parameters/errors/impropers_control.f90
-#        parameters/errors/nbdists_dat.f90
-#        parameters/errors/nbdists.f90
-#        parameters/errors/nbdists_control.f90
-#        parameters/errors/rmsd_dat.f90
-#        parameters/errors/rmsd.f90
-#        parameters/errors/rmsd_control.f90
-#        parameters/errors/ihess_dat.f90
-#        parameters/errors/ihess.f90
-#        parameters/errors/ihess_control.f90
-#        parameters/errors/energy_dat.f90
-#        parameters/errors/energy.f90
-#        parameters/errors/energy_control.f90
+        parameters/errors/geometry/bonds.f90
+        parameters/errors/geometry/angles.f90
+        parameters/errors/geometry/dihedrals.f90
+        parameters/errors/geometry/impropers.f90
+        parameters/errors/geometry/nbdists.f90
+        parameters/errors/geometry/rmsd.f90
+
+        parameters/errors/energy/energy.f90
+        parameters/errors/energy/ihess.f90
+        parameters/errors/energy/mue.f90
+        parameters/errors/energy/zerograd.f90
+
+        parameters/errors/params/l1reg.f90
+        parameters/errors/params/l2reg.f90
+
 #        parameters/errors/sapt_dat.f90
 #        parameters/errors/sapt.f90
 #        parameters/errors/sapt_control.f90
@@ -87,9 +78,6 @@ SET(FFDEVEL_SRC
 #        parameters/errors/qnb_dat.f90
 #        parameters/errors/qnb.f90
 #        parameters/errors/qnb_control.f90
-#        parameters/errors/mue_dat.f90
-#        parameters/errors/mue.f90
-#        parameters/errors/mue_control.f90
 #        parameters/errors/nbpnl_dat.f90
 #        parameters/errors/nbpnl.f90
 #        parameters/errors/nbpnl_control.f90

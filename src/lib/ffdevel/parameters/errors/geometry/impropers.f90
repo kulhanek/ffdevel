@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2019 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,57 +20,113 @@ module ffdev_err_impropers
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
+
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTImpropers
+
+    logical         :: LockToPhase
+
+    contains
+        ! executive methods
+        procedure   :: init_errfce              => ffdev_err_impropers_init
+        procedure   :: load_errfce              => ffdev_err_impropers_ctrl
+        procedure   :: set_title_errfce         => ffdev_err_impropers_set_title
+        procedure   :: calc_errfce              => ffdev_err_impropers_error
+        procedure   :: print_pts_summary_errfce => ffdev_err_impropers_summary
+end type TypeEFTImpropers
 
 contains
 
-! ==============================================================================
-! subroutine ffdev_err_impropers_init
-! ==============================================================================
+!===============================================================================
+! Subroutine:  init_errfce
+!===============================================================================
 
-subroutine ffdev_err_impropers_init
-
-    use ffdev_err_impropers_dat
+subroutine ffdev_err_impropers_init(err_item)
 
     implicit none
+    class(TypeEFTImpropers) :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableImpropersError            = .false.
-    PrintImpropersErrorSummary      = .false.
-    ImpropersErrorWeight            = DEV_D2R
-    ImpropersErrorLockToPhase       = .false.
-    OnlyFFOptImpropers              = .false.
+    call err_item%ErrorFceType%init_errfce()
+
+    err_item%LockToPhase = .false.
 
 end subroutine ffdev_err_impropers_init
+
+! ==============================================================================
+! subroutine ffdev_err_impropers_ctrl
+! ==============================================================================
+
+subroutine ffdev_err_impropers_ctrl(err_item,fin)
+
+    use ffdev_utils
+    use prmfile
+
+    implicit none
+    class(TypeEFTImpropers) :: err_item
+    type(PRMFILE_TYPE)      :: fin
+    ! --------------------------------------------------------------------------
+
+    call err_item%ErrorFceType%load_errfce(fin)
+
+    if( prmfile_get_logical_by_key(fin,'lock2phase', err_item%LockToPhase)) then
+        write(DEV_OUT,10) prmfile_onoff(err_item%LockToPhase)
+    else
+        write(DEV_OUT,15) prmfile_onoff(err_item%LockToPhase)
+    end if
+
+10  format ('Lock to phase angle (lock2phase)       = ',a12)
+15  format ('Lock to phase angle (lock2phase)       = ',a12,'                  (default)')
+
+end subroutine ffdev_err_impropers_ctrl
+
+!===============================================================================
+! Subroutine:  ffdev_err_impropers_set_title
+!===============================================================================
+
+subroutine ffdev_err_impropers_set_title(err_item)
+
+    implicit none
+    class(TypeEFTImpropers)    :: err_item
+    ! --------------------------------------------------------------------------
+
+    err_item%Title = 'Impropers'
+
+end subroutine ffdev_err_impropers_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_impropers_error
 ! ==============================================================================
 
-subroutine ffdev_err_impropers_error(error)
+subroutine ffdev_err_impropers_error(err_item,opterr)
 
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_impropers_dat
-    use ffdev_err_impropers_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTImpropers) :: err_item
+    logical                 :: opterr
     ! --------------------------------------------
     integer             :: i,j,q,ai,aj,ak,al,idt
     real(DEVDP)         :: err,seterrimpropers,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%impropers = 0.0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     seterrimpropers = 0.0
     totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%nimpropers
-            if( OnlyFFOptImpropers ) then
+            if( err_item%OnlyFFOpt ) then
                 if( .not. sets(i)%top%improper_types(sets(i)%top%impropers(q)%dt)%ffoptactive ) cycle
             end if
             ai = sets(i)%top%impropers(q)%ai
@@ -81,7 +138,7 @@ subroutine ffdev_err_impropers_error(error)
                 if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
 
                 d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al)
-                if( ImpropersErrorLockToPhase ) then
+                if( err_item%LockToPhase ) then
                     idt = sets(i)%top%impropers(q)%dt
                     dt = sets(i)%top%improper_types(idt)%g
                 else
@@ -96,7 +153,7 @@ subroutine ffdev_err_impropers_error(error)
     end do
 
     if( totw .gt. 0 ) then
-        error%impropers = sqrt(seterrimpropers/totw)
+        err_item%ErrFceValue = sqrt(seterrimpropers/totw)
     end if
 
 end subroutine ffdev_err_impropers_error
@@ -105,19 +162,20 @@ end subroutine ffdev_err_impropers_error
 ! subroutine ffdev_err_impropers_summary
 ! ==============================================================================
 
-subroutine ffdev_err_impropers_summary(top,geo,printsum)
+subroutine ffdev_err_impropers_summary(err_item,top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
-    use ffdev_err_impropers_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    logical         :: printsum
+    class(TypeEFTImpropers) :: err_item
+    type(TOPOLOGY)          :: top
+    type(GEOMETRY)          :: geo
+    logical                 :: printsum
     ! --------------------------------------------------------------------------
 
+    if( .not. err_item%PrintSummary ) return
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
@@ -125,7 +183,7 @@ subroutine ffdev_err_impropers_summary(top,geo,printsum)
         return
     end if
 
-    call ffdev_geometry_utils_comp_impropers(.false.,top,geo%trg_crd,geo%crd,ImpropersErrorLockToPhase)
+    call ffdev_geometry_utils_comp_impropers(.false.,top,geo%trg_crd,geo%crd,err_item%LockToPhase)
 
 end subroutine ffdev_err_impropers_summary
 

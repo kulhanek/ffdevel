@@ -542,6 +542,9 @@ subroutine execute_mmopt(grpin,exec)
     logical             :: exec
     ! --------------------------------------------------------------------------
 
+    ! disable unused variable warning
+    ignored_arg__ = exec .eqv. exec
+
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'MMOPT', ':')
 
@@ -600,6 +603,9 @@ subroutine execute_fferror(grpin,exec)
     logical             :: exec
     ! --------------------------------------------------------------------------
 
+    ! disable unused variable warning
+    ignored_arg__ = exec .eqv. exec
+
     ! load and execute error setup
     call ffdev_errors_ctrl(grpin)
 
@@ -626,6 +632,9 @@ subroutine execute_check_gradient(grpin,exec)
     ! --------------------------------------------
     integer             :: i,j
     ! --------------------------------------------------------------------------
+
+    ! disable unused variable warning
+    ignored_arg__ = same_type_as(grpin,grpin)
 
     if( .not. exec ) return
 

@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2018 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,6 +20,26 @@ module ffdev_err_energy
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
+
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTEnergy
+
+    integer         :: EnergyErrorMode
+    logical         :: EnableMaxFilter
+    real(DEVDP)     :: MaxTargetEnergy
+    logical         :: EnableMinFilter
+    real(DEVDP)     :: MinTargetEnergy
+
+    contains
+        ! executive methods
+        procedure   :: init_errfce              => ffdev_err_energy_init
+        procedure   :: load_errfce              => ffdev_err_energy_ctrl
+        procedure   :: set_title_errfce         => ffdev_err_energy_set_title
+        procedure   :: calc_errfce              => ffdev_err_energy_error
+        procedure   :: print_individual_summary_errfce => ffdev_err_energy_summary
+end type TypeEFTEnergy
 
 contains
 
@@ -26,46 +47,122 @@ contains
 ! subroutine ffdev_err_energy_init
 ! ==============================================================================
 
-subroutine ffdev_err_energy_init
-
-    use ffdev_err_energy_dat
-    use ffdev_errors_dat
+subroutine ffdev_err_energy_init(err_item)
 
     implicit none
+    class(TypeEFTEnergy)    :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableEnergyError       = .false.
-    PrintEnergyErrorSummary = .false.
-    EnergyErrorWeight       = 1.0
-    EnergyErrorMode         = EE_ABS
-    EnableMaxFilter         = .false.
-    MaxTargetEnergy         = 0.0
-    EnableMinFilter         = .false.
-    MinTargetEnergy         = 0.0
+    call err_item%ErrorFceType%init_errfce()
+
+    err_item%EnergyErrorMode    = EE_ABS
+    err_item%EnableMaxFilter    = .false.
+    err_item%MaxTargetEnergy    = 0.0
+    err_item%EnableMinFilter    = .false.
+    err_item%MinTargetEnergy    = 0.0
 
 end subroutine ffdev_err_energy_init
+
+! ==============================================================================
+! subroutine ffdev_err_energy_ctrl
+! ==============================================================================
+
+subroutine ffdev_err_energy_ctrl(err_item,fin)
+
+    use ffdev_errors_dat
+    use ffdev_utils
+    use ffdev_errors_utils
+    use prmfile
+
+    implicit none
+    class(TypeEFTEnergy)        :: err_item
+    type(PRMFILE_TYPE)          :: fin
+    ! --------------------------------------------
+    character(PRMFILE_MAX_PATH) :: string
+    ! --------------------------------------------------------------------------
+
+    call err_item%ErrorFceType%load_errfce(fin)
+
+    if( prmfile_get_string_by_key(fin,'scale', string)) then
+        err_item%EnergyErrorMode = ffdev_errors_utils_scale_from_string(string)
+        write(DEV_OUT,140) ffdev_errors_utils_scale_to_string(err_item%EnergyErrorMode)
+    else
+        write(DEV_OUT,145) ffdev_errors_utils_scale_to_string(err_item%EnergyErrorMode)
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'maxfilter', err_item%EnableMaxFilter)) then
+        write(DEV_OUT,150) prmfile_onoff(err_item%EnableMaxFilter)
+    else
+        write(DEV_OUT,155) prmfile_onoff(err_item%EnableMaxFilter)
+    end if
+    if( prmfile_get_real8_by_key(fin,'maxvalue', err_item%MaxTargetEnergy)) then
+        write(DEV_OUT,160) err_item%MaxTargetEnergy
+    else
+        write(DEV_OUT,165) err_item%MaxTargetEnergy
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'minfilter', err_item%EnableMinFilter)) then
+        write(DEV_OUT,170) prmfile_onoff(err_item%EnableMinFilter)
+    else
+        write(DEV_OUT,175) prmfile_onoff(err_item%EnableMinFilter)
+    end if
+    if( prmfile_get_real8_by_key(fin,'minvalue', err_item%MinTargetEnergy)) then
+        write(DEV_OUT,180) err_item%MinTargetEnergy
+    else
+        write(DEV_OUT,185) err_item%MinTargetEnergy
+    end if
+
+140  format ('Error scale (scale)                    = ',a24)
+145  format ('Error scale (scale)                    = ',a24,'      (default)')
+150  format ('Enable max energy filter (maxfilter)   = ',a12)
+155  format ('Enable max energy filter (maxfilter)   = ',a12,'                  (default)')
+160  format ('Max target rnergy (maxvalue)           = ',f21.8)
+165  format ('Max target rnergy (maxvalue)           = ',f21.8,'         (default)')
+170  format ('Enable min energy filter (minfilter)   = ',a12)
+175  format ('Enable min energy filter (minfilter)   = ',a12,'                  (default)')
+180  format ('Min target rnergy (maxvalue)           = ',f21.8)
+185  format ('Min target rnergy (maxvalue)           = ',f21.8,'         (default)')
+
+end subroutine ffdev_err_energy_ctrl
+
+!===============================================================================
+! Subroutine:  ffdev_err_energy_set_title
+!===============================================================================
+
+subroutine ffdev_err_energy_set_title(err_item)
+
+    implicit none
+    class(TypeEFTEnergy)    :: err_item
+    ! --------------------------------------------------------------------------
+
+    err_item%Title = 'Energy'
+
+end subroutine ffdev_err_energy_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_energy_error
 ! ==============================================================================
 
-subroutine ffdev_err_energy_error(error)
+subroutine ffdev_err_energy_error(err_item,opterr)
 
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_energy_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTEnergy)    :: err_item
+    logical                 :: opterr
     ! --------------------------------------------
-    integer             :: i,j,nene
-    real(DEVDP)         :: err,seterrene,totw
+    integer                 :: i,j,nene
+    real(DEVDP)             :: err,seterrene,totw
     ! --------------------------------------------------------------------------
 
-    error%energy = 0.0d0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     seterrene = 0.0
     nene = 0
@@ -80,14 +177,14 @@ subroutine ffdev_err_energy_error(error)
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
 
             ! filters
-            if( EnableMaxFilter ) then
-                if( sets(i)%geo(j)%trg_energy .gt. MaxTargetEnergy ) cycle
+            if( err_item%EnableMaxFilter ) then
+                if( sets(i)%geo(j)%trg_energy .gt. err_item%MaxTargetEnergy ) cycle
             end if
-            if( EnableMinFilter ) then
-                if( sets(i)%geo(j)%trg_energy .lt. MinTargetEnergy ) cycle
+            if( err_item%EnableMinFilter ) then
+                if( sets(i)%geo(j)%trg_energy .lt. err_item%MinTargetEnergy ) cycle
             end if
 
-            select case(EnergyErrorMode)
+            select case(err_item%EnergyErrorMode)
                 case(EE_ABS)
                     nene = nene + 1
                     err = sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy
@@ -115,7 +212,7 @@ subroutine ffdev_err_energy_error(error)
     end do
 
     if( totw .gt. 0 ) then
-        error%energy = sqrt(seterrene/totw)
+        err_item%ErrFceValue = sqrt(seterrene/totw)
     end if
 
 end subroutine ffdev_err_energy_error
@@ -124,19 +221,22 @@ end subroutine ffdev_err_energy_error
 ! subroutine ffdev_err_energy_summary
 ! ==============================================================================
 
-subroutine ffdev_err_energy_summary
+subroutine ffdev_err_energy_summary(err_item)
 
     use ffdev_targetset_dat
     use ffdev_geometry
-    use ffdev_err_energy_dat
 
     implicit none
+    class(TypeEFTEnergy) :: err_item
+    ! --------------------------------------------
     real(DEVDP)         :: aerr,aserr
     real(DEVDP)         :: rerr,rserr
     real(DEVDP)         :: lerr,lserr,maxerr,atotw,rtotw,ltotw
     integer             :: i,j
     logical             :: printsum
     ! --------------------------------------------------------------------------
+
+    if( .not. err_item%PrintSummary ) return
 
     printsum = .false.
     do i=1,nsets
@@ -239,7 +339,7 @@ subroutine ffdev_err_energy_summary
 
     write(DEV_OUT,35)  maxerr
     write(DEV_OUT,40)  aserr, rserr*100.0d0, lserr
-    write(DEV_OUT,45)  EnergyErrorWeight*aserr, EnergyErrorWeight*rserr*100.0d0, EnergyErrorWeight*lserr
+    write(DEV_OUT,45)  err_item%Weight*aserr, err_item%Weight*rserr*100.0d0, err_item%Weight*lserr
 
  5 format('# Energy errors')
 10 format('# SET GeoID Weight      E(MM)     E(TGR)     Err(E) relErr%(E)  logErr(E) | ')

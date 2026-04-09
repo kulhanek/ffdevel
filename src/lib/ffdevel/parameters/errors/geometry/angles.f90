@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2019 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,55 +20,65 @@ module ffdev_err_angles
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
+
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTAngles
+    contains
+        ! executive methods
+        procedure   :: set_title_errfce         => ffdev_err_angles_set_title
+        procedure   :: calc_errfce              => ffdev_err_angles_error
+        procedure   :: print_pts_summary_errfce => ffdev_err_angles_summary
+end type TypeEFTAngles
 
 contains
 
-! ==============================================================================
-! subroutine ffdev_err_angles_init
-! ==============================================================================
+!===============================================================================
+! Subroutine:  ffdev_err_angles_set_title
+!===============================================================================
 
-subroutine ffdev_err_angles_init
-
-    use ffdev_err_angles_dat
+subroutine ffdev_err_angles_set_title(err_item)
 
     implicit none
+    class(TypeEFTAngles)    :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableAnglesError         = .false.
-    PrintAnglesErrorSummary   = .false.
-    AngleErrorsWeight         = DEV_D2R
-    OnlyFFOptAngles           = .false.
+    err_item%Title = 'Angles'
 
-end subroutine ffdev_err_angles_init
+end subroutine ffdev_err_angles_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_angles_error
 ! ==============================================================================
 
-subroutine ffdev_err_angles_error(error)
+subroutine ffdev_err_angles_error(err_item,opterr)
 
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_angles_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTAngles)    :: err_item
+    logical                 :: opterr
     ! --------------------------------------------
-    integer             :: i,j,q,ai,aj,ak
-    real(DEVDP)         :: err,seterrangles,totw
-    real(DEVDP)         :: d0,dt
+    integer                 :: i,j,q,ai,aj,ak
+    real(DEVDP)             :: err,seterrangles,totw
+    real(DEVDP)             :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%angles = 0.0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     seterrangles = 0.0
     totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%nangles
-            if( OnlyFFOptAngles ) then
+            if( err_item%OnlyFFOpt ) then
                 if( .not. sets(i)%top%angle_types(sets(i)%top%angles(q)%at)%ffoptactive ) cycle
             end if
             ai = sets(i)%top%angles(q)%ai
@@ -87,7 +98,7 @@ subroutine ffdev_err_angles_error(error)
     end do
 
     if( totw .gt. 0 ) then
-        error%angles = sqrt(seterrangles/totw)
+        err_item%ErrFceValue = sqrt(seterrangles/totw)
     end if
 
 end subroutine ffdev_err_angles_error
@@ -96,18 +107,20 @@ end subroutine ffdev_err_angles_error
 ! subroutine ffdev_err_angles_summary
 ! ==============================================================================
 
-subroutine ffdev_err_angles_summary(top,geo,printsum)
+subroutine ffdev_err_angles_summary(err_item,top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    logical         :: printsum
+    class(TypeEFTAngles)    :: err_item
+    type(TOPOLOGY)          :: top
+    type(GEOMETRY)          :: geo
+    logical                 :: printsum
     ! --------------------------------------------------------------------------
 
+    if( .not. err_item%PrintSummary ) return
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then

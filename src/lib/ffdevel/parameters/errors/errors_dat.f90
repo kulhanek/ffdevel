@@ -46,6 +46,7 @@ type ErrorFceType
         ! executive methods
         procedure               :: init_errfce
         procedure               :: load_errfce
+        procedure               :: set_title_errfce
         procedure               :: setup_domains_errfce
         procedure               :: calc_errfce
         procedure               :: print_individual_summary_errfce
@@ -61,7 +62,7 @@ end type ErrorFcePointer
 
 ! ------------------------------------------------------------------------------
 
-integer                             :: NumOfErrorFces       ! number of error functions
+integer                             :: NumOfErrorFces = 0   ! number of error functions
 type(ErrorFcePointer),allocatable   :: ErrorFceList(:)      ! list of error functions
 
 ! ------------------------------------------------------------------------------
@@ -94,9 +95,13 @@ subroutine init_errfce(err_item)
     ! --------------------------------------------------------------------------
 
     err_item%Title           = ''
+
+    err_item%Enabled         = .false.
     err_item%PrintSummary    = .false.
-    err_item%ErrFceValue     = 0.0d0
+    err_item%OnlyFFOpt       = .false.
     err_item%Weight          = 1.0d0
+
+    err_item%ErrFceValue     = 0.0d0
 
 end subroutine init_errfce
 
@@ -104,59 +109,62 @@ end subroutine init_errfce
 ! Subroutine:  load_errfce
 !===============================================================================
 
-subroutine load_errfce(err_item)
+subroutine load_errfce(err_item,fin)
+
+    use prmfile
+
+    implicit none
+    class(ErrorFceType) :: err_item
+    type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------------------------------------
+
+    ! load setup
+    if( prmfile_get_logical_by_key(fin,'enabled', err_item%Enabled)) then
+        write(DEV_OUT,110) prmfile_onoff(err_item%Enabled)
+    else
+        write(DEV_OUT,115) prmfile_onoff(err_item%Enabled)
+    end if
+    if( prmfile_get_logical_by_key(fin,'summary', err_item%PrintSummary)) then
+        write(DEV_OUT,130) prmfile_onoff( err_item%PrintSummary)
+    else
+        write(DEV_OUT,135) prmfile_onoff( err_item%PrintSummary)
+    end if
+    if( prmfile_get_real8_by_key(fin,'weight', err_item%Weight)) then
+        write(DEV_OUT,120) err_item%Weight
+    else
+        write(DEV_OUT,125) err_item%Weight
+    end if
+    if( prmfile_get_logical_by_key(fin,'onlyffopt', err_item%OnlyFFOpt)) then
+        write(DEV_OUT,140) prmfile_onoff(err_item%OnlyFFOpt)
+    else
+        write(DEV_OUT,145) prmfile_onoff(err_item%OnlyFFOpt)
+    end if
+
+110  format ('Error enabled (enabled)                = ',a12)
+115  format ('Error enabled (enabled)                = ',a12,'                  (default)')
+130  format ('Print error summary (summary)          = ',a12)
+135  format ('Print error summary (summary)          = ',a12,'                  (default)')
+120  format ('Error weight (weight)                  = ',f21.8)
+125  format ('Error weight (weight)                  = ',f21.8,'         (default)')
+140  format ('Only FFopt related (onlyffopt)         = ',a12)
+145  format ('Only FFopt related (onlyffopt)         = ',a12,'                  (default)')
+
+end subroutine load_errfce
+
+!===============================================================================
+! Subroutine:  set_title_errfce
+!===============================================================================
+
+subroutine set_title_errfce(err_item)
 
     implicit none
     class(ErrorFceType)    :: err_item
     ! --------------------------------------------------------------------------
 
-    write(DEV_OUT,*)
-    write(DEV_OUT,10)
-
-    if( .not. prmfile_open_section(fin,'bonds') ) then
-        write(DEV_OUT,115) prmfile_onoff(EnableBondsError)
-        write(DEV_OUT,135) prmfile_onoff(PrintBondsErrorSummary)
-        write(DEV_OUT,125) BondErrorsWeight
-        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptBonds)
-        return
-    end if
-
-    if( prmfile_get_logical_by_key(fin,'enabled', EnableBondsError)) then
-        write(DEV_OUT,110) prmfile_onoff(EnableBondsError)
-    else
-        write(DEV_OUT,115) prmfile_onoff(EnableBondsError)
-    end if
-    if( prmfile_get_logical_by_key(fin,'summary', PrintBondsErrorSummary)) then
-        write(DEV_OUT,130) prmfile_onoff(PrintBondsErrorSummary)
-    else
-        write(DEV_OUT,135) prmfile_onoff(PrintBondsErrorSummary)
-    end if
-    if( prmfile_get_real8_by_key(fin,'weight', BondErrorsWeight)) then
-        write(DEV_OUT,120) BondErrorsWeight
-    else
-        write(DEV_OUT,125) BondErrorsWeight
-    end if
-    if( prmfile_get_logical_by_key(fin,'onlyffopt', OnlyFFOptBonds)) then
-        write(DEV_OUT,140) prmfile_onoff(OnlyFFOptBonds)
-    else
-        write(DEV_OUT,145) prmfile_onoff(OnlyFFOptBonds)
-    end if
-
- 10 format('=== [bonds] ====================================================================')
-
-110  format ('Bonds error (enabled)                  = ',a12)
-115  format ('Bonds error (enabled)                  = ',a12,'                  (default)')
-130  format ('Print bonds error summary (summary)    = ',a12)
-135  format ('Print bonds error summary (summary)    = ',a12,'                  (default)')
-120  format ('Bonds error weight (weight)            = ',f21.8)
-125  format ('Bonds error weight (weight)            = ',f21.8,'         (default)')
-140  format ('Only FFopt bonds (onlyffopt)           = ',a12)
-145  format ('Only FFopt bonds (onlyffopt)           = ',a12,'                  (default)')
-
     ! disable unused variable warning
     ignored_arg__ = same_type_as(err_item,err_item)
 
-end subroutine load_errfce
+end subroutine set_title_errfce
 
 !===============================================================================
 ! Subroutine:  setup_domains_errfce

@@ -46,8 +46,6 @@ subroutine ffdev_errors_init()
         call ErrorFceList(i)%ErrFce%init_errfce()
     end do
 
-    NumOfErrorFces = 0
-
 end subroutine ffdev_errors_init
 
 ! ==============================================================================
@@ -58,10 +56,6 @@ end subroutine ffdev_errors_init
 subroutine ffdev_errors_error_setup_domains(opterr)
 
     use ffdev_errors_dat
-    use ffdev_err_energy_dat
-    use ffdev_err_sapt_dat
-    use ffdev_err_zerograd_dat
-    use ffdev_err_probe_dat
 
     implicit none
     logical         :: opterr
@@ -194,17 +188,18 @@ subroutine ffdev_errors_summary(logmode)
 
     use ffdev_errors_dat
     use ffdev_targetset_dat
+    use ffdev_utils
 
     implicit none
     integer     :: logmode
     ! --------------------------------------------
     logical     :: printflag, printsum
-    integer     :: i,j
+    integer     :: i,j,k
     ! --------------------------------------------------------------------------
 
     printflag = .false.
-    do i=1,NumOfErrorFces
-        printflag = printflag .or. ErrorFceList(i)%ErrFce%PrintSummary
+    do k=1,NumOfErrorFces
+        printflag = printflag .or. ErrorFceList(k)%ErrFce%PrintSummary
     end do
 
     if( .not. printflag ) then
@@ -225,16 +220,18 @@ subroutine ffdev_errors_summary(logmode)
     write(DEV_OUT,1)
 
     ! individual summaries
-    do i=1,NumOfErrorFces
-        call ErrorFceList(i)%ErrFce%print_individual_summary_errfce()
+    do k=1,NumOfErrorFces
+        call ErrorFceList(k)%ErrFce%print_individual_summary_errfce()
     end do
 
     ! summary per sets
     printflag = .false.
     do i=1,nsets
-        printsum = .false.
-        call ErrorFceList(i)%ErrFce%print_set_summary_errfce(sets(i),printsum)
-        printflag = printflag .or. printsum
+        do k=1,NumOfErrorFces
+            printsum = .false.
+            call ErrorFceList(k)%ErrFce%print_set_summary_errfce(sets(i),printsum)
+            printflag = printflag .or. printsum
+        end do
     end do
 
     if( printflag ) then
@@ -242,16 +239,18 @@ subroutine ffdev_errors_summary(logmode)
         write(DEV_OUT,10)
 
         do i=1,nsets
-            printsum = .false.
-            call ErrorFceList(i)%ErrFce%print_set_summary_errfce(sets(i),printsum)
-            printflag = printflag .or. printsum
+            do k=1,NumOfErrorFces
+                printsum = .false.
+                call ErrorFceList(k)%ErrFce%print_set_summary_errfce(sets(i),printsum)
+                printflag = printflag .or. printsum
 
-            if( .not. printflag ) cycle
+                if( .not. printflag ) cycle
 
-            write(DEV_OUT,*)
-            write(DEV_OUT,5) i
-            printsum = .true.
-            call ErrorFceList(i)%ErrFce%print_set_summary_errfce(sets(i),printsum)
+                write(DEV_OUT,*)
+                write(DEV_OUT,5) i
+                printsum = .true.
+                call ErrorFceList(k)%ErrFce%print_set_summary_errfce(sets(i),printsum)
+            end do
         end do
     end if
 
@@ -259,11 +258,13 @@ subroutine ffdev_errors_summary(logmode)
     printflag = .false.
     do i=1,nsets
         do j=1,sets(i)%ngeos
-            printsum = .false.
-            call ErrorFceList(i)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
-            printflag = printflag .or. printsum
+            do k=1,NumOfErrorFces
+                printsum = .false.
+                call ErrorFceList(k)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
+                printflag = printflag .or. printsum
+            end do
         end do
-    end do
+    end do ! <- do we need to print anything?
 
     if( printflag ) then
         write(DEV_OUT,*)
@@ -271,16 +272,23 @@ subroutine ffdev_errors_summary(logmode)
 
         do i=1,nsets
             do j=1,sets(i)%ngeos
-                printsum = .false.
-                call ErrorFceList(i)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
-                printflag = printflag .or. printsum
+
+                printflag = .false.
+                do k=1,NumOfErrorFces
+                    printsum = .false.
+                    call ErrorFceList(k)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
+                    printflag = printflag .or. printsum
+                end do  ! <- do we need to print something for the PTS?
 
                 if( .not. printflag ) cycle
 
                 write(DEV_OUT,*)
                 write(DEV_OUT,6) i,j
-                printsum = .true.
-                call ErrorFceList(i)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
+
+                do k=1,NumOfErrorFces
+                    printsum = .true.
+                    call ErrorFceList(k)%ErrFce%print_pts_summary_errfce(sets(i)%top,sets(i)%geo(j),printsum)
+                end do
             end do
         end do
     end if

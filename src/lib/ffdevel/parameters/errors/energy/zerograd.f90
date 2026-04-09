@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2018 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,48 +20,57 @@ module ffdev_err_zerograd
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
+
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTZeroGrad
+    contains
+        ! executive methods
+        procedure   :: set_title_errfce         => ffdev_err_zerograd_set_title
+        procedure   :: calc_errfce              => ffdev_err_zerograd_error
+        procedure   :: print_individual_summary_errfce => ffdev_err_zerograd_summary
+end type TypeEFTZeroGrad
 
 contains
 
-! ==============================================================================
-! subroutine ffdev_err_zerograd_init
-! ==============================================================================
+!===============================================================================
+! Subroutine:  ffdev_err_zerograd_set_title
+!===============================================================================
 
-subroutine ffdev_err_zerograd_init
-
-    use ffdev_err_zerograd_dat
-    use ffdev_errors_dat
+subroutine ffdev_err_zerograd_set_title(err_item)
 
     implicit none
+    class(TypeEFTZeroGrad)    :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableZeroGradError       = .false.
-    PrintZeroGradErrorSummary = .false.
-    ZeroGradErrorWeight       = 1.0
+    err_item%Title = 'ZeroGrd'
 
-end subroutine ffdev_err_zerograd_init
+end subroutine ffdev_err_zerograd_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_zerograd_error
 ! ==============================================================================
 
-subroutine ffdev_err_zerograd_error(error)
+subroutine ffdev_err_zerograd_error(err_item,opterr)
 
     use ffdev_targetset
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
-    use ffdev_errors_dat
-    use ffdev_err_zerograd_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTZeroGrad)  :: err_item
+    logical                 :: opterr
     ! --------------------------------------------
     integer             :: i,j,k
     real(DEVDP)         :: grms,totgrms,nele
     ! --------------------------------------------------------------------------
 
-    error%zerograd = 0.0d0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     nele = 0
     totgrms = 0.0d0
@@ -82,7 +92,7 @@ subroutine ffdev_err_zerograd_error(error)
     end do
 
     if( nele.gt. 0 ) then
-        error%zerograd = sqrt(totgrms/nele)
+        err_item%ErrFceValue = sqrt(totgrms/nele)
     end if
 
 end subroutine ffdev_err_zerograd_error
@@ -91,17 +101,20 @@ end subroutine ffdev_err_zerograd_error
 ! subroutine ffdev_err_zerograd_summary
 ! ==============================================================================
 
-subroutine ffdev_err_zerograd_summary
+subroutine ffdev_err_zerograd_summary(err_item)
 
     use ffdev_targetset_dat
     use ffdev_geometry
-    use ffdev_err_zerograd_dat
 
     implicit none
+    class(TypeEFTZeroGrad)  :: err_item
+    ! --------------------------------------------
     real(DEVDP)         :: grms,totgrms,totw
     integer             :: i,j,k
     logical             :: printsum
     ! --------------------------------------------------------------------------
+
+    if( .not. err_item%PrintSummary ) return
 
     printsum = .false.
     do i=1,nsets
@@ -145,7 +158,7 @@ subroutine ffdev_err_zerograd_summary
     end if
 
     write(DEV_OUT,40)  totgrms
-    write(DEV_OUT,45)  ZeroGradErrorWeight*totgrms
+    write(DEV_OUT,45)  err_item%Weight*totgrms
 
  5 format('# Zero gradient errors')
 10 format('# SET  GeoID Weight   GRMS(MM)')

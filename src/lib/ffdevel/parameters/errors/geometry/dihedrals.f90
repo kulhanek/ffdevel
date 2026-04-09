@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2019 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -19,55 +20,65 @@ module ffdev_err_dihedrals
 
 use ffdev_constants
 use ffdev_variables
+use ffdev_errors_dat
+
+!===============================================================================
+
+type, extends(ErrorFceType) :: TypeEFTDihedrals
+    contains
+        ! executive methods
+        procedure   :: set_title_errfce         => ffdev_err_dihedrals_set_title
+        procedure   :: calc_errfce              => ffdev_err_dihedrals_error
+        procedure   :: print_pts_summary_errfce => ffdev_err_dihedrals_summary
+end type TypeEFTDihedrals
 
 contains
 
-! ==============================================================================
-! subroutine ffdev_err_dihedrals_init
-! ==============================================================================
+!===============================================================================
+! Subroutine:  ffdev_err_dihedrals_set_title
+!===============================================================================
 
-subroutine ffdev_err_dihedrals_init
-
-    use ffdev_err_dihedrals_dat
+subroutine ffdev_err_dihedrals_set_title(err_item)
 
     implicit none
+    class(TypeEFTDihedrals)    :: err_item
     ! --------------------------------------------------------------------------
 
-    EnableDihedralsError           = .false.
-    PrintDihedralsErrorSummary     = .false.
-    DihedralsErrorWeight           = DEV_D2R
-    OnlyFFOptDihedrals             = .false.
+    err_item%Title = 'Dihedrals'
 
-end subroutine ffdev_err_dihedrals_init
+end subroutine ffdev_err_dihedrals_set_title
 
 ! ==============================================================================
 ! subroutine ffdev_err_dihedrals_error
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_error(error)
+subroutine ffdev_err_dihedrals_error(err_item,opterr)
 
     use ffdev_targetset_dat
     use ffdev_utils
     use ffdev_geometry
     use ffdev_errors_dat
-    use ffdev_err_dihedrals_dat
 
     implicit none
-    type(FFERROR_TYPE)  :: error
+    class(TypeEFTDihedrals) :: err_item
+    logical                 :: opterr
     ! --------------------------------------------
     integer             :: i,j,q,ai,aj,ak,al
     real(DEVDP)         :: err,seterrdihedrals,totw
     real(DEVDP)         :: d0,dt
     ! --------------------------------------------------------------------------
 
-    error%dihedrals = 0.0
+    err_item%ErrFceValue = 0.0d0
+    if( .not. err_item%Enabled ) then
+        if( opterr ) return
+    end if
 
     seterrdihedrals = 0.0
     totw = 0
 
     do i=1,nsets
         do q=1,sets(i)%top%ndihedrals
-            if( OnlyFFOptDihedrals ) then
+            if( err_item%OnlyFFOpt ) then
                 if( .not. sets(i)%top%dihedral_types(sets(i)%top%dihedrals(q)%dt)%ffoptactive ) cycle
             end if
 
@@ -92,7 +103,7 @@ subroutine ffdev_err_dihedrals_error(error)
     end do
 
     if( totw .gt. 0 ) then
-        error%dihedrals = sqrt(seterrdihedrals/totw)
+        err_item%ErrFceValue = sqrt(seterrdihedrals/totw)
     end if
 
 end subroutine ffdev_err_dihedrals_error
@@ -101,19 +112,20 @@ end subroutine ffdev_err_dihedrals_error
 ! subroutine ffdev_err_dihedrals_summary
 ! ==============================================================================
 
-subroutine ffdev_err_dihedrals_summary(top,geo,printsum)
+subroutine ffdev_err_dihedrals_summary(err_item,top,geo,printsum)
 
     use ffdev_topology
     use ffdev_geometry
     use ffdev_geometry_utils
-    use ffdev_err_dihedrals_dat
 
     implicit none
-    type(TOPOLOGY)  :: top
-    type(GEOMETRY)  :: geo
-    logical         :: printsum
+    class(TypeEFTDihedrals) :: err_item
+    type(TOPOLOGY)          :: top
+    type(GEOMETRY)          :: geo
+    logical                 :: printsum
     ! --------------------------------------------------------------------------
 
+    if( .not. err_item%PrintSummary ) return
     if( .not. geo%trg_crd_optimized ) return
 
     if( printsum .eqv. .false. ) then
@@ -121,7 +133,7 @@ subroutine ffdev_err_dihedrals_summary(top,geo,printsum)
         return
     end if
 
-    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd,OnlyFFOptDihedrals)
+    call ffdev_geometry_utils_comp_dihedrals(.false.,top,geo%trg_crd,geo%crd,err_item%OnlyFFOpt)
 
 end subroutine ffdev_err_dihedrals_summary
 
