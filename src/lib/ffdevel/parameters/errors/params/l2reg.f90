@@ -138,7 +138,7 @@ subroutine ffdev_err_l2reg_error(err_item,opterr)
 
         ! check if it is actvated
         if( err_item%OnlyFFOpt ) then
-            if( params(i)%enabled ) cycle
+            if( .not. params(i)%enabled ) cycle
         end if
 
         ! calculate error
