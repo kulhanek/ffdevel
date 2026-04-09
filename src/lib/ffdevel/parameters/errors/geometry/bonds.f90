@@ -81,6 +81,7 @@ subroutine ffdev_err_bonds_error(err_item,opterr)
 
     do i=1,nsets
         do q=1,sets(i)%top%nbonds
+
             if( err_item%OnlyFFOpt ) then
                 if( .not. sets(i)%top%bond_types(sets(i)%top%bonds(q)%bt)%ffoptactive ) cycle
             end if

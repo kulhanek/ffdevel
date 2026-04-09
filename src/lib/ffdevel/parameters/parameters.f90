@@ -2808,35 +2808,38 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%d0 = params(i)%value
-                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_BOND_K)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%k = params(i)%value
-                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_ANGLE_A0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%a0 = params(i)%value
-                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_ANGLE_K)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%k = params(i)%value
-                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_DIH_V)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%v(params(i)%pn) = params(i)%value
-                        ! this must be accumulatiove do to pn
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
@@ -2845,7 +2848,6 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%c(params(i)%pn) = params(i)%value
-                        ! this must be accumulatiove do to pn
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
@@ -2854,7 +2856,6 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%g(params(i)%pn) = params(i)%value
-                        ! this must be accumulatiove do to pn
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
@@ -2863,7 +2864,6 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scee = 1.0d0/params(i)%value
-                        ! this must be accumulatiove do to pn
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
@@ -2872,7 +2872,6 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scnb = 1.0d0/params(i)%value
-                        ! this must be accumulatiove do to pn
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
@@ -2881,14 +2880,16 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%v = params(i)%value
-                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_IMPR_G)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%g = params(i)%value
-                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
 
@@ -2897,21 +2898,24 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%eps = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_R0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%r0 = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_ALPHA)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%alpha = params(i)%value
-                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_ALPHA0)
@@ -2921,14 +2925,16 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%PA = params(i)%value
-                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_PB)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%PB = params(i)%value
-                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
             case(REALM_VDW_B0)
@@ -2937,7 +2943,8 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%RC = params(i)%value
-                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = params(i)%enabled
+                        sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
                     end if
                 end do
 

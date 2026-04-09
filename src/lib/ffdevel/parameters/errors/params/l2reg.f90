@@ -125,6 +125,7 @@ subroutine ffdev_err_l2reg_error(err_item,opterr)
     logical             :: opterr
     ! --------------------------------------------
     integer             :: i
+    real(DEVDP)         :: v
     ! --------------------------------------------------------------------------
 
     err_item%ErrFceValue = 0.0d0
@@ -136,13 +137,14 @@ subroutine ffdev_err_l2reg_error(err_item,opterr)
         ! skip different realms
         if( params(i)%realm .ne. err_item%Realm ) cycle
 
-        ! check if it is actvated
+        ! check if it is activated
         if( err_item%OnlyFFOpt ) then
             if( .not. params(i)%enabled ) cycle
         end if
 
         ! calculate error
-        err_item%ErrFceValue = err_item%ErrFceValue + params(i)%value**2
+        v = params(i)%value
+        err_item%ErrFceValue = err_item%ErrFceValue + v**2
     end do
 
 end subroutine ffdev_err_l2reg_error
