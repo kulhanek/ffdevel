@@ -917,7 +917,7 @@ subroutine ffdev_geometry_utils_targetset_stat_angles(onlyffopt)
 210 format('# ----------------------------------------------------------------------------------------------')
 220 format('# Type   Type   Type Count    SUD       MUD       AD        RMSD     <A(MM)>  <A(TRG)>  FF Value')
 230 format('# ---- = ---- = ---- ----- --------- --------- --------- --------- --------- --------- ---------')
-240 format(2X,A4,3X,A4,3X,A4,1X,I5,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2)
+240 format(2X,A4,3X,A4,3X,A4,1X,I5,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2)
 
 end subroutine ffdev_geometry_utils_targetset_stat_angles
 
