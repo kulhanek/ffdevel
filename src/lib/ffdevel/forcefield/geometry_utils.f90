@@ -910,7 +910,7 @@ subroutine ffdev_geometry_utils_targetset_stat_angles(onlyffopt)
                            types(params(i)%tj)%name, &
                            types(params(i)%tk)%name, &
                            nb, serr*DEV_R2D, lerr*DEV_R2D, aerr*DEV_R2D, rmse*DEV_R2D, &
-                           a1ave*DEV_R2D, a2ave*DEV_R2D, params(i)%value
+                           a1ave*DEV_R2D, a2ave*DEV_R2D, params(i)%value*DEV_R2D
     end do
 
 200 format('# Angles by types (MM vs TRG)')
