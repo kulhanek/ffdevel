@@ -891,7 +891,7 @@ subroutine ffdev_geometry_utils_targetset_stat_angles(onlyffopt)
                     rmse = rmse + diff**2
 
                     a1ave = a1ave + d1
-                    a2ave = a2ave + d1
+                    a2ave = a2ave + d2
 
                     nb = nb + 1
                     first = .false.

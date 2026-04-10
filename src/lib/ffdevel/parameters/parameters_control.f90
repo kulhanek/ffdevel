@@ -959,13 +959,31 @@ subroutine ffdev_parameters_ctrl_identities(fin)
         read(string,*) key, subkey
         select case(key)
             case('dih_v')
-                write(DEV_OUT,*)
-                write(DEV_OUT,40) adjustl(key),'byrot'
-                call setup_dih_identity_byrot(REALM_DIH_V,niden)
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. 'byrot') ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(key),'byrot'
+                    call setup_dih_identity_byrot(REALM_DIH_V,niden)
+                else if( trim(subkey) .eq. 'types' ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(string)
+                    call setup_dih_identity_types(REALM_DIH_V,string,niden)
+                else
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                               'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
+                end if
             case('dih_gamma')
-                write(DEV_OUT,*)
-                write(DEV_OUT,40) adjustl(key),'byrot'
-                call setup_dih_identity_byrot(REALM_DIH_G,niden)
+                if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. 'byrot') ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(key),'byrot'
+                    call setup_dih_identity_byrot(REALM_DIH_G,niden)
+                else if( trim(subkey) .eq. 'types' ) then
+                    write(DEV_OUT,*)
+                    write(DEV_OUT,40) adjustl(string)
+                    call setup_dih_identity_types(REALM_DIH_G,string,niden)
+                else
+                    call ffdev_utils_exit(DEV_ERR,1, &
+                               'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
+                end if
             case('dih_c')
                 if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. 'byrot') ) then
                     write(DEV_OUT,*)
