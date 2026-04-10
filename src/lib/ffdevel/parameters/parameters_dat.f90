@@ -24,7 +24,7 @@ use ffdev_topology_dat
 
 ! ------------------------------------------------------------------------------
 
-integer,parameter       :: REALM_BOND_D0    = 1
+integer,parameter       :: REALM_BOND_R0    = 1
 integer,parameter       :: REALM_BOND_K     = 2
 integer,parameter       :: REALM_ANGLE_A0   = 3
 integer,parameter       :: REALM_ANGLE_K    = 4
@@ -81,7 +81,7 @@ integer,parameter       :: REALM_K_IND      = 34
 integer,parameter       :: REALM_VDW_R0FREE = 35
 integer,parameter       :: REALM_VDW_PBFREE = 36
 
-integer,parameter       :: REALM_FIRST   = REALM_BOND_D0
+integer,parameter       :: REALM_FIRST   = REALM_BOND_R0
 integer,parameter       :: REALM_LAST    = REALM_VDW_PBFREE
 
 ! ------------------------------------------------------------------------------

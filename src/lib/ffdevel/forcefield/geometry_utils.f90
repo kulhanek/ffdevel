@@ -396,7 +396,7 @@ end subroutine ffdev_geometry_utils_rmsdfit
 ! subroutine ffdev_geometry_utils_comp_bonds
 ! ==============================================================================
 
-subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
+subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2,onlyffopt)
 
     use ffdev_topology
     use ffdev_geometry
@@ -406,13 +406,28 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
     type(TOPOLOGY)  :: top
     real(DEVDP)     :: crd1(:,:)
     real(DEVDP)     :: crd2(:,:)
+    logical         :: onlyffopt
     ! --------------------------------------------
     integer         :: i, j, ai, aj, nb
     real(DEVDP)     :: d1, d2, diff
-    real(DEVDP)     :: serr, lerr,aerr,rmse
+    real(DEVDP)     :: serr,lerr,aerr,rmse
+    logical         :: first,printsum
     ! --------------------------------------------------------------------------
 
     if( top%nbonds .le. 0 ) return ! no data - exit
+
+    printsum = .false.
+    do i=1,top%nbonds
+        if( onlyffopt ) then
+            if( top%bond_types(top%bonds(i)%bt)%ffoptactive ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
+
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)
@@ -424,14 +439,22 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
     end if
     write(DEV_OUT,130)
 
-    serr = 100d0
+    serr = 0.0d0
     lerr = 0.0d0
     aerr = 0.0d0
     rmse = 0.0d0
 
+    first = .true.
+
     do i=1,top%nbonds
+
+        if( onlyffopt ) then
+            if( .not. top%bond_types(top%bonds(i)%bt)%ffoptactive ) cycle
+        end if
+
         ai = top%bonds(i)%ai
         aj = top%bonds(i)%aj
+
         d1 = ffdev_geometry_get_length(crd1,ai,aj)
         d2 = ffdev_geometry_get_length(crd2,ai,aj)
         diff = d2 - d1
@@ -440,10 +463,11 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
                             aj, top%atoms(aj)%name, top%atom_types(top%atoms(aj)%typeid)%name, &
                             top%atoms(aj)%residx, top%atoms(aj)%resname, &
                             d1,d2,diff
-        if( serr .gt. abs(diff) ) serr = abs(diff)
-        if( lerr .lt. abs(diff) ) lerr = abs(diff)
+        if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
         aerr = aerr + abs(diff)
         rmse = rmse + diff**2
+        first = .false.
     end do
 
     if( top%nbonds .gt. 0 ) then
@@ -476,11 +500,17 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
 
     do i=1,top%nbond_types
 
-        serr = 100d0
+        if( onlyffopt ) then
+            if( .not. top%bond_types(i)%ffoptactive ) cycle
+        end if
+
+        serr = 0.0d0
         lerr = 0.0d0
         aerr = 0.0d0
         rmse = 0.0d0
         nb = 0
+
+        first = .true.
 
         do j=1,top%nbonds
             if( top%bonds(j)%bt .ne. i ) cycle
@@ -491,11 +521,12 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
             d2 = ffdev_geometry_get_length(crd2,ai,aj)
             diff = d2 - d1
 
-            if( serr .gt. abs(diff) ) serr = abs(diff)
-            if( lerr .lt. abs(diff) ) lerr = abs(diff)
+            if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+            if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
             aerr = aerr + abs(diff)
             rmse = rmse + diff**2
             nb = nb + 1
+            first = .false.
         end do
 
         if( nb .gt. 0 ) then
@@ -504,23 +535,129 @@ subroutine ffdev_geometry_utils_comp_bonds(c12,top,crd1,crd2)
         end if
 
         write(DEV_OUT,240) top%atom_types(top%bond_types(i)%ti)%name, &
-                           top%atom_types(top%bond_types(i)%tj)%name, serr, lerr, aerr, rmse
+                           top%atom_types(top%bond_types(i)%tj)%name, &
+                           nb, serr, lerr, aerr, rmse
 
     end do
 
 200 format('# Bonds by types')
-210 format('# ---------------------------------------------------')
-220 format('# Type   Type    SUD       MUD       AD        RMSD  ')
-230 format('# ---- = ---- --------- --------- --------- ---------')
-240 format(2X,A4,3X,A4,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4)
+210 format('# ---------------------------------------------------------')
+220 format('# Type   Type Count    SUD       MUD       AD        RMSD  ')
+230 format('# ---- = ---- ----- --------- --------- --------- ---------')
+240 format(2X,A4,3X,A4,1X,I5,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4)
 
 end subroutine ffdev_geometry_utils_comp_bonds
+
+! ==============================================================================
+! subroutine ffdev_geometry_utils_targetset_stat_bonds
+! ==============================================================================
+
+subroutine ffdev_geometry_utils_targetset_stat_bonds(onlyffopt)
+
+    use ffdev_targetset_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    logical         :: onlyffopt
+    ! --------------------------------------------
+    integer         :: i, j, ai, aj, nb, s, g
+    real(DEVDP)     :: d1, d2, diff, d1ave, d2ave
+    real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first, printsum
+    ! --------------------------------------------------------------------------
+
+    printsum = .false.
+    do i=1,nparams
+
+        if( params(i)%realm .ne. REALM_BOND_R0 ) cycle
+
+        if( onlyffopt ) then
+            if( params(i)%enabled ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,200)
+    write(DEV_OUT,210)
+    write(DEV_OUT,220)
+    write(DEV_OUT,230)
+
+    do i=1,nparams
+
+        if( params(i)%realm .ne. REALM_BOND_R0 ) cycle
+
+        if( onlyffopt ) then
+            if( .not. ffdev_parameters_is_parameter_enabled(i) ) cycle
+        end if
+
+        serr = 0.0d0
+        lerr = 0.0d0
+        aerr = 0.0d0
+        rmse = 0.0d0
+        d1ave = 0.0d0
+        d2ave = 0.0d0
+        nb = 0
+
+        first = .true.
+
+        do s=1,nsets
+            do g=1,sets(s)%ngeos
+                do j=1,sets(s)%top%nbonds
+                    if( sets(s)%top%bonds(j)%bt .ne. params(i)%ids(s) ) cycle
+
+                    ai = sets(s)%top%bonds(j)%ai
+                    aj = sets(s)%top%bonds(j)%aj
+                    d1 = ffdev_geometry_get_length(sets(s)%geo(g)%crd,ai,aj)
+                    d2 = ffdev_geometry_get_length(sets(s)%geo(g)%trg_crd,ai,aj)
+                    diff = d2 - d1
+
+                    if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+                    if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
+                    aerr = aerr + abs(diff)
+                    rmse = rmse + diff**2
+
+                    d1ave = d1ave + d1
+                    d2ave = d2ave + d2
+
+                    nb = nb + 1
+                    first = .false.
+                end do
+            end do
+        end do
+
+        if( nb .gt. 0 ) then
+            aerr = aerr / real(nb)
+            rmse = sqrt(rmse / real(nb))
+            d1ave = d1ave / real(nb)
+            d2ave = d2ave / real(nb)
+        end if
+
+        write(DEV_OUT,240) types(params(i)%ti)%name, types(params(i)%tj)%name, &
+                           nb, serr, lerr, aerr, rmse, d1ave, d2ave, params(i)%value
+
+    end do
+
+200 format('# Bonds by types (MM vs TRG)')
+210 format('# ---------------------------------------------------------------------------------------')
+220 format('# Type   Type Count    SUD       MUD       AD        RMSD     <D(MM)>  <D(TRG)>  FF Value')
+230 format('# ---- = ---- ----- --------- --------- --------- --------- --------- --------- ---------')
+240 format(2X,A4,3X,A4,1X,I5,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4,1X,F9.4)
+
+end subroutine ffdev_geometry_utils_targetset_stat_bonds
 
 !===============================================================================
 ! subroutine:  ffdev_geometry_utils_comp_angles
 !===============================================================================
 
-subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
+subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2,onlyffopt)
 
     use ffdev_topology
     use ffdev_geometry
@@ -530,13 +667,27 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
     type(TOPOLOGY)  :: top
     real(DEVDP)     :: crd1(:,:)
     real(DEVDP)     :: crd2(:,:)
+    logical         :: onlyffopt
     ! --------------------------------------------
     integer         :: i, j, ai, aj, ak, nb
     real(DEVDP)     :: d1, d2, diff
     real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first,printsum
     ! --------------------------------------------------------------------------
 
     if( top%nangles .le. 0 ) return ! no data - exit
+
+    printsum = .false.
+    do i=1,top%nangles
+        if( onlyffopt ) then
+            if( top%angle_types(top%angles(i)%at)%ffoptactive ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)
@@ -548,15 +699,22 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
     end if
     write(DEV_OUT,130)
 
-    serr = 100d0
+    serr = 0.0d0
     lerr = 0.0d0
     aerr = 0.0d0
     rmse = 0.0d0
 
+    first = .true.
+
     do i=1,top%nangles
+        if( onlyffopt ) then
+            if( .not. top%angle_types(top%angles(i)%at)%ffoptactive ) cycle
+        end if
+
         ai = top%angles(i)%ai
         aj = top%angles(i)%aj
         ak = top%angles(i)%ak
+
         d1 = ffdev_geometry_get_angle(crd1,ai,aj,ak)
         d2 = ffdev_geometry_get_angle(crd2,ai,aj,ak)
         diff = d2 - d1
@@ -567,10 +725,11 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
                             ak, top%atoms(ak)%name, top%atom_types(top%atoms(ak)%typeid)%name, &
                             top%atoms(ak)%residx, top%atoms(ak)%resname, &
                             d1*DEV_R2D,d2*DEV_R2D,diff*DEV_R2D
-        if( serr .gt. abs(diff) ) serr = abs(diff)
-        if( lerr .lt. abs(diff) ) lerr = abs(diff)
+        if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
         aerr = aerr + abs(diff)
         rmse = rmse + diff**2
+        first = .false.
     end do
 
     if( top%nangles .gt. 0 ) then
@@ -608,7 +767,11 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
 
     do i=1,top%nangle_types
 
-        serr = 100d0
+        if( onlyffopt ) then
+            if( .not. top%angle_types(i)%ffoptactive ) cycle
+        end if
+
+        serr = 0.0d0
         lerr = 0.0d0
         aerr = 0.0d0
         rmse = 0.0d0
@@ -623,11 +786,12 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
             d1 = ffdev_geometry_get_angle(crd1,ai,aj,ak)
             d2 = ffdev_geometry_get_angle(crd2,ai,aj,ak)
             diff = d2 - d1
-            if( serr .gt. abs(diff) ) serr = abs(diff)
-            if( lerr .lt. abs(diff) ) lerr = abs(diff)
+            if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+            if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
             aerr = aerr + abs(diff)
             rmse = rmse + diff**2
             nb = nb + 1
+            first = .false.
         end do
 
         if( nb .gt. 0 ) then
@@ -650,10 +814,118 @@ subroutine ffdev_geometry_utils_comp_angles(c12,top,crd1,crd2)
 end subroutine ffdev_geometry_utils_comp_angles
 
 !===============================================================================
+! subroutine:  ffdev_geometry_utils_targetset_stat_angles
+!===============================================================================
+
+subroutine ffdev_geometry_utils_targetset_stat_angles(onlyffopt)
+
+    use ffdev_targetset_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    logical         :: onlyffopt
+    ! --------------------------------------------
+    integer         :: i, j, ai, aj, ak, nb, g, s
+    real(DEVDP)     :: d1, d2, diff, a1ave, a2ave
+    real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first,printsum
+    ! --------------------------------------------------------------------------
+
+    printsum = .false.
+    do i=1,nparams
+
+        if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
+
+        if( onlyffopt ) then
+            if( params(i)%enabled ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,200)
+    write(DEV_OUT,210)
+    write(DEV_OUT,220)
+    write(DEV_OUT,230)
+
+    do i=1,nparams
+
+        if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
+
+        if( onlyffopt ) then
+            if( .not. ffdev_parameters_is_parameter_enabled(i) ) cycle
+        end if
+
+        serr = 0.0d0
+        lerr = 0.0d0
+        aerr = 0.0d0
+        rmse = 0.0d0
+        a1ave = 0.0d0
+        a2ave = 0.0d0
+
+        nb = 0
+
+        first = .true.
+
+        do s=1,nsets
+            do g=1,sets(s)%ngeos
+                do j=1,sets(s)%top%nangles
+                    if( sets(s)%top%angles(j)%at .ne. params(i)%ids(s) ) cycle
+
+                    ai = sets(s)%top%angles(j)%ai
+                    aj = sets(s)%top%angles(j)%aj
+                    ak = sets(s)%top%angles(j)%ak
+                    d1 = ffdev_geometry_get_angle(sets(s)%geo(g)%crd,ai,aj,ak)
+                    d2 = ffdev_geometry_get_angle(sets(s)%geo(g)%trg_crd,ai,aj,ak)
+                    diff = d2 - d1
+                    if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+                    if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
+                    aerr = aerr + abs(diff)
+                    rmse = rmse + diff**2
+
+                    a1ave = a1ave + d1
+                    a2ave = a2ave + d1
+
+                    nb = nb + 1
+                    first = .false.
+                end do
+            end do
+        end do
+
+        if( nb .gt. 0 ) then
+            aerr = aerr / real(nb)
+            rmse = sqrt(rmse / real(nb))
+            a1ave = a1ave / real(nb)
+            a2ave = a2ave / real(nb)
+        end if
+
+        write(DEV_OUT,240) types(params(i)%ti)%name, &
+                           types(params(i)%tj)%name, &
+                           types(params(i)%tk)%name, &
+                           nb, serr*DEV_R2D, lerr*DEV_R2D, aerr*DEV_R2D, rmse*DEV_R2D, &
+                           a1ave*DEV_R2D, a2ave*DEV_R2D, params(i)%value
+    end do
+
+200 format('# Angles by types (MM vs TRG)')
+210 format('# ----------------------------------------------------------------------------------------------')
+220 format('# Type   Type   Type Count    SUD       MUD       AD        RMSD     <A(MM)>  <A(TRG)>  FF Value')
+230 format('# ---- = ---- = ---- ----- --------- --------- --------- --------- --------- --------- ---------')
+240 format(2X,A4,3X,A4,3X,A4,1X,I5,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2)
+
+end subroutine ffdev_geometry_utils_targetset_stat_angles
+
+!===============================================================================
 ! subroutine:  ffdev_geometry_utils_comp_dihedrals
 !===============================================================================
 
-subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
+subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlyffopt)
 
     use ffdev_topology
     use ffdev_geometry
@@ -664,14 +936,27 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
     type(TOPOLOGY)  :: top
     real(DEVDP)     :: crd1(:,:)
     real(DEVDP)     :: crd2(:,:)
-    logical         :: onlytyped
+    logical         :: onlyffopt
     ! --------------------------------------------
     integer         :: i, j, ai, aj, ak, al, nb
     real(DEVDP)     :: d1, d2, diff
     real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first,printsum
     ! --------------------------------------------------------------------------
 
     if( top%ndihedrals .le. 0 ) return ! no data - exit
+
+    printsum = .false.
+    do i=1,top%ndihedrals
+        if( onlyffopt ) then
+            if( top%dihedral_types(top%dihedrals(i)%dt)%ffoptactive ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
 
     write(DEV_OUT,*)
     write(DEV_OUT,100)
@@ -683,21 +968,23 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
     end if
     write(DEV_OUT,130)
 
-    serr = 100d0
+    serr = 0.0d0
     lerr = 0.0d0
     aerr = 0.0d0
     rmse = 0.0d0
     nb   = 0
 
+    first = .true.
+
     do i=1,top%ndihedrals
+        if( onlyffopt ) then
+            if( .not. top%dihedral_types(top%dihedrals(i)%dt)%ffoptactive ) cycle
+        end if
+
         ai = top%dihedrals(i)%ai
         aj = top%dihedrals(i)%aj
         ak = top%dihedrals(i)%ak
         al = top%dihedrals(i)%al
-
-        if( onlytyped ) then
-            if( .not. top%dihedral_types(top%dihedrals(i)%dt)%ffoptactive ) cycle
-        end if
 
         d1 = ffdev_geometry_get_dihedral(crd1,ai,aj,ak,al)
         d2 = ffdev_geometry_get_dihedral(crd2,ai,aj,ak,al)
@@ -711,11 +998,12 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
                             al, top%atoms(al)%name, top%atom_types(top%atoms(al)%typeid)%name, &
                             top%atoms(al)%residx, top%atoms(al)%resname, &
                             d1*DEV_R2D,d2*DEV_R2D,diff*DEV_R2D
-        if( serr .gt. abs(diff) ) serr = abs(diff)
-        if( lerr .lt. abs(diff) ) lerr = abs(diff)
+        if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
         aerr = aerr + abs(diff)
         rmse = rmse + diff**2
         nb = nb + 1
+        first = .false.
     end do
 
     if( nb .gt. 0 ) then
@@ -755,11 +1043,11 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
 
     do i=1,top%ndihedral_types
 
-        if( onlytyped ) then
+        if( onlyffopt ) then
             if( .not. top%dihedral_types(i)%ffoptactive ) cycle
         end if
 
-        serr = 100d0
+        serr = 0.0d0
         lerr = 0.0d0
         aerr = 0.0d0
         rmse = 0.0d0
@@ -775,11 +1063,12 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
             d1 = ffdev_geometry_get_dihedral(crd1,ai,aj,ak,al)
             d2 = ffdev_geometry_get_dihedral(crd2,ai,aj,ak,al)
             diff = ffdev_geometry_get_dihedral_deviation(d2,d1)
-            if( serr .gt. abs(diff) ) serr = abs(diff)
-            if( lerr .lt. abs(diff) ) lerr = abs(diff)
+            if( (serr .gt. abs(diff)) .or. first  ) serr = abs(diff)
+            if( (lerr .lt. abs(diff)) .or. first  ) lerr = abs(diff)
             aerr = aerr + abs(diff)
             rmse = rmse + diff**2
             nb = nb + 1
+            first = .false.
         end do
 
         if( nb .gt. 0 ) then
@@ -803,6 +1092,110 @@ subroutine ffdev_geometry_utils_comp_dihedrals(c12,top,crd1,crd2,onlytyped)
 end subroutine ffdev_geometry_utils_comp_dihedrals
 
 !===============================================================================
+! subroutine:  ffdev_geometry_utils_targetset_stat_dihedrals
+!===============================================================================
+
+subroutine ffdev_geometry_utils_targetset_stat_dihedrals(onlyffopt)
+
+    use ffdev_targetset_dat
+    use ffdev_parameters_dat
+    use ffdev_parameters
+    use ffdev_topology
+    use ffdev_geometry
+
+    implicit none
+    logical         :: onlyffopt
+    ! --------------------------------------------
+    integer         :: i, j, ai, aj, ak, al, nb, s, g
+    real(DEVDP)     :: d1, d2, diff
+    real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first,printsum
+    ! --------------------------------------------------------------------------
+
+    printsum = .false.
+    do i=1,nparams
+
+        ! FIXME
+        if( params(i)%realm .ne. REALM_DIH_C ) cycle
+
+        if( onlyffopt ) then
+            if( params(i)%enabled ) then
+                printsum = .true.
+                exit
+            end if
+        end if
+    end do
+
+    if( .not. printsum ) return
+
+    write(DEV_OUT,*)
+    write(DEV_OUT,200)
+    write(DEV_OUT,210)
+    write(DEV_OUT,220)
+    write(DEV_OUT,230)
+
+    do i=1,nparams
+
+        ! FIXME
+        if( params(i)%realm .ne. REALM_DIH_C ) cycle
+
+        if( onlyffopt ) then
+            if( .not. ffdev_parameters_is_parameter_enabled(i) ) cycle
+        end if
+
+        ! FIXME
+        if( params(i)%pn .ne. 2 ) cycle
+
+        serr = 0.0d0
+        lerr = 0.0d0
+        aerr = 0.0d0
+        rmse = 0.0d0
+        nb = 0
+
+        first = .true.
+
+        do s=1,nsets
+            do g=1,sets(s)%ngeos
+                do j=1,sets(s)%top%ndihedrals
+                    if( sets(s)%top%dihedrals(j)%dt .ne. params(i)%ids(s) ) cycle
+                    ai = sets(s)%top%dihedrals(j)%ai
+                    aj = sets(s)%top%dihedrals(j)%aj
+                    ak = sets(s)%top%dihedrals(j)%ak
+                    al = sets(s)%top%dihedrals(j)%al
+                    d1 = ffdev_geometry_get_dihedral(sets(s)%geo(g)%crd,ai,aj,ak,al)
+                    d2 = ffdev_geometry_get_dihedral(sets(s)%geo(g)%trg_crd,ai,aj,ak,al)
+                    diff = ffdev_geometry_get_dihedral_deviation(d2,d1)
+                    if( (serr .gt. abs(diff)) .or. first  ) serr = abs(diff)
+                    if( (lerr .lt. abs(diff)) .or. first  ) lerr = abs(diff)
+                    aerr = aerr + abs(diff)
+                    rmse = rmse + diff**2
+                    nb = nb + 1
+                    first = .false.
+                end do
+            end do
+        end do
+
+        if( nb .gt. 0 ) then
+            aerr = aerr / real(nb)
+            rmse = sqrt(rmse / real(nb))
+        end if
+
+        write(DEV_OUT,240) types(params(i)%ti)%name, &
+                           types(params(i)%tj)%name, &
+                           types(params(i)%tk)%name, &
+                           types(params(i)%tl)%name, &
+                           nb, serr*DEV_R2D, lerr*DEV_R2D, aerr*DEV_R2D, rmse*DEV_R2D
+    end do
+
+200 format('# Dihedrals by types (MM vs TRG)')
+210 format('# -----------------------------------------------------------------------')
+220 format('# Type   Type   Type   Type Count    SUD       MUD       AD        RMSD  ')
+230 format('# ---- = ---- = ---- = ---- ----- --------- --------- --------- ---------')
+240 format(2X,A4,3X,A4,3X,A4,3X,A4,1X,I5,1X,F9.2,1X,F9.2,1X,F9.2,1X,F9.2)
+
+end subroutine ffdev_geometry_utils_targetset_stat_dihedrals
+
+!===============================================================================
 ! subroutine:  ffdev_geometry_utils_comp_impropers
 !===============================================================================
 
@@ -821,6 +1214,7 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
     integer         :: i, j, ai, aj, ak, al, nb, idt
     real(DEVDP)     :: d1, d2, diff
     real(DEVDP)     :: serr, lerr,aerr,rmse
+    logical         :: first
     ! --------------------------------------------------------------------------
 
     if( top%nimpropers .le. 0 ) return ! no data - exit
@@ -839,10 +1233,12 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
     end if
     write(DEV_OUT,130)
 
-    serr = 100d0
+    serr = 0.0d0
     lerr = 0.0d0
     aerr = 0.0d0
     rmse = 0.0d0
+
+    first = .true.
 
     do i=1,top%nimpropers
         ai = top%impropers(i)%ai
@@ -866,10 +1262,11 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
                             al, top%atoms(al)%name, top%atom_types(top%atoms(al)%typeid)%name, &
                             top%atoms(al)%residx, top%atoms(al)%resname, &
                             d1*DEV_R2D,d2*DEV_R2D,diff*DEV_R2D
-        if( serr .gt. abs(diff) ) serr = abs(diff)
-        if( lerr .lt. abs(diff) ) lerr = abs(diff)
+        if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+        if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
         aerr = aerr + abs(diff)
         rmse = rmse + diff**2
+        first = .false.
     end do
 
     if( top%nimpropers .gt. 0 ) then
@@ -911,11 +1308,13 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
 
     do i=1,top%nimproper_types
 
-        serr = 100d0
+        serr = 0.0d0
         lerr = 0.0d0
         aerr = 0.0d0
         rmse = 0.0d0
         nb = 0
+
+        first = .true.
 
         do j=1,top%nimpropers
             if( top%impropers(j)%dt .ne. i ) cycle
@@ -932,11 +1331,12 @@ subroutine ffdev_geometry_utils_comp_impropers(c12,top,crd1,crd2,lock2phase)
             end if
             d2 = ffdev_geometry_get_improper(crd2,ai,aj,ak,al)
             diff = ffdev_geometry_get_dihedral_deviation(d2,d1)
-            if( serr .gt. abs(diff) ) serr = abs(diff)
-            if( lerr .lt. abs(diff) ) lerr = abs(diff)
+            if( (serr .gt. abs(diff)) .or. first ) serr = abs(diff)
+            if( (lerr .lt. abs(diff)) .or. first ) lerr = abs(diff)
             aerr = aerr + abs(diff)
             rmse = rmse + diff**2
             nb = nb + 1
+            first = .false.
         end do
 
         if( nb .gt. 0 ) then

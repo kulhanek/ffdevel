@@ -29,6 +29,7 @@ type, extends(ErrorFceType) :: TypeEFTBonds
         ! executive methods
         procedure   :: set_title_errfce         => ffdev_err_bonds_set_title
         procedure   :: calc_errfce              => ffdev_err_bonds_error
+        procedure   :: print_individual_summary_errfce => ffdev_err_bonds_summary_targetset
         procedure   :: print_pts_summary_errfce => ffdev_err_bonds_summary
 end type TypeEFTBonds
 
@@ -109,6 +110,24 @@ subroutine ffdev_err_bonds_error(err_item,opterr)
 end subroutine ffdev_err_bonds_error
 
 ! ==============================================================================
+! subroutine ffdev_err_bonds_summary_targetset
+! ==============================================================================
+
+subroutine ffdev_err_bonds_summary_targetset(err_item)
+
+    use ffdev_geometry_utils
+
+    implicit none
+    class(TypeEFTBonds) :: err_item
+    ! --------------------------------------------
+
+    if( .not. err_item%PrintSummary ) return
+
+    call ffdev_geometry_utils_targetset_stat_bonds(err_item%OnlyFFOpt)
+
+end subroutine ffdev_err_bonds_summary_targetset
+
+! ==============================================================================
 ! subroutine ffdev_err_bonds_summary
 ! ==============================================================================
 
@@ -133,7 +152,7 @@ subroutine ffdev_err_bonds_summary(err_item,top,geo,printsum)
         return
     end if
 
-    call ffdev_geometry_utils_comp_bonds(.false.,top,geo%trg_crd,geo%crd)
+    call ffdev_geometry_utils_comp_bonds(.false.,top,geo%trg_crd,geo%crd,err_item%OnlyFFOpt)
 
 end subroutine ffdev_err_bonds_summary
 

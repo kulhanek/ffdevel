@@ -150,11 +150,11 @@ subroutine ffdev_parameters_reinit()
     do i=1,nsets
         if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nbond_types
-            parmid = find_parameter(sets(i)%top,j,0,REALM_BOND_D0)
+            parmid = find_parameter(sets(i)%top,j,0,REALM_BOND_R0)
             if( parmid .eq. 0 ) then    ! new parameter
                 nparams = nparams + 1
                 params(nparams)%value = sets(i)%top%bond_types(j)%d0
-                params(nparams)%realm = REALM_BOND_D0
+                params(nparams)%realm = REALM_BOND_R0
                 params(nparams)%enabled = .false.
                 params(nparams)%identity = 0
                 params(nparams)%pn    = 0
@@ -1165,7 +1165,7 @@ integer function find_parameter(top,id,pn,realm)
 
     ! find global type ids for given parameter realm
     select case(realm)
-        case(REALM_BOND_D0,REALM_BOND_K)
+        case(REALM_BOND_R0,REALM_BOND_K)
             ti = get_common_type_id(top,top%bond_types(id)%ti)
             tj = get_common_type_id(top,top%bond_types(id)%tj)
         case(REALM_ANGLE_A0,REALM_ANGLE_K)
@@ -1197,7 +1197,7 @@ integer function find_parameter(top,id,pn,realm)
         if( params(i)%pn .ne. pn ) cycle
 
         select case(realm)
-            case(REALM_BOND_D0,REALM_BOND_K)
+            case(REALM_BOND_R0,REALM_BOND_K)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter = i
@@ -1261,7 +1261,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
         if( params(i)%pn .ne. pn ) cycle
 
         select case(realm)
-            case(REALM_BOND_D0,REALM_BOND_K)
+            case(REALM_BOND_R0,REALM_BOND_K)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj)) .or. &
                     ((params(i)%ti .eq. tj) .and. (params(i)%tj .eq. ti)) ) then
                         find_parameter_by_ids = i
@@ -1799,7 +1799,7 @@ subroutine ffdev_parameters_save_amber(name)
         types(i)%print_nb = .false.
     end do
     do i=1,nparams
-        if( (params(i)%realm .eq. REALM_BOND_D0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
+        if( (params(i)%realm .eq. REALM_BOND_R0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
             enable_section = .true.
             types(params(i)%ti)%print_nb = .true.
             types(params(i)%tj)%print_nb = .true.
@@ -1848,7 +1848,7 @@ subroutine ffdev_parameters_save_amber(name)
     ! bonds
     enable_section = .false.
     do i=1,nparams
-        if( (params(i)%realm .eq. REALM_BOND_D0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
+        if( (params(i)%realm .eq. REALM_BOND_R0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
             enable_section = .true.
             exit
         end if
@@ -1857,7 +1857,7 @@ subroutine ffdev_parameters_save_amber(name)
         it = 0
         write(DEV_PRMS,20) 'BOND'
         do i=1,nparams
-            if( params(i)%realm .ne. REALM_BOND_D0 ) cycle
+            if( params(i)%realm .ne. REALM_BOND_R0 ) cycle
             it = it + 1
             ij = 0
             do j=1,nparams
@@ -2281,7 +2281,7 @@ integer function ffdev_parameters_get_realmid(realm)
 
     select case(trim(realm))
         case('bond_r0')
-            ffdev_parameters_get_realmid = REALM_BOND_D0
+            ffdev_parameters_get_realmid = REALM_BOND_R0
         case('bond_k')
             ffdev_parameters_get_realmid = REALM_BOND_K
         case('angle_a0')
@@ -2385,7 +2385,7 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
     ! --------------------------------------------------------------------------
 
     select case(realmid)
-        case(REALM_BOND_D0)
+        case(REALM_BOND_R0)
             ffdev_parameters_get_realm_name = 'bond_r0'
         case(REALM_BOND_K)
             ffdev_parameters_get_realm_name = 'bond_k'
@@ -2489,7 +2489,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
     ffdev_parameters_get_realm_scaling = 1.0d0
 
     select case(realmid)
-        case(REALM_BOND_D0,REALM_BOND_K)
+        case(REALM_BOND_R0,REALM_BOND_K)
             ! nothing to do
         case(REALM_ANGLE_A0)
             ffdev_parameters_get_realm_scaling = DEV_R2D
@@ -2804,12 +2804,13 @@ subroutine ffdev_parameters_to_tops
         select case(params(i)%realm)
 
         ! bonded parameters
-            case(REALM_BOND_D0)
+            case(REALM_BOND_R0)
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%d0 = params(i)%value
                         sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_BOND_K)
@@ -2817,7 +2818,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%bond_types(params(i)%ids(j))%k = params(i)%value
                         sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%bond_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_ANGLE_A0)
@@ -2825,7 +2827,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%a0 = params(i)%value
                         sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_ANGLE_K)
@@ -2833,7 +2836,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%angle_types(params(i)%ids(j))%k = params(i)%value
                         sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%angle_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_DIH_V)
@@ -2841,7 +2845,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%v(params(i)%pn) = params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_DIH_C)
@@ -2849,7 +2854,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%c(params(i)%pn) = params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_DIH_G)
@@ -2857,7 +2863,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%g(params(i)%pn) = params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_DIH_SCEE)
@@ -2865,7 +2872,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scee = 1.0d0/params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_DIH_SCNB)
@@ -2873,7 +2881,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scnb = 1.0d0/params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_IMPR_V)
@@ -2881,7 +2890,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%v = params(i)%value
                         sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_IMPR_G)
@@ -2889,7 +2899,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%improper_types(params(i)%ids(j))%g = params(i)%value
                         sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%improper_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
 
@@ -2899,7 +2910,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%eps = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_VDW_R0)
@@ -2907,7 +2919,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%r0 = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_VDW_ALPHA)
@@ -2915,7 +2928,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%nb_types(params(i)%ids(j))%alpha = params(i)%value
                         sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%nb_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_VDW_ALPHA0)
@@ -2926,7 +2940,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%PA = params(i)%value
                         sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_VDW_PB)
@@ -2934,7 +2949,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%PB = params(i)%value
                         sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
             case(REALM_VDW_B0)
@@ -2944,7 +2960,8 @@ subroutine ffdev_parameters_to_tops
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%atom_types(params(i)%ids(j))%RC = params(i)%value
                         sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive = &
-                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. params(i)%enabled
+                            sets(j)%top%atom_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
                     end if
                 end do
 
@@ -3010,7 +3027,8 @@ subroutine ffdev_parameters_to_tops
                         do k=1,sets(j)%top%natoms
                             if( sets(j)%top%atoms(k)%symmclass .eq. params(i)%ids(j) ) then
                                 sets(j)%top%atoms(k)%charge = params(i)%value
-                                sets(j)%top%atoms(k)%ffoptactive = params(i)%enabled
+                                sets(j)%top%atoms(k)%ffoptactive = sets(j)%top%atoms(k)%ffoptactive .or. &
+                                        ffdev_parameters_is_parameter_enabled(i)
                             end if
                         end do
                     end if
@@ -3298,7 +3316,7 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_BOND_D0)
+        case(REALM_BOND_R0)
             ffdev_params_get_lower_bound = MinBondD0
         case(REALM_BOND_K)
             ffdev_params_get_lower_bound = MinBondK
@@ -3403,7 +3421,7 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_BOND_D0)
+        case(REALM_BOND_R0)
             MinBondD0 = mvalue
         case(REALM_BOND_K)
             MinBondK = mvalue
@@ -3559,7 +3577,7 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_BOND_D0)
+        case(REALM_BOND_R0)
             ffdev_params_get_upper_bound = MaxBondD0
         case(REALM_BOND_K)
             ffdev_params_get_upper_bound = MaxBondK
@@ -3662,7 +3680,7 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
     ! --------------------------------------------------------------------------
 
     select case(realm)
-        case(REALM_BOND_D0)
+        case(REALM_BOND_R0)
             MaxBondD0 = mvalue
         case(REALM_BOND_K)
             MaxBondK = mvalue
@@ -4030,6 +4048,32 @@ subroutine ffdev_parameters_error_only(prms,errfcetot,opterr)
     call ffdev_errors_error_only(errfcetot,opterr)
 
 end subroutine ffdev_parameters_error_only
+
+! ==============================================================================
+! function ffdev_parameters_is_parameter_enabled
+! ==============================================================================
+
+recursive function ffdev_parameters_is_parameter_enabled(idx) result(rst)
+
+    use ffdev_parameters_dat
+
+    implicit none
+    integer             :: idx
+    logical             :: rst
+    ! --------------------------------------------------------------------------
+
+    rst = .false.
+    if( params(idx)%enabled .eqv. .true. ) then
+        rst = .true.
+        return
+    end if
+
+    ! resolve prm identities
+
+    if( params(idx)%identity .eq. 0 ) return
+    rst = ffdev_parameters_is_parameter_enabled(params(idx)%identity)
+
+end function ffdev_parameters_is_parameter_enabled
 
 ! ------------------------------------------------------------------------------
 

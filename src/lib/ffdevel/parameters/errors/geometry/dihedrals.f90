@@ -29,6 +29,7 @@ type, extends(ErrorFceType) :: TypeEFTDihedrals
         ! executive methods
         procedure   :: set_title_errfce         => ffdev_err_dihedrals_set_title
         procedure   :: calc_errfce              => ffdev_err_dihedrals_error
+        procedure   :: print_individual_summary_errfce => ffdev_err_dihedrals_summary_targetset
         procedure   :: print_pts_summary_errfce => ffdev_err_dihedrals_summary
 end type TypeEFTDihedrals
 
@@ -107,6 +108,24 @@ subroutine ffdev_err_dihedrals_error(err_item,opterr)
     end if
 
 end subroutine ffdev_err_dihedrals_error
+
+! ==============================================================================
+! subroutine ffdev_err_dihedrals_summary_targetset
+! ==============================================================================
+
+subroutine ffdev_err_dihedrals_summary_targetset(err_item)
+
+    use ffdev_geometry_utils
+
+    implicit none
+    class(TypeEFTDihedrals) :: err_item
+    ! --------------------------------------------
+
+    if( .not. err_item%PrintSummary ) return
+
+    call ffdev_geometry_utils_targetset_stat_dihedrals(err_item%OnlyFFOpt)
+
+end subroutine ffdev_err_dihedrals_summary_targetset
 
 ! ==============================================================================
 ! subroutine ffdev_err_dihedrals_summary

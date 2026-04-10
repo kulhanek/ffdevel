@@ -89,10 +89,10 @@ program ffdev_compgeo_program
     ! compare geometry
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'BONDS','=')
-    call ffdev_geometry_utils_comp_bonds(.true.,top,geo1%crd,geo2%crd)
+    call ffdev_geometry_utils_comp_bonds(.true.,top,geo1%crd,geo2%crd,.false.)
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'ANGLES','=')
-    call ffdev_geometry_utils_comp_angles(.true.,top,geo1%crd,geo2%crd)
+    call ffdev_geometry_utils_comp_angles(.true.,top,geo1%crd,geo2%crd,.false.)
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'DIHEDRALS','=')
     call ffdev_geometry_utils_comp_dihedrals(.true.,top,geo1%crd,geo2%crd,.false.)

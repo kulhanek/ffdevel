@@ -504,7 +504,12 @@
 		<Unit filename="src/lib/ffdevel/parameters/errors/geometry/rmsd.f90">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/parameters/errors/params/l2reg.f90" />
+		<Unit filename="src/lib/ffdevel/parameters/errors/params/l1reg.f90">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/lib/ffdevel/parameters/errors/params/l2reg.f90">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/nb2nb.f90">
 			<Option weight="9" />
 			<Option target="&lt;{~None~}&gt;" />

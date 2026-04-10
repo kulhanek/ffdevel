@@ -29,6 +29,7 @@ type, extends(ErrorFceType) :: TypeEFTAngles
         ! executive methods
         procedure   :: set_title_errfce         => ffdev_err_angles_set_title
         procedure   :: calc_errfce              => ffdev_err_angles_error
+        procedure   :: print_individual_summary_errfce => ffdev_err_angles_summary_targetset
         procedure   :: print_pts_summary_errfce => ffdev_err_angles_summary
 end type TypeEFTAngles
 
@@ -104,6 +105,24 @@ subroutine ffdev_err_angles_error(err_item,opterr)
 end subroutine ffdev_err_angles_error
 
 ! ==============================================================================
+! subroutine ffdev_err_angles_summary_targetset
+! ==============================================================================
+
+subroutine ffdev_err_angles_summary_targetset(err_item)
+
+    use ffdev_geometry_utils
+
+    implicit none
+    class(TypeEFTAngles) :: err_item
+    ! --------------------------------------------
+
+    if( .not. err_item%PrintSummary ) return
+
+    call ffdev_geometry_utils_targetset_stat_angles(err_item%OnlyFFOpt)
+
+end subroutine ffdev_err_angles_summary_targetset
+
+! ==============================================================================
 ! subroutine ffdev_err_angles_summary
 ! ==============================================================================
 
@@ -128,7 +147,7 @@ subroutine ffdev_err_angles_summary(err_item,top,geo,printsum)
         return
     end if
 
-    call ffdev_geometry_utils_comp_angles(.false.,top,geo%trg_crd,geo%crd)
+    call ffdev_geometry_utils_comp_angles(.false.,top,geo%trg_crd,geo%crd,err_item%OnlyFFOpt)
 
 end subroutine ffdev_err_angles_summary
 

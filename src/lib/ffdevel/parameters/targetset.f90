@@ -278,7 +278,7 @@ subroutine ffdev_targetset_reinit_nbparams()
         do j=1,nsets
             if( params(i)%ids(j) .eq. 0 ) cycle
             select case(params(i)%realm)
-                case(REALM_BOND_D0,REALM_BOND_K, &
+                case(REALM_BOND_R0,REALM_BOND_K, &
                      REALM_ANGLE_A0,REALM_ANGLE_K,REALM_DIH_V,REALM_DIH_G, &
                      REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_IMPR_V, &
                      REALM_IMPR_G,REALM_DIH_C,REALM_PAC)

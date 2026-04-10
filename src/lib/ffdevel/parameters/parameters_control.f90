@@ -855,7 +855,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
         pn  = 0
 
         select case(realmid)
-            case(REALM_BOND_D0,REALM_BOND_K)
+            case(REALM_BOND_R0,REALM_BOND_K)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
             case(REALM_ANGLE_A0,REALM_ANGLE_K)
                 read(line,*,err=100,end=100) realm, sti, stj, lvalue
@@ -1623,7 +1623,7 @@ subroutine change_realms(realm,enable,options,nchanged)
 ! ------------------
     else if( is_realm_option(options,'types') ) then
         select case(realmid)
-            case(REALM_BOND_D0,REALM_BOND_K,            &
+            case(REALM_BOND_R0,REALM_BOND_K,            &
                  REALM_ANGLE_A0,REALM_ANGLE_K,          &
                  REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,   &
                  REALM_VDW_EPS,REALM_VDW_R0)
@@ -1983,7 +1983,7 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
             if( (typeid .le. 0) .or. (typeid .gt. nparams) ) then
                 call ffdev_utils_exit(DEV_ERR,1,'type is out-of-legal range!')
             end if
-            if( params(typeid)%realm .ne. REALM_BOND_D0 ) then
+            if( params(typeid)%realm .ne. REALM_BOND_R0 ) then
                 call ffdev_utils_exit(DEV_ERR,1,'type is not bond_r0!')
             end if
             if( exec ) call ffdev_parameters_bond_r0_init(typeid,mode)
@@ -1991,7 +1991,7 @@ subroutine ffdev_parameters_ctrl_bond_r0(fin,exec)
         end do
     else
         do i=1,nparams
-            if( params(i)%realm .eq. REALM_BOND_D0 ) then
+            if( params(i)%realm .eq. REALM_BOND_R0 ) then
                 if( exec ) call ffdev_parameters_bond_r0_init(i,mode)
             end if
         end do
