@@ -59,6 +59,8 @@ SET(FFDEVEL_SRC
 
         parameters/errors/params/l1reg.f90
         parameters/errors/params/l2reg.f90
+        parameters/errors/params/bond_r0.f90
+        parameters/errors/params/angle_a0.f90
 
 #        parameters/errors/sapt_dat.f90
 #        parameters/errors/sapt.f90

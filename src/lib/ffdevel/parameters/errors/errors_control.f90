@@ -114,6 +114,8 @@ subroutine ffdev_errors_ctrl_create_errfce(errfce,errfcename)
 ! parameters
     use ffdev_err_l1reg
     use ffdev_err_l2reg
+    use ffdev_err_bond_r0
+    use ffdev_err_angle_a0
 
     implicit none
     class(ErrorFceType),pointer :: errfce
@@ -152,6 +154,10 @@ subroutine ffdev_errors_ctrl_create_errfce(errfce,errfcename)
             allocate(TypeEFTL1Reg::errfce, stat = alloc_stat)
         case('l2reg')
             allocate(TypeEFTL2Reg::errfce, stat = alloc_stat)
+        case('bond_r0')
+            allocate(TypeEFTBondR0::errfce, stat = alloc_stat)
+        case('angle_a0')
+            allocate(TypeEFTAngleA0::errfce, stat = alloc_stat)
 
     ! not found
         case default

@@ -142,7 +142,7 @@ subroutine ffdev_err_l1reg_error(err_item,opterr)
         end if
 
         ! calculate error
-        err_item%ErrFceValue = err_item%ErrFceValue + params(i)%value**2
+        err_item%ErrFceValue = err_item%ErrFceValue + abs(params(i)%value)
     end do
 
 end subroutine ffdev_err_l1reg_error
