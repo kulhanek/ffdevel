@@ -483,6 +483,8 @@ subroutine read_shark_method(fin)
                     write(DEV_OUT,75) 'input'
                 case(SHARK_GUESS_RANDOMIZE)
                     write(DEV_OUT,75) 'randomize'
+                case(SHARK_GUESS_RANDOMIZE_INPUT)
+                    write(DEV_OUT,75) 'randomize-input'
                 case(SHARK_GUESS_KEEP)
                     write(DEV_OUT,75) 'keep'
                 case(SHARK_GUESS_MIX)
@@ -538,6 +540,9 @@ subroutine read_shark_method(fin)
                 case('randomize')
                     Shark_ParameterGuess = SHARK_GUESS_RANDOMIZE
                     write(DEV_OUT,70) trim(string)
+                case('randomize-input')
+                    Shark_ParameterGuess = SHARK_GUESS_RANDOMIZE_INPUT
+                    write(DEV_OUT,70) trim(string)
                 case('keep')
                     Shark_ParameterGuess = SHARK_GUESS_KEEP
                     write(DEV_OUT,70) trim(string)
@@ -553,6 +558,8 @@ subroutine read_shark_method(fin)
                     write(DEV_OUT,75) 'input'
                 case(SHARK_GUESS_RANDOMIZE)
                     write(DEV_OUT,75) 'randomize'
+                case(SHARK_GUESS_RANDOMIZE_INPUT)
+                    write(DEV_OUT,75) 'randomize-input'
                 case(SHARK_GUESS_KEEP)
                     write(DEV_OUT,75) 'keep'
                 case(SHARK_GUESS_MIX)

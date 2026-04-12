@@ -31,11 +31,11 @@ interface
         integer(4)      :: nprms
     end subroutine nlo_create
 
-    subroutine nlo_set_initial_step1(ret,id,v)
+    subroutine nlo_set_initial_step(ret,id,dx)
         integer(4)      :: ret
         integer(8)      :: id
-        real(8)         :: v
-    end subroutine nlo_set_initial_step1
+        real(8)         :: dx(*)
+    end subroutine nlo_set_initial_step
 
     subroutine nlo_set_maxeval(ret,id,v)
         integer(4)      :: ret
@@ -148,12 +148,12 @@ subroutine ffdev_ffopt_set_default()
 
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
-    NLOpt_InitialStep   = 0.001d0
+    NLOpt_InitialStep   = 0.1d0
     NLOPT_NRuns         = 1
 
 ! === [Shark] ==================================================================
     Shark_Method            = SHARK_CMA_ES
-    Shark_InitialStep       = 0.5d0
+    Shark_InitialStep       = 0.1d0
     Shark_EnableBoxing      = .true.
     Shark_NRuns             = 1
     Shark_ParameterGuess    = SHARK_GUESS_RANDOMIZE
@@ -722,13 +722,13 @@ subroutine opt_nlopt
 
     NLoptID = 0
     call nlo_create(NLoptID,NLOpt_Method, nactparms)
-    call nlo_set_initial_step1(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
     call nlo_set_maxeval(ires, NLoptID, NOptSteps)
     call nlo_set_stopval(ires,NLoptID,real(0.0,DEVDP))
     call nlo_set_ftol_abs(ires, NLoptID, real(MinErrorChange,DEVDP))
 
     ! allocate working array
-    allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), stat=alloc_status)
+    allocate(tmp_lb(nactparms),tmp_ub(nactparms),tmp_xg(nactparms), &
+             tmp_dx(nactparms), stat=alloc_status)
     if( alloc_status .ne. 0 ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate data for NLOPT optimization!')
     end if
@@ -746,6 +746,9 @@ subroutine opt_nlopt
     if( ires .ne. NLOPT_SUCCESS ) then
         call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_upper_bounds!')
     end if
+
+    tmp_dx(:) = NLOpt_InitialStep * abs(tmp_ub(:)-tmp_lb(:))
+    call nlo_set_initial_step(ires, NLoptID, tmp_dx)
 
     istep = 0
     call nlo_set_min_objective(ires, NLoptID, opt_nlopt_fce, istep)
@@ -800,6 +803,7 @@ subroutine opt_nlopt
     deallocate(tmp_lb)
     deallocate(tmp_ub)
     deallocate(tmp_xg)
+    deallocate(tmp_dx)
 
 10 format('NLOpt finished with return status = ',I6,' ',A)
 
@@ -917,6 +921,16 @@ subroutine opt_shark_nruns
                     minv = ffdev_params_get_lower_bound_for_prms(i)
                     maxv = ffdev_params_get_upper_bound_for_prms(i)
                     FFParams(k) = minv + (maxv - minv)*rnd
+                    k = k + 1
+                end do
+            case(SHARK_GUESS_RANDOMIZE_INPUT)
+                k = 1
+                do i=1,nparams
+                    if( .not. params(i)%enabled ) cycle
+                    call random_number(rnd)
+                    minv = ffdev_params_get_lower_bound_for_prms(i)
+                    maxv = ffdev_params_get_upper_bound_for_prms(i)
+                    FFParams(k) = tmp_InitialParams(k) + (minv + (maxv - minv)*rnd)*Shark_InitialStep
                     k = k + 1
                 end do
             case(SHARK_GUESS_MIX)

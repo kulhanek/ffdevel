@@ -82,15 +82,16 @@ integer, parameter      :: SHARK_MIN_ENE_TRESHOLD   = 10
 integer, parameter      :: SHARK_CMA_ES             = 1     ! CMA-ES
 
 ! possible values for initial parameters
-integer, parameter      :: SHARK_GUESS_INPUT        = 1 ! use the same input
-integer, parameter      :: SHARK_GUESS_RANDOMIZE    = 2 ! randomize parameters
-integer, parameter      :: SHARK_GUESS_KEEP         = 3 ! keep previous parameters
-integer, parameter      :: SHARK_GUESS_MIX          = 4 ! mix two last parameters
+integer, parameter      :: SHARK_GUESS_INPUT            = 1 ! use the same input
+integer, parameter      :: SHARK_GUESS_RANDOMIZE        = 2 ! randomize parameters
+integer, parameter      :: SHARK_GUESS_RANDOMIZE_INPUT  = 3 ! randomize input parameters, the scale is controlled by Shark_InitialStep
+integer, parameter      :: SHARK_GUESS_KEEP             = 4 ! keep previous parameters
+integer, parameter      :: SHARK_GUESS_MIX              = 5 ! mix two last parameters
 
 ! ------------------------------------------------------------------------------
 ! working directories
 integer                 :: FFOptFceEvals
-real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:)
+real(DEVDP),allocatable :: tmp_xg(:),tmp_ub(:),tmp_lb(:),tmp_dx(:)
 
 ! for multiple runs of shark
 real(DEVDP),allocatable :: tmp_InitialParams(:)     ! (nactparams)
