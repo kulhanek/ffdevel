@@ -122,10 +122,13 @@ end subroutine init_errfce
 subroutine load_errfce(err_item,fin)
 
     use prmfile
+    use ffdev_utils
 
     implicit none
     class(ErrorFceType) :: err_item
     type(PRMFILE_TYPE)  :: fin
+    ! --------------------------------------------
+    character(MAX_TITLE)        :: mode
     ! --------------------------------------------------------------------------
 
     ! load setup
@@ -149,6 +152,30 @@ subroutine load_errfce(err_item,fin)
     else
         write(DEV_OUT,125) err_item%Weight
     end if
+
+    select case(err_item%ErrorMode)
+        case(EM_WE2IS2)
+            mode = 'we2is2'
+        case(EM_WEIS)
+            mode = 'weis'
+    end select
+
+    if( prmfile_get_string_by_key(fin,'mode', mode)) then
+        write(DEV_OUT,160) mode
+    else
+        write(DEV_OUT,165) mode
+    end if
+
+    select case(trim(mode))
+        case('we2is2')
+            err_item%ErrorMode = EM_WE2IS2
+        case('weis')
+            err_item%ErrorMode = EM_WEIS
+        case default
+            call ffdev_utils_exit(DEV_ERR,1,'Not implemented in error mode '''//trim(mode)//''' in load_errfce!')
+    end select
+
+
     if( prmfile_get_logical_by_key(fin,'onlyffopt', err_item%OnlyFFOpt)) then
         write(DEV_OUT,140) prmfile_onoff(err_item%OnlyFFOpt)
     else
@@ -163,8 +190,11 @@ subroutine load_errfce(err_item,fin)
 155  format ('Scale factor (scale_fac)               = ',f21.8,'         (default)')
 120  format ('Error weight (weight)                  = ',f21.8)
 125  format ('Error weight (weight)                  = ',f21.8,'         (default)')
+160  format ('Error mode (mode)                      = ',a12)
+165  format ('Error mode (mode)                      = ',a12,'                  (default)')
 140  format ('Only FFopt related (onlyffopt)         = ',a12)
 145  format ('Only FFopt related (onlyffopt)         = ',a12,'                  (default)')
+
 
 end subroutine load_errfce
 
