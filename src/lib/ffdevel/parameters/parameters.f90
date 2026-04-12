@@ -3108,12 +3108,12 @@ subroutine ffdev_params_reset_ranges
 
 ! === [ranges] =================================================================
 
-    MinBondD0    =       0.5d0
-    MaxBondD0    =       5.0d0
+    MinBondD0    =       0.7d0
+    MaxBondD0    =       2.5d0
     MinBondK     =       0.0
     MaxBondK     =    1500.0d0
-    MinAngleA0   =       0.0
-    MaxAngleA0   =       DEV_PI
+    MinAngleA0   =       80.0*DEV_D2R
+    MaxAngleA0   =      180.0*DEV_D2R
     MinAngleK    =       0.0d0
     MaxAngleK    =    1000.0d0
     MinDihV      =       0.0d0
