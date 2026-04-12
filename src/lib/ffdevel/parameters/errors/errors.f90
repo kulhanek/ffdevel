@@ -1,5 +1,6 @@
 ! ==============================================================================
 ! This file is part of FFDevel.
+!    Copyright (C) 2026 Petr Kulhanek, kulhanek@chemi.muni.cz
 !    Copyright (C) 2018 Petr Kulhanek, kulhanek@chemi.muni.cz
 !
 ! FFDevel is free software: you can redistribute it and/or modify it under
@@ -111,7 +112,7 @@ subroutine ffdev_errors_error_only(errfcetot,opterr)
     ! get individual errors
     do i=1,NumOfErrorFces
         call ErrorFceList(i)%ErrFce%calc_errfce(opterr)
-        errfcetot = errfcetot + ErrorFceList(i)%ErrFce%ErrFceValue * ErrorFceList(i)%ErrFce%Weight
+        errfcetot = errfcetot + ErrorFceList(i)%ErrFce%OptValue
     end do
 
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
@@ -160,6 +161,46 @@ subroutine ffdev_errors_ffopt_header_II()
 end subroutine ffdev_errors_ffopt_header_II
 
 !===============================================================================
+! subroutine ffdev_errors_ffopt_header_scale_fac
+!===============================================================================
+
+subroutine ffdev_errors_ffopt_header_scale_fac()
+
+    use ffdev_errors_dat
+
+    implicit none
+    integer             :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,NumOfErrorFces
+        write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%ScaleFac
+    end do
+
+10 format(1X,E12.5)
+
+end subroutine ffdev_errors_ffopt_header_scale_fac
+
+!===============================================================================
+! subroutine ffdev_errors_ffopt_header_weight
+!===============================================================================
+
+subroutine ffdev_errors_ffopt_header_weight()
+
+    use ffdev_errors_dat
+
+    implicit none
+    integer             :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,NumOfErrorFces
+        write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%Weight
+    end do
+
+10 format(1X,E12.5)
+
+end subroutine ffdev_errors_ffopt_header_weight
+
+!===============================================================================
 ! subroutine ffdev_errors_ffopt_results
 !===============================================================================
 
@@ -172,8 +213,7 @@ subroutine ffdev_errors_ffopt_results()
     ! --------------------------------------------------------------------------
 
     do i=1,NumOfErrorFces
-        write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%ErrFceValue &
-                                     * ErrorFceList(i)%ErrFce%Weight
+        write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%RepValue
     end do
 
 10 format(1X,E12.5)

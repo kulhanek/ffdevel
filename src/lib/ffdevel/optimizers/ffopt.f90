@@ -1132,7 +1132,26 @@ subroutine write_header(printmethod)
         end select
     end if
 
+! scaling weighting factors
+
     write(DEV_OUT,*)
+    write(DEV_OUT,25,ADVANCE='NO')
+    call ffdev_errors_ffopt_header_II
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,30,ADVANCE='NO')
+    call ffdev_errors_ffopt_header_scale_fac
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,32,ADVANCE='NO')
+    call ffdev_errors_ffopt_header_weight
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,25,ADVANCE='NO')
+    call ffdev_errors_ffopt_header_II
+    write(DEV_OUT,*)
+
+! error domains
     write(DEV_OUT,20,ADVANCE='NO')
     call ffdev_errors_ffopt_header_I
 
@@ -1161,6 +1180,10 @@ subroutine write_header(printmethod)
 
  20 format('# STEP        Error')
  25 format('#----- ------------')
+
+ 30 format('# Scale factor     ')
+ 32 format('# Weight           ')
+ 34 format('# Mode             ')
 
  60 format('         RMSG         maxG')
  65 format(' ------------ ------------')

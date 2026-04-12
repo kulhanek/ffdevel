@@ -504,10 +504,10 @@
 		<Unit filename="src/lib/ffdevel/parameters/errors/geometry/rmsd.f90">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/parameters/errors/params/angles_a0.f90">
+		<Unit filename="src/lib/ffdevel/parameters/errors/params/angle_a0.f90">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/lib/ffdevel/parameters/errors/params/bonds_r0.f90">
+		<Unit filename="src/lib/ffdevel/parameters/errors/params/bond_r0.f90">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/lib/ffdevel/parameters/errors/params/l1reg.f90">

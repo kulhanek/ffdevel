@@ -67,7 +67,8 @@ subroutine ffdev_err_angle_a0_error(err_item,opterr)
     real(DEVDP)             :: d0,dt
     ! --------------------------------------------------------------------------
 
-    err_item%ErrFceValue = 0.0d0
+    err_item%RepValue = 0.0d0
+    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
@@ -98,7 +99,11 @@ subroutine ffdev_err_angle_a0_error(err_item,opterr)
     end do
 
     if( totw .gt. 0 ) then
-        err_item%ErrFceValue = sqrt(seterrangles/totw)
+        err_item%RepValue = sqrt(seterrangles/totw)
+    end if
+
+    if( err_item%ScaleFac .gt. 0 ) then
+        err_item%OptValue = err_item%Weight * err_item%RepValue**2 / err_item%ScaleFac**2
     end if
 
 end subroutine ffdev_err_angle_a0_error

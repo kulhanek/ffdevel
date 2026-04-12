@@ -167,7 +167,8 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
     real(DEVDP)         :: k1,k2,ihess_bse,ihess_ase,diff
     ! --------------------------------------------------------------------------
 
-    err_item%ErrFceValue = 0.0d0
+    err_item%RepValue = 0.0d0
+    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
@@ -203,7 +204,7 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
             end do
 
             if( nihess_b .gt. 0 ) then
-                err_item%ErrFceValue = sqrt(ihess_bse / real(nihess_b))
+                err_item%RepValue = sqrt(ihess_bse / real(nihess_b))
             end if
         case(REALM_ANGLE_K)
             nihess_a = 0
@@ -226,11 +227,15 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
             end do
 
             if( nihess_a .gt. 0 ) then
-                err_item%ErrFceValue = sqrt(ihess_ase / real(nihess_a))
+                err_item%RepValue = sqrt(ihess_ase / real(nihess_a))
             end if
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm in ffdev_err_ihess_error!')
-        end select
+    end select
+
+    if( err_item%ScaleFac .gt. 0 ) then
+        err_item%OptValue = err_item%Weight * err_item%RepValue**2 / err_item%ScaleFac**2
+    end if
 
 end subroutine ffdev_err_ihess_error
 

@@ -34,13 +34,15 @@ type ErrorFceType
     logical                     :: Enabled      ! enable the error as the part of the optimized objective function
     logical                     :: PrintSummary ! print error summary
     logical                     :: OnlyFFOpt    ! consider items that are related to optimized parameters
+    real(DEVDP)                 :: Scalefac     ! scale factor
     real(DEVDP)                 :: Weight       ! weight of error function
 
     ! calculated
     character(MAX_TITLE)        :: Title        ! short description
 
-    ! value
-    real(DEVDP)                 :: ErrFceValue  ! value of error function
+    ! values
+    real(DEVDP)                 :: RepValue  ! reported value of error function - no scaling, no weighting
+    real(DEVDP)                 :: OptValue  ! optimized value of error function - scaled and weighted
 
     contains
         ! executive methods
@@ -99,9 +101,11 @@ subroutine init_errfce(err_item)
     err_item%Enabled         = .false.
     err_item%PrintSummary    = .false.
     err_item%OnlyFFOpt       = .false.
+    err_item%ScaleFac        = 1.0d0
     err_item%Weight          = 1.0d0
 
-    err_item%ErrFceValue     = 0.0d0
+    err_item%RepValue       = 0.0d0
+    err_item%OptValue       = 0.0d0
 
 end subroutine init_errfce
 
@@ -129,6 +133,11 @@ subroutine load_errfce(err_item,fin)
     else
         write(DEV_OUT,135) prmfile_onoff( err_item%PrintSummary)
     end if
+    if( prmfile_get_real8_by_key(fin,'scale_fac', err_item%ScaleFac)) then
+        write(DEV_OUT,150) err_item%ScaleFac
+    else
+        write(DEV_OUT,155) err_item%ScaleFac
+    end if
     if( prmfile_get_real8_by_key(fin,'weight', err_item%Weight)) then
         write(DEV_OUT,120) err_item%Weight
     else
@@ -144,6 +153,8 @@ subroutine load_errfce(err_item,fin)
 115  format ('Error enabled (enabled)                = ',a12,'                  (default)')
 130  format ('Print error summary (summary)          = ',a12)
 135  format ('Print error summary (summary)          = ',a12,'                  (default)')
+150  format ('Scale factor (scale_fac)               = ',f21.8)
+155  format ('Scale factor (scale_fac)               = ',f21.8,'         (default)')
 120  format ('Error weight (weight)                  = ',f21.8)
 125  format ('Error weight (weight)                  = ',f21.8,'         (default)')
 140  format ('Only FFopt related (onlyffopt)         = ',a12)
@@ -195,7 +206,8 @@ subroutine calc_errfce(err_item,opterr)
     logical             :: opterr
     ! --------------------------------------------------------------------------
 
-    err_item%ErrFceValue = 0.0d0
+    err_item%RepValue       = 0.0d0
+    err_item%OptValue       = 0.0d0
 
     ! disable unused variable warning
     ignored_arg__ = opterr .eqv. opterr

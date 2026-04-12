@@ -68,7 +68,8 @@ subroutine ffdev_err_mue_error(err_item,opterr)
     integer             :: i,j
     ! --------------------------------------------------------------------------
 
-    err_item%ErrFceValue = 0.0d0
+    err_item%RepValue = 0.0d0
+    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
@@ -81,12 +82,16 @@ subroutine ffdev_err_mue_error(err_item,opterr)
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
 
-            if( abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) .gt. err_item%ErrFceValue ) then
-                err_item%ErrFceValue = abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)
+            if( abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy) .gt. err_item%RepValue ) then
+                err_item%RepValue = abs(sets(i)%geo(j)%total_ene - sets(i)%geo(j)%trg_energy)
             end if
 
         end do
     end do
+
+    if( err_item%ScaleFac .gt. 0 ) then
+        err_item%OptValue = err_item%Weight * err_item%RepValue**2 / err_item%ScaleFac**2
+    end if
 
 end subroutine ffdev_err_mue_error
 

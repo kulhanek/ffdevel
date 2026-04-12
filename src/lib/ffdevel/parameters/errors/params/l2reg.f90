@@ -51,7 +51,8 @@ subroutine ffdev_err_l2reg_init(err_item)
 
     call err_item%ErrorFceType%init_errfce()
 
-    err_item%Realm            = REALM_DIH_C
+    err_item%Realm          = REALM_DIH_C
+    err_item%ScaleFac       = 0.0d0 ! auto
 
 end subroutine ffdev_err_l2reg_init
 
@@ -119,20 +120,23 @@ subroutine ffdev_err_l2reg_error(err_item,opterr)
     use ffdev_geometry
     use ffdev_errors_dat
     use ffdev_parameters_dat
+    use ffdev_parameters
 
     implicit none
     class(TypeEFTL2Reg) :: err_item
     logical             :: opterr
     ! --------------------------------------------
-    integer             :: i
-    real(DEVDP)         :: v
+    integer             :: i, pc
+    real(DEVDP)         :: v, used_scale_fac
     ! --------------------------------------------------------------------------
 
-    err_item%ErrFceValue = 0.0d0
+    err_item%RepValue = 0.0d0
+    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
 
+    pc = 0
     do i=1,nparams
         ! skip different realms
         if( params(i)%realm .ne. err_item%Realm ) cycle
@@ -144,8 +148,19 @@ subroutine ffdev_err_l2reg_error(err_item,opterr)
 
         ! calculate error
         v = params(i)%value
-        err_item%ErrFceValue = err_item%ErrFceValue + v**2
+        err_item%RepValue = err_item%RepValue + v**2
+        pc = pc + 1
     end do
+
+    used_scale_fac = err_item%ScaleFac
+    if( used_scale_fac .eq. 0 ) then
+        used_scale_fac = pc * max( abs(ffdev_params_get_lower_bound(err_item%Realm)), &
+                              abs(ffdev_params_get_upper_bound(err_item%Realm)) )**2
+    end if
+
+    if( used_scale_fac .gt. 0 ) then
+        err_item%OptValue = err_item%Weight * err_item%RepValue / used_scale_fac
+    end if
 
 end subroutine ffdev_err_l2reg_error
 
