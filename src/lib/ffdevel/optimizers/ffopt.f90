@@ -397,19 +397,40 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
 
         call ffdev_errors_error_only(errfcetot,.false.)
 
-        ! print error summary
-        write(DEV_OUT,*)
-        write(DEV_OUT,100,ADVANCE='NO')
-        call ffdev_errors_ffopt_header_I
+    ! scaling weighting factors
 
         write(DEV_OUT,*)
         write(DEV_OUT,200,ADVANCE='NO')
         call ffdev_errors_ffopt_header_II
-
         write(DEV_OUT,*)
+
+        write(DEV_OUT,40,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_scale_fac
+        write(DEV_OUT,*)
+
+        write(DEV_OUT,42,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_weight
+        write(DEV_OUT,*)
+
+        write(DEV_OUT,44,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_emode
+        write(DEV_OUT,*)
+
+        write(DEV_OUT,200,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_II
+        write(DEV_OUT,*)
+
+! error domains
+        write(DEV_OUT,100,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_I
+        write(DEV_OUT,*)
+
+        write(DEV_OUT,200,ADVANCE='NO')
+        call ffdev_errors_ffopt_header_II
+        write(DEV_OUT,*)
+
         write(DEV_OUT,300,ADVANCE='NO') errfcetot
         call ffdev_errors_ffopt_results()
-
         write(DEV_OUT,*)
 
         ! print error statistics
@@ -429,10 +450,13 @@ subroutine ffdev_ffopt_write_error_sumlogs(logmode)
  11 format('errorsum-',I3.3)
  30 format('>>> Error summary written to: ',A)
 
+ 40 format('# Scale factor ')
+ 42 format('# Weight       ')
+ 44 format('# Mode         ')
 
-100 format('#      Error')
-200 format('# ----------')
-300 format(E12.5)
+100 format('#         Error')
+200 format('# -------------')
+300 format(E15.5)
 
 end subroutine ffdev_ffopt_write_error_sumlogs
 
@@ -1145,6 +1169,10 @@ subroutine write_header(printmethod)
 
     write(DEV_OUT,32,ADVANCE='NO')
     call ffdev_errors_ffopt_header_weight
+    write(DEV_OUT,*)
+
+    write(DEV_OUT,34,ADVANCE='NO')
+    call ffdev_errors_ffopt_header_emode
     write(DEV_OUT,*)
 
     write(DEV_OUT,25,ADVANCE='NO')

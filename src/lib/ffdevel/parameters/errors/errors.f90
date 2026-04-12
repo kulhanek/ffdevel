@@ -112,7 +112,19 @@ subroutine ffdev_errors_error_only(errfcetot,opterr)
     ! get individual errors
     do i=1,NumOfErrorFces
         call ErrorFceList(i)%ErrFce%calc_errfce(opterr)
-        errfcetot = errfcetot + ErrorFceList(i)%ErrFce%OptValue
+        if( ErrorFceList(i)%ErrFce%ScaleFacUsed .eq. 0.0d0 ) then
+            ErrorFceList(i)%ErrFce%ScaleFacUsed = ErrorFceList(i)%ErrFce%ScaleFac
+        end if
+        if( ErrorFceList(i)%ErrFce%ScaleFacUsed .ne. 0.0d0 ) then
+            select case(ErrorFceList(i)%ErrFce%ErrorMode)
+                case(EM_WE2IS2)
+                    errfcetot = errfcetot &
+                    + ErrorFceList(i)%ErrFce%Weight * ErrorFceList(i)%ErrFce%RepValue**2 / ErrorFceList(i)%ErrFce%ScaleFacUsed**2
+                case(EM_WEIS)
+                    errfcetot = errfcetot &
+                    + ErrorFceList(i)%ErrFce%Weight * ErrorFceList(i)%ErrFce%RepValue / ErrorFceList(i)%ErrFce%ScaleFacUsed
+            end select
+        end if
     end do
 
     call ffdev_timers_stop_timer(FFDEV_ERRORS_TIMER)
@@ -173,10 +185,15 @@ subroutine ffdev_errors_ffopt_header_scale_fac()
     ! --------------------------------------------------------------------------
 
     do i=1,NumOfErrorFces
-        write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%ScaleFac
+        if( ErrorFceList(i)%ErrFce%ScaleFac .eq. 0.0d0 ) then
+            write(DEV_OUT,15,ADVANCE='NO') '-auto-'
+        else
+            write(DEV_OUT,10,ADVANCE='NO') ErrorFceList(i)%ErrFce%ScaleFac
+        end if
     end do
 
 10 format(1X,E12.5)
+15 format(1X,A12)
 
 end subroutine ffdev_errors_ffopt_header_scale_fac
 
@@ -199,6 +216,31 @@ subroutine ffdev_errors_ffopt_header_weight()
 10 format(1X,E12.5)
 
 end subroutine ffdev_errors_ffopt_header_weight
+
+!===============================================================================
+! subroutine ffdev_errors_ffopt_header_emode
+!===============================================================================
+
+subroutine ffdev_errors_ffopt_header_emode()
+
+    use ffdev_errors_dat
+
+    implicit none
+    integer             :: i
+    ! --------------------------------------------------------------------------
+
+    do i=1,NumOfErrorFces
+        select case(ErrorFceList(i)%ErrFce%ErrorMode)
+            case(EM_WE2IS2)
+                write(DEV_OUT,10,ADVANCE='NO') 'w*e^2/s^2'
+            case(EM_WEIS)
+                write(DEV_OUT,10,ADVANCE='NO') 'w*e/s'
+        end select
+    end do
+
+10 format(1X,A12)
+
+end subroutine ffdev_errors_ffopt_header_emode
 
 !===============================================================================
 ! subroutine ffdev_errors_ffopt_results

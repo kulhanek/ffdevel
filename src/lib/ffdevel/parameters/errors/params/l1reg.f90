@@ -127,11 +127,9 @@ subroutine ffdev_err_l1reg_error(err_item,opterr)
     logical             :: opterr
     ! --------------------------------------------
     integer             :: i, pc
-    real(DEVDP)         :: used_scale_fac
     ! --------------------------------------------------------------------------
 
     err_item%RepValue = 0.0d0
-    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
@@ -151,14 +149,10 @@ subroutine ffdev_err_l1reg_error(err_item,opterr)
         pc = pc + 1
     end do
 
-    used_scale_fac = err_item%ScaleFac
-    if( used_scale_fac .eq. 0 ) then
-        used_scale_fac = pc * max( abs(ffdev_params_get_lower_bound(err_item%Realm)), &
-                              abs(ffdev_params_get_upper_bound(err_item%Realm)) )**2
-    end if
-
-    if( err_item%ScaleFac .gt. 0 ) then
-        err_item%OptValue = err_item%Weight * err_item%RepValue / err_item%ScaleFac
+    err_item%ScaleFacUsed = err_item%ScaleFac
+    if( err_item%ScaleFacUsed .eq. 0 ) then
+        err_item%ScaleFacUsed = pc * max( abs(ffdev_params_get_lower_bound(err_item%Realm)), &
+                                          abs(ffdev_params_get_upper_bound(err_item%Realm)) )**2
     end if
 
 end subroutine ffdev_err_l1reg_error

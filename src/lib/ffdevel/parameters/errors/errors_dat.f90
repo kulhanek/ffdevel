@@ -27,6 +27,10 @@ integer,parameter       :: EE_ABS       = 1 ! absolute
 integer,parameter       :: EE_REL       = 2 ! relative
 integer,parameter       :: EE_LOG       = 3 ! log
 
+! ------------------------------------------------------------------------------
+
+integer,parameter       :: EM_WE2IS2    = 1 ! w * e^2 / s^2
+integer,parameter       :: EM_WEIS      = 2 ! w * e / s
 
 ! base class for error function ------------------------------------------------
 type ErrorFceType
@@ -34,15 +38,16 @@ type ErrorFceType
     logical                     :: Enabled      ! enable the error as the part of the optimized objective function
     logical                     :: PrintSummary ! print error summary
     logical                     :: OnlyFFOpt    ! consider items that are related to optimized parameters
-    real(DEVDP)                 :: Scalefac     ! scale factor
+    real(DEVDP)                 :: ScaleFac     ! scale factor
     real(DEVDP)                 :: Weight       ! weight of error function
 
     ! calculated
     character(MAX_TITLE)        :: Title        ! short description
 
     ! values
-    real(DEVDP)                 :: RepValue  ! reported value of error function - no scaling, no weighting
-    real(DEVDP)                 :: OptValue  ! optimized value of error function - scaled and weighted
+    integer                     :: ErrorMode    ! w * e^2 / s^2 | w * e / s
+    real(DEVDP)                 :: ScaleFacUsed
+    real(DEVDP)                 :: RepValue     ! reported value of error function - no scaling, no weighting
 
     contains
         ! executive methods
@@ -96,16 +101,17 @@ subroutine init_errfce(err_item)
     class(ErrorFceType)    :: err_item
     ! --------------------------------------------------------------------------
 
-    err_item%Title           = ''
+    err_item%Title          = ''
 
-    err_item%Enabled         = .false.
-    err_item%PrintSummary    = .false.
-    err_item%OnlyFFOpt       = .false.
-    err_item%ScaleFac        = 1.0d0
-    err_item%Weight          = 1.0d0
+    err_item%Enabled        = .false.
+    err_item%PrintSummary   = .false.
+    err_item%OnlyFFOpt      = .false.
+    err_item%ScaleFac       = 1.0d0
+    err_item%Weight         = 1.0d0
 
+    err_item%ErrorMode      = EM_WEIS
+    err_item%ScaleFacUsed   = 0.0d0
     err_item%RepValue       = 0.0d0
-    err_item%OptValue       = 0.0d0
 
 end subroutine init_errfce
 
@@ -207,7 +213,6 @@ subroutine calc_errfce(err_item,opterr)
     ! --------------------------------------------------------------------------
 
     err_item%RepValue       = 0.0d0
-    err_item%OptValue       = 0.0d0
 
     ! disable unused variable warning
     ignored_arg__ = opterr .eqv. opterr

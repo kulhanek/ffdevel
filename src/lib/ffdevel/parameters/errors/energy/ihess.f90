@@ -168,7 +168,6 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
     ! --------------------------------------------------------------------------
 
     err_item%RepValue = 0.0d0
-    err_item%OptValue = 0.0d0
     if( .not. err_item%Enabled ) then
         if( opterr ) return
     end if
@@ -232,10 +231,6 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
         case default
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm in ffdev_err_ihess_error!')
     end select
-
-    if( err_item%ScaleFac .gt. 0 ) then
-        err_item%OptValue = err_item%Weight * err_item%RepValue**2 / err_item%ScaleFac**2
-    end if
 
 end subroutine ffdev_err_ihess_error
 
