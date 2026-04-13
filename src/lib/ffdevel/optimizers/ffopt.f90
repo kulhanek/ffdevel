@@ -155,7 +155,7 @@ subroutine ffdev_ffopt_set_default()
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
     NLOpt_InitialStep   = 0.1d0
-    NLOpt_SingleIStep   = .true.
+    NLOpt_SingleIStep   = .false.
 
 ! === [Shark] ==================================================================
     Shark_Method            = SHARK_CMA_ES
@@ -247,7 +247,7 @@ subroutine ffdev_ffopt_run()
     use ffdev_timers
 
     implicit none
-    integer :: alloc_stat, istep
+    integer :: alloc_stat
     ! --------------------------------------------------------------------------
 
     call ffdev_timers_start_timer(FFDEV_FFOPT_TIMER)
