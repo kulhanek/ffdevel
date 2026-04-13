@@ -384,6 +384,7 @@ subroutine read_nlopt_method(fin)
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported methopd in read_nlopt_method!')
         end select
         write(DEV_OUT,35) NLOpt_InitialStep
+        write(DEV_OUT,45) prmfile_onoff(NLOpt_SingleIStep)
         return
     end if
 
@@ -440,11 +441,21 @@ subroutine read_nlopt_method(fin)
         write(DEV_OUT,35) NLOpt_InitialStep
     end if
 
+    if( prmfile_get_logical_by_key(fin,'single_istep', NLOpt_SingleIStep)) then
+        write(DEV_OUT,40) prmfile_onoff(NLOpt_SingleIStep)
+    else
+        write(DEV_OUT,45) prmfile_onoff(NLOpt_SingleIStep)
+    end if
+
     return
+
+
  20  format ('Optmization algorithm (algorithm)      = ',A)
  25  format ('Optmization algorithm (algorithm)      = ',A20,'          (default)')
  30  format ('Initial step (initialstep)             = ',f12.7)
  35  format ('Initial step (initialstep)             = ',f12.7,'                  (default)')
+ 40  format ('Use single step setup (single_istep)   = ',a12)
+ 45  format ('Use single step setup (single_istep)   = ',a12,'                  (default)')
 
 end subroutine read_nlopt_method
 

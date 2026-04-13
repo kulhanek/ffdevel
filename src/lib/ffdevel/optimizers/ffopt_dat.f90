@@ -44,7 +44,7 @@ integer         :: NOptSteps            ! max number of steps
 integer         :: OutSamples           ! how often to write results
 integer         :: IntSamples           ! how often to write intermediate sumlogs
 
-! maximum number of steps is nsteps - this is becuase of change of restraints etc
+! maximum number of steps is nsteps - this is because of change of restraints etc
 real(DEVDP)     :: MaxRMSG
 real(DEVDP)     :: MaxG
 real(DEVDP)     :: MinErrorChange      ! negative number - this test is switched off by default
@@ -64,9 +64,7 @@ integer         :: NumberOfCorrections
 integer(8)      :: NLoptID
 integer         :: NLOpt_Method
 real(DEVDP)     :: NLOpt_InitialStep
-
-! FIXME - need to implement setup via control file
-integer         :: NLOPT_NRuns
+logical         :: NLOpt_SingleIStep
 
 ! === [Shark] ==================================================================
 integer         :: Shark_Method

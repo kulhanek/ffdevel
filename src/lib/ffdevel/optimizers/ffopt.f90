@@ -37,6 +37,12 @@ interface
         real(8)         :: dx(*)
     end subroutine nlo_set_initial_step
 
+    subroutine nlo_set_initial_step1(ret,id,dx)
+        integer(4)      :: ret
+        integer(8)      :: id
+        real(8)         :: dx
+    end subroutine nlo_set_initial_step1
+
     subroutine nlo_set_maxeval(ret,id,v)
         integer(4)      :: ret
         integer(8)      :: id
@@ -130,7 +136,7 @@ subroutine ffdev_ffopt_set_default()
     OutSamples          =    20      ! how often write results
     IntSamples          =   100
 
-! maximum number of steps is nsteps - this is becuase of change of restraints etc
+! maximum number of steps is nsteps - this is because of change of restraints etc
     MaxRMSG             = 0.001d0
     MaxG                = 0.001d0
     MinErrorChange      = -1   ! if negative number - this test is switched off
@@ -149,7 +155,7 @@ subroutine ffdev_ffopt_set_default()
 ! === [NLOPT] ==================================================================
     NLOpt_Method        = NLOPT_LN_COBYLA
     NLOpt_InitialStep   = 0.1d0
-    NLOPT_NRuns         = 1
+    NLOpt_SingleIStep   = .true.
 
 ! === [Shark] ==================================================================
     Shark_Method            = SHARK_CMA_ES
@@ -285,10 +291,7 @@ subroutine ffdev_ffopt_run()
             call opt_lbfgs
         case(MINIMIZATION_NLOPT)
             call write_header(.true.)
-            do istep=1,NLOPt_NRuns
-                CurrentProgRP = istep
-                call opt_nlopt
-            end do
+            call opt_nlopt
         case(MINIMIZATION_SHARK)
             if( Shark_NRuns .eq. 1 ) then
                 ! it has own header
@@ -747,8 +750,13 @@ subroutine opt_nlopt
         call ffdev_utils_exit(DEV_ERR,1,'Unable to set nlo_set_upper_bounds!')
     end if
 
-    tmp_dx(:) = NLOpt_InitialStep * abs(tmp_ub(:)-tmp_lb(:))
-    call nlo_set_initial_step(ires, NLoptID, tmp_dx)
+    if( NLOpt_SingleIStep ) then
+        call nlo_set_initial_step1(ires, NLoptID, real(NLOpt_InitialStep,DEVDP))
+    else
+        tmp_dx(:) = NLOpt_InitialStep * abs(tmp_ub(:)-tmp_lb(:))
+        ! write(*,*) 'here ', tmp_dx
+        call nlo_set_initial_step(ires, NLoptID, tmp_dx)
+    end if
 
     istep = 0
     call nlo_set_min_objective(ires, NLoptID, opt_nlopt_fce, istep)
