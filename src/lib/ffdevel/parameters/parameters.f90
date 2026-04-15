@@ -1276,16 +1276,16 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
             case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
-                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
-                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
+                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tk) .and. &
+                     (params(i)%tk .eq. tj) .and. (params(i)%tl .eq. ti)) ) then
                         find_parameter_by_ids = i
                         return
                 end if
             case(REALM_IMPR_V,REALM_IMPR_G)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
-                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
-                     (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. ti)) ) then
+                    ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tk) .and. &
+                     (params(i)%tk .eq. tj) .and. (params(i)%tl .eq. ti)) ) then
                         find_parameter_by_ids = i
                         return
                 end if
