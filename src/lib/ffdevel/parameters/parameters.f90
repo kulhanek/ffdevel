@@ -2719,6 +2719,8 @@ subroutine ffdev_parameters_gather(prms)
     integer         :: idx, i
     ! --------------------------------------------------------------------------
 
+    params(:)%pidx = 0
+
     idx = 1
     do i=1,nparams
         if( params(i)%enabled ) then
@@ -2728,8 +2730,6 @@ subroutine ffdev_parameters_gather(prms)
         else
             if( params(i)%identity .gt. 0 ) then
                 params(i)%pidx = params( params(i)%identity )%pidx
-            else
-                params(i)%pidx = 0
             end if
         end if
     end do
