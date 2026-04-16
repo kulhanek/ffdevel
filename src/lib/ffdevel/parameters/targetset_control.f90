@@ -532,6 +532,15 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                 do k=1,sets(i)%nrefs
                     sets(i)%geo(j)%trg_energy = sets(i)%geo(j)%trg_energy - sets( sets(i)%refs(k) )%geo(1)%trg_energy
                 end do
+
+                ! overwrite weights
+                select case(trim(wmode))
+                    case('boltzmann')
+                        sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+                    case default
+                        call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
+                end select
+
                 call ffdev_geometry_info_point(sets(i)%geo(j),GEO_INFO_RELENERGY)
             end do
         end if

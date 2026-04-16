@@ -1234,6 +1234,7 @@ subroutine ffdev_geometry_info_point(geo,mode)
     ! --------------------------------------------
     character(len=40)   :: lname
     character(len=1)    :: enef, prbf, chrgf, saptf
+    integer             :: n
     ! --------------------------------------------------------------------------
 
     enef = 'F'
@@ -1272,7 +1273,13 @@ subroutine ffdev_geometry_info_point(geo,mode)
         end if
     end if
 
-    lname = trim(geo%name)
+    ! get 40 rightmost characters ....
+    n = len_trim(geo%name)
+    if( n .gt. 40 ) then
+        lname = geo%name(n-39:n)
+    else
+        lname = geo%name(1:n)
+    endif
 
     select case(mode)
         case(GEO_INFO_ABSENERGY)
