@@ -165,7 +165,7 @@ logical         :: ShowPACStat          = .false.
 
 ! === [grbf2cos] ===============================================================
 integer         :: GRBF2COSMaxN     = 4             ! max length of cos series
-real(DEVDP)     :: GRBF2COSMinV     = 0.1d0         ! min amplitude of each cos item
+real(DEVDP)     :: GRBF2COSMinV     = 0.01d0        ! min amplitude of each cos item
 
 ! === [ranges] =================================================================
 

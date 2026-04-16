@@ -2721,15 +2721,35 @@ subroutine ffdev_parameters_gather(prms)
 
     params(:)%pidx = 0
 
+! WRONG: pidx might not be set due to linear exploration of the list
+!    idx = 1
+!    do i=1,nparams
+!        if( params(i)%enabled ) then
+!            prms(idx) = params(i)%value
+!            params(i)%pidx = idx
+!            idx = idx + 1
+!        else
+!            if( params(i)%identity .gt. 0 ) then
+!                params(i)%pidx = params( params(i)%identity )%pidx
+!            end if
+!        end if
+!    end do
+
+! first set the parameters in prms and setup pidx
     idx = 1
     do i=1,nparams
         if( params(i)%enabled ) then
             prms(idx) = params(i)%value
             params(i)%pidx = idx
             idx = idx + 1
-        else
-            if( params(i)%identity .gt. 0 ) then
-                params(i)%pidx = params( params(i)%identity )%pidx
+        end if
+    end do
+
+! set pidx due to identity
+    do i=1,nparams
+        if( params(i)%identity .gt. 0 ) then
+            if( ffdev_parameters_is_parameter_enabled(i) ) then
+                params(i)%pidx = params( ffdev_prameters_get_root_parameter(i) )%pidx
             end if
         end if
     end do
@@ -4074,6 +4094,26 @@ recursive function ffdev_parameters_is_parameter_enabled(idx) result(rst)
     rst = ffdev_parameters_is_parameter_enabled(params(idx)%identity)
 
 end function ffdev_parameters_is_parameter_enabled
+
+! ==============================================================================
+! function ffdev_prameters_get_root_parameter
+! ==============================================================================
+
+recursive function ffdev_prameters_get_root_parameter(idx) result(rst)
+
+    use ffdev_parameters_dat
+
+    implicit none
+    integer             :: idx
+    integer             :: rst
+    ! --------------------------------------------------------------------------
+
+    rst = idx
+    ! resolve prm identities
+    if( params(idx)%identity .eq. 0 ) return
+    rst = ffdev_prameters_get_root_parameter(params(idx)%identity)
+
+end function ffdev_prameters_get_root_parameter
 
 ! ------------------------------------------------------------------------------
 
