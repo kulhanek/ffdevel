@@ -535,6 +535,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
                 ! overwrite weights
                 select case(trim(wmode))
+                    case('auto')
+                        ! skip
                     case('boltzmann')
                         sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
                     case default
@@ -579,6 +581,8 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
 
                     ! overwrite weights
                     select case(trim(wmode))
+                        case('auto')
+                            ! skip
                         case('boltzmann')
                             if( sets(i)%geo(j)%trg_ene_loaded ) then
                                 sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
