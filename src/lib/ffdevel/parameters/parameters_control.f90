@@ -830,7 +830,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
     ! --------------------------------------------
     character(PRMFILE_MAX_PATH) :: line, sti, stj, stk, stl, realm
     real(DEVDP)                 :: lvalue
-    integer                     :: pn, realmid, ti, tj, tk, tl, parmid
+    integer                     :: i, pn, realmid, ti, tj, tk, tl, parmid
     ! --------------------------------------------------------------------------
 
     write(DEV_OUT,*)
@@ -904,6 +904,15 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
         end if
 
     end do
+
+    ! update values due to identities
+    do i=1,nparams
+        if( params(i)%identity .gt. 0 ) then
+            params(i)%value = params( ffdev_prameters_get_root_parameter(i) )%value
+        end if
+    end do
+
+    call ffdev_parameters_print_parameters(PARAMS_SUMMARY_MODIFIED)
 
     return
 
@@ -1022,8 +1031,14 @@ subroutine ffdev_parameters_ctrl_identities(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,30) niden
 
-    call ffdev_parameters_print_parameters(PARAMS_SUMMARY_MODIFIED)
+    ! update values due to identities
+    do i=1,nparams
+        if( params(i)%identity .gt. 0 ) then
+            params(i)%value = params( ffdev_prameters_get_root_parameter(i) )%value
+        end if
+    end do
 
+    call ffdev_parameters_print_parameters(PARAMS_SUMMARY_MODIFIED)
 
 10 format('=== [identities] ===============================================================')
 20 format('>> INFO: No identities defined!')
