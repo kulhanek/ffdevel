@@ -2203,10 +2203,11 @@ subroutine ffdev_parameters_dih2cos(top,idx)
 
     ! filter them and update dihedral_type
     top%dihedral_types(idx)%mode = DIH_COS
+    top%dihedral_types(idx)%enabled(:) = .false.
     if( DIH2COS_ReportAll ) then
-        top%dihedral_types(idx)%enabled(:) = .true.
-    else
-        top%dihedral_types(idx)%enabled(:) = .false.
+        do i=1,min(DIH2COS_MaxN,top%ndihedral_seq_size)
+            top%dihedral_types(idx)%enabled(i) = .true.
+        end do
     end if
 
     ! y(1) - DC component, maybe we can use it to get the value of offset?
