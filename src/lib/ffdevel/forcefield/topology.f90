@@ -73,7 +73,7 @@ subroutine ffdev_topology_load(top,name)
     logical                     :: my_result, lbuff
     integer                     :: alloc_stat, io_stat, i, idx, nbuff, pn
     character(PRMFILE_MAX_LINE) :: buffer
-    real(DEVDP)                 :: v,g,c,p,w,e,chrg
+    real(DEVDP)                 :: v,g,c,p,w,e,chrg,scee,scnb
     ! --------------------------------------------------------------------------
 
     ! load topology file
@@ -333,6 +333,9 @@ subroutine ffdev_topology_load(top,name)
         top%dihedral_types(i)%c(:) = 0.0d0
         top%dihedral_types(i)%p(:) = 0.0d0
         top%dihedral_types(i)%w2(:) = 0.0d0
+        top%dihedral_types(i)%inv_scee = 1.0d0
+        top%dihedral_types(i)%inv_scnb = 1.0d0
+        top%dihedral_types(i)%o    = 0.0d0
         top%dihedral_types(i)%enabled(:) = .true.
         top%dihedral_types(i)%ffoptactive = .false.
     end do
@@ -352,13 +355,17 @@ subroutine ffdev_topology_load(top,name)
         read(buffer,*,iostat=io_stat) nbuff, top%dihedral_types(idx)%ti, top%dihedral_types(idx)%tj, &
                                       top%dihedral_types(idx)%tk, top%dihedral_types(idx)%tl, &
                                       top%dihedral_types(idx)%mode, &
-                                      top%dihedral_types(idx)%inv_scee, top%dihedral_types(idx)%inv_scnb
+                                      scee, scnb, &
+                                      top%dihedral_types(idx)%o
 
-        if( top%dihedral_types(idx)%inv_scee .ne. 0.0 ) then
-            top%dihedral_types(idx)%inv_scee = 1.0d0 / top%dihedral_types(idx)%inv_scee
+        ! ensure <0,2*PI)
+        top%dihedral_types(idx)%o = modulo(top%dihedral_types(idx)%o,2.0d0*DEV_PI)
+
+        if( scee .ne. 0.0 ) then
+            top%dihedral_types(idx)%inv_scee = 1.0d0 / scee
         end if
-        if( top%dihedral_types(idx)%inv_scnb .ne. 0.0 ) then
-            top%dihedral_types(idx)%inv_scnb = 1.0d0 / top%dihedral_types(idx)%inv_scnb
+        if( scnb .ne. 0.0 ) then
+            top%dihedral_types(idx)%inv_scnb = 1.0d0 / scnb
         end if
 
         if( io_stat .ne. 0 ) then
@@ -705,11 +712,12 @@ subroutine ffdev_topology_save(top,name)
                                    top%dihedral_types(i)%tk, &
                                    top%dihedral_types(i)%tl, &
                                    top%dihedral_types(i)%mode,  &
-                                   1.0/top%dihedral_types(i)%inv_scee, 1.0/top%dihedral_types(i)%inv_scnb
+                                   1.0/top%dihedral_types(i)%inv_scee, 1.0/top%dihedral_types(i)%inv_scnb, &
+                                   top%dihedral_types(i)%o
         end do
     end if
 
- 90 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4,1X,F13.6,1X,F13.6,1X,F13.6,1X,F13.6)
+ 90 format(I7,1X,I5,1X,I5,1X,I5,1X,I5,1X,I4,1X,F13.6,1X,F13.6,1X,F13.6,1X,F13.6,1X,F13.6)
 
     dihedral_seq_cos = .false.
     dihedral_seq_grbf = .false.
@@ -947,7 +955,7 @@ subroutine ffdev_topology_info_types(top,mode)
                                        adjustl(top%atom_types(top%dihedral_types(i)%tj)%name), &
                                        adjustl(top%atom_types(top%dihedral_types(i)%tk)%name), &
                                        adjustl(top%atom_types(top%dihedral_types(i)%tl)%name), &
-                                       top%dihedral_types(i)%mode, scee, scnb
+                                       top%dihedral_types(i)%mode, scee, scnb, top%dihedral_types(i)%o
             end do
         end if
 
@@ -1050,9 +1058,9 @@ subroutine ffdev_topology_info_types(top,mode)
 240 format(I4,1X,A4,1X,A4,1X,A4,1X,F16.6,1X,F16.6)
 
 310 format('# ~~~~~~~~~~~~~~~~ dihedral types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-320 format('# ID TypA TypB TypC TypD Mod     scee       scnb    ')
-330 format('# -- ---- ---- ---- ---- --- ----------- -----------')
-340 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,I3,1X,F11.6,1X,F11.6)
+320 format('# ID TypA TypB TypC TypD Mod     scee       scnb       offset   ')
+330 format('# -- ---- ---- ---- ---- --- ----------- ----------- -----------')
+340 format(I4,1X,A4,1X,A4,1X,A4,1X,A4,1X,I3,1X,F11.6,1X,F11.6,1X,F11.6)
 
 350 format('# ~~~~~~~~~~~~~~~~ dihedral types - cos mode ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 355 format('# Type ST Pn     V           gamma    ')

@@ -35,51 +35,52 @@ integer,parameter       :: REALM_DIH_SCNB   = 8
 integer,parameter       :: REALM_IMPR_V     = 9
 integer,parameter       :: REALM_IMPR_G     = 10
 integer,parameter       :: REALM_DIH_C      = 11
+integer,parameter       :: REALM_DIH_O      = 12
 
 ! non-bonded - vdW setup - LJ parameters
-integer,parameter       :: REALM_VDW_EPS    = 12
-integer,parameter       :: REALM_VDW_R0     = 13
+integer,parameter       :: REALM_VDW_EPS    = 13
+integer,parameter       :: REALM_VDW_R0     = 14
 
 ! exp-6 probing
-integer,parameter       :: REALM_VDW_ALPHA  = 14
-integer,parameter       :: REALM_VDW_ALPHA0 = 15
+integer,parameter       :: REALM_VDW_ALPHA  = 15
+integer,parameter       :: REALM_VDW_ALPHA0 = 16
 
 ! non-bonded - vdW setup - repulsion
-integer,parameter       :: REALM_VDW_PA     = 16
-integer,parameter       :: REALM_VDW_PB     = 17
-integer,parameter       :: REALM_VDW_RC     = 18
+integer,parameter       :: REALM_VDW_PA     = 17
+integer,parameter       :: REALM_VDW_PB     = 18
+integer,parameter       :: REALM_VDW_RC     = 19
 
-integer,parameter       :: REALM_VDW_B0     = 19
+integer,parameter       :: REALM_VDW_B0     = 20
 
 ! non-bonded - vdW setup - dispersion
-integer,parameter       :: REALM_DISP_S6    = 20
-integer,parameter       :: REALM_DISP_S8    = 21
-integer,parameter       :: REALM_DISP_S10   = 22
+integer,parameter       :: REALM_DISP_S6    = 21
+integer,parameter       :: REALM_DISP_S8    = 22
+integer,parameter       :: REALM_DISP_S10   = 23
 
-integer,parameter       :: REALM_DAMP_FA    = 23
-integer,parameter       :: REALM_DAMP_FB    = 24
+integer,parameter       :: REALM_DAMP_FA    = 24
+integer,parameter       :: REALM_DAMP_FB    = 25
 
-integer,parameter       :: REALM_DAMP_PB    = 25
-integer,parameter       :: REALM_DAMP_TB    = 26
-integer,parameter       :: REALM_DAMP_PE    = 27
-
-! non-bonded - electrostatics
-integer,parameter       :: REALM_PAC        = 28
-integer,parameter       :: REALM_ELE_SQ     = 29
-
-integer,parameter       :: REALM_ZEFF       = 30
+integer,parameter       :: REALM_DAMP_PB    = 26
+integer,parameter       :: REALM_DAMP_TB    = 27
+integer,parameter       :: REALM_DAMP_PE    = 28
 
 ! non-bonded - electrostatics
-integer,parameter       :: REALM_GLB_SCEE   = 31
-integer,parameter       :: REALM_GLB_SCNB   = 32
+integer,parameter       :: REALM_PAC        = 29
+integer,parameter       :: REALM_ELE_SQ     = 30
+
+integer,parameter       :: REALM_ZEFF       = 31
+
+! non-bonded - electrostatics
+integer,parameter       :: REALM_GLB_SCEE   = 32
+integer,parameter       :: REALM_GLB_SCNB   = 33
 
 ! Pauli repulsion K factors
-integer,parameter       :: REALM_K_EXC      = 33
-integer,parameter       :: REALM_K_IND      = 34
+integer,parameter       :: REALM_K_EXC      = 34
+integer,parameter       :: REALM_K_IND      = 35
 
 ! AIM
-integer,parameter       :: REALM_VDW_R0FREE = 35
-integer,parameter       :: REALM_VDW_PBFREE = 36
+integer,parameter       :: REALM_VDW_R0FREE = 36
+integer,parameter       :: REALM_VDW_PBFREE = 37
 
 integer,parameter       :: REALM_FIRST   = REALM_BOND_R0
 integer,parameter       :: REALM_LAST    = REALM_VDW_PBFREE
@@ -164,8 +165,10 @@ integer         :: PACSource            = PAC_SOURCE_TOPOLOGY
 logical         :: ShowPACStat          = .false.
 
 ! === [grbf2cos] ===============================================================
-integer         :: GRBF2COSMaxN     = 4             ! max length of cos series
-real(DEVDP)     :: GRBF2COSMinV     = 0.01d0        ! min amplitude of each cos item
+integer         :: DIH2COS_MaxN         = 4             ! max length of cos series
+integer         :: DIH2COS_NPoints      = 180           ! number of training points
+real(DEVDP)     :: DIH2COS_MinV         = 0.01d0        ! min amplitude of each cos item
+logical         :: DIH2COS_ReportAll    = .true.        ! report all cos series term
 
 ! === [ranges] =================================================================
 
@@ -193,6 +196,8 @@ real(DEVDP)     :: MinImprG
 real(DEVDP)     :: MaxImprG
 real(DEVDP)     :: MinDihC
 real(DEVDP)     :: MaxDihC
+real(DEVDP)     :: MinDihO
+real(DEVDP)     :: MaxDihO
 
 ! non-bonded LJ
 real(DEVDP)     :: MinVdwEps

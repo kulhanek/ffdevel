@@ -76,7 +76,7 @@ subroutine ffdev_parameters_init()
         maxnparams = maxnparams + 2*sets(i)%top%nbond_types     ! bonds
         maxnparams = maxnparams + 2*sets(i)%top%nangle_types    ! angles
         maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
-        maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types ! dihedral scee, scnb
+        maxnparams = maxnparams + 3*sets(i)%top%ndihedral_types ! dihedral: scee, scnb, offset
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 3*sets(i)%top%nnb_types       ! eps, r0,alpha
         maxnparams = maxnparams + 3*sets(i)%top%natom_types     ! pa, pb, rc
@@ -389,7 +389,31 @@ subroutine ffdev_parameters_reinit()
         end do
     end do
 
-    ! imroper v realm ======================
+    ! dihedral o realm ==================
+    do i=1,nsets
+        if( sets(i)%top%probe_size .ne. 0 ) cycle
+        do j=1,sets(i)%top%ndihedral_types
+            parmid = find_parameter(sets(i)%top,j,0,REALM_DIH_O)
+            if( parmid .eq. 0 ) then    ! new parameter
+                nparams = nparams + 1
+                params(nparams)%value = sets(i)%top%dihedral_types(j)%o
+                params(nparams)%realm = REALM_DIH_O
+                params(nparams)%enabled = .false.
+                params(nparams)%identity = 0
+                params(nparams)%pn    = 0
+                params(nparams)%ids(:) = 0
+                params(nparams)%ids(i) = j
+                params(nparams)%ti   = get_common_type_id(sets(i)%top,sets(i)%top%dihedral_types(j)%ti)
+                params(nparams)%tj   = get_common_type_id(sets(i)%top,sets(i)%top%dihedral_types(j)%tj)
+                params(nparams)%tk   = get_common_type_id(sets(i)%top,sets(i)%top%dihedral_types(j)%tk)
+                params(nparams)%tl   = get_common_type_id(sets(i)%top,sets(i)%top%dihedral_types(j)%tl)
+            else
+                params(parmid)%ids(i) = j ! parameter already exists, update link
+            end if
+        end do
+    end do
+
+    ! improper v realm ======================
     do i=1,nsets
         if( sets(i)%top%probe_size .ne. 0 ) cycle
         do j=1,sets(i)%top%nimproper_types
@@ -1172,7 +1196,7 @@ integer function find_parameter(top,id,pn,realm)
             ti = get_common_type_id(top,top%angle_types(id)%ti)
             tj = get_common_type_id(top,top%angle_types(id)%tj)
             tk = get_common_type_id(top,top%angle_types(id)%tk)
-        case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB)
+        case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_DIH_O)
             ti = get_common_type_id(top,top%dihedral_types(id)%ti)
             tj = get_common_type_id(top,top%dihedral_types(id)%tj)
             tk = get_common_type_id(top,top%dihedral_types(id)%tk)
@@ -1207,7 +1231,7 @@ integer function find_parameter(top,id,pn,realm)
                     ((params(i)%ti .eq. tk) .and. (params(i)%tj .eq. tj) .and. (params(i)%tk .eq. ti)) ) then
                         find_parameter = i
                 end if
-            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB)
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_DIH_O)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
                     ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tj) .and. &
@@ -1273,7 +1297,7 @@ integer function find_parameter_by_ids(realm,pn,ti,tj,tk,tl)
                         find_parameter_by_ids = i
                         return
                 end if
-            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB)
+            case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_DIH_O)
                 if( ((params(i)%ti .eq. ti) .and. (params(i)%tj .eq. tj) .and. &
                      (params(i)%tk .eq. tk) .and. (params(i)%tl .eq. tl)) .or. &
                     ((params(i)%ti .eq. tl) .and. (params(i)%tj .eq. tk) .and. &
@@ -1465,7 +1489,7 @@ subroutine ffdev_parameters_gen_unique_types()
                     types(i)%ids(j) = k
                     types(i)%z = sets(j)%top%atom_types(k)%z
                     types(i)%mass = sets(j)%top%atom_types(k)%mass
-                    ! this is cummulative set - if any is probe
+                    ! this is cumulative set - if any is probe
                     types(i)%probe = types(i)%probe .or. sets(j)%top%atom_types(k)%probe
                     sets(j)%top%atom_types(k)%glbtypeid = i
                     types(i)%PA   = 0.0d0
@@ -1991,7 +2015,7 @@ subroutine ffdev_parameters_save_amber(name)
             if( (idx .eq. 0) .or. (si .eq. 0) ) cycle
 
             ! transform the dihedral
-            call ffdev_parameters_grbf2cos(sets(si)%top,idx)
+            call ffdev_parameters_dih2cos(sets(si)%top,idx)
 
             ! find max pn
             max_pn = 0
@@ -2094,12 +2118,12 @@ subroutine ffdev_parameters_save_amber(name)
 end subroutine ffdev_parameters_save_amber
 
 ! ==============================================================================
-! subroutine ffdev_parameters_grbf2cos
+! subroutine ffdev_parameters_dih2cos
 ! readings:
 ! https://www.gaussianwaves.com/2015/11/interpreting-fft-results-obtaining-magnitude-and-phase-information/
 ! ==============================================================================
 
-subroutine ffdev_parameters_grbf2cos(top,idx)
+subroutine ffdev_parameters_dih2cos(top,idx)
 
     use ffdev_topology
     use ffdev_parameters_dat
@@ -2120,7 +2144,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     ! --------------------------------------------------------------------------
 
     if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Dihedral is not DIH_GRBF in ffdev_parameters_grbf2cos!')
+        call ffdev_utils_exit(DEV_ERR,1,'Dihedral is not DIH_GRBF in ffdev_parameters_dih2cos!')
     end if
 
     write(DEV_OUT,10,ADVANCE='NO')  top%atom_types(top%dihedral_types(idx)%ti)%name, &
@@ -2128,24 +2152,47 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
                                     top%atom_types(top%dihedral_types(idx)%tk)%name, &
                                     top%atom_types(top%dihedral_types(idx)%tl)%name
 
-    nfreq   = GRBF2COSMaxN          ! number of frequency components
-    nsample = GRBF2COSMaxN*16       ! number of samples
+    nfreq   = DIH2COS_MaxN          ! number of frequency components
+    nsample = DIH2COS_NPoints       ! number of samples
 
     allocate(x(nsample),y(nsample/2+1), stat = alloc_stat)
     if(alloc_stat .ne. 0) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for FFTW in ffdev_parameters_grbf2cos!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to allocate memory for FFTW in ffdev_parameters_dih2cos!')
     end if
 
     ! calculate the dihedral potential
     do i=1,nsample
         phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
+
+        ! apply offset - only here
+        phi = phi - top%dihedral_types(idx)%o
+        phi = modulo(phi+DEV_PI,2.0d0*DEV_PI)-DEV_PI
+
         ene = 0.0d0
-        do pn=1,top%dihedral_types(idx)%n
-            if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
-            ene = ene + top%dihedral_types(idx)%c(pn) &
-                          * exp(-(ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(idx)%p(pn))**2) &
-                          / top%dihedral_types(idx)%w2(pn))
-        end do
+
+        select case(top%dihedral_types(idx)%mode)
+            case(DIH_COS)
+                do pn=1,top%dihedral_types(idx)%n
+                   ! write(*,*) i,j,k,l,pn
+                    if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
+                    arg = pn*phi - top%dihedral_types(idx)%g(pn)
+                    if( dih_cos_only ) then
+                        ene = ene + top%dihedral_types(idx)%v(pn)*cos(arg)
+                    else
+                        ene = ene + top%dihedral_types(idx)%v(pn)*(1.0d0+cos(arg))
+                    end if
+                end do
+            case(DIH_GRBF)
+                do pn=1,top%dihedral_types(idx)%n
+                    if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
+                    ene = ene + top%dihedral_types(idx)%c(pn) &
+                              * exp(-(ffdev_geometry_get_dihedral_deviation(phi,top%dihedral_types(idx)%p(pn))**2) &
+                              / top%dihedral_types(idx)%w2(pn))
+                end do
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Not implemented [ffdev_parameters_dih2cos]!')
+        end select
+
         x(i) = ene
     end do
 
@@ -2156,11 +2203,15 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
 
     ! filter them and update dihedral_type
     top%dihedral_types(idx)%mode = DIH_COS
-    top%dihedral_types(idx)%enabled(:) = .false.
+    if( DIH2COS_ReportAll ) then
+        top%dihedral_types(idx)%enabled(:) = .true.
+    else
+        top%dihedral_types(idx)%enabled(:) = .false.
+    end if
 
     ! y(1) - DC component, maybe we can use it to get the value of offset?
     do i=1,nfreq
-        if( 2.0d0*abs(y(i+1))/real(nsample,DEVDP) .gt. GRBF2COSMinV ) then
+        if( 2.0d0*abs(y(i+1))/real(nsample,DEVDP) .gt. DIH2COS_MinV ) then
             top%dihedral_types(idx)%enabled(i) = .true.
             top%dihedral_types(idx)%g(i) = 2*DEV_PI - atan2(aimag(y(i+1)),real(y(i+1)))
             ! wrap phase into <0;360>
@@ -2174,6 +2225,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     offset = 0.0d0
     do i=1,nsample
         phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
+
         ene = 0.0d0
         do pn=1,top%dihedral_types(idx)%n
             if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
@@ -2194,6 +2246,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
     rmse = 0.0d0
     do i=1,nsample
         phi = 2.0d0*DEV_PI*(i-1)/(real(nsample,DEVDP))
+
         ene = 0.0d0
         do pn=1,top%dihedral_types(idx)%n
             if( .not. top%dihedral_types(idx)%enabled(pn) ) cycle
@@ -2216,7 +2269,7 @@ subroutine ffdev_parameters_grbf2cos(top,idx)
  10 format('       # converting grbf2cos for: ',A2,'-',A2,'-',A2,'-',A2)
  20 format(', RMSE= ',F10.4)
 
-end subroutine ffdev_parameters_grbf2cos
+end subroutine ffdev_parameters_dih2cos
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_print_types
@@ -2292,12 +2345,14 @@ integer function ffdev_parameters_get_realmid(realm)
             ffdev_parameters_get_realmid = REALM_DIH_V
         case('dih_c')
             ffdev_parameters_get_realmid = REALM_DIH_C
-        case('dih_gamma')
+        case('dih_g')
             ffdev_parameters_get_realmid = REALM_DIH_G
         case('dih_scee')
             ffdev_parameters_get_realmid = REALM_DIH_SCEE
         case('dih_scnb')
             ffdev_parameters_get_realmid = REALM_DIH_SCNB
+        case('dih_o')
+            ffdev_parameters_get_realmid = REALM_DIH_O
         case('impr_v')
             ffdev_parameters_get_realmid = REALM_IMPR_V
         case('impr_gamma')
@@ -2398,11 +2453,13 @@ character(MAX_PATH) function ffdev_parameters_get_realm_name(realmid)
         case(REALM_DIH_C)
             ffdev_parameters_get_realm_name = 'dih_c'
         case(REALM_DIH_G)
-            ffdev_parameters_get_realm_name = 'dih_gamma'
+            ffdev_parameters_get_realm_name = 'dih_g'
         case(REALM_DIH_SCEE)
             ffdev_parameters_get_realm_name = 'dih_scee'
         case(REALM_DIH_SCNB)
             ffdev_parameters_get_realm_name = 'dih_scnb'
+        case(REALM_DIH_O)
+            ffdev_parameters_get_realm_name = 'dih_o'
         case(REALM_IMPR_V)
             ffdev_parameters_get_realm_name = 'impr_v'
         case(REALM_IMPR_G)
@@ -2495,7 +2552,7 @@ real(DEVDP) function ffdev_parameters_get_realm_scaling(realmid)
             ffdev_parameters_get_realm_scaling = DEV_R2D
         case(REALM_ANGLE_K,REALM_DIH_V,REALM_DIH_C)
             ! nothing to do
-        case(REALM_DIH_G)
+        case(REALM_DIH_G,REALM_DIH_O)
             ffdev_parameters_get_realm_scaling = DEV_R2D
         case(REALM_DIH_SCEE,REALM_DIH_SCNB,REALM_IMPR_V)
             ! nothing to do
@@ -2820,6 +2877,13 @@ subroutine ffdev_parameters_to_tops
         end do
     end do
 
+    ! enable all dihedral terms in tops
+    do i=1,nsets
+        do j=1,sets(i)%top%ndihedral_types
+            sets(i)%top%dihedral_types(j)%enabled(:) = .true.
+        end do
+    end do
+
     do i=1,nparams
         select case(params(i)%realm)
 
@@ -2900,6 +2964,15 @@ subroutine ffdev_parameters_to_tops
                 do j=1,nsets
                     if( params(i)%ids(j) .ne. 0 ) then
                         sets(j)%top%dihedral_types(params(i)%ids(j))%inv_scnb = 1.0d0/params(i)%value
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
+                            sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
+                            ffdev_parameters_is_parameter_enabled(i)
+                    end if
+                end do
+            case(REALM_DIH_O)
+                do j=1,nsets
+                    if( params(i)%ids(j) .ne. 0 ) then
+                        sets(j)%top%dihedral_types(params(i)%ids(j))%o = params(i)%value
                         sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive = &
                             sets(j)%top%dihedral_types(params(i)%ids(j))%ffoptactive .or. &
                             ffdev_parameters_is_parameter_enabled(i)
@@ -3139,11 +3212,13 @@ subroutine ffdev_params_reset_ranges
     MinDihV      =       0.0d0
     MaxDihV      =      50.0d0
     MinDihG      =       0.0d0
-    MaxDihG      =     2*DEV_PI
+    MaxDihG      =     2.0d0*DEV_PI
     MinDihSCEE   =       0.5d0
     MaxDihSCEE   =       3.0d0
     MinDihSCNB   =       0.5d0
     MaxDihSCNB   =       3.0d0
+    MinDihO      =       0.0d0
+    MaxDihO      =     2.0d0*DEV_PI
     MinImprV     =       0.0d0
     MaxImprV     =      50.0d0
     MinImprG     =      -DEV_PI
@@ -3354,6 +3429,8 @@ real(DEVDP) function ffdev_params_get_lower_bound(realm)
             ffdev_params_get_lower_bound = MinDihSCEE
         case(REALM_DIH_SCNB)
             ffdev_params_get_lower_bound = MinDihSCNB
+        case(REALM_DIH_O)
+            ffdev_params_get_lower_bound = MinDihO
         case(REALM_IMPR_V)
             ffdev_params_get_lower_bound = MinImprV
         case(REALM_IMPR_G)
@@ -3459,6 +3536,8 @@ subroutine ffdev_params_set_lower_bound(realm,mvalue)
             MinDihSCEE = mvalue
         case(REALM_DIH_SCNB)
             MinDihSCNB = mvalue
+        case(REALM_DIH_O)
+            MinDihO = mvalue
         case(REALM_IMPR_V)
             MinImprV = mvalue
         case(REALM_IMPR_G)
@@ -3615,6 +3694,8 @@ real(DEVDP) function ffdev_params_get_upper_bound(realm)
             ffdev_params_get_upper_bound = MaxDihSCEE
         case(REALM_DIH_SCNB)
             ffdev_params_get_upper_bound = MaxDihSCNB
+        case(REALM_DIH_O)
+            ffdev_params_get_upper_bound = MaxDihO
         case(REALM_IMPR_V)
             ffdev_params_get_upper_bound = MaxImprV
         case(REALM_IMPR_G)
@@ -3718,6 +3799,8 @@ subroutine ffdev_params_set_upper_bound(realm,mvalue)
             MaxDihSCEE = mvalue
         case(REALM_DIH_SCNB)
             MaxDihSCNB = mvalue
+        case(REALM_DIH_O)
+            MaxDihO = mvalue
         case(REALM_IMPR_V)
             MaxImprV = mvalue
         case(REALM_IMPR_G)

@@ -694,11 +694,12 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
         }
 
         // add new data
-        dtype.defined[pn] = true;
-        dtype.v0[pn]     = p_dihedral_type->GetPK();
-        dtype.phase[pn] = p_dihedral_type->GetPHASE();
-        dtype.scee  = p_dihedral_type->GetSCEE();
-        dtype.scnb  = p_dihedral_type->GetSCNB();
+        dtype.defined[pn]   =  true;
+        dtype.v0[pn]        = p_dihedral_type->GetPK();
+        dtype.phase[pn]     = p_dihedral_type->GetPHASE();
+        dtype.scee          = p_dihedral_type->GetSCEE();
+        dtype.scnb          = p_dihedral_type->GetSCNB();
+        dtype.o             = 0.0;
 
         DihedralTypes[dtype.idx] = dtype;
     }
@@ -727,7 +728,7 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
     if( DihedralTypes.size() == 0 ) return;
 
     sout << "[dihedral_types]" << endl;
-    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb ! TypeA TypeB TypeC TypeD" << endl;
+    sout << "! Index TypeA TypeB TypeC TypeD Form          scee          scnb        offset ! TypeA TypeB TypeC TypeD" << endl;
 
     std::map<int,CDihedralType>::iterator it = DihedralTypes.begin();
     std::map<int,CDihedralType>::iterator ie = DihedralTypes.end();
@@ -751,7 +752,8 @@ void CTop2STop::WriteDihedralTypes(ostream& sout)
             break;
         }
         sout << right << fixed << setw(13) << setprecision(6) << dtype.scee << " ";
-        sout << right << fixed << setw(13) << setprecision(6) << dtype.scnb << " ! ";
+        sout << right << fixed << setw(13) << setprecision(6) << dtype.scnb << " ";
+        sout << right << fixed << setw(13) << setprecision(6) << dtype.o << " ! ";
         sout << left << setw(5) << AtomTypes[dtype.at1].name << " ";
         sout << left << setw(5) << AtomTypes[dtype.at2].name << " ";
         sout << left << setw(5) << AtomTypes[dtype.at3].name << " ";

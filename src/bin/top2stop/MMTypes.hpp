@@ -95,6 +95,7 @@ public:
     std::vector<double> w2;
     double              scee;
     double              scnb;
+    double              o;
     bool                nb_processed;
 public:
     CDihedralType(void);

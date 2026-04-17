@@ -115,8 +115,9 @@ CDihedralType::CDihedralType(void)
     at2 = -1;
     at3 = -1;
     at4 = -1;
-    scee = 0.0;
-    scnb = 0.0;
+    scee = 1.2; // default AMBER parameters: 1.2 and 2.0
+    scnb = 2.0;
+    o = 0.0;
     nb_processed = false;
     mode = EDM_COS;
     DihCOffset = false;

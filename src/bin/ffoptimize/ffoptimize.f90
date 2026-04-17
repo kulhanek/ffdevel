@@ -105,7 +105,7 @@ program ffdev_optimize_program
         call ffdev_utils_heading(DEV_OUT,'{FFPARAMS}',':')
         call ffdev_parameters_ctrl_control(fin)
         call ffdev_parameters_ctrl_files(fin)
-        call ffdev_parameters_ctrl_grbf2cos(fin)
+        call ffdev_parameters_ctrl_dih2cos(fin)
         call ffdev_nb2nb_ctrl(fin)
     end if
 

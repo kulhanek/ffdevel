@@ -352,6 +352,10 @@ subroutine ffdev_gradient_dihedrals(top,geo)
                     phi = -phi
         end if
 
+        ! apply offset
+        phi = phi - top%dihedral_types(ic)%o
+        phi = modulo(phi+DEV_PI,2.0d0*DEV_PI)-DEV_PI
+
         dv = 0.0d0
         select case(top%dihedral_types(ic)%mode)
             case(DIH_COS)

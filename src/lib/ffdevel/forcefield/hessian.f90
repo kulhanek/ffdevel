@@ -843,6 +843,10 @@ subroutine ffdev_hessian_dihedrals(top,geo)
                     phi = -phi
         end if
 
+        ! apply offset
+        phi = phi - top%dihedral_types(ic)%o
+        phi = modulo(phi+DEV_PI,2.0d0*DEV_PI)-DEV_PI
+
         f1 = 0.0d0
         f2 = 0.0d0
         select case(top%dihedral_types(ic)%mode)

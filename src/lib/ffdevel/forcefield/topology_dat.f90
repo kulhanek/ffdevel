@@ -91,6 +91,7 @@ type DIHEDRAL_TYPE
     real(DEVDP),pointer :: c(:)             ! grbf - weights
     real(DEVDP),pointer :: p(:)             ! grbf - positions
     real(DEVDP),pointer :: w2(:)            ! grbf - widths
+    real(DEVDP)         :: o                ! angle offset
     logical,pointer     :: enabled(:)       ! what is enabled, applicable both to cos and grbf
     logical             :: ffoptactive      ! this type is subject of ffopt
 end type DIHEDRAL_TYPE

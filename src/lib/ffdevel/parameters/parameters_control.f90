@@ -426,10 +426,10 @@ subroutine ffdev_parameters_ctrl_files_exec(fin,exec)
 end subroutine ffdev_parameters_ctrl_files_exec
 
 ! ==============================================================================
-! subroutine ffdev_parameters_ctrl_grbf2cos
+! subroutine ffdev_parameters_ctrl_dih2cos
 ! ==============================================================================
 
-subroutine ffdev_parameters_ctrl_grbf2cos(fin)
+subroutine ffdev_parameters_ctrl_dih2cos(fin)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -445,34 +445,55 @@ subroutine ffdev_parameters_ctrl_grbf2cos(fin)
     write(DEV_OUT,*)
     write(DEV_OUT,10)
 
-    if( .not. prmfile_open_section(fin,'grbf2cos') ) then
-        write(DEV_OUT,25) GRBF2COSMaxN
-        write(DEV_OUT,35) GRBF2COSMinV
+    if( .not. prmfile_open_section(fin,'dih2cos') ) then
+        write(DEV_OUT,25) DIH2COS_MaxN
+        write(DEV_OUT,55) DIH2COS_NPoints
+        write(DEV_OUT,35) DIH2COS_MinV
+        write(DEV_OUT,45) prmfile_onoff(DIH2COS_ReportAll)
         return
     end if
 
-    if( prmfile_get_integer_by_key(fin,'max_n', GRBF2COSMaxN)) then
-        write(DEV_OUT,20) GRBF2COSMaxN
+    if( prmfile_get_integer_by_key(fin,'max_n', DIH2COS_MaxN)) then
+        write(DEV_OUT,20) DIH2COS_MaxN
     else
-        write(DEV_OUT,25) GRBF2COSMaxN
+        write(DEV_OUT,25) DIH2COS_MaxN
     end if
 
-    if( prmfile_get_real8_by_key(fin,'min_v', GRBF2COSMinV)) then
-        write(DEV_OUT,30) GRBF2COSMinV
+    if( prmfile_get_integer_by_key(fin,'npoints', DIH2COS_NPoints)) then
+        write(DEV_OUT,50) DIH2COS_NPoints
     else
-        write(DEV_OUT,35) GRBF2COSMinV
+        write(DEV_OUT,55) DIH2COS_NPoints
+    end if
+
+    if( prmfile_get_real8_by_key(fin,'min_v', DIH2COS_MinV)) then
+        write(DEV_OUT,30) DIH2COS_MinV
+    else
+        write(DEV_OUT,35) DIH2COS_MinV
+    end if
+
+    if( prmfile_get_logical_by_key(fin,'report_all', DIH2COS_ReportAll)) then
+        write(DEV_OUT,40) prmfile_onoff(DIH2COS_ReportAll)
+    else
+        write(DEV_OUT,45) prmfile_onoff(DIH2COS_ReportAll)
     end if
 
     return
 
- 10 format('=== [grbf2cos] =================================================================')
+ 10 format('=== [dih2cos] ==================================================================')
 
  20  format ('Maximum length of cos series (max_n)     = ',i12)
  25  format ('Maximum length of cos series (max_n)     = ',i12,'                (default)')
+
+ 50  format ('Number of training points (npoints)      = ',i12)
+ 55  format ('Number of training points (npoints)      = ',i12,'                (default)')
+
  30  format ('Minimum accepted amplitude (min_v)       = ',f12.7)
  35  format ('Minimum accepted amplitude (min_v)       = ',f12.7,'                (default)')
 
-end subroutine ffdev_parameters_ctrl_grbf2cos
+ 40  format ('Report the entire sequence (report_all)  = ',a12)
+ 45  format ('Report the entire sequence (report_all)  = ',a12,'                (default)')
+
+end subroutine ffdev_parameters_ctrl_dih2cos
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_ffmanip
@@ -828,7 +849,7 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
     type(PRMFILE_TYPE)          :: fin
     logical                     :: exec
     ! --------------------------------------------
-    character(PRMFILE_MAX_PATH) :: line, sti, stj, stk, stl, realm
+    character(PRMFILE_MAX_PATH) :: line, sti, stj, stk, stl, realm, k2, k3
     real(DEVDP)                 :: lvalue
     integer                     :: i, pn, realmid, ti, tj, tk, tl, parmid
     ! --------------------------------------------------------------------------
@@ -853,34 +874,37 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
         stk = ''
         stl = ''
         pn  = 0
+        k2 = ''
 
         select case(realmid)
             case(REALM_BOND_R0,REALM_BOND_K)
-                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, k3, lvalue
             case(REALM_ANGLE_A0,REALM_ANGLE_K)
-                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, k3, lvalue
             case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
-                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, stk, stl, k3, pn, lvalue
+            case(REALM_DIH_O)
+                read(line,*,err=100,end=100) realm, k2, sti, stj, stk, stl, k3, lvalue
             case(REALM_DIH_SCEE,REALM_DIH_SCNB)
-                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, stk, stl, k3, lvalue
             case(REALM_IMPR_V,REALM_IMPR_G)
-                read(line,*,err=100,end=100) realm, sti, stj, stk, stl, pn, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, stk, stl, k3, pn, lvalue
             case(REALM_VDW_EPS,REALM_VDW_R0)
-                read(line,*,err=100,end=100) realm, sti, stj, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, stj, k3, lvalue
             case(REALM_VDW_PA,REALM_VDW_PB,REALM_VDW_RC)
-                read(line,*,err=100,end=100) realm, sti, lvalue
+                read(line,*,err=100,end=100) realm, k2, sti, k3, lvalue
             case(REALM_VDW_B0)
-                read(line,*,err=100,end=100) realm, pn, lvalue
+                read(line,*,err=100,end=100) realm, k3, pn, lvalue
             case(REALM_ELE_SQ)
-                read(line,*,err=100,end=100) realm, lvalue
+                read(line,*,err=100,end=100) realm, k3, lvalue
             case(REALM_DAMP_FA,REALM_DAMP_FB,REALM_DAMP_PB,REALM_DAMP_TB,REALM_DAMP_PE)
-                read(line,*,err=100,end=100) realm, lvalue
+                read(line,*,err=100,end=100) realm, k3, lvalue
             case(REALM_DISP_S6,REALM_DISP_S8,REALM_DISP_S10)
-                read(line,*,err=100,end=100) realm, lvalue
+                read(line,*,err=100,end=100) realm, k3, lvalue
             case(REALM_GLB_SCEE,REALM_GLB_SCNB)
-                read(line,*,err=100,end=100) realm, lvalue
+                read(line,*,err=100,end=100) realm, k3, lvalue
             case(REALM_K_EXC,REALM_K_IND)
-                read(line,*,err=100,end=100) realm, lvalue
+                read(line,*,err=100,end=100) realm, k3, lvalue
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Not implemented in ffdev_parameters_ctrl_setprms!')
         end select
@@ -972,7 +996,7 @@ subroutine ffdev_parameters_ctrl_identities(fin)
                     write(DEV_OUT,*)
                     write(DEV_OUT,40) adjustl(string)
                     realmid = ffdev_parameters_get_realmid(key)
-                    call setup_p2_identity_types(realmid,string,niden)
+                    call setup_realm_identity_types_t2(realmid,string,niden)
                 else
                     call ffdev_utils_exit(DEV_ERR,1, &
                                'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
@@ -982,12 +1006,12 @@ subroutine ffdev_parameters_ctrl_identities(fin)
                     write(DEV_OUT,*)
                     write(DEV_OUT,40) adjustl(string)
                     realmid = ffdev_parameters_get_realmid(key)
-                    call setup_p3_identity_types(realmid,string,niden)
+                    call setup_realm_identity_types_t3(realmid,string,niden)
                 else
                     call ffdev_utils_exit(DEV_ERR,1, &
                                'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
                 end if
-            case('dih_v','dih_gamma','dih_c')
+            case('dih_v','dih_g','dih_c')
                 if( (trim(subkey) .eq. '') .or. (trim(subkey) .eq. 'byrot') ) then
                     write(DEV_OUT,*)
                     write(DEV_OUT,40) adjustl(key),'byrot'
@@ -997,7 +1021,7 @@ subroutine ffdev_parameters_ctrl_identities(fin)
                     write(DEV_OUT,*)
                     write(DEV_OUT,40) adjustl(string)
                     realmid = ffdev_parameters_get_realmid(key)
-                    call setup_dih_identity_types(realmid,string,niden)
+                    call setup_realm_identity_types_t4(realmid,string,niden)
                 else
                     call ffdev_utils_exit(DEV_ERR,1, &
                                'Unsupported identity key '''//trim(key)//''' and subkey '''//trim(subkey)//'''!')
@@ -1100,7 +1124,7 @@ end subroutine setup_realm_identity
 
 ! ------------------------------------------------------------------------------
 
-subroutine setup_p2_identity_types(realm,string,niden)
+subroutine setup_realm_identity_types_t2(realm,string,niden)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1120,7 +1144,7 @@ subroutine setup_p2_identity_types(realm,string,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .ne. REALM_BOND_R0) .and. (realm .ne. REALM_BOND_K) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_p2_identity_types!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_realm_identity_types_t2!')
     end if
 
     ! read types
@@ -1193,11 +1217,11 @@ subroutine setup_p2_identity_types(realm,string,niden)
  10 format('    >>> Parameter ',I4,' is root for:')
  20 format(1X,I4)
 
-end subroutine setup_p2_identity_types
+end subroutine setup_realm_identity_types_t2
 
 ! ------------------------------------------------------------------------------
 
-subroutine setup_p3_identity_types(realm,string,niden)
+subroutine setup_realm_identity_types_t3(realm,string,niden)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1217,7 +1241,7 @@ subroutine setup_p3_identity_types(realm,string,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .ne. REALM_ANGLE_A0) .and. (realm .ne. REALM_ANGLE_K) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_p3_identity_types!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_realm_identity_types_t3!')
     end if
 
     ! read types
@@ -1300,7 +1324,7 @@ subroutine setup_p3_identity_types(realm,string,niden)
  10 format('    >>> Parameter ',I4,' is root for:')
  20 format(1X,I4)
 
-end subroutine setup_p3_identity_types
+end subroutine setup_realm_identity_types_t3
 
 ! ------------------------------------------------------------------------------
 
@@ -1366,7 +1390,7 @@ end subroutine setup_dih_identity_byrot
 
 ! ------------------------------------------------------------------------------
 
-subroutine setup_dih_identity_types(realm,string,niden)
+subroutine setup_realm_identity_types_t4(realm,string,niden)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1386,7 +1410,7 @@ subroutine setup_dih_identity_types(realm,string,niden)
     ! --------------------------------------------------------------------------
 
     if( (realm .ne. REALM_DIH_V) .and. (realm .ne. REALM_DIH_G) .and. (realm .ne. REALM_DIH_C) ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_dih_identity_types!')
+        call ffdev_utils_exit(DEV_ERR,1,'Unsupported realm for setup_realm_identity_types_t4!')
     end if
 
     ! read types
@@ -1475,7 +1499,7 @@ subroutine setup_dih_identity_types(realm,string,niden)
  10 format('    >>> Parameter ',I4,' is root for:')
  20 format(1X,I4)
 
-end subroutine setup_dih_identity_types
+end subroutine setup_realm_identity_types_t4
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_ctrl_realms
@@ -1766,7 +1790,7 @@ subroutine change_realms(realm,enable,options,nchanged)
     else if( is_realm_option(options,'bond') ) then
         select case(realmid)
             case(REALM_DIH_V,REALM_DIH_C,REALM_DIH_G)
-                call change_dih_realm_bond(realmid,enable,options,nchanged)
+                call change_realm_bond(realmid,enable,options,nchanged)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Option ''bond'' can be used only with dih_v, dih_c, and dih_g')
         end select
@@ -1845,7 +1869,7 @@ subroutine change_realms(realm,enable,options,nchanged)
     else if( is_realm_option(options,'type') ) then
         select case(realmid)
             case(REALM_VDW_PA,REALM_VDW_PB,REALM_PAC)
-                call change_dih_realm_type(realmid,enable,options,nchanged)
+                call change_realm_type(realmid,enable,options,nchanged)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Option ''type'' can be used only with vdw_pa, vdw_pb, and pac')
         end select
@@ -1860,14 +1884,15 @@ subroutine change_realms(realm,enable,options,nchanged)
 ! ------------------
     else if( is_realm_option(options,'types') ) then
         select case(realmid)
-            case(REALM_BOND_R0,REALM_BOND_K,            &
-                 REALM_ANGLE_A0,REALM_ANGLE_K,          &
-                 REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,   &
+            case(REALM_BOND_R0,REALM_BOND_K,                        &
+                 REALM_ANGLE_A0,REALM_ANGLE_K,                      &
+                 REALM_DIH_V,REALM_DIH_C,REALM_DIH_G,REALM_DIH_O,   &
+                 REALM_DIH_SCEE,REALM_DIH_SCNB,                     &
                  REALM_VDW_EPS,REALM_VDW_R0)
-                call change_dih_realm_types(realmid,enable,options,nchanged)
+                call change_realm_types(realmid,enable,options,nchanged)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Option "types" can be used only with bond_d0, bond_k,' &
-                                                // 'angle_a0, angle_k, dih_v, dih_c, dih_g, vdw_eps, and vdw_r0')
+                    // 'angle_a0, angle_k, dih_v, dih_c, dih_g, dih_o, dih_scee, dih_scnb, vdw_eps, and vdw_r0')
         end select
     else
             call ffdev_utils_exit(DEV_ERR,1,'Unsupported option ('//trim(options)//')')
@@ -1877,7 +1902,7 @@ end subroutine change_realms
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_dih_realm_bond(realmid,enable,options,nchanged)
+subroutine change_realm_bond(realmid,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -1940,7 +1965,7 @@ subroutine change_dih_realm_bond(realmid,enable,options,nchanged)
 
 100 call ffdev_utils_exit(DEV_ERR,1,'Illegal option ''bond'' for dih_* realm!')
 
-end subroutine change_dih_realm_bond
+end subroutine change_realm_bond
 
 ! ------------------------------------------------------------------------------
 
@@ -1985,7 +2010,7 @@ end subroutine change_dih_realm_pn
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_dih_realm_types(realmid,enable,options,nchanged)
+subroutine change_realm_types(realmid,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -2068,11 +2093,11 @@ subroutine change_dih_realm_types(realmid,enable,options,nchanged)
         end if
     end do
 
-end subroutine change_dih_realm_types
+end subroutine change_realm_types
 
 ! ------------------------------------------------------------------------------
 
-subroutine change_dih_realm_type(realmid,enable,options,nchanged)
+subroutine change_realm_type(realmid,enable,options,nchanged)
 
     use ffdev_parameters
     use ffdev_parameters_dat
@@ -2116,9 +2141,9 @@ subroutine change_dih_realm_type(realmid,enable,options,nchanged)
 
     return
 
-100 call ffdev_utils_exit(DEV_ERR,1,'Inproper definition of ''type'' option!')
+100 call ffdev_utils_exit(DEV_ERR,1,'Incorrect definition of ''type'' option!')
 
-end subroutine change_dih_realm_type
+end subroutine change_realm_type
 
 ! ------------------------------------------------------------------------------
 
