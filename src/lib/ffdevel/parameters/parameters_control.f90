@@ -317,11 +317,12 @@ subroutine ffdev_parameters_ctrl_files(fin)
     write(DEV_OUT,'(/,a)') '=== [files] ===================================================================='
 
     ! input file cannot be setup here
-    ! the correct parametr data can be loaded only after parameters are properly setup
+    ! the correct parameter data can be loaded only after parameters are properly setup
 
     if(.not. prmfile_open_section(fin,'files')) then
         write (DEV_OUT,25) trim(OutParamFileName)
         write (DEV_OUT,35) trim(OutAmberPrmsFileName)
+        write (DEV_OUT,45) prmfile_onoff(OutAmberPrmsActiveOnly)
         return
     end if
 
@@ -337,12 +338,20 @@ subroutine ffdev_parameters_ctrl_files(fin)
         write (DEV_OUT,30) trim(OutAmberPrmsFileName)
     end if
 
+    if(.not. prmfile_get_logical_by_key(fin,'only_active', OutAmberPrmsActiveOnly)) then
+        write (DEV_OUT,45) prmfile_onoff(OutAmberPrmsActiveOnly)
+    else
+        write (DEV_OUT,40) prmfile_onoff(OutAmberPrmsActiveOnly)
+    end if
+
     return
 
 20 format('Final parameters file (final)          = ',a)
 25 format('Final parameters file (final)          = ',a12,'                  (default)')
 30 format('Final AMBER parameters (amber)         = ',a)
 35 format('Final AMBER parameters (amber)         = ',a12,'                  (default)')
+40 format('AMBER: Rep. only active (only_active)  = ',a)
+45 format('AMBER: Rep. only active (only_active)  = ',a12,'                  (default)')
 
 end subroutine ffdev_parameters_ctrl_files
 
@@ -609,14 +618,21 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
         end if
 
         if( nb_mode .eq. NB_VDW_LJ ) then
-            if( ApplyCombiningRules ) then
+            ! ApplyCombiningRules - it is set later
+            ! if( ApplyCombiningRules ) then
                 write(DEV_OUT,35) ffdev_topology_LJ_comb_rules_to_string(lj_comb_rules)
-            end if
-            write(DEV_OUT,230) prmfile_onoff(lj_exp6_probe)
+            ! end if
+            write(DEV_OUT,235) prmfile_onoff(lj_exp6_probe)
             if( lj_exp6_probe ) then
                 write(DEV_OUT,245) ffdev_topology_LJ_alpha_mode_to_string(lj_alpha_mode)
             end if
         end if
+
+        write(DEV_OUT,505) prmfile_onoff(mmd3_enabled)
+        write(DEV_OUT,515) prmfile_onoff(xdm_enabled)
+        write(DEV_OUT,525) prmfile_onoff(disp_enabled)
+        write(DEV_OUT,535) prmfile_onoff(atomicdata_enabled)
+        write(DEV_OUT,545) prmfile_onoff(buried_enabled)
         return
     end if
 
@@ -733,7 +749,8 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 ! ---------------------------
     if( to_nb_mode .eq. NB_VDW_LJ ) then
-        if( ApplyCombiningRules ) then
+        ! ApplyCombiningRules - it is set later
+        !if( ApplyCombiningRules ) then
             if( prmfile_get_string_by_key(fin,'lj_comb_rules', string)) then
                 lcomb_rules = ffdev_topology_LJ_comb_rules_from_string(string)
                 write(DEV_OUT,30) ffdev_topology_LJ_comb_rules_to_string(lcomb_rules)
@@ -744,7 +761,7 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
             else
                 write(DEV_OUT,35) ffdev_topology_LJ_comb_rules_to_string(lj_comb_rules)
             end if
-        end if
+        !end if
         if( prmfile_get_logical_by_key(fin,'lj_exp6_probe', llj_exp6_probe)) then
             write(DEV_OUT,230) prmfile_onoff(llj_exp6_probe)
             if( exec ) then
@@ -825,6 +842,21 @@ subroutine ffdev_parameters_ctrl_nbsetup(fin,exec)
 
 240 format('LJ Exp6 alpha mode (lj_alpha_mode) = ',A)
 245 format('LJ Exp6 alpha mode (lj_alpha_mode) = ',A33,' (current)')
+
+500 format('MMD3 enabled (mmd3_enabled)        = ',A)
+505 format('MMD3 enabled (mmd3_enabled)        = ',A33,' (current)')
+
+510 format('XDM enabled (xdm_enabled)          = ',A)
+515 format('XDM enabled (xdm_enabled)          = ',A33,' (current)')
+
+520 format('DISP enabled (disp_enabled)        = ',A)
+525 format('DISP enabled (disp_enabled)        = ',A33,' (current)')
+
+530 format('AtomidDB (atomicdata_enabled)      = ',A)
+535 format('AtomidDB (atomicdata_enabled)      = ',A33,' (current)')
+
+540 format('Burried enabled (buried_enabled)   = ',A)
+545 format('Burried enabled (buried_enabled)   = ',A33,' (current)')
 
  15 format('=== SET ',I2.2)
 
@@ -910,21 +942,44 @@ subroutine ffdev_parameters_ctrl_setprms(fin,exec)
         end select
 
         if( exec ) then
-            ti = get_common_type_from_name(sti)
-            tj = get_common_type_from_name(stj)
-            tk = get_common_type_from_name(stk)
-            tl = get_common_type_from_name(stl)
+            if( (pn .eq. 0) .and. ( (realmid .eq. REALM_DIH_V) .or. (realmid .eq. REALM_DIH_C)  &
+                               .or. (realmid .eq. REALM_DIH_G) .or. (realmid .eq. REALM_IMPR_V) &
+                               .or. (realmid .eq. REALM_IMPR_G) ) ) then
 
-            parmid = find_parameter_by_ids(realmid,pn,ti,tj,tk,tl)
+                do i=1,ffdev_parameters_get_max_dih_seq_size()
+                    ti = get_common_type_from_name(sti)
+                    tj = get_common_type_from_name(stj)
+                    tk = get_common_type_from_name(stk)
+                    tl = get_common_type_from_name(stl)
 
-            write(DEV_OUT,30) parmid, trim(realm), trim(sti), trim(stj), trim(stk), trim(stl), pn, lvalue
+                    parmid = find_parameter_by_ids(realmid,i,ti,tj,tk,tl)
 
-            if( parmid .le. 0 ) then
-                call ffdev_utils_exit(DEV_ERR,1,'Unable to find the parameter!')
+                    if( (i .gt. 1) .and. (parmid .le. 0) ) exit
+
+                    write(DEV_OUT,30) parmid, trim(realm), trim(sti), trim(stj), trim(stk), trim(stl), i, lvalue
+
+                    if( parmid .le. 0 ) then
+                        call ffdev_utils_exit(DEV_ERR,1,'Unable to find the parameter!')
+                    end if
+
+                    params(parmid)%value = lvalue / ffdev_parameters_get_realm_scaling(realmid)
+                end do
+            else
+                ti = get_common_type_from_name(sti)
+                tj = get_common_type_from_name(stj)
+                tk = get_common_type_from_name(stk)
+                tl = get_common_type_from_name(stl)
+
+                parmid = find_parameter_by_ids(realmid,pn,ti,tj,tk,tl)
+
+                write(DEV_OUT,30) parmid, trim(realm), trim(sti), trim(stj), trim(stk), trim(stl), pn, lvalue
+
+                if( parmid .le. 0 ) then
+                    call ffdev_utils_exit(DEV_ERR,1,'Unable to find the parameter!')
+                end if
+
+                params(parmid)%value = lvalue / ffdev_parameters_get_realm_scaling(realmid)
             end if
-
-            params(parmid)%value = lvalue / ffdev_parameters_get_realm_scaling(realmid)
-
         end if
 
     end do
@@ -2024,8 +2079,8 @@ subroutine change_realm_types(realmid,enable,options,nchanged)
     character(*)    :: options
     integer         :: nchanged
     ! --------------------------------------------
-    integer         :: i, ti, tj, tk, tl
-    character(80)   :: k1, k2, k3, sti, stj, stk, stl
+    integer         :: i, ti, tj, tk, tl, pn
+    character(80)   :: k1, k2, k3, k4, sti, stj, stk, stl
     ! --------------------------------------------------------------------------
 
     ! read types
@@ -2037,6 +2092,7 @@ subroutine change_realm_types(realmid,enable,options,nchanged)
     tj = 0
     tk = 0
     tl = 0
+    pn = 0
 
     read(options,*,end=555,err=555) k1, k2, k3, sti, stj, stk, stl
 555     do i=1,ntypes
@@ -2049,6 +2105,12 @@ subroutine change_realm_types(realmid,enable,options,nchanged)
     ! we need at least two types
     if( (tj .eq. 0) .and. (tk .eq. 0) .and. (tl .eq. 0) ) then
         call ffdev_utils_exit(DEV_ERR,1,'At least two types are required to be defined for ''types'' option!')
+    end if
+
+    ! if four types, try to read pn
+    if( (ti .ne. 0) .and. (tj .ne. 0) .and. (tk .ne. 0) .and. (tl .ne. 0) ) then
+        read(options,*,end=556,err=556) k1, k2, k3, sti, stj, stk, stl, k4, pn
+556     continue
     end if
 
     do i=1,nparams
@@ -2078,6 +2140,11 @@ subroutine change_realm_types(realmid,enable,options,nchanged)
 
         if( (realmid .eq. -1) .or. (params(i)%realm .eq. realmid) ) then
             if( params(i)%identity .eq. 0 ) then
+
+                if( pn .gt. 0 ) then
+                    if( params(i)%pn .ne. pn ) cycle
+                end if
+
                 if( realmid .eq. REALM_DIH_C ) then
                     if( LockDihC_PN1 .and. params(i)%pn .eq. 1 ) then
                         ! do nothing

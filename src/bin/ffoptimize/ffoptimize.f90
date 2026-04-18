@@ -158,22 +158,32 @@ program ffdev_optimize_program
     ! finalize topologies in sets
     call ffdev_targetset_init_pts
 
-    ! run mmd3
-    call ffdev_mmd3_init
-    call ffdev_mmd3_run_stat
+    if( mmd3_enabled ) then
+        ! run mmd3
+        call ffdev_mmd3_init
+        call ffdev_mmd3_run_stat
+    end if
 
     ! run XDM stat if data available
-    call ffdev_xdm_run_stat
+    if( xdm_enabled ) then
+        call ffdev_xdm_run_stat
+    end if
 
     ! init DISP
-    call ffdev_disp_update_db
+    if( disp_enabled ) then
+        call ffdev_disp_update_db
+    end if
 
     ! print atomic database
-    call ffdev_atomicdata_update_db
-    call ffdev_atomicdata_print
+    if( atomicdata_enabled ) then
+        call ffdev_atomicdata_update_db
+        call ffdev_atomicdata_print
+    end if
 
     ! buried atoms
-    call ffdev_buried_run_stat
+    if( buried_enabled ) then
+        call ffdev_buried_run_stat
+    end if
 
 ! ==============================================================================
 ! INITIAL PART - check for syntax errors in control file

@@ -75,7 +75,7 @@ subroutine ffdev_parameters_init()
         ! topology related data
         maxnparams = maxnparams + 2*sets(i)%top%nbond_types     ! bonds
         maxnparams = maxnparams + 2*sets(i)%top%nangle_types    ! angles
-        maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*sets(i)%top%ndihedral_seq_size ! dihedrals
+        maxnparams = maxnparams + 2*sets(i)%top%ndihedral_types*ffdev_parameters_get_max_dih_seq_size() ! dihedrals
         maxnparams = maxnparams + 3*sets(i)%top%ndihedral_types ! dihedral: scee, scnb, offset
         maxnparams = maxnparams + 2*sets(i)%top%nimproper_types ! impropers
         maxnparams = maxnparams + 3*sets(i)%top%nnb_types       ! eps, r0,alpha
@@ -120,6 +120,28 @@ subroutine ffdev_parameters_init()
  50 format('Input parameters taken from topologies ... ')
 
 end subroutine ffdev_parameters_init
+
+
+! ==============================================================================
+! function ffdev_parameters_get_max_dih_seq_size
+! ==============================================================================
+
+function ffdev_parameters_get_max_dih_seq_size() result(nseq)
+
+    use ffdev_parameters_dat
+    use ffdev_targetset_dat
+
+    implicit none
+    integer     :: nseq, i
+    ! --------------------------------------------------------------------------
+
+    nseq = 0
+
+    do i=1,nsets
+        nseq = max(nseq,sets(i)%top%ndihedral_seq_size)
+    end do
+
+end function ffdev_parameters_get_max_dih_seq_size
 
 ! ==============================================================================
 ! subroutine ffdev_parameters_reinit
@@ -514,8 +536,10 @@ subroutine ffdev_parameters_reinit()
                 use_damp_fb     = .true.
             end if
 
-            use_vdw_r0free = .true.
-            use_vdw_pbfree = .true.
+            if( atomicdata_enabled ) then
+                use_vdw_r0free = .true.
+                use_vdw_pbfree = .true.
+            end if
 
         case(NB_VDW_EXP_DISPBJ,NB_VDW_EXP_DISPTT)
 
@@ -717,7 +741,7 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_vdw_b0 ) then
+    if( use_vdw_b0 .and. atomicdata_enabled ) then
         ! rep B0 realm =====================
         do i=1,ntypes
             parmid = find_parameter(sets(i)%top,0,types(i)%z,REALM_VDW_B0)
@@ -782,7 +806,7 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_vdw_r0free ) then
+    if( use_vdw_r0free .and. atomicdata_enabled ) then
         ! =====================
         do j=1,ntypes
             found = .false.
@@ -813,7 +837,7 @@ subroutine ffdev_parameters_reinit()
         end do
     end if
 
-    if( use_vdw_pbfree ) then
+    if( use_vdw_pbfree .and. atomicdata_enabled ) then
         ! =====================
         do j=1,ntypes
             found = .false.
@@ -1823,6 +1847,9 @@ subroutine ffdev_parameters_save_amber(name)
         types(i)%print_nb = .false.
     end do
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_BOND_R0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
             enable_section = .true.
             types(params(i)%ti)%print_nb = .true.
@@ -1872,6 +1899,9 @@ subroutine ffdev_parameters_save_amber(name)
     ! bonds
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_BOND_R0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
             enable_section = .true.
             exit
@@ -1881,6 +1911,9 @@ subroutine ffdev_parameters_save_amber(name)
         it = 0
         write(DEV_PRMS,20) 'BOND'
         do i=1,nparams
+            if( OutAmberPrmsActiveOnly ) then
+                if( .not. params(i)%enabled ) cycle
+            end if
             if( params(i)%realm .ne. REALM_BOND_R0 ) cycle
             it = it + 1
             ij = 0
@@ -1898,6 +1931,9 @@ subroutine ffdev_parameters_save_amber(name)
     ! angles
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_ANGLE_A0) .or. ( params(i)%realm .eq. REALM_ANGLE_K ) ) then
             enable_section = .true.
             exit
@@ -1907,6 +1943,9 @@ subroutine ffdev_parameters_save_amber(name)
         it = 0
         write(DEV_PRMS,20) 'ANGL'
         do i=1,nparams
+            if( OutAmberPrmsActiveOnly ) then
+                if( .not. params(i)%enabled ) cycle
+            end if
             if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
             it = it + 1
             ij = 0
@@ -1924,6 +1963,9 @@ subroutine ffdev_parameters_save_amber(name)
     ! dihedrals
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_DIH_V) .or. ( params(i)%realm .eq. REALM_DIH_G ) .or. &
             (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
             enable_section = .true.
@@ -1934,6 +1976,9 @@ subroutine ffdev_parameters_save_amber(name)
         it = 0
         write(DEV_PRMS,20) 'DIHE'
         do i=1,nparams
+            if( OutAmberPrmsActiveOnly ) then
+                if( .not. params(i)%enabled ) cycle
+            end if
             if( params(i)%realm .ne. REALM_DIH_V ) cycle
             v = params(i)%value
             max_pn = 0
@@ -1983,6 +2028,9 @@ subroutine ffdev_parameters_save_amber(name)
     old_enable_section = enable_section
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_DIH_C) .or. &
             (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
             enable_section = .true.
@@ -1999,8 +2047,11 @@ subroutine ffdev_parameters_save_amber(name)
     if( enable_section ) then
         it = 0
         do i=1,nparams
+            if( OutAmberPrmsActiveOnly ) then
+                if( .not. params(i)%enabled ) cycle
+            end if
             if( params(i)%realm .ne. REALM_DIH_C ) cycle
-            if( params(i)%pn .ne. 1 ) cycle
+            if( params(i)%pn .ne. 2 ) cycle ! pn = 1 can be disabled
 
             ! find topology for transformation
             si  = 0
@@ -2046,6 +2097,9 @@ subroutine ffdev_parameters_save_amber(name)
     ! impropers
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_IMPR_V) .or. ( params(i)%realm .eq. REALM_IMPR_G ) ) then
             enable_section = .true.
             exit
@@ -2055,6 +2109,9 @@ subroutine ffdev_parameters_save_amber(name)
         it = 0
         write(DEV_PRMS,20) 'IMPR'
         do i=1,nparams
+            if( OutAmberPrmsActiveOnly ) then
+                if( .not. params(i)%enabled ) cycle
+            end if
             if( params(i)%realm .ne. REALM_IMPR_V ) cycle
             v = params(i)%value
             pn = 2
@@ -2076,6 +2133,9 @@ subroutine ffdev_parameters_save_amber(name)
 
     enable_section = .false.
     do i=1,nparams
+        if( OutAmberPrmsActiveOnly ) then
+            if( .not. params(i)%enabled ) cycle
+        end if
         if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) ) then
             enable_section = .true.
             exit
@@ -2083,6 +2143,12 @@ subroutine ffdev_parameters_save_amber(name)
     end do
 
     if( enable_section ) then
+
+! FIXME
+!        if( OutAmberPrmsActiveOnly ) then
+!            if( .not. params(i)%enabled ) cycle
+!        end if
+
         ! reset data
         do i=1,ntypes
             types(i)%r0 = 0.0d0

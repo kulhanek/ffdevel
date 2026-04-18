@@ -164,11 +164,17 @@ integer         :: GlbRngSeed           = 5489                      ! random num
 integer         :: PACSource            = PAC_SOURCE_TOPOLOGY
 logical         :: ShowPACStat          = .false.
 
-! === [grbf2cos] ===============================================================
+logical         :: mmd3_enabled         = .false.
+logical         :: xdm_enabled          = .false.
+logical         :: disp_enabled         = .false.
+logical         :: atomicdata_enabled   = .false.
+logical         :: buried_enabled       = .false.
+
+! === [dih2cos] ===============================================================
 integer         :: DIH2COS_MaxN         = 4             ! max length of cos series
 integer         :: DIH2COS_NPoints      = 180           ! number of training points
 real(DEVDP)     :: DIH2COS_MinV         = 0.01d0        ! min amplitude of each cos item
-logical         :: DIH2COS_ReportAll    = .true.        ! report all cos series term
+logical         :: DIH2COS_ReportAll    = .true.        ! report all cos series terms
 
 ! === [ranges] =================================================================
 
@@ -272,8 +278,9 @@ real(DEVDP)     :: MinVdwPBFree
 real(DEVDP)     :: MaxVdwPBFree
 
 ! === [files] ==================================================================
-character(MAX_PATH) :: OutParamFileName     = 'final.prms'      ! output parameters
-character(MAX_PATH) :: OutAmberPrmsFileName = 'final.frcmod'    ! output Amber force field
+character(MAX_PATH) :: OutParamFileName         = 'final.prms'      ! output parameters
+character(MAX_PATH) :: OutAmberPrmsFileName     = 'final.frcmod'    ! output Amber force field
+logical             :: OutAmberPrmsActiveOnly   = .true.
 
 ! ------------------------------------------------------------------------------
 
