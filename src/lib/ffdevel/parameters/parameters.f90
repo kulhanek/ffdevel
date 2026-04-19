@@ -1831,9 +1831,9 @@ subroutine ffdev_parameters_save_amber(name)
     character(*)    :: name
     ! --------------------------------------------
     integer         :: datum(8)
-    integer         :: i,j,it,ij,pn,max_pn,idx,si
-    real(DEVDP)     :: v,g, scee, scnb
-    logical         :: enable_section,old_enable_section
+    integer         :: i,j,pn,max_pn,sidx,tidx
+    real(DEVDP)     :: scee, scnb
+    logical         :: enable_section
     ! --------------------------------------------------------------------------
 
     call ffdev_utils_open(DEV_PRMS,name,'U')
@@ -1907,23 +1907,34 @@ subroutine ffdev_parameters_save_amber(name)
             exit
         end if
     end do
+
     if( enable_section ) then
-        it = 0
         write(DEV_PRMS,20) 'BOND'
         do i=1,nparams
-            if( OutAmberPrmsActiveOnly ) then
-                if( .not. params(i)%enabled ) cycle
-            end if
             if( params(i)%realm .ne. REALM_BOND_R0 ) cycle
-            it = it + 1
-            ij = 0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_BOND_K ) cycle
-                ij = ij + 1
-                if( ij .eq. it ) exit
+
+            tidx = 0
+            sidx = 0
+            do j=1,nsets
+                if( params(i)%ids(j) .ne. 0 ) then
+                    tidx = params(i)%ids(j)
+                    sidx = j
+                    exit
+                end if
             end do
-            write(DEV_PRMS,40) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                               0.5d0*params(j)%value,params(i)%value
+
+            ! not found
+            if( tidx .eq. 0 ) cycle
+
+            if( OutAmberPrmsActiveOnly ) then
+                ! not active
+                if( .not. sets(sidx)%top%bond_types(tidx)%ffoptactive ) cycle
+            end if
+
+            write(DEV_PRMS,40) sets(sidx)%top%atom_types(sets(sidx)%top%bond_types(tidx)%ti)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%bond_types(tidx)%tj)%name, &
+                               0.5d0*sets(sidx)%top%bond_types(tidx)%k, &
+                               sets(sidx)%top%bond_types(tidx)%d0
         end do
         write(DEV_PRMS,*)
     end if
@@ -1940,22 +1951,34 @@ subroutine ffdev_parameters_save_amber(name)
         end if
     end do
     if( enable_section ) then
-        it = 0
         write(DEV_PRMS,20) 'ANGL'
         do i=1,nparams
-            if( OutAmberPrmsActiveOnly ) then
-                if( .not. params(i)%enabled ) cycle
-            end if
+
             if( params(i)%realm .ne. REALM_ANGLE_A0 ) cycle
-            it = it + 1
-            ij = 0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_ANGLE_K ) cycle
-                ij = ij + 1
-                if( ij .eq. it ) exit
+
+            tidx = 0
+            sidx = 0
+            do j=1,nsets
+                if( params(i)%ids(j) .ne. 0 ) then
+                    tidx = params(i)%ids(j)
+                    sidx = j
+                    exit
+                end if
             end do
-            write(DEV_PRMS,50) types(params(i)%ti)%name,types(params(i)%tj)%name,types(params(i)%tk)%name, &
-                               0.5d0*params(j)%value,params(i)%value*DEV_R2D
+
+            ! not found
+            if( tidx .eq. 0 ) cycle
+
+            if( OutAmberPrmsActiveOnly ) then
+                ! not active
+                if( .not. sets(sidx)%top%angle_types(tidx)%ffoptactive ) cycle
+            end if
+
+            write(DEV_PRMS,50) sets(sidx)%top%atom_types(sets(sidx)%top%angle_types(tidx)%ti)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%angle_types(tidx)%tj)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%angle_types(tidx)%tk)%name, &
+                               0.5d0*sets(sidx)%top%angle_types(tidx)%k, &
+                               sets(sidx)%top%angle_types(tidx)%a0*DEV_R2D
         end do
         write(DEV_PRMS,*)
     end if
@@ -1967,131 +1990,62 @@ subroutine ffdev_parameters_save_amber(name)
             if( .not. params(i)%enabled ) cycle
         end if
         if( (params(i)%realm .eq. REALM_DIH_V) .or. ( params(i)%realm .eq. REALM_DIH_G ) .or. &
+            (params(i)%realm .eq. REALM_DIH_C) .or. (params(i)%realm .eq. REALM_DIH_O) .or. &
             (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
             enable_section = .true.
             exit
         end if
     end do
     if( enable_section ) then
-        it = 0
         write(DEV_PRMS,20) 'DIHE'
         do i=1,nparams
-            if( OutAmberPrmsActiveOnly ) then
-                if( .not. params(i)%enabled ) cycle
-            end if
-            if( params(i)%realm .ne. REALM_DIH_V ) cycle
-            v = params(i)%value
-            max_pn = 0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_DIH_V ) cycle
-                if( (params(i)%ti .eq. params(j)%ti) .and. &
-                    (params(i)%tj .eq. params(j)%tj) .and. &
-                    (params(i)%tk .eq. params(j)%tk) .and. &
-                    (params(i)%tl .eq. params(j)%tl) ) then
-                        max_pn  = max_pn + 1
-                end if
-            end do
-            pn = params(i)%pn
-            if( pn .lt. max_pn ) pn = -pn
-            it = it + 1
-            ij = 0
-            g = 0.0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_DIH_G ) cycle
-                ij = ij + 1
-                g = params(j)%value
-                if( ij .eq. it ) exit
-            end do
-            ij = 0
-            scee = 1.2
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_DIH_SCEE ) cycle
-                ij = ij + 1
-                scee = params(j)%value
-                if( ij .eq. it ) exit
-            end do
-            ij = 0
-            scnb = 2.0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_DIH_SCNB ) cycle
-                ij = ij + 1
-                scnb = params(j)%value
-                if( ij .eq. it ) exit
-            end do
-            write(DEV_PRMS,60) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                               types(params(i)%tk)%name, types(params(i)%tl)%name, &
-                               v, g*DEV_R2D, pn, scee, scnb
-        end do
-    end if
 
-    ! dih_c realm
-    old_enable_section = enable_section
-    enable_section = .false.
-    do i=1,nparams
-        if( OutAmberPrmsActiveOnly ) then
-            if( .not. params(i)%enabled ) cycle
-        end if
-        if( (params(i)%realm .eq. REALM_DIH_C) .or. &
-            (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
-            enable_section = .true.
-            if( .not. old_enable_section ) then
-                write(DEV_PRMS,20) 'DIHE'
-            end if
-            exit
-        end if
-    end do
-    if( old_enable_section .and. (.not. enable_section) ) then
-        write(DEV_PRMS,*)
-    end if
+            if( (params(i)%realm .ne. REALM_DIH_V) .and. (params(i)%realm .ne. REALM_DIH_C) ) cycle
+            if( params(i)%pn .ne. 1 ) cycle
 
-    if( enable_section ) then
-        it = 0
-        do i=1,nparams
-            if( OutAmberPrmsActiveOnly ) then
-                if( .not. params(i)%enabled ) cycle
-            end if
-            if( params(i)%realm .ne. REALM_DIH_C ) cycle
-            if( params(i)%pn .ne. 2 ) cycle ! pn = 1 can be disabled
-
-            ! find topology for transformation
-            si  = 0
-            idx = 0
+            tidx = 0
+            sidx = 0
             do j=1,nsets
                 if( params(i)%ids(j) .ne. 0 ) then
-                    idx = params(i)%ids(j)
-                    si = j
+                    tidx = params(i)%ids(j)
+                    sidx = j
                     exit
                 end if
             end do
-            if( (idx .eq. 0) .or. (si .eq. 0) ) cycle
+
+            ! not found
+            if( tidx .eq. 0 ) cycle
+
+            if( OutAmberPrmsActiveOnly ) then
+                ! not active
+                if( .not. sets(sidx)%top%dihedral_types(tidx)%ffoptactive ) cycle
+            end if
 
             ! transform the dihedral
-            call ffdev_parameters_dih2cos(sets(si)%top,idx)
+            call ffdev_parameters_dih2cos(sets(sidx)%top,tidx)
 
-            ! find max pn
+            ! determine max pn
             max_pn = 0
-            do j=1,sets(si)%top%dihedral_types(idx)%n
-                if( sets(si)%top%dihedral_types(idx)%enabled(j) ) then
-                    max_pn = j
-                end if
+            do j=1,sets(sidx)%top%dihedral_types(tidx)%n
+                if( .not. sets(sidx)%top%dihedral_types(tidx)%enabled(j) ) cycle
+                max_pn = j
             end do
 
             ! write dihedral
-            scee = 1.0d0 / sets(si)%top%dihedral_types(idx)%inv_scee
-            scnb = 1.0d0 / sets(si)%top%dihedral_types(idx)%inv_scnb
-            do j=1,sets(si)%top%dihedral_types(idx)%n
-                if( .not. sets(si)%top%dihedral_types(idx)%enabled(j) ) cycle
+            scee = 1.0d0 / sets(sidx)%top%dihedral_types(tidx)%inv_scee
+            scnb = 1.0d0 / sets(sidx)%top%dihedral_types(tidx)%inv_scnb
+            do j=1,sets(sidx)%top%dihedral_types(tidx)%n
+                if( .not. sets(sidx)%top%dihedral_types(tidx)%enabled(j) ) cycle
                 pn = j
                 if( pn .lt. max_pn ) pn = -pn
-                write(DEV_PRMS,60) sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%ti)%name, &
-                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tj)%name, &
-                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tk)%name, &
-                                   sets(si)%top%atom_types(sets(si)%top%dihedral_types(idx)%tl)%name, &
-                                   sets(si)%top%dihedral_types(idx)%v(j), &
-                                   sets(si)%top%dihedral_types(idx)%g(j)*DEV_R2D, pn, scee, scnb
+                write(DEV_PRMS,60) sets(sidx)%top%atom_types(sets(sidx)%top%dihedral_types(tidx)%ti)%name, &
+                                   sets(sidx)%top%atom_types(sets(sidx)%top%dihedral_types(tidx)%tj)%name, &
+                                   sets(sidx)%top%atom_types(sets(sidx)%top%dihedral_types(tidx)%tk)%name, &
+                                   sets(sidx)%top%atom_types(sets(sidx)%top%dihedral_types(tidx)%tl)%name, &
+                                   sets(sidx)%top%dihedral_types(tidx)%v(j), &
+                                   sets(sidx)%top%dihedral_types(tidx)%g(j)*DEV_R2D, pn, scee, scnb
             end do
         end do
-        write(DEV_PRMS,*)
     end if
 
     ! impropers
@@ -2106,27 +2060,36 @@ subroutine ffdev_parameters_save_amber(name)
         end if
     end do
     if( enable_section ) then
-        it = 0
         write(DEV_PRMS,20) 'IMPR'
         do i=1,nparams
-            if( OutAmberPrmsActiveOnly ) then
-                if( .not. params(i)%enabled ) cycle
-            end if
+
             if( params(i)%realm .ne. REALM_IMPR_V ) cycle
-            v = params(i)%value
-            pn = 2
-            it = it + 1
-            ij = 0
-            g = 0.0
-            do j=1,nparams
-                if( params(j)%realm .ne. REALM_IMPR_G ) cycle
-                ij = ij + 1
-                g = params(j)%value
-                if( ij .eq. it ) exit
+
+            tidx = 0
+            sidx = 0
+            do j=1,nsets
+                if( params(i)%ids(j) .ne. 0 ) then
+                    tidx = params(i)%ids(j)
+                    sidx = j
+                    exit
+                end if
             end do
-            write(DEV_PRMS,70) types(params(i)%ti)%name,types(params(i)%tj)%name, &
-                               types(params(i)%tk)%name, types(params(i)%tl)%name, &
-                               v, g*DEV_R2D, pn
+
+            ! not found
+            if( tidx .eq. 0 ) cycle
+
+            if( OutAmberPrmsActiveOnly ) then
+                ! not active
+                if( .not. sets(sidx)%top%improper_types(tidx)%ffoptactive ) cycle
+            end if
+
+            pn = 2
+            write(DEV_PRMS,70) sets(sidx)%top%atom_types(sets(sidx)%top%improper_types(tidx)%ti)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%improper_types(tidx)%tj)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%improper_types(tidx)%tk)%name, &
+                               sets(sidx)%top%atom_types(sets(sidx)%top%improper_types(tidx)%tl)%name, &
+                               sets(sidx)%top%improper_types(tidx)%v, &
+                               sets(sidx)%top%improper_types(tidx)%g*DEV_R2D, pn
         end do
         write(DEV_PRMS,*)
     end if
@@ -2209,9 +2172,10 @@ subroutine ffdev_parameters_dih2cos(top,idx)
     integer                     :: nfreq,nsample
     ! --------------------------------------------------------------------------
 
-    if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
-        call ffdev_utils_exit(DEV_ERR,1,'Dihedral is not DIH_GRBF in ffdev_parameters_dih2cos!')
-    end if
+! now we can transfer all types
+!    if( top%dihedral_types(idx)%mode .ne. DIH_GRBF ) then
+!        call ffdev_utils_exit(DEV_ERR,1,'Dihedral is not DIH_GRBF in ffdev_parameters_dih2cos!')
+!    end if
 
     write(DEV_OUT,10,ADVANCE='NO')  top%atom_types(top%dihedral_types(idx)%ti)%name, &
                                     top%atom_types(top%dihedral_types(idx)%tj)%name, &
@@ -2270,6 +2234,7 @@ subroutine ffdev_parameters_dih2cos(top,idx)
     ! filter them and update dihedral_type
     top%dihedral_types(idx)%mode = DIH_COS
     top%dihedral_types(idx)%enabled(:) = .false.
+    top%dihedral_types(idx)%o = 0.0d0
     if( DIH2COS_ReportAll ) then
         do i=1,min(DIH2COS_MaxN,top%ndihedral_seq_size)
             top%dihedral_types(idx)%enabled(i) = .true.
