@@ -29,7 +29,7 @@ integer, allocatable        :: lgrcnt(:,:)
 integer                     :: nlgrng=0
 real(kind=8), allocatable   :: q0(:),crd(:,:)
 integer, allocatable        :: ivary(:),izan(:)
-real(kind=8)                :: qwt=0,q0tot=0,rcond=1.0d-7
+real(kind=8)                :: qwt=0,q0tot=0,rcond=1.0d-9
 real(kind=8), allocatable   :: awork(:,:),bwork(:),scr1(:)
 integer, allocatable        :: iscr1(:)
 real(kind=8), allocatable   :: co(:,:)
@@ -171,7 +171,7 @@ subroutine readin
     qwt = 0.0005d0
     iunits = 0
     ialg = 0
-    rcond = 1.0d-7
+    rcond = 1.0d-9
     iwmod = 0
     do icard=1,1000
         read(5,'(a80)',end=10) card
