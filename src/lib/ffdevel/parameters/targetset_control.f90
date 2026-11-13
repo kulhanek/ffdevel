@@ -42,12 +42,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     character(PRMFILE_MAX_PATH) :: string,topin,key,geoname,sweight,field,wmode
     integer                     :: i,j,k,l,alloc_status,minj,probesize,npoints,ai
     logical                     :: data_avail,rst,shift2zero,stream,has_sapt
-    real(DEVDP)                 :: minenergy,weight,temperature
+    real(DEVDP)                 :: minenergy,weight,deftemperature
     logical                     :: unique_probe_types
     ! --------------------------------------------------------------------------
 
     ! employed in weights by Boltzmann
-    temperature = 300.0d0
+    deftemperature = 300.0d0
 
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'{TARGETS}', ':')
@@ -275,10 +275,11 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
             write(DEV_OUT,95) trim(wmode)
         end if
 
-        if( prmfile_get_real8_by_key(fin,'temperature', temperature)) then
-            write(DEV_OUT,400) temperature
+        sets(i)%temperature = deftemperature
+        if( prmfile_get_real8_by_key(fin,'temperature', sets(i)%temperature)) then
+            write(DEV_OUT,400) sets(i)%temperature
         else
-            write(DEV_OUT,405) temperature
+            write(DEV_OUT,405) sets(i)%temperature
         end if
 
         ! get name of initial driving profile
@@ -458,12 +459,12 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                         end if
                     case('boltzmannProbe')
                         if( sets(i)%geo(j)%trg_probe_ene_loaded ) then
-                            sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*temperature))
+                            sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*sets(i)%temperature))
                         end if
                     case('boltzmann')
                         ! for this we need relative energy - it is recalculated later
 !                       if( sets(i)%geo(j)%trg_ene_loaded ) then
-!                           sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+!                           sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
 !                       end if
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
@@ -538,7 +539,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                     case('auto')
                         ! skip
                     case('boltzmann')
-                        sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+                        sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
@@ -585,7 +586,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                             ! skip
                         case('boltzmann')
                             if( sets(i)%geo(j)%trg_ene_loaded ) then
-                                sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*temperature))
+                                sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
                             end if
                         case default
                             call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')

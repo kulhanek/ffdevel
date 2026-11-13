@@ -32,6 +32,7 @@ type TARGETSET
     character(len=MAX_PATH)     :: initial_drvxyz   ! driving geometries
     character(len=MAX_PATH)     :: final_drvene     ! driving profiles
     character(len=MAX_PATH)     :: final_drvxyz     ! driving geometries
+    real(DEVDP)                 :: temperature      ! temperature for Boltzmann weights
     integer                     :: ngeos            ! number of training points in the set
     type(GEOMETRY),pointer      :: geo(:)           ! training data
     integer                     :: mineneid         ! geometry with minimum of energy

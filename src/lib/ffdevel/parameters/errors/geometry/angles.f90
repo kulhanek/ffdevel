@@ -25,8 +25,13 @@ use ffdev_errors_dat
 !===============================================================================
 
 type, extends(ErrorFceType) :: TypeEFTAngles
+
+    logical         :: BoltzmannWeights         ! extra Boltzmann weights from target energies
+
     contains
         ! executive methods
+        procedure   :: init_errfce              => ffdev_err_angles_init
+        procedure   :: load_errfce              => ffdev_err_angles_ctrl
         procedure   :: set_title_errfce         => ffdev_err_angles_set_title
         procedure   :: calc_errfce              => ffdev_err_angles_error
         procedure   :: print_individual_summary_errfce => ffdev_err_angles_summary_targetset
@@ -34,6 +39,51 @@ type, extends(ErrorFceType) :: TypeEFTAngles
 end type TypeEFTAngles
 
 contains
+
+! ==============================================================================
+! subroutine ffdev_err_angles_init
+! ==============================================================================
+
+subroutine ffdev_err_angles_init(err_item)
+
+    implicit none
+    class(TypeEFTAngles)    :: err_item
+    ! --------------------------------------------------------------------------
+
+    call err_item%ErrorFceType%init_errfce()
+
+    err_item%BoltzmannWeights = .false.
+
+end subroutine ffdev_err_angles_init
+
+! ==============================================================================
+! subroutine ffdev_err_angles_ctrl
+! ==============================================================================
+
+subroutine ffdev_err_angles_ctrl(err_item,fin)
+
+    use ffdev_errors_dat
+    use ffdev_utils
+    use ffdev_errors_utils
+    use prmfile
+
+    implicit none
+    class(TypeEFTAngles)        :: err_item
+    type(PRMFILE_TYPE)          :: fin
+    ! --------------------------------------------------------------------------
+
+    call err_item%ErrorFceType%load_errfce(fin)
+
+    if( prmfile_get_logical_by_key(fin,'bweight', err_item%BoltzmannWeights)) then
+        write(DEV_OUT,170) prmfile_onoff(err_item%BoltzmannWeights)
+    else
+        write(DEV_OUT,175) prmfile_onoff(err_item%BoltzmannWeights)
+    end if
+
+170  format ('Extra Boltzmann weight (bweight)       = ',a12)
+175  format ('Extra Boltzmann weight (bweight)       = ',a12,'                  (default)')
+
+end subroutine ffdev_err_angles_ctrl
 
 !===============================================================================
 ! Subroutine:  ffdev_err_angles_set_title
@@ -66,7 +116,7 @@ subroutine ffdev_err_angles_error(err_item,opterr)
     ! --------------------------------------------
     integer                 :: i,j,q,ai,aj,ak
     real(DEVDP)             :: err,seterrangles,totw
-    real(DEVDP)             :: d0,dt
+    real(DEVDP)             :: d0,dt,w
     ! --------------------------------------------------------------------------
 
     err_item%RepValue = 0.0d0
@@ -92,8 +142,12 @@ subroutine ffdev_err_angles_error(err_item,opterr)
                 d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D
                 dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D
                 err = d0 - dt
-                seterrangles = seterrangles + sets(i)%geo(j)%weight * err**2
-                totw = totw + sets(i)%geo(j)%weight
+                w = sets(i)%geo(j)%weight
+                if( err_item%BoltzmannWeights .and. (.not. sets(i)%isref) ) then
+                    w = w * exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
+                end if
+                seterrangles = seterrangles + w * err**2
+                totw = totw + w
             end do
         end do
     end do
