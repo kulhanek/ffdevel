@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+    "settings": {
+        "files.exclude": {
+            "**/*.o": true,
+            "**/*.mod": true,
+            "**/build": true,
+			"**/*.cmake": true,
+			"bin": true,
+			"obj": true,
+			"lib": true,
+			"Testing": true,
+			"tests": true,
+			"**/CMakeFiles": true,
+			"**/Makefile": true,
+			"CMakeCache.txt": true,
+			"DartConfiguration.tcl": true
+		},
+		"editor.fontSize": 16,
+		"fortran.linter.compilerPath": "gfortran",
+		"fortran.linter.includePaths": [
+			"${workspaceFolder}/src/lib/fpmf",
+			"${workspaceFolder}/../../prmfile/1.0/src/lib/fprmfile",
+			"${workspaceFolder}/../../scimafic/1.0/src/lib/fscimafic",
+		],
+		"fortran.linter.extraArgs": [
+				"-cpp",
+				"-Wall"
+		],
+		"fortran.fortls.directories": [
+			"${workspaceFolder}/../../prmfile/1.0/src/lib/fprmfile/**",
+			"${workspaceFolder}/../../scimafic/1.0/src/lib/fscimafic/**",
+			"${workspaceFolder}/**"
+		],
+		"fortran.fortls.disableDiagnostics": true,
+	}
+}
