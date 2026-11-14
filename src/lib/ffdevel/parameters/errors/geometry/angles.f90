@@ -137,7 +137,7 @@ subroutine ffdev_err_angles_error(err_item,opterr)
             ak = sets(i)%top%angles(q)%ak
 
             do j=1,sets(i)%ngeos
-                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+                if( (.not. sets(i)%geo(j)%trg_crd_optimized) .or. sets(i)%geo(j)%trg_crd_optfailed ) cycle
 
                 d0 = ffdev_geometry_get_angle(sets(i)%geo(j)%crd,ai,aj,ak) * DEV_R2D
                 dt = ffdev_geometry_get_angle(sets(i)%geo(j)%trg_crd,ai,aj,ak) * DEV_R2D
@@ -145,6 +145,7 @@ subroutine ffdev_err_angles_error(err_item,opterr)
                 w = sets(i)%geo(j)%weight
                 if( err_item%BoltzmannWeights .and. (.not. sets(i)%isref) ) then
                     w = w * exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
+                    if( sets(i)%wset ) w = 1.0d0 ! already weighted - keep 1.0
                 end if
                 seterrangles = seterrangles + w * err**2
                 totw = totw + w

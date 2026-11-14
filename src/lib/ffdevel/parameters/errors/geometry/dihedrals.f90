@@ -89,7 +89,7 @@ subroutine ffdev_err_dihedrals_error(err_item,opterr)
             al = sets(i)%top%dihedrals(q)%al
 
             do j=1,sets(i)%ngeos
-                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+                if( (.not. sets(i)%geo(j)%trg_crd_optimized) .or. sets(i)%geo(j)%trg_crd_optfailed ) cycle
 
                 d0 = ffdev_geometry_get_dihedral(sets(i)%geo(j)%crd,ai,aj,ak,al)
                 dt = ffdev_geometry_get_dihedral(sets(i)%geo(j)%trg_crd,ai,aj,ak,al)

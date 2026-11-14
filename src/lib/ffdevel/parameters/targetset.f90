@@ -103,7 +103,6 @@ subroutine ffdev_targetset_calc_all
             if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
             if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
             do j=1,sets(i)%ngeos
-                sets(i)%geo(j)%trg_crd_optimized = .false.
                 if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
                     .and. sets(i)%geo(j)%trg_crd_loaded ) then
                     if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
@@ -119,7 +118,6 @@ subroutine ffdev_targetset_calc_all
                     !$omp task
                     ! no output is allowed in parallel mode
                     call ffdev_geoopt_run(0,sets(i)%top,sets(i)%geo(j))
-                    sets(i)%geo(j)%trg_crd_optimized = .true.
                     !$omp end task
                 end if
             end do
@@ -132,7 +130,6 @@ subroutine ffdev_targetset_calc_all
             if( sets(i)%top%probe_size .gt. 0 ) cycle   ! do not optimize probed structures
             if( sets(i)%top%natoms .le. 1 ) cycle       ! do not optimize systems with one atom
             do j=1,sets(i)%ngeos
-                sets(i)%geo(j)%trg_crd_optimized = .false.
                 if( (sets(i)%optgeo .or. GlbOptGeometryEnabled) .and. (.not. GlbOptGeometryDisabled) &
                     .and. sets(i)%geo(j)%trg_crd_loaded ) then
                     if( .not. (sets(i)%keepoptgeo .or. GlbKeepOptGeometry) ) then
@@ -150,7 +147,6 @@ subroutine ffdev_targetset_calc_all
                     else
                         call ffdev_geoopt_run(DEV_NULL,sets(i)%top,sets(i)%geo(j))
                     end if
-                    sets(i)%geo(j)%trg_crd_optimized = .true.
                 end if
             end do
         end do

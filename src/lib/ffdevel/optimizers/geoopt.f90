@@ -120,6 +120,9 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     type(GEOMETRY)  :: geo
     ! --------------------------------------------------------------------------
 
+    geo%trg_crd_optimized = .false.
+    geo%trg_crd_optfailed = .false.
+
     if( PrintRSTSummary .and. (fout .gt. 0) ) then
         ! print summary about RSTs
         write(fout,*)
@@ -135,6 +138,8 @@ subroutine ffdev_geoopt_run(fout,top,geo)
         case(MINIMIZATION_LBFGS)
             call opt_lbfgs(fout,top,geo)
     end select
+
+    geo%trg_crd_optimized = .true.
 
     !$omp atomic
     NumberOfRuns =  NumberOfRuns + 1
@@ -318,6 +323,7 @@ subroutine opt_steepest_descent(fout,top,geo)
         !$omp atomic
         NumberOfFailedRuns =  NumberOfFailedRuns + 1
         !$omp end atomic
+        geo%trg_crd_optfailed = .false.
     end if
 
     if( fout .gt. 0 ) then
@@ -462,6 +468,7 @@ subroutine opt_lbfgs(fout,top,geo)
         !$omp atomic
         NumberOfFailedRuns =  NumberOfFailedRuns + 1
         !$omp end atomic
+        geo%trg_crd_optfailed = .true.
     end if
 
     if( fout .gt. 0 ) then

@@ -80,6 +80,7 @@ subroutine ffdev_geometry_init(geo)
     geo%trg_freq_loaded     = .false.
     geo%trg_esp_loaded      = .false.
     geo%trg_crd_optimized   = .false.
+    geo%trg_crd_optfailed   = .false.
     geo%esp_npoints         = 0
 
     geo%sup_xdm_loaded   = .false.

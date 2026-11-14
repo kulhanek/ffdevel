@@ -72,7 +72,8 @@ type GEOMETRY
     real(DEVDP),pointer     :: nmodes(:,:,:,:)  ! normal modes (3,natoms,3,natoms)
     real(DEVDP),pointer     :: freq(:)          ! frequencies of normal vibrations (3*natoms)
 ! target data
-    logical                 :: trg_crd_optimized    ! indicates that the goemtry was optimized
+    logical                 :: trg_crd_optimized    ! indicates that the geometry was MM optimized
+    logical                 :: trg_crd_optfailed    ! indicates that the geometry optimization failed
     logical                 :: trg_ene_loaded
     logical                 :: trg_ene_generic
     logical                 :: trg_crd_loaded

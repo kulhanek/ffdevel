@@ -171,10 +171,15 @@ subroutine ffdev_err_energy_error(err_item,opterr)
     do i=1,nsets
         ! use only sets, which can provide reliable energy
         if( .not. ( (sets(i)%nrefs .ge. 1) .or. (sets(i)%top%probe_size .gt. 0) ) ) cycle
+        if( sets(i)%isref ) cycle
 
         do j=1,sets(i)%ngeos
             ! ------------------------------------------------------------------
             if( .not. sets(i)%geo(j)%trg_ene_loaded ) cycle
+            if( .not. sets(i)%geo(j)%trg_crd_optimized ) then
+                ! geometry optimized - but with error - skip
+                if( sets(i)%geo(j)%trg_crd_optfailed ) cycle
+            end if
 
             ! filters
             if( err_item%EnableMaxFilter ) then

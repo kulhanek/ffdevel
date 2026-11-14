@@ -135,7 +135,7 @@ subroutine ffdev_err_impropers_error(err_item,opterr)
             al = sets(i)%top%impropers(q)%al
 
             do j=1,sets(i)%ngeos
-                if( .not. sets(i)%geo(j)%trg_crd_optimized ) cycle
+                if( (.not. sets(i)%geo(j)%trg_crd_optimized) .or. sets(i)%geo(j)%trg_crd_optfailed ) cycle
 
                 d0 = ffdev_geometry_get_improper(sets(i)%geo(j)%crd,ai,aj,ak,al)
                 if( err_item%LockToPhase ) then

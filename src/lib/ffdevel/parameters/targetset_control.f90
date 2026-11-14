@@ -88,6 +88,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
     ! pre-init
     sets(:)%isref       = .false.
     sets(:)%name        = ''
+    sets(:)%wset        = .false.
 
     rst = prmfile_first_section(fin)
 
@@ -451,16 +452,19 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                                 sets(i)%geo(j)%weight = 0.0d0
                             end if
                         end if
+                        sets(i)%wset = .false.
                     case('ire2')
                         if( sets(i)%geo(j)%trg_ene_loaded ) then
                             if( sets(i)%geo(j)%trg_energy .ne. 0d0 ) then
                                 sets(i)%geo(j)%weight = 1.0d0 / sets(i)%geo(j)%trg_energy**2
                             end if
                         end if
+                        sets(i)%wset = .true.
                     case('boltzmannProbe')
                         if( sets(i)%geo(j)%trg_probe_ene_loaded ) then
                             sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_probe_ene / (DEV_Rgas*sets(i)%temperature))
                         end if
+                        sets(i)%wset = .true.
                     case('boltzmann')
                         ! for this we need relative energy - it is recalculated later
 !                       if( sets(i)%geo(j)%trg_ene_loaded ) then
@@ -540,6 +544,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                         ! skip
                     case('boltzmann')
                         sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
+                        sets(i)%wset = .true.
                     case default
                         call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                 end select
@@ -588,6 +593,7 @@ subroutine ffdev_targetset_ctrl(fin,allow_nopoints)
                             if( sets(i)%geo(j)%trg_ene_loaded ) then
                                 sets(i)%geo(j)%weight = exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
                             end if
+                            sets(i)%wset = .true.
                         case default
                             call ffdev_utils_exit(DEV_ERR,1,'Unsupported wmode ''' // trim(wmode) // '''!')
                     end select

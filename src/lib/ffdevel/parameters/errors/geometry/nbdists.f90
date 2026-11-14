@@ -139,7 +139,8 @@ subroutine ffdev_err_nbdists_error(err_item,opterr)
     do i=1,nsets
         do j=1,sets(i)%ngeos
 
-            if( .not. (sets(i)%geo(j)%trg_crd_optimized .and. sets(i)%top%nfragments .gt. 1) )  cycle
+            if( (.not. (sets(i)%geo(j)%trg_crd_optimized .and. sets(i)%top%nfragments .gt. 1) ) &
+                 .or. sets(i)%geo(j)%trg_crd_optfailed )  cycle
 
             do q=1,sets(i)%top%nb_size
                 ai = sets(i)%top%nb_list(q)%ai
