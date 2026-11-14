@@ -144,6 +144,7 @@ subroutine ffdev_err_angle_a0_error(err_item,opterr)
                 w = sets(i)%geo(j)%weight
                 if( err_item%BoltzmannWeights .and. (.not. sets(i)%isref) ) then
                     w = w * exp( -sets(i)%geo(j)%trg_energy / (DEV_Rgas*sets(i)%temperature))
+                    if( sets(i)%wset ) w = 1.0d0 ! already weighted - keep 1.0
                 end if
                 seterrangles = seterrangles + w * err**2
                 totw = totw + w
