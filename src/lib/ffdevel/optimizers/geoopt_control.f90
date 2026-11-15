@@ -60,6 +60,7 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
         write(DEV_OUT,65) prmfile_onoff(PrintFinalGradient)
         write(DEV_OUT,75) OutSamples
         write(DEV_OUT,85) TrajSamples
+        write(DEV_OUT,95) DrvSteps
 
         call read_opt_method(fin)
         return
@@ -145,6 +146,16 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
     end if
     if( TrajSamples .eq. 0 ) TrajSamples = -1
 
+    if( prmfile_get_integer_by_key(fin,'drvsteps', DrvSteps)) then
+        write(DEV_OUT,90) DrvSteps
+    else
+        write(DEV_OUT,95) DrvSteps
+    end if
+
+    if( DrvSteps .gt. NOptSteps ) then
+        call ffdev_utils_exit(DEV_ERR,1,'drvsteps has to be smaller than or equal to steps!')
+    end if
+
     call read_opt_method(fin)
 
     return
@@ -165,6 +176,8 @@ subroutine ffdev_geoopt_ctrl_minimize(fin)
  75  format ('Energy summary samples (outsamples)    = ',i12,'                  (default)')
  80  format ('Trajectory samples (trajsamples)       = ',i12)
  85  format ('Trajectory samples (trajsamples)       = ',i12,'                  (default)')
+ 90  format ('Number of driving steps (drvsteps)     = ',i12)
+ 95  format ('Number of driving steps (drvsteps)     = ',i12,'                  (default)')
 
 end subroutine ffdev_geoopt_ctrl_minimize
 

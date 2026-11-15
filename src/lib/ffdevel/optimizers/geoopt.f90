@@ -40,6 +40,7 @@ subroutine ffdev_geoopt_set_default()
     NOptSteps           =  5000      ! max number of steps
     OutSamples          =    20      ! how often write results
     TrajSamples         =   100
+    DrvSteps            =     0
 
 ! maximum number of steps is nsteps - this is becuase of change of restraints etc
     MaxRMSG             = 0.001d0
@@ -250,7 +251,7 @@ subroutine opt_steepest_descent(fout,top,geo)
         !$omp end atomic
 
         ! rst penalty
-        call ffdev_geometry_get_rst_penalty(geo)
+        call ffdev_geometry_get_rst_penalty(geo,istep,DrvSteps)
 
         totene = geo%total_ene + geo%rst_energy
 
@@ -258,7 +259,7 @@ subroutine opt_steepest_descent(fout,top,geo)
         ! check all criteria
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
-        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange ) then
+        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange .and. istep .gt. DrvSteps ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
                 write(fout,'(a,F16.4)')   ' >>> INFO: Energy change treshold : ', MinEnergyChange
@@ -267,7 +268,7 @@ subroutine opt_steepest_descent(fout,top,geo)
             exit
         end if
 
-        if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
+        if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG .and. istep .gt. DrvSteps ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
                 write(fout,'(a,F16.4)')   ' >>> INFO: RMS of gradient treshold        : ', MaxRMSG
@@ -297,7 +298,7 @@ subroutine opt_steepest_descent(fout,top,geo)
             tmp_xg1(:,:)    = geo%crd(:,:)
             tmp_xg2(:,:)    = geo%grd(:,:)
             lastenergy      = totene
-            geo%crd(:,:)       = geo%crd(:,:) - geo%grd(:,:)*stepsize/sqrt(rmsg)
+            geo%crd(:,:)       = geo%crd(:,:) - geo%grd(:,:)*stepsize ! /sqrt(rmsg)
             !write(DEV_OUT,'(/,a,I10,a)') '>>> INFO: Minimization step ',istep,' was accepted!'
         else if ( adaptivestep .and. istep .ne. 1 .and. totene .ge. lastenergy ) then
             ! go back and try smaller step
@@ -305,14 +306,14 @@ subroutine opt_steepest_descent(fout,top,geo)
             geo%crd(:,:)       = tmp_xg1(:,:)
             geo%grd(:,:)       = tmp_xg2(:,:)
             rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
-            geo%crd(:,:)       = geo%crd(:,:) - geo%grd(:,:)*stepsize/sqrt(rmsg)
+            geo%crd(:,:)       = geo%crd(:,:) - geo%grd(:,:)*stepsize ! /sqrt(rmsg)
             !write(DEV_OUT,'(/,a,I10,a)') '>>> INFO: Minimization step ',istep,' was rejected!'
         else
             ! first step
             tmp_xg1(:,:)    = geo%crd(:,:)
             tmp_xg2(:,:)    = geo%grd(:,:)
             lastenergy      = totene
-            geo%crd(:,:)    = geo%crd(:,:) - geo%grd(:,:)*stepsize/sqrt(rmsg)
+            geo%crd(:,:)    = geo%crd(:,:) - geo%grd(:,:)*stepsize ! /sqrt(rmsg)
         end if
 
     end do
@@ -409,7 +410,7 @@ subroutine opt_lbfgs(fout,top,geo)
         !$omp end atomic
 
         ! rst penalty
-        call ffdev_geometry_get_rst_penalty(geo)
+        call ffdev_geometry_get_rst_penalty(geo,istep,DrvSteps)
 
         totene = geo%total_ene + geo%rst_energy
 
@@ -417,7 +418,7 @@ subroutine opt_lbfgs(fout,top,geo)
         ! check all criteria
         rmsg = ffdev_gradient_rmsg(geo,maxgrad,maxatom)
 
-        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange ) then
+        if( istep .ne. 1 .and. abs(totene - lastenergy) .le. MinEnergyChange .and. istep .gt. DrvSteps ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,/)') ' >>> INFO: Energy change is below treshold! Minimization was stoped.'
                 write(fout,'(a,F16.4)') ' >>> INFO: Last energy change     : ', abs(totene - lastenergy)
@@ -426,7 +427,7 @@ subroutine opt_lbfgs(fout,top,geo)
             exit
         end if
 
-        if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG ) then
+        if( abs(maxgrad) .le. MaxG .and. rmsg .le. MaxRMSG .and. istep .gt. DrvSteps ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,/)') ' >>> INFO: Gradient tresholds were satisfied! Minimization was stoped.'
                 write(fout,'(a,F16.4)') ' >>> INFO: RMS of gradient                 : ', rmsg
@@ -452,7 +453,7 @@ subroutine opt_lbfgs(fout,top,geo)
                     .false.,tmp_xg,iprint,eps,xtol,work,iflag,ctx)
 
         if( iflag .eq. 0 ) exit
-        if( iflag .le. 0 ) then
+        if( (iflag .le. 0) .and. (istep .gt. DrvSteps) ) then
             if( fout .gt. 0 ) then
                 write(fout,'(/,a,i2,/)') '>>> ERROR: Internal L-BFGS driver error! Code = ', iflag
             end if

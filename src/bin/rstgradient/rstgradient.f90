@@ -102,7 +102,7 @@ program ffdev_gradient_program
         call ffdev_geometry_get_rst_penalty_num(geo)
     else
         write(DEV_OUT,'(A)') 'Analytical gradient ...'
-        call ffdev_geometry_get_rst_penalty(geo)
+        call ffdev_geometry_get_rst_penalty(geo,1,0)
     end if
 
     write(DEV_OUT,*)
