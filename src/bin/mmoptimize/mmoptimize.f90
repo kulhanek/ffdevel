@@ -125,7 +125,11 @@ program ffdev_mmoptimize
     ! finalize all -------------------------------------------------------------
     write(DEV_OUT,*)
     call ffdev_utils_heading(DEV_OUT,'Finalization',':')
-    call ffdev_geometry_save_xyz(geo,OptRstName)
+    if( OptRstInPtsFormat ) then
+        call ffdev_geometry_save_optpts(geo,OptRstName)
+    else
+        call ffdev_geometry_save_xyz(geo,OptRstName)
+    end if
 
     ! close trajectory
     call ffdev_geoopt_closetraj

@@ -993,6 +993,96 @@ subroutine ffdev_geometry_save_point(geo,name,trg)
 end subroutine ffdev_geometry_save_point
 
 ! ==============================================================================
+! subroutine ffdev_geometry_save_optpts
+! ==============================================================================
+
+subroutine ffdev_geometry_save_optpts(geo,name)
+
+    use ffdev_utils
+    use smf_periodic_table_dat
+
+    implicit none
+    type(GEOMETRY)      :: geo
+    character(*)        :: name
+    ! --------------------------------------------
+    integer             :: i,write_stat
+    character(len=255)  :: buffer
+    ! --------------------------------------------------------------------------
+
+    geo%name = name
+
+    ! open file
+    call ffdev_utils_open(DEV_GEO,name,'U')
+
+    ! number of atoms
+    write(DEV_GEO,'(I8)',iostat = write_stat) geo%natoms
+    if( write_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save number of atoms!')
+    end if
+
+    ! title
+    write(DEV_GEO,'(A80)',iostat = write_stat) geo%title
+    if( write_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save title!')
+    end if
+
+    ! save geometry - mandatory
+    do i=1,geo%natoms
+        write(DEV_GEO,'(A2,1X,F12.6,1X,F12.6,1X,F12.6)',iostat = write_stat) &
+                       pt_symbols(geo%z(i)), geo%crd(1,i), geo%crd(2,i), geo%crd(3,i)
+        if( write_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with coordinates!')
+        end if
+    end do
+
+    ! energy
+    write(DEV_GEO,'(A)',iostat = write_stat) 'ENERGY'
+    ! geo%total_ene - this is a potential energy, energy of restraints is not included
+    write(DEV_GEO,'(F20.6)',iostat = write_stat) geo%total_ene
+    if( write_stat .ne. 0 ) then
+        call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with energy!')
+    end if
+
+    ! CVs
+    if( geo%nrst .gt. 0 ) then
+        write(DEV_GEO,'(A)',iostat = write_stat) 'RST'
+        write(DEV_GEO,'(I5)',iostat = write_stat) geo%nrst
+        if( write_stat .ne. 0 ) then
+            call ffdev_utils_exit(DEV_ERR,1,'Unable to save line with RST!')
+        end if
+        do i=1,geo%nrst
+            ! here - we use intentionally the current CV values
+            select case(trim(geo%rst(i)%cvtype))
+                case('B')
+                    write(DEV_GEO,10,iostat = write_stat) i, geo%rst(i)%value, &
+                            geo%rst(i)%ai(1), geo%rst(i)%ai(2)
+                case('A')
+                    write(DEV_GEO,20,iostat = write_stat) i, geo%rst(i)%value * DEV_R2D, &
+                            geo%rst(i)%ai(1), geo%rst(i)%ai(2), geo%rst(i)%ai(3)
+                case('D')
+                    write(DEV_GEO,30,iostat = write_stat) i, geo%rst(i)%value * DEV_R2D, &
+                            geo%rst(i)%ai(1), geo%rst(i)%ai(2), geo%rst(i)%ai(3), geo%rst(i)%ai(4)
+                case default
+                    write(buffer,'(A,A,A,I3)') 'Unsupported RST type ',trim(geo%rst(i)%cvtype),'! RST CV = ',i
+                    call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+            end select
+            if( write_stat .ne. 0 ) then
+                write(buffer,'(A,I3)') 'Unable to save line with CV = ',i
+                call ffdev_utils_exit(DEV_ERR,1,trim(buffer))
+            end if
+        end do
+    end if
+
+    ! close file
+    close(DEV_GEO)
+
+10 format(I3,1X,'B',1X,F20.6,1X,I6,1X,I6)
+20 format(I3,1X,'A',1X,F20.6,1X,I6,1X,I6,1X,I6)
+30 format(I3,1X,'D',1X,F20.6,1X,I6,1X,I6,1X,I6,1X,I6)
+
+end subroutine ffdev_geometry_save_optpts
+
+! ==============================================================================
 ! subroutine ffdev_geometry_save_xyzr
 ! ==============================================================================
 

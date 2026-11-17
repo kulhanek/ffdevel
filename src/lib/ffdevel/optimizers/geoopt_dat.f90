@@ -32,8 +32,9 @@ integer, parameter     :: MINIMIZATION_LBFGS               = 1
 ! === [files] ==================================================================
 character(len=MAX_PATH) :: OptTopName      ! input topology name
 character(len=MAX_PATH) :: OptCrdName      ! input coordinate name
-character(len=MAX_PATH) :: OptRstName  = 'final.xyz'    ! final coordinates name
-character(len=MAX_PATH) :: OptTrajName = 'traj.xyz'     ! trajectory name
+character(len=MAX_PATH) :: OptRstName        = 'final.xyz'  ! final coordinates name
+character(len=MAX_PATH) :: OptTrajName       = 'traj.xyz'   ! trajectory name
+logical                 :: OptRstInPtsFormat = .false.      ! output result as pts
 
 ! === [minimization] ===========================================================
 integer         :: OptimizationMethod

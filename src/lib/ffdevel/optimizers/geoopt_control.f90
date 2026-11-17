@@ -348,6 +348,7 @@ subroutine ffdev_geoopt_ctrl_files(fin)
         end if
         write (DEV_OUT,20) trim(OptCrdName)
         write (DEV_OUT,35) trim(OptRstName)
+        write (DEV_OUT,55) prmfile_onoff(OptRstInPtsFormat)
         write (DEV_OUT,45) trim(OptTrajName)
         return
     end if
@@ -370,7 +371,11 @@ subroutine ffdev_geoopt_ctrl_files(fin)
     else
         write (DEV_OUT,30) trim(OptRstName)
     end if
-
+    if( prmfile_get_logical_by_key(fin,'ptsformat', OptRstInPtsFormat)) then
+        write(DEV_OUT,50) prmfile_onoff(OptRstInPtsFormat)
+    else
+        write(DEV_OUT,55) prmfile_onoff(OptRstInPtsFormat)
+    end if
     ! trajectory file
     if( .not. prmfile_get_string_by_key(fin,'trajectory', OptTrajName)) then
         write (DEV_OUT,45) trim(OptTrajName)
@@ -384,6 +389,8 @@ subroutine ffdev_geoopt_ctrl_files(fin)
 20 format('Initial coordinate file (input)        = ',a)
 30 format('Final coordinate file (final)          = ',a)
 35 format('Final coordinate file (final)          = ',a12,'                  (default)')
+50 format('Write final file as pts (ptsformat)    = ',a)
+55 format('Write final file as pts (ptsformat)    = ',a12,'                  (default)')
 40 format('Trajectory file (trajectory)           = ',a)
 45 format('Trajectory file (trajectory)           = ',a12,'                  (default)')
 
