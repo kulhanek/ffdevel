@@ -79,7 +79,6 @@ type GEOMETRY
     logical                 :: trg_crd_loaded
     logical                 :: trg_grd_loaded
     logical                 :: trg_hess_loaded
-    logical                 :: trg_ihess_loaded
     logical                 :: trg_freq_loaded
     logical                 :: trg_esp_loaded
     real(DEVDP)             :: trg_energy           ! target energy

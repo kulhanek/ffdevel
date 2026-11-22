@@ -177,7 +177,6 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
         do i=1,sets(s)%ngeos
             call ffdev_err_ihess_error_geo(err_item,sets(s)%top,sets(s)%geo(i))
         end do
-
     end do
 
     ! calculate error
@@ -194,6 +193,7 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
                     bt = sets(s)%top%bonds(i)%bt
                     k1 = sets(s)%top%bond_types(bt)%k
                     do j=1,sets(s)%ngeos
+                        if( .not. sets(s)%geo(j)%trg_hess_loaded ) continue
                         k2 = sets(s)%geo(j)%trg_ihess_bonds(i)
                         diff = k2 - k1
                         ihess_bse = ihess_bse + diff**2
@@ -217,6 +217,7 @@ subroutine ffdev_err_ihess_error(err_item,opterr)
                     at = sets(s)%top%angles(i)%at
                     k1 = sets(s)%top%angle_types(at)%k
                     do j=1,sets(s)%ngeos
+                        if( .not. sets(s)%geo(j)%trg_hess_loaded ) continue
                         k2 = sets(s)%geo(j)%trg_ihess_angles(i)
                         diff = k2 - k1
                         ihess_ase = ihess_ase + diff**2
@@ -256,6 +257,8 @@ subroutine ffdev_err_ihess_error_geo(err_item,top,geo)
     ! --------------------------------------------
     type(GEOMETRY)      :: geo_backup
     ! -----------------------------------------------------------------------------
+
+    if( .not. geo%trg_hess_loaded ) return
 
     if( .not. associated(geo%trg_ihess) ) then
         call ffdev_hessian_allocate_trg_ihess(top,geo)
