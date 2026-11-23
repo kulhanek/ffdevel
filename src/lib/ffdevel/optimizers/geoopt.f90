@@ -251,7 +251,7 @@ subroutine opt_steepest_descent(fout,top,geo)
         !$omp end atomic
 
         ! rst penalty
-        call ffdev_geometry_get_rst_penalty(geo,istep,DrvSteps)
+        call ffdev_geometry_get_rst_penalty(geo)
 
         totene = geo%total_ene + geo%rst_energy
 
@@ -410,7 +410,7 @@ subroutine opt_lbfgs(fout,top,geo)
         !$omp end atomic
 
         ! rst penalty
-        call ffdev_geometry_get_rst_penalty(geo,istep,DrvSteps)
+        call ffdev_geometry_get_rst_penalty(geo)
 
         totene = geo%total_ene + geo%rst_energy
 

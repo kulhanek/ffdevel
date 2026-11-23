@@ -1840,14 +1840,12 @@ end function ffdev_geometry_get_dihedral_deviation
 ! including gardient
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_rst_penalty(geo,istep,drvsteps)
+subroutine ffdev_geometry_get_rst_penalty(geo)
 
     use ffdev_utils
 
     implicit none
     type(GEOMETRY)  :: geo
-    integer         :: istep
-    integer         :: drvsteps
     ! --------------------------------------------
     integer         :: i
     ! --------------------------------------------------------------------------
@@ -1858,11 +1856,11 @@ subroutine ffdev_geometry_get_rst_penalty(geo,istep,drvsteps)
     do i=1,geo%nrst
         select case(trim(geo%rst(i)%cvtype))
             case('B')
-                call ffdev_geometry_get_bond_penalty(geo,i,istep,drvsteps)
+                call ffdev_geometry_get_bond_penalty(geo,i)
             case('A')
-                call ffdev_geometry_get_angle_penalty(geo,i,istep,drvsteps)
+                call ffdev_geometry_get_angle_penalty(geo,i)
             case('D')
-                call ffdev_geometry_get_torsion_penalty(geo,i,istep,drvsteps)
+                call ffdev_geometry_get_torsion_penalty(geo,i)
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_get_rst_penalty!')
         end select
@@ -2053,27 +2051,17 @@ end subroutine ffdev_geometry_rstsum
 ! subroutine ffdev_geometry_get_bond_penalty
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_bond_penalty(geo,cvidx,istep,drvsteps)
+subroutine ffdev_geometry_get_bond_penalty(geo,cvidx)
 
     implicit none
     type(GEOMETRY)  :: geo
     integer         :: cvidx
-    integer         :: istep
-    integer         :: drvsteps
     ! --------------------------------------------
     integer         :: i,j
     real(DEVDP)     :: b,db,dv,rij(3)
-    real(DEVDP)     :: applied_fc, fac
     ! --------------------------------------------------------------------------
 
-    applied_fc = DIS_FC
-    if( drvsteps .gt. 0 ) then
-        fac = real(istep,DEVDP) / real(drvsteps,DEVDP)
-        fac = max(0.0d0,min(1.0d0,fac))
-        applied_fc = applied_fc * fac**2
-    end if
-
-    ! for each bond
+    ! bond atoms
     i  = geo%rst(cvidx)%ai(1)
     j  = geo%rst(cvidx)%ai(2)
 
@@ -2083,11 +2071,11 @@ subroutine ffdev_geometry_get_bond_penalty(geo,cvidx,istep,drvsteps)
     ! calculate penalty
     b = sqrt ( rij(1)**2 + rij(2)**2 + rij(3)**2 )
     db = b - geo%rst(cvidx)%trg_value
-    geo%rst(cvidx)%value = 0.5*applied_fc*db**2
+    geo%rst(cvidx)%value = 0.5*DIS_FC*db**2
     geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! calculate gradient
-    dv = applied_fc*db/b
+    dv = DIS_FC*db/b
     geo%grd(:,j) = geo%grd(:,j) + rij(:)*dv
     geo%grd(:,i) = geo%grd(:,i) - rij(:)*dv
 
@@ -2097,27 +2085,18 @@ end subroutine ffdev_geometry_get_bond_penalty
 ! subroutine ffdev_geometry_get_angle_penalty
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_angle_penalty(geo,cvidx,istep,drvsteps)
+subroutine ffdev_geometry_get_angle_penalty(geo,cvidx)
 
     implicit none
     type(GEOMETRY)  :: geo
     integer         :: cvidx
-    integer         :: istep
-    integer         :: drvsteps
     ! --------------------------------------------
     integer         :: i,j,k
     real(DEVDP)     :: bji2inv,bjk2inv,bjiinv,bjkinv,scp,angv,da,dv,f1
     real(DEVDP)     :: rji(3),rjk(3),di(3),dk(3)
-    real(DEVDP)     :: applied_fc, fac
     ! --------------------------------------------------------------------------
 
-    applied_fc = ANG_FC
-    if( drvsteps .gt. 0 ) then
-        fac = real(istep,DEVDP) / real(drvsteps,DEVDP)
-        fac = max(0.0d0,min(1.0d0,fac))
-        applied_fc = applied_fc * fac**2
-    end if
-
+    ! angle atoms
     i  = geo%rst(cvidx)%ai(1)
     j  = geo%rst(cvidx)%ai(2)
     k  = geo%rst(cvidx)%ai(3)
@@ -2144,11 +2123,11 @@ subroutine ffdev_geometry_get_angle_penalty(geo,cvidx,istep,drvsteps)
 
     ! calculate energy
     da = angv - geo%rst(cvidx)%trg_value
-    geo%rst(cvidx)%value = 0.5*applied_fc*da**2
+    geo%rst(cvidx)%value = 0.5*ANG_FC*da**2
     geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! calculate gradient
-    dv = applied_fc*da
+    dv = ANG_FC*da
 
     f1 = sin ( angv )
     if ( abs(f1) .lt. 1.0d-3 ) then
@@ -2169,96 +2148,11 @@ subroutine ffdev_geometry_get_angle_penalty(geo,cvidx,istep,drvsteps)
 
 end subroutine ffdev_geometry_get_angle_penalty
 
-! ! E(phi) = k * (1 - cos(phi-phi0))
-! ! ==============================================================================
-! ! subroutine ffdev_geometry_get_torsion_penalty
-! ! ==============================================================================
-
-! subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx,istep,drvsteps)
-
-!     implicit none
-!     type(GEOMETRY)  :: geo
-!     integer         :: cvidx
-!     integer         :: istep
-!     integer         :: drvsteps
-!     ! ------------------------------
-!     integer         :: i,j,k,l
-!     real(DEVDP)     :: f(3),g(3),h(3),dv,fg,hg,a2,b2,gv
-!     real(DEVDP)     :: phi,a(3),b(3),da,scp,stp
-!     real(DEVDP)     :: applied_fc,fac
-!     ! --------------------------------------------------------------------------
-
-!     ! force constant ramp
-!     applied_fc = ANG_FC
-!     if( drvsteps .gt. 0 ) then
-!         fac = real(istep,DEVDP) / real(drvsteps,DEVDP)
-!         fac = max(0.0d0,min(1.0d0,fac))
-!         applied_fc = applied_fc * fac**2
-!     end if
-
-!     ! atom indices
-!     i = geo%rst(cvidx)%ai(1)
-!     j = geo%rst(cvidx)%ai(2)
-!     k = geo%rst(cvidx)%ai(3)
-!     l = geo%rst(cvidx)%ai(4)
-
-!     ! bond vectors
-!     f(:) = geo%crd(:,i) - geo%crd(:,j)
-!     g(:) = geo%crd(:,j) - geo%crd(:,k)
-!     h(:) = geo%crd(:,l) - geo%crd(:,k)
-
-!     ! plane normals
-!     a(1) = f(2)*g(3) - f(3)*g(2)
-!     a(2) = f(3)*g(1) - f(1)*g(3)
-!     a(3) = f(1)*g(2) - f(2)*g(1)
-
-!     b(1) = h(2)*g(3) - h(3)*g(2)
-!     b(2) = h(3)*g(1) - h(1)*g(3)
-!     b(3) = h(1)*g(2) - h(2)*g(1)
-
-!     fg = dot_product(f,g)
-!     hg = dot_product(h,g)
-!     a2 = dot_product(a,a)
-!     b2 = dot_product(b,b)
-!     gv = sqrt(dot_product(g,g))
-
-!     ! calculate torsion angle using atan2
-!     scp = dot_product(a,b)
-!     stp = -(g(1)*(a(2)*b(3)-a(3)*b(2)) &
-!            +g(2)*(a(3)*b(1)-a(1)*b(3)) &
-!            +g(3)*(a(1)*b(2)-a(2)*b(1)))/gv
-
-!     phi = atan2(stp,scp)
-
-!     ! angular deviation
-!     da = phi - geo%rst(cvidx)%trg_value
-
-!     ! periodic torsion restraint energy
-!     geo%rst(cvidx)%value = applied_fc*(1.0d0-cos(da))
-!     geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
-
-!     ! derivative with respect to torsion angle
-!     dv = applied_fc*sin(da)
-
-!     ! Cartesian gradient
-!     geo%grd(:,i) = geo%grd(:,i) + dv*( -gv/a2*a(:) )
-
-!     geo%grd(:,j) = geo%grd(:,j) + dv*( &
-!         (gv/a2 + fg/(a2*gv))*a(:) - hg/(b2*gv)*b(:) )
-
-!     geo%grd(:,k) = geo%grd(:,k) + dv*( &
-!         (hg/(b2*gv) - gv/b2)*b(:) - fg/(a2*gv)*a(:) )
-
-!     geo%grd(:,l) = geo%grd(:,l) + dv*( gv/b2*b(:) )
-
-! end subroutine ffdev_geometry_get_torsion_penalty
-
-! harmonic restraint
 ! ==============================================================================
-! subroutine ffdev_geometry_get_torsion_penalty
+! subroutine ffdev_geometry_get_angle_penalty
 ! ==============================================================================
 
-subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx,istep,drvsteps)
+subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
 
     implicit none
     type(GEOMETRY)  :: geo
@@ -2268,17 +2162,7 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx,istep,drvsteps)
     ! ------------------------------
     integer         :: i,j,k,l
     real(DEVDP)     :: f(3),g(3),h(3),dv,fg,hg,a2,b2,gv,scp,phi,a(3),b(3),da
-    real(DEVDP)     :: applied_fc, fac 
     ! --------------------------------------------------------------------------
-
-    applied_fc = ANG_FC
-    if( drvsteps .gt. 0 ) then
-        fac = real(istep,DEVDP) / real(drvsteps,DEVDP)
-        fac = max(0.0d0,min(1.0d0,fac))
-        applied_fc = applied_fc * fac**2
-    end if
-
-    ! write(*,*) ANG_FC, applied_fc, istep, drvsteps
 
     ! source: 10.1002/(SICI)1096-987X(19960715)17:9<1132::AID-JCC5>3.0.CO;2-T
 
@@ -2324,11 +2208,11 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx,istep,drvsteps)
 
     ! deviation and value
     da = ffdev_geometry_get_dihedral_deviation(phi,geo%rst(cvidx)%trg_value)
-    geo%rst(cvidx)%value = 0.5*applied_fc*da**2
+    geo%rst(cvidx)%value = 0.5*ANG_FC*da**2
     geo%rst_energy = geo%rst_energy + geo%rst(cvidx)%value
 
     ! contribution to grad
-    dv = applied_fc*da
+    dv = ANG_FC*da
 
     ! calculate gradient
     geo%grd(:,i) = geo%grd(:,i) + dv*( -gv/a2*a(:) )
