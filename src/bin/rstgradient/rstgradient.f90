@@ -106,7 +106,7 @@ program ffdev_gradient_program
     end if
 
     write(DEV_OUT,*)
-    call ffdev_geometry_rstsum(DEV_OUT,geo)
+    call ffdev_geometry_rstsum(DEV_OUT,geo,.false.)
 
     if( do_test ) then
         write(DEV_OUT,*)

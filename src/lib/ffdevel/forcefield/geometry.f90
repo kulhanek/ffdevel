@@ -1869,6 +1869,69 @@ subroutine ffdev_geometry_get_rst_penalty(geo)
 end subroutine ffdev_geometry_get_rst_penalty
 
 ! ==============================================================================
+! subroutine ffdev_geometry_rst_driving_init
+! ==============================================================================
+
+subroutine ffdev_geometry_rst_driving_init(geo)
+
+    use ffdev_utils
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    ! --------------------------------------------
+    integer         :: i
+    ! --------------------------------------------------------------------------
+
+    ! get current - initial RST value
+    call ffdev_geometry_get_rst_values(geo)
+
+    ! setup start and stop values
+    do i=1,geo%nrst
+        geo%rst(i)%start_value = geo%rst(i)%value
+        geo%rst(i)%stop_value = geo%rst(i)%trg_value
+    end do
+
+end subroutine ffdev_geometry_rst_driving_init
+
+! ==============================================================================
+! subroutine ffdev_geometry_rst_driving
+! ==============================================================================
+
+subroutine ffdev_geometry_rst_driving(geo,istep,totsteps)
+
+    use ffdev_utils
+
+    implicit none
+    type(GEOMETRY)  :: geo
+    integer         :: istep
+    integer         :: totsteps
+    ! --------------------------------------------
+    integer         :: i
+    real(DEVDP)     :: diff
+    ! --------------------------------------------------------------------------
+
+    if( istep .gt. totsteps ) return
+    if( istep .lt. 0 ) return
+
+    ! update target value
+    do i=1,geo%nrst
+        select case(trim(geo%rst(i)%cvtype))
+            case('B')
+                diff = geo%rst(i)%stop_value - geo%rst(i)%start_value
+            case('A')
+                diff = geo%rst(i)%stop_value - geo%rst(i)%start_value
+            case('D')
+                diff = ffdev_geometry_get_dihedral_deviation(geo%rst(i)%stop_value,geo%rst(i)%start_value)
+            case default
+                call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_rst_driving!')
+        end select
+
+        geo%rst(i)%trg_value = geo%rst(i)%start_value +  diff * real(istep,DEVDP) / real(totsteps,DEVDP)
+    end do
+
+end subroutine ffdev_geometry_rst_driving
+
+! ==============================================================================
 ! subroutine ffdev_geometry_get_rst_penalty_only
 ! without gradient
 ! ==============================================================================
@@ -1995,16 +2058,17 @@ end subroutine ffdev_geometry_get_rst_values
 ! subroutine ffdev_geometry_rstsum
 ! ==============================================================================
 
-subroutine ffdev_geometry_rstsum(unid,geo)
+subroutine ffdev_geometry_rstsum(unid,geo,drvmod)
 
     use ffdev_utils
 
     implicit none
     integer         :: unid
     type(GEOMETRY)  :: geo
+    logical         :: drvmod
     ! --------------------------------------------
     integer         :: i
-    real(DEVDP)     :: actv,tv,dev
+    real(DEVDP)     :: actv,tv,dev,sta,sto
     ! --------------------------------------------------------------------------
 
     if( geo%nrst .le. 0 ) then
@@ -2012,8 +2076,13 @@ subroutine ffdev_geometry_rstsum(unid,geo)
     end if
 
     write(unid,10)
-    write(unid,20)
-    write(unid,30)
+    if( drvmod ) then
+        write(unid,120)
+        write(unid,130)
+    else    
+        write(unid,20)
+        write(unid,30)
+    end if
 
     call ffdev_geometry_get_rst_values(geo)
 
@@ -2023,10 +2092,14 @@ subroutine ffdev_geometry_rstsum(unid,geo)
                 actv = geo%rst(i)%value
                 tv = geo%rst(i)%trg_value
                 dev = actv - tv
+                sta = geo%rst(i)%start_value
+                sto = geo%rst(i)%stop_value
             case('A')
                 actv = geo%rst(i)%value * DEV_R2D
                 tv = geo%rst(i)%trg_value * DEV_R2D
                 dev = actv - tv
+                sta = geo%rst(i)%start_value * DEV_R2D
+                sto = geo%rst(i)%stop_value * DEV_R2D
             case('D')
                 actv = geo%rst(i)%value 
                 tv = geo%rst(i)%trg_value 
@@ -2034,16 +2107,26 @@ subroutine ffdev_geometry_rstsum(unid,geo)
                 actv = actv * DEV_R2D
                 tv = tv * DEV_R2D
                 dev = dev * DEV_R2D
+                sta = geo%rst(i)%start_value * DEV_R2D
+                sto = geo%rst(i)%stop_value * DEV_R2D
             case default
                 call ffdev_utils_exit(DEV_ERR,1,'Unsupported CV in ffdev_geometry_rstsum!')
         end select
-        write(unid,40) i, geo%rst(i)%cvtype, tv, actv, dev
+        if( drvmod ) then
+            write(unid,140) i, geo%rst(i)%cvtype, tv, actv, dev, sta, sto
+        else
+            write(unid,40) i, geo%rst(i)%cvtype, tv, actv, dev
+        end if
     end do
 
  10 format('# Geometry Restraint Summary')
  20 format('# ID  Type  Target value Current val.  Deviation  ')
  30 format('# --- ----- ------------ ------------ ------------')
  40 format(I5,1X,A5,1X,F12.6,1X,F12.6,1X,F12.6)
+
+ 120 format('# ID  Type  Target value Current val.  Deviation   Start value  Stop value  ')
+ 130 format('# --- ----- ------------ ------------ ------------ ------------ ------------')
+ 140 format(I5,1X,A5,1X,F12.6,1X,F12.6,1X,F12.6,1X,F12.6,1X,F12.6)
 
 end subroutine ffdev_geometry_rstsum
 
@@ -2157,8 +2240,6 @@ subroutine ffdev_geometry_get_torsion_penalty(geo,cvidx)
     implicit none
     type(GEOMETRY)  :: geo
     integer         :: cvidx
-    integer         :: istep
-    integer         :: drvsteps
     ! ------------------------------
     integer         :: i,j,k,l
     real(DEVDP)     :: f(3),g(3),h(3),dv,fg,hg,a2,b2,gv,scp,phi,a(3),b(3),da

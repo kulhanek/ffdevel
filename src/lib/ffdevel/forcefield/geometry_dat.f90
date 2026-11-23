@@ -27,6 +27,9 @@ type RESTRAINT
     real(DEVDP)                 :: value
     character(len=MAX_CVTYPE)   :: cvtype
     integer,pointer             :: ai(:)
+    ! RST driving
+    real(DEVDP)                 :: start_value
+    real(DEVDP)                 :: stop_value
 end type RESTRAINT
 
 ! ------------------------------------------------------------------------------

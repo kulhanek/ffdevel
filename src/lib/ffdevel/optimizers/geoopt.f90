@@ -124,10 +124,15 @@ subroutine ffdev_geoopt_run(fout,top,geo)
     geo%trg_crd_optimized = .false.
     geo%trg_crd_optfailed = .false.
 
+    ! init driving mode
+    if( DrvSteps .gt. 0 ) then
+        call ffdev_geometry_rst_driving_init(geo)
+    end if
+
     if( PrintRSTSummary .and. (fout .gt. 0) ) then
         ! print summary about RSTs
         write(fout,*)
-        call ffdev_geometry_rstsum(fout,geo)
+        call ffdev_geometry_rstsum(fout,geo,DrvSteps .ne. 0)
         write(fout,*)
     end if
 
@@ -250,6 +255,11 @@ subroutine opt_steepest_descent(fout,top,geo)
         NumberOfGrdEvals =  NumberOfGrdEvals + 1
         !$omp end atomic
 
+        ! increment RST values in driving
+        if( DrvSteps .gt. 0 .and. istep .le. DrvSteps ) then
+            call ffdev_geometry_rst_driving(geo,istep,DrvSteps)
+        end if
+
         ! rst penalty
         call ffdev_geometry_get_rst_penalty(geo)
 
@@ -343,7 +353,7 @@ subroutine opt_steepest_descent(fout,top,geo)
         if( PrintRSTSummary ) then
             ! print summary about RSTs
             write(fout,*)
-            call ffdev_geometry_rstsum(fout,geo)
+            call ffdev_geometry_rstsum(fout,geo,DrvSteps.ne.0)
         end if
 
         if( PrintFinalGradient ) then
@@ -408,6 +418,11 @@ subroutine opt_lbfgs(fout,top,geo)
         !$omp atomic
         NumberOfGrdEvals =  NumberOfGrdEvals + 1
         !$omp end atomic
+
+        ! increment RST values in driving
+        if( DrvSteps .gt. 0 .and. istep .le. DrvSteps ) then
+            call ffdev_geometry_rst_driving(geo,istep,DrvSteps)
+        end if
 
         ! rst penalty
         call ffdev_geometry_get_rst_penalty(geo)
@@ -489,7 +504,7 @@ subroutine opt_lbfgs(fout,top,geo)
         if( PrintRSTSummary ) then
             ! print summary about RSTs
             write(fout,*)
-            call ffdev_geometry_rstsum(fout,geo)
+            call ffdev_geometry_rstsum(fout,geo,DrvSteps.ne.0)
         end if
 
         if( PrintFinalGradient ) then
