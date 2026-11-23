@@ -1850,36 +1850,6 @@ subroutine ffdev_parameters_save_amber(name)
         if( OutAmberPrmsActiveOnly ) then
             if( .not. params(i)%enabled ) cycle
         end if
-        if( (params(i)%realm .eq. REALM_BOND_R0) .or. ( params(i)%realm .eq. REALM_BOND_K ) ) then
-            enable_section = .true.
-            types(params(i)%ti)%print_nb = .true.
-            types(params(i)%tj)%print_nb = .true.
-            cycle
-        end if
-        if( (params(i)%realm .eq. REALM_ANGLE_A0) .or. ( params(i)%realm .eq. REALM_ANGLE_K ) ) then
-            enable_section = .true.
-            types(params(i)%ti)%print_nb = .true.
-            types(params(i)%tj)%print_nb = .true.
-            types(params(i)%tk)%print_nb = .true.
-            cycle
-        end if
-        if( (params(i)%realm .eq. REALM_DIH_V) .or. ( params(i)%realm .eq. REALM_DIH_G ) .or. &
-            (params(i)%realm .eq. REALM_DIH_SCEE) .or. ( params(i)%realm .eq. REALM_DIH_SCNB ) ) then
-            enable_section = .true.
-            types(params(i)%ti)%print_nb = .true.
-            types(params(i)%tj)%print_nb = .true.
-            types(params(i)%tk)%print_nb = .true.
-            types(params(i)%tl)%print_nb = .true.
-            cycle
-        end if
-        if( (params(i)%realm .eq. REALM_IMPR_V) .or. ( params(i)%realm .eq. REALM_IMPR_G ) ) then
-            enable_section = .true.
-            types(params(i)%ti)%print_nb = .true.
-            types(params(i)%tj)%print_nb = .true.
-            types(params(i)%tk)%print_nb = .true.
-            types(params(i)%tl)%print_nb = .true.
-            cycle
-        end if
         if( (params(i)%realm .eq. REALM_VDW_EPS) .or. ( params(i)%realm .eq. REALM_VDW_R0 ) ) then
             enable_section = .true.
             types(params(i)%ti)%print_nb = .true.
