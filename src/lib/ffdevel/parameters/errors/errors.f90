@@ -75,6 +75,7 @@ subroutine ffdev_errors_error_setup_domains(opterr)
         call ErrorFceList(i)%ErrFce%setup_domains_errfce(opterr)
     end do
 
+! FIXME - energy - OK, zerograd - OK, fix the rest of errors
 ! to be moved to individual classes
 !    errors_calc_ene  = EnableEnergyError .or. EnableProbeError
 !    errors_calc_sapt = EnableSAPTError

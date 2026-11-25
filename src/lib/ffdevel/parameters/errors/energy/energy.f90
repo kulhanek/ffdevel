@@ -37,6 +37,7 @@ type, extends(ErrorFceType) :: TypeEFTEnergy
         procedure   :: init_errfce              => ffdev_err_energy_init
         procedure   :: load_errfce              => ffdev_err_energy_ctrl
         procedure   :: set_title_errfce         => ffdev_err_energy_set_title
+        procedure   :: setup_domains_errfce     => ffdev_err_energy_setup_domains_errfce
         procedure   :: calc_errfce              => ffdev_err_energy_error
         procedure   :: print_individual_summary_errfce => ffdev_err_energy_summary
 end type TypeEFTEnergy
@@ -138,6 +139,25 @@ subroutine ffdev_err_energy_set_title(err_item)
     err_item%Title = 'Energy'
 
 end subroutine ffdev_err_energy_set_title
+
+!===============================================================================
+! Subroutine:  ffdev_err_energy_setup_domains_errfce
+!===============================================================================
+
+subroutine ffdev_err_energy_setup_domains_errfce(err_item,opterr)
+
+    implicit none
+    class(TypeEFTEnergy)    :: err_item
+    logical                 :: opterr
+    ! --------------------------------------------------------------------------
+
+    errors_calc_ene  = err_item%Enabled
+
+    if( .not. opterr ) then
+        errors_calc_ene  = errors_calc_ene .or. err_item%PrintSummary
+    end if
+
+end subroutine ffdev_err_energy_setup_domains_errfce
 
 ! ==============================================================================
 ! subroutine ffdev_err_energy_error

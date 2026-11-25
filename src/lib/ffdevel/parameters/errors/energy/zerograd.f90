@@ -28,6 +28,7 @@ type, extends(ErrorFceType) :: TypeEFTZeroGrad
     contains
         ! executive methods
         procedure   :: set_title_errfce         => ffdev_err_zerograd_set_title
+        procedure   :: setup_domains_errfce     => ffdev_err_zerograd_setup_domains_errfce
         procedure   :: calc_errfce              => ffdev_err_zerograd_error
         procedure   :: print_individual_summary_errfce => ffdev_err_zerograd_summary
 end type TypeEFTZeroGrad
@@ -47,6 +48,25 @@ subroutine ffdev_err_zerograd_set_title(err_item)
     err_item%Title = 'ZeroGrd'
 
 end subroutine ffdev_err_zerograd_set_title
+
+!===============================================================================
+! Subroutine:  ffdev_err_zerograd_setup_domains_errfce
+!===============================================================================
+
+subroutine ffdev_err_zerograd_setup_domains_errfce(err_item,opterr)
+
+    implicit none
+    class(TypeEFTZeroGrad)  :: err_item
+    logical                 :: opterr
+    ! --------------------------------------------------------------------------
+
+    errors_calc_grad  = err_item%Enabled
+
+    if( .not. opterr ) then
+        errors_calc_grad  = errors_calc_grad .or. err_item%PrintSummary
+    end if
+
+end subroutine ffdev_err_zerograd_setup_domains_errfce
 
 ! ==============================================================================
 ! subroutine ffdev_err_zerograd_error
